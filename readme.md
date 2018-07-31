@@ -6,11 +6,11 @@ This repository includes backend code for BriteX
 
 
 
-### Laravel Sponsors
+### Configuration Steps
 
 Follow given steps to run:
 
-- Clone repository
+- clone repository
 - composer install
 - cp .env.example .env
 - put appropriate configuration in .env
