@@ -38,4 +38,5 @@ class AddonController extends Controller
       return response()->json($this->content);
     }
 
+
 }

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 09, 2018 at 12:59 PM
+-- Generation Time: Aug 13, 2018 at 10:06 AM
 -- Server version: 10.1.34-MariaDB
 -- PHP Version: 7.2.7
 
@@ -44,14 +44,6 @@ CREATE TABLE `addon` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `addon`
---
-
-INSERT INTO `addon` (`id`, `company_id`, `name`, `description`, `notes`, `image`, `amount_recurring`, `taxable`, `show`, `sku`, `soc_code`, `bot_code`, `created_at`, `updated_at`) VALUES
-(1, 1, 'suraj', 'it works', 'sgggsgs', 'sgsgsgsg', 2000.3, 1, 1, 'hdhhdhd', 'sdghsj', 'xbxbx', NULL, NULL),
-(2, 1, 'suraj', 'it works', 'sgggsgs', 'sgsgsgsg', 2000.3, 1, 1, 'hdhhdhd', 'sdghsj', 'xbxbx', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -108,7 +100,7 @@ CREATE TABLE `business_verification` (
   `approved` tinyint(4) NOT NULL,
   `hash` char(60) COLLATE utf8mb4_unicode_ci NOT NULL,
   `business_name` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `tax_id` int(11) NOT NULL,
+  `tax_id` char(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fname` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `lname` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` text COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -126,8 +118,7 @@ CREATE TABLE `business_verification` (
 --
 
 INSERT INTO `business_verification` (`id`, `approved`, `hash`, `business_name`, `tax_id`, `fname`, `lname`, `email`, `address_line1`, `address_line2`, `city`, `state`, `zip`, `created_at`, `updated_at`) VALUES
-(1, 122, 'hardare', 'xyz', 1, 'suraj', 'bhattarai', 'suraj.bh46@gmail.com', 'block g', 'millan tol', 'lamahi', 'five', 'egegege', NULL, NULL),
-(2, 122, 'hardare', 'xyz', 1, 'suraj', 'bhattarai', 'suraj.bh46@gmail.com', 'block g', 'millan tol', 'lamahi', 'five', 'egegege', NULL, NULL);
+(1, 1, '', 'Test Co', '12-3456789', '', '', '', '', '', '', '', '', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -156,6 +147,14 @@ CREATE TABLE `carriers` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `carriers`
+--
+
+INSERT INTO `carriers` (`id`, `name`, `created_at`, `updated_at`) VALUES
+(1, 'T-Mobile', NULL, NULL),
+(2, 'At&T', NULL, NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -172,6 +171,13 @@ CREATE TABLE `carrier_blocks` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `carrier_blocks`
+--
+
+INSERT INTO `carrier_blocks` (`id`, `carrier_id`, `type`, `display_name`, `bot_code`, `soc_code`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 0, 0, 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -201,8 +207,8 @@ CREATE TABLE `companies` (
 --
 
 INSERT INTO `companies` (`id`, `api_key`, `name`, `url`, `selling_devices`, `selling_plans`, `selling_addons`, `selling_sim_standalone`, `business_verification`, `regulatory_label`, `default_reg_fee`, `sprint_api_key`, `created_at`, `updated_at`) VALUES
-(1, 'xyz', 'britex', 'www.britex.com', 122, 123, 123, 'testing ', 123, 'Regulatory', 123.09, 'fsfsgsg', NULL, NULL),
-(2, 'xyz', 'britex', 'www.britex.com', 122, 123, 123, 'testing ', 123, 'Regulatory', 123.09, 'fsfsgsg', NULL, NULL);
+(1, '', 'Test Communications', '', 0, 0, 0, '', 1, 'Regulatory', 3.5, '', NULL, NULL),
+(2, '', 'Teltik', '', 0, 0, 0, '', 1, '', 0, '', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -217,6 +223,14 @@ CREATE TABLE `company_to_carriers` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `company_to_carriers`
+--
+
+INSERT INTO `company_to_carriers` (`id`, `company_id`, `carrier_id`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, NULL, NULL),
+(2, 2, 1, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -310,8 +324,7 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`id`, `hash`, `company_id`, `business_verification_id`, `subscription_start_date`, `billing_start`, `billing_end`, `primary_payment_method`, `primary_payment_card`, `account_suspended`, `billing_address1`, `billing_address2`, `billing_city`, `billing_state_id`, `shipping_address1`, `shipping_address2`, `shipping_city`, `shipping_state_id`, `created_at`, `updated_at`) VALUES
-(1, 'ssd', 1, 1, '0000-00-00', '0000-00-00', '0000-00-00', 1, 1, 1, 'lamahi', 'dang', 'ghorahi', '', 'narayanpur', 'tulsipur', 'butwal', '1', NULL, NULL),
-(2, 'ssd', 1, 1, '0000-00-00', '0000-00-00', '0000-00-00', 1, 1, 1, 'lamahi', 'dang', 'ghorahi', '', 'narayanpur', 'tulsipur', 'butwal', '1', NULL, NULL);
+(1, '', 1, 1, '2018-03-01', '2018-03-01', '2018-03-31', 0, 0, 0, '731 Route 18 South', '', 'East Brunswick', 'NJ', '731 Route 18 South', '', 'East Brunswick', 'NJ', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -357,7 +370,7 @@ CREATE TABLE `device` (
   `type` int(11) NOT NULL,
   `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `tag_id` int(10) UNSIGNED NOT NULL,
+  `tag_id` int(10) UNSIGNED DEFAULT NULL,
   `notes` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `primary_image` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `amount` double NOT NULL,
@@ -369,6 +382,37 @@ CREATE TABLE `device` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `device`
+--
+
+INSERT INTO `device` (`id`, `company_id`, `carrier_id`, `type`, `name`, `description`, `tag_id`, `notes`, `primary_image`, `amount`, `amount_w_plan`, `taxable`, `associate_with_plan`, `show`, `sku`, `created_at`, `updated_at`) VALUES
+(1, 1, 2, 1, 'Samsung Galaxy', '<ul><li>Samsung Galaxy S9</li></ul>', NULL, '\r\n', '', 800, 720, 1, 0, 1, '', NULL, NULL),
+(2, 1, 1, 2, 'Ipad pro', '<ul><li>iPad Pro</li><li>12.9-inch display</li></ul>', NULL, '', '', 850, 800, 1, 0, 1, '', NULL, NULL),
+(3, 1, 1, 1, 'iphone X', '', NULL, '', '', 850, 800, 1, 0, 1, '', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `device_groups`
+--
+
+CREATE TABLE `device_groups` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `company_id` int(10) UNSIGNED NOT NULL,
+  `name` char(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `device_groups`
+--
+
+INSERT INTO `device_groups` (`id`, `company_id`, `name`, `created_at`, `updated_at`) VALUES
+(1, 1, 'Android', NULL, NULL),
+(2, 1, 'Apple', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -383,6 +427,15 @@ CREATE TABLE `device_images` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `device_images`
+--
+
+INSERT INTO `device_images` (`id`, `device_id`, `source`, `created_at`, `updated_at`) VALUES
+(1, 1, '', NULL, NULL),
+(2, 1, '', NULL, NULL),
+(3, 2, '', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -401,6 +454,26 @@ CREATE TABLE `device_to_carrier` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `device_to_group`
+--
+
+CREATE TABLE `device_to_group` (
+  `id` int(11) NOT NULL,
+  `device_group_id` int(11) DEFAULT NULL,
+  `device_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `device_to_group`
+--
+
+INSERT INTO `device_to_group` (`id`, `device_group_id`, `device_id`) VALUES
+(1, 1, 1),
+(2, 2, 2);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `device_to_plan`
 --
 
@@ -411,6 +484,15 @@ CREATE TABLE `device_to_plan` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `device_to_plan`
+--
+
+INSERT INTO `device_to_plan` (`id`, `device_id`, `plan_id`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, NULL, NULL),
+(2, 1, 2, NULL, NULL),
+(3, 2, 3, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -426,19 +508,12 @@ CREATE TABLE `device_to_sim` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
-
 --
--- Table structure for table `device__groups`
+-- Dumping data for table `device_to_sim`
 --
 
-CREATE TABLE `device__groups` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `company_id` int(10) UNSIGNED NOT NULL,
-  `name` char(191) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `device_to_sim` (`id`, `device_id`, `sim_id`, `created_at`, `updated_at`) VALUES
+(1, 3, 1, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -499,14 +574,6 @@ CREATE TABLE `invoices` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `invoices`
---
-
-INSERT INTO `invoices` (`id`, `customer_id`, `type`, `status`, `start_date`, `end_date`, `due_date`, `subtotal`, `total_due`, `prev_balance`, `payment_method`, `business_name`, `billing_fname`, `billing_lname`, `billing_address_line_1`, `billing_address_line_2`, `billing_city`, `billing_state`, `billing_zip`, `shipping_fname`, `shipping_lname`, `shipping_address_line_1`, `shipping_address_line_2`, `shipping_city`, `shipping_state`, `shipping_zip`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, '0000-00-00', '0000-00-00', '0000-00-00', 1221323.89, 2323442.34, 224344, 'cheque', 'xyz', 'suraj', 'bhatttari', 'dang', 'ghorahi', 'pmb', 'five', 'wregeg', 'adc', 'ch', 'shshhs', 'bfs', 'xhs', 'six', 'fegehehee', NULL, NULL),
-(2, 1, 1, 1, '0000-00-00', '0000-00-00', '0000-00-00', 1221323.89, 2323442.34, 224344, 'cheque', 'xyz', 'suraj', 'bhatttari', 'dang', 'ghorahi', 'pmb', 'five', 'wregeg', 'adc', 'ch', 'shshhs', 'bfs', 'xhs', 'six', 'fegehehee', NULL, NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -555,11 +622,11 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 
 CREATE TABLE `order` (
   `id` int(10) UNSIGNED NOT NULL,
-  `active_group_id` int(11) NOT NULL,
-  `Active_subscription_id` int(11) NOT NULL,
+  `active_group_id` int(11) DEFAULT NULL,
+  `Active_subscription_id` int(11) DEFAULT NULL,
   `order_num` int(11) NOT NULL,
   `status` tinyint(4) NOT NULL,
-  `invoice_id` int(10) UNSIGNED NOT NULL,
+  `invoice_id` int(10) UNSIGNED DEFAULT NULL,
   `hash` char(60) COLLATE utf8mb4_unicode_ci NOT NULL,
   `company_id` int(10) UNSIGNED NOT NULL,
   `customer_id` int(10) UNSIGNED NOT NULL,
@@ -573,8 +640,7 @@ CREATE TABLE `order` (
 --
 
 INSERT INTO `order` (`id`, `active_group_id`, `Active_subscription_id`, `order_num`, `status`, `invoice_id`, `hash`, `company_id`, `customer_id`, `date_processed`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 1, 1, 1, 'software', 1, 1, '0000-00-00', NULL, NULL),
-(3, 1, 1, 1, 1, 1, 'software', 1, 1, '0000-00-00', NULL, NULL);
+(1, NULL, NULL, 1, 1, NULL, '', 1, 1, '0000-00-00', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -605,6 +671,8 @@ CREATE TABLE `order_group` (
   `sim_id` int(10) UNSIGNED NOT NULL,
   `sim_num` int(11) NOT NULL,
   `sim_type` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `porting_number` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `area_code` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `require_plan` tinyint(4) NOT NULL,
   `require_device` tinyint(4) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -625,6 +693,45 @@ CREATE TABLE `order_group_addon` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `order_plan`
+--
+
+CREATE TABLE `order_plan` (
+  `id` int(11) NOT NULL,
+  `order_id` tinyint(4) NOT NULL,
+  `plan_id` tinyint(4) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `order_plan`
+--
+
+INSERT INTO `order_plan` (`id`, `order_id`, `plan_id`) VALUES
+(1, 1, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `order_sim`
+--
+
+CREATE TABLE `order_sim` (
+  `id` int(11) NOT NULL,
+  `order_id` tinyint(4) NOT NULL,
+  `order_plan_id` tinyint(4) NOT NULL,
+  `sim_id` tinyint(4) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `order_sim`
+--
+
+INSERT INTO `order_sim` (`id`, `order_id`, `order_plan_id`, `sim_id`) VALUES
+(1, 1, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -666,7 +773,7 @@ CREATE TABLE `plan` (
   `device_id` int(10) UNSIGNED NOT NULL,
   `carrier_id` int(10) UNSIGNED NOT NULL,
   `type` int(11) NOT NULL,
-  `tag_id` int(10) UNSIGNED NOT NULL,
+  `tag_id` int(10) UNSIGNED DEFAULT NULL,
   `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `image` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -676,6 +783,7 @@ CREATE TABLE `plan` (
   `amount_onetime` double NOT NULL,
   `regulatory_fee_type` tinyint(4) NOT NULL,
   `regulatory_fee_amount` double NOT NULL,
+  `sim_required` tinyint(4) NOT NULL,
   `taxable` tinyint(4) NOT NULL,
   `show` tinyint(4) NOT NULL,
   `sku` text COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -685,12 +793,23 @@ CREATE TABLE `plan` (
   `data_soc` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `signup_porting` tinyint(4) NOT NULL,
   `subsequent_porting` tinyint(4) NOT NULL,
+  `area_code` tinyint(4) NOT NULL,
   `associate_with_device` tinyint(4) NOT NULL,
   `affilate_credit` tinyint(4) NOT NULL DEFAULT '1',
-  `sim_required` tinyint(4) NOT NULL,
+  `imei_required` tinyint(4) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `plan`
+--
+
+INSERT INTO `plan` (`id`, `device_id`, `carrier_id`, `type`, `tag_id`, `name`, `image`, `description`, `notes`, `primary_image`, `amount_recurring`, `amount_onetime`, `regulatory_fee_type`, `regulatory_fee_amount`, `sim_required`, `taxable`, `show`, `sku`, `data_limit`, `rate_plan_soc`, `rate_plan_bot_code`, `data_soc`, `signup_porting`, `subsequent_porting`, `area_code`, `associate_with_device`, `affilate_credit`, `imei_required`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 1, NULL, '2GB Voice T-mobile', '', '<ul><li><em>Unlimited</em></li><li>Talk &amp; Text</li><li><em>2GB High-speed</em></li><li>4G LTE Data</li><li>+ Mobile HotSpot</li></ul>', '', '', 20, 0, 1, 3.5, 1, 1, 1, 'V-UNL-2GB', 0, 'ZNATTU12', 'BIZ SC N.AmericaTT+D 12Line', 'Z2GBXDATA', 0, 0, 0, 0, 1, 0, NULL, NULL),
+(2, 1, 1, 1, NULL, '6GB Voice T-mobile', '', '<ul><li><em>Unlimited</em></li><li>Talk &amp; Text</li><li><em>6GB High-speed</em></li><li>4G LTE Data</li><li>+ Mobile HotSpot</li><li>Unlimited Video Streaming</li><li>Rollover Data</li></ul>', '', '', 30, 0, 1, 3.5, 1, 1, 1, 'V-UNL-2GB', 0, '6FMBZ4L', 'BIZ FM UTT+6GB for 4 lines', '6BFMX6G', 0, 0, 0, 0, 1, 0, NULL, NULL),
+(3, 1, 1, 2, NULL, 'TabletOne Plus T-mobile', '', '<ul><li><em>Tablet Solution</em></li><li><em>Unlimited</li></em><li>High-speed 4G LTE Data</li><li><em>+ 10GB Mobile HotSpot</em></li></ul>', '', '', 40, 0, 1, 1.5, 1, 1, 1, 'D-UNL-10GBHS', 0, 'ZTMIUN13', 'T-Mobile ONE @Work Tabl TE', 'ZTM1PLMI2', 0, 0, 0, 0, 1, 0, NULL, NULL),
+(4, 1, 2, 1, NULL, '2GB Voice AT&T', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, '', 0, '', '', '', 0, 0, 0, 0, 1, 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -813,6 +932,16 @@ CREATE TABLE `sim` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `sim`
+--
+
+INSERT INTO `sim` (`id`, `company_id`, `carrier_id`, `name`, `description`, `notes`, `image`, `amount_alone`, `amount_w_plan`, `taxable`, `show`, `sku`, `code`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'T-Mobile Nano', '', '', '', 25, 10, 1, 0, '', '', NULL, NULL),
+(2, 1, 2, 'AT&T Nano', '', '', '', 20, 5, 1, 0, '', '', NULL, NULL),
+(3, 2, 1, 'T-mobile Micro', '', '', '', 10, 10, 1, 0, '', '', NULL, NULL),
+(4, 2, 2, 'T-mobile Micro', '', '', '', 10, 10, 1, 0, '', '', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -969,14 +1098,6 @@ CREATE TABLE `taxes` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `taxes`
---
-
-INSERT INTO `taxes` (`id`, `company_id`, `state`, `rate`, `created_at`, `updated_at`) VALUES
-(3, 1, 'five', 1200.9, NULL, NULL),
-(4, 1, 'five', 1200.9, NULL, NULL);
-
 -- --------------------------------------------------------
 
 --
@@ -1117,6 +1238,13 @@ ALTER TABLE `device`
   ADD KEY `device_tag_id_foreign` (`tag_id`);
 
 --
+-- Indexes for table `device_groups`
+--
+ALTER TABLE `device_groups`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `device__groups_company_id_foreign` (`company_id`);
+
+--
 -- Indexes for table `device_images`
 --
 ALTER TABLE `device_images`
@@ -1130,6 +1258,12 @@ ALTER TABLE `device_to_carrier`
   ADD PRIMARY KEY (`id`),
   ADD KEY `device_to_carrier_device_id_foreign` (`device_id`),
   ADD KEY `device_to_carrier_carrier_id_foreign` (`carrier_id`);
+
+--
+-- Indexes for table `device_to_group`
+--
+ALTER TABLE `device_to_group`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `device_to_plan`
@@ -1146,13 +1280,6 @@ ALTER TABLE `device_to_sim`
   ADD PRIMARY KEY (`id`),
   ADD KEY `device_to_sim_device_id_foreign` (`device_id`),
   ADD KEY `device_to_sim_sim_id_foreign` (`sim_id`);
-
---
--- Indexes for table `device__groups`
---
-ALTER TABLE `device__groups`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `device__groups_company_id_foreign` (`company_id`);
 
 --
 -- Indexes for table `email_template`
@@ -1217,6 +1344,18 @@ ALTER TABLE `order_group_addon`
   ADD KEY `order_group_addon_order_group_id_foreign` (`order_group_id`),
   ADD KEY `order_group_addon_addon_id_foreign` (`addon_id`),
   ADD KEY `order_group_addon_subscription_id_foreign` (`subscription_id`);
+
+--
+-- Indexes for table `order_plan`
+--
+ALTER TABLE `order_plan`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `order_sim`
+--
+ALTER TABLE `order_sim`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `password_resets`
@@ -1378,7 +1517,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `addon`
 --
 ALTER TABLE `addon`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `bans`
@@ -1402,7 +1541,7 @@ ALTER TABLE `ban_groups`
 -- AUTO_INCREMENT for table `business_verification`
 --
 ALTER TABLE `business_verification`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `business_verification_docs`
@@ -1414,13 +1553,13 @@ ALTER TABLE `business_verification_docs`
 -- AUTO_INCREMENT for table `carriers`
 --
 ALTER TABLE `carriers`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `carrier_blocks`
 --
 ALTER TABLE `carrier_blocks`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `companies`
@@ -1432,7 +1571,7 @@ ALTER TABLE `companies`
 -- AUTO_INCREMENT for table `company_to_carriers`
 --
 ALTER TABLE `company_to_carriers`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `coupons`
@@ -1456,7 +1595,7 @@ ALTER TABLE `coupon_product_types`
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `customer_notes`
@@ -1474,13 +1613,19 @@ ALTER TABLE `default_imeis`
 -- AUTO_INCREMENT for table `device`
 --
 ALTER TABLE `device`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `device_groups`
+--
+ALTER TABLE `device_groups`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `device_images`
 --
 ALTER TABLE `device_images`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `device_to_carrier`
@@ -1489,22 +1634,22 @@ ALTER TABLE `device_to_carrier`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `device_to_group`
+--
+ALTER TABLE `device_to_group`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `device_to_plan`
 --
 ALTER TABLE `device_to_plan`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `device_to_sim`
 --
 ALTER TABLE `device_to_sim`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `device__groups`
---
-ALTER TABLE `device__groups`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `email_template`
@@ -1516,7 +1661,7 @@ ALTER TABLE `email_template`
 -- AUTO_INCREMENT for table `invoices`
 --
 ALTER TABLE `invoices`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `invoice_item`
@@ -1534,7 +1679,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT for table `order`
 --
 ALTER TABLE `order`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `order_coupons`
@@ -1555,6 +1700,18 @@ ALTER TABLE `order_group_addon`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `order_plan`
+--
+ALTER TABLE `order_plan`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `order_sim`
+--
+ALTER TABLE `order_sim`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT for table `pending_charges`
 --
 ALTER TABLE `pending_charges`
@@ -1564,7 +1721,7 @@ ALTER TABLE `pending_charges`
 -- AUTO_INCREMENT for table `plan`
 --
 ALTER TABLE `plan`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `plan_blocks`
@@ -1606,7 +1763,7 @@ ALTER TABLE `port_note`
 -- AUTO_INCREMENT for table `sim`
 --
 ALTER TABLE `sim`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `staff`
@@ -1660,7 +1817,7 @@ ALTER TABLE `tags`
 -- AUTO_INCREMENT for table `taxes`
 --
 ALTER TABLE `taxes`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -1750,6 +1907,12 @@ ALTER TABLE `device`
   ADD CONSTRAINT `device_tag_id_foreign` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`id`);
 
 --
+-- Constraints for table `device_groups`
+--
+ALTER TABLE `device_groups`
+  ADD CONSTRAINT `device__groups_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`);
+
+--
 -- Constraints for table `device_images`
 --
 ALTER TABLE `device_images`
@@ -1775,12 +1938,6 @@ ALTER TABLE `device_to_plan`
 ALTER TABLE `device_to_sim`
   ADD CONSTRAINT `device_to_sim_device_id_foreign` FOREIGN KEY (`device_id`) REFERENCES `device` (`id`),
   ADD CONSTRAINT `device_to_sim_sim_id_foreign` FOREIGN KEY (`sim_id`) REFERENCES `sim` (`id`);
-
---
--- Constraints for table `device__groups`
---
-ALTER TABLE `device__groups`
-  ADD CONSTRAINT `device__groups_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`);
 
 --
 -- Constraints for table `email_template`

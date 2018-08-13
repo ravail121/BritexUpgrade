@@ -16,8 +16,13 @@ class DeviceController extends Controller
 	}
 
 	public function get(Request $request){
-		$this->content=array(array('id'=>1,'amount'=>100));
-		Device::where('id',1)->get();
-		Return Response()->json($this content);
+		//$this->content=array(array('id'=>1,'amount'=>100));
+		$this->content= Device::all();
+		Return Response()->json($this->content);
+	}
+
+	public function find(Request $request, $id){
+		$this->content= Device::where('id',$id)->get()[0];
+		return Response()->json($this->content);
 	}
 }

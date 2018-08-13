@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
-use App\model\Plan;
+use App\Model\Plan;
 
 /**
  * 
@@ -24,7 +24,19 @@ class PlanController extends Controller
       //      array('id'=>1, 'amount'=>100)
       //  );
 
-       $this->content= Order::all();
+       $this->content = Plan::all();
 
         return response()->json($this->content);
+
+
+        
+	}
+
+	public function find(Request $request, $id){
+        $this->content = Plan::where('id',$id)->get()[0];
+
+        return response()->json($this->content);
+    }
+
+
 }

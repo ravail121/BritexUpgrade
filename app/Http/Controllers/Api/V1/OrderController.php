@@ -15,7 +15,6 @@ class OrderController extends Controller
     public function __construct(){
         $this->content = array();
     }
-
     public function get(Request $request){
         // $this->content = array(
         //     array('id'=>1, 'amount'=>100)
@@ -25,7 +24,7 @@ class OrderController extends Controller
 
         return response()->json($this->content);
     }
-     public function find(request $request, $id)
+     public function find(Request $request, $id)
      {
        
         $this->content = Order::where('id',$id)->get()[0];
