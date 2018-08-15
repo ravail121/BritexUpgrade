@@ -32,7 +32,7 @@ class SimController extends Controller
 
     public function find(request $request, $id)
     {
-       $this->content = Sim::where('id',$id)->get()[0];
+       $this->content = Sim::where('id',$id)->get();
        return response()->json($this->request);
     }
  }

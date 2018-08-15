@@ -33,7 +33,7 @@ class AddonController extends Controller
 
     public function find(Request $request , $id){
 
-      $this->content= Addon::where('id', $id)->get()[0];
+      $this->content= Addon::where('id', $id)->get();
 
       return response()->json($this->content);
     }

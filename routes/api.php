@@ -79,7 +79,7 @@ Route::group(['prefix' => 'devices', 'namespace' => 'Api\V1'], function()
   ]);
 });
 
-Route::group(['prefix' => 'plans', 'names' => 'Api\V1'],function()
+Route::group(['prefix' => 'plans', 'namespace' => 'Api\V1'],function()
 {
   Route::get('/',[
   'as' => 'api.plans.list',
@@ -105,7 +105,7 @@ Route::group(['prefix' => 'plans', 'names' => 'Api\V1'],function()
 });
 
 
-Route::group(['prefix'=>'sims','names'=>'Api\v1'],function()
+Route::group(['prefix'=>'sims','namespace'=>'Api\v1'],function()
 {
   Route::get('/',[
  'as'=>'api.sims.list',
@@ -117,7 +117,7 @@ Route::group(['prefix'=>'sims','names'=>'Api\v1'],function()
     //'middleware'=>'auth:api',
     'uses'=>'SimController@add',
   ]);
-  Route::get('/id',[
+  Route::get('/{id}',[
   
   'as'=>'api.sims.find',
   //'middleware'=>'auth:api',
@@ -130,7 +130,7 @@ Route::group(['prefix'=>'sims','names'=>'Api\v1'],function()
   ]);
 });
 
-Route::group(['prefix'=>'addons','names'=>'Api\v1'],function()
+Route::group(['prefix'=>'addons','namespace'=>'Api\v1'],function()
 {
   Route::get('/',[
  'as'=>'api.addons.list',
@@ -142,7 +142,7 @@ Route::group(['prefix'=>'addons','names'=>'Api\v1'],function()
     //'middleware'=>'auth:api',
     'uses'=>'AddonController@add',
   ]);
-  Route::get('/id',[
+  Route::get('/{id}',[
   
   'as'=>'api.addons.find',
   //'middleware'=>'auth:api',
