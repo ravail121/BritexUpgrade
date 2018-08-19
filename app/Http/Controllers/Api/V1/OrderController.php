@@ -16,15 +16,23 @@ class OrderController extends Controller
         $this->content = array();
     }
     public function get(Request $request){
-        // $this->content = array(
-        //     array('id'=>1, 'amount'=>100)
-        // );
 
-        $this-> content = Order::all();
+        $this->content = array();
 
+        $hash = $request->input('order_hash');
+
+        if($hash){
+            $this->content = Order::where('hash',$hash)->get();
+        }else{
+            $this->content = Order::all();
+        }
         return response()->json($this->content);
+
+
     }
-     public function find(Request $request, $id)
+
+
+    public function find(Request $request, $id)
      {
        
         $this->content = Order::where('id',$id)->get()[0];

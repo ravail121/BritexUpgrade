@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 
 use DB;
-use App\User;
+use App\Model\Company;
 
 class APIToken
 {
@@ -19,8 +19,8 @@ class APIToken
     public function handle($request, Closure $next)
     {
       if($request->header('Authorization')){
-        $user = User::where('api_token',$request->header('Authorization'))->first();
-        if($user){     return $next($request); }
+        $company = Company::where('api_key',$request->header('Authorization'))->first();
+        if($company){     return $next($request); }
 
       }
       return response()->json([
