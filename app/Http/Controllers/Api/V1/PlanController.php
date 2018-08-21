@@ -36,8 +36,7 @@ class PlanController extends Controller
 	}
 
 	 public function find(Request $request, $id){
-        $this->content = Plan::where('id',$id)->get()[0];
-
+        $this->content = Plan::find($id);
         return response()->json($this->content);
     }
 
