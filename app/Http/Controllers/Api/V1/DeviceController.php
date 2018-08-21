@@ -17,8 +17,13 @@ class DeviceController extends Controller
 
 	public function get(Request $request){
 		//$this->content=array(array('id'=>1,'amount'=>100));
-		$this->content= Device::all();
-		Return Response()->json($this->content);
+		$carrier_id = $request->input('carrier_id');
+		if($carrier_id){
+		  $this->content = Device::where('carrier_id', $carrier_id)->get();
+		} else{
+		    $this->content= Device::all();
+		}
+		return Response()->json($this->content);
 	}
 
 	public function find(Request $request, $id){

@@ -24,15 +24,18 @@ class PlanController extends Controller
       //      array('id'=>1, 'amount'=>100)
       //  );
 
-       $this->content = Plan::all();
-
+       
+       $device_id = $request->input('device_id');
+       if($device_id){
+        $this->content = Plan::where('device_id', $device_id)->get();
+       }else{
+            $this->content = Plan::all();
+        }
         return response()->json($this->content);
-
-
         
 	}
 
-	public function find(Request $request, $id){
+	 public function find(Request $request, $id){
         $this->content = Plan::where('id',$id)->get()[0];
 
         return response()->json($this->content);

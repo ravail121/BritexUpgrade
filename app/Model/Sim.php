@@ -7,4 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Sim extends Model
 {
      protected $table = 'sim';
+
+     public function order_group(){
+     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
+    }
 }

@@ -24,9 +24,12 @@ class SimController extends Controller
        // $this->content = array(
       //      array('id'=>1, 'amount'=>100)
       //  );
-
-        $this->content = Sim::all();
-
+        $plan_id = $request->input('plan_id');
+        if($plan_id){
+          $this->content = Sim::where('plan_id', $plan_id)->get();
+        }else{
+           $this->content = Sim::all();
+          }
         return response()->json($this->content);
     }
 
