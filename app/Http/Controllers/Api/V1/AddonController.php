@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
-use App\model\Addon;
+use App\Model\Addon;
+use App\Model\PlanToAddon;
 
 /**
  * 
@@ -20,13 +21,21 @@ class AddonController extends Controller
 	}
   
    public function get(Request $request){
-       // $this->content = array(
-      //      array('id'=>1, 'amount'=>100)
-      //  );
 
-       $this->content= Addon::all();
+      
+    $plan_id = $request->input('plan_id');
+    $addon_to_plans = PlanToAddon::with(['plan', 'addon'])->whereHas('plan', function($query) use ($plan_id) {
+                                                $query->where('plan_id', $plan_id);
 
-        return response()->json($this->content);
+                  })->get();
+
+    foreach($addon_to_plans as $ap){
+      array_push($this->content, $ap->addon);
+    }
+    
+    return response()->json($this->content);
+
+
      }
 
 

@@ -20,7 +20,11 @@ class APIToken
     {
       if($request->header('Authorization')){
         $company = Company::where('api_key',$request->header('Authorization'))->first();
-        if($company){     return $next($request); }
+        if($company){
+            $request->attributes->add(['company' => $company]);
+            return $next($request);
+
+        }
 
       }
       return response()->json([
