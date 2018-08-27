@@ -105,7 +105,7 @@ Route::middleware('APIToken')->group(function () {
       });
 
 
-      Route::group(['prefix'=>'sims','namespace'=>'Api\v1'],function()
+      Route::group(['prefix'=>'sims','namespace'=>'Api\V1'],function()
       {
         Route::get('/',[
        'as'=>'api.sims.list',
@@ -130,7 +130,7 @@ Route::middleware('APIToken')->group(function () {
         ]);
       });
 
-      Route::group(['prefix'=>'addons','namespace'=>'Api\v1'],function()
+      Route::group(['prefix'=>'addons','namespace'=>'Api\V1'],function()
       {
         Route::get('/',[
        'as'=>'api.addons.list',

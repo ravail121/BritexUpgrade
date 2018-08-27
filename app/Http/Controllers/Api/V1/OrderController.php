@@ -19,7 +19,7 @@ class OrderController extends Controller
 
 
         $hash = $request->input('order_hash');
-        $orders = array();
+        $order = array(); //'order'=>array(), 'order_groups'=>array());
         
         if($hash){
             $order_groups = OrderGroup::with(['order', 'sim', 'device'])->whereHas('order', function($query) use ($hash) {
@@ -27,17 +27,22 @@ class OrderController extends Controller
 
                         })->get();
 
+            
             foreach($order_groups as $og){
-                $tmp = $og->order;
-                $tmp['sim'] = $og->sim;
-                $tmp['device'] = $og->device;
-                $tmp['plan'] = $og->plan;
-                array_push($orders, $tmp);
+                $order = $og->order;
+                $tmp = array(
+                    'sim' => $og->sim,
+                    'device' => $og->device,
+                    'plan' => $og->plan
+                );
+                $order['order_groups'] = $tmp;
+                
+                
             }
 
          }
 
-        $this->content = $orders;
+        $this->content = $order;
         return response()->json($this->content);
 
 
