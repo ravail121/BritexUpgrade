@@ -35,4 +35,8 @@ class Device extends Model
      return $this->hasMany('App\Model\DeviceToPlan', 'id');
    }
     
+  public function device_to_sim()
+    {
+     return $this->hasMany('App\Model\DeviceToSim', 'id');
+   }
 }
