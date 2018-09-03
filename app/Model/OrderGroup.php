@@ -8,6 +8,10 @@ class OrderGroup extends Model
 {
    protected $table = 'order_group';
 
+   protected $fillable = [
+        'order_id', 'device_id', 'sim_id', 'plan_id', 'sim_num', 'sim_type'
+    ];
+
    public function order()
     {
      return $this->hasOne('App\Model\Order', 'id');
@@ -24,4 +28,9 @@ class OrderGroup extends Model
     {
      return $this->hasOne('App\Model\Plan', 'id');
    }
+
+   public function order_group_addon()
+    {
+     return $this->hasMany('App\Model\OrderGroupAddon', 'id');
+    }
 }

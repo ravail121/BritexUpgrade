@@ -8,6 +8,10 @@ class Order extends Model
 {
     protected $table = 'order';
 
+    protected $fillable = [
+        'hash', 'company_id', 'active_group_id',
+    ];
+
     public function order_group(){
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }

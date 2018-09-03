@@ -27,13 +27,6 @@ class PlanController extends Controller
       $company = \Request::get('company');
        
       $device_id = $request->input('device_id');
-      
-
-      // if($device_id){
-      //   $this->content = Plan::where('device_id', $device_id)->get();
-      // }else{
-      //       $this->content = Plan::all();
-      // }
 
       $plans = Plan::with(['device']);
       if($device_id){
