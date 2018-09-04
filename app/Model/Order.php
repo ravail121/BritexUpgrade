@@ -15,5 +15,10 @@ class Order extends Model
     public function order_group(){
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }
+
+    public function OG()
+    {
+     return $this->hasOne('App\Model\OrderGroup', 'id');
+   }
       
 }

@@ -97,7 +97,6 @@ class OrderController extends Controller
 
         // check active_group_id
         if(!$order->active_group_id){
-            echo 'createing new group';
             $order_group = OrderGroup::create([
                 'order_id' => $order->id
             ]);
