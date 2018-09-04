@@ -31,17 +31,16 @@ Route::middleware('APIToken')->group(function () {
 
 
       // Orders API
-      Route::group(['prefix' => 'orders', 'namespace' => '\Api\V1'], function()
+      Route::group(['prefix' => 'order', 'namespace' => '\Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
       {
         Route::get('/', [
           'as' => 'api.orders.list',
           //'middleware' => 'auth:api',
           'uses' => 'OrderController@get',
         ]);
-        Route::post('/add', [
-          'as' => 'api.orders.add',
-          //'middleware' =>'auth:api',
-          'uses' => 'OrderController@add',
+        Route::post('/', [
+          'as' => 'api.orders.post',
+          'uses' => 'OrderController@post',
         ]);
         Route::get('/{id}', [
           'as' => 'api.orders.find',
@@ -52,6 +51,19 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.orders.delete',
           //'middleware' => 'auth:api',
           'uses' => 'OrderController@delete',
+        ]);
+      });
+
+      // Order-Group API
+      Route::group(['prefix' => 'order-group', 'namespace' => '\Api\V1'], function()
+      {
+        Route::get('/', [
+          'as' => 'api.order_group.list',
+          'uses' => 'OrderGroupController@get',
+        ]);
+        Route::put('/', [
+          'as' => 'api.order_group.put',
+          'uses' => 'OrderGroupController@put',
         ]);
       });
 
@@ -153,6 +165,18 @@ Route::middleware('APIToken')->group(function () {
         //'middleware'=>'auth:api',
         'uses'=>'AddonController@delete',
         ]);
+      });
+
+
+
+       // Porting
+      Route::group(['prefix' => 'porting/check', 'namespace' => '\Api\V1'], function()
+      {
+        Route::get('/', [
+          'as' => 'api.porting.check',
+          'uses' => 'PortingController@check',
+        ]);
+
       });
 
 }); //APIToken middleware
