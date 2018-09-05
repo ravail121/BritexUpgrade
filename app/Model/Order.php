@@ -18,7 +18,7 @@ class Order extends Model
 
     public function OG()
     {
-     return $this->hasOne('App\Model\OrderGroup', 'id');
+     return $this->hasOne('App\Model\OrderGroup', 'id', 'active_group_id');
    }
       
 }

@@ -27,8 +27,8 @@ class PortingController extends Controller
         $validation = Validator::make(
             $request->all(),
             [
-                'order_hash' => 'string',
-                'plan_id' => 'numeric'
+                'order_hash' => 'required|string',
+                'plan_id' => 'required|numeric'
             ]
         );
         if ($validation->fails()) {
@@ -63,7 +63,7 @@ class PortingController extends Controller
                 return response()->json(array('show_porting' => false));
             }
 
-            return response()->json('d');
+            return response()->json([]);
         }
 
     }

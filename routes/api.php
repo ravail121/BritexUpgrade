@@ -103,6 +103,12 @@ Route::middleware('APIToken')->group(function () {
         'uses' => "PlanController@add",
 
         ]);
+
+        Route::get('/check-area-code',[
+         'as'=> 'api.plans.check_area_code',
+         'uses'=> "PlanController@check_area_code"
+        ]);
+
         Route::get('/{id}',[
          'as' => 'api.plans.find',
          //'middleware'=>'auth:api',
