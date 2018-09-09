@@ -185,4 +185,29 @@ Route::middleware('APIToken')->group(function () {
 
       });
 
+
+       Route::group(['prefix' => 'customer', 'namespace' => '\Api\V1'],function()
+      {
+        Route::post('/',[
+        'as'=>'api.customer.post',
+        'uses'=>'CustomerController@post',
+        ]);
+
+        Route::get('/subscriptions',[
+          'as'=>'api.customer.subscription_list',
+          'uses'=>'CustomerSubscriptionController@subscription_list',
+           
+          ]);
+
+      }); 
+
+
+       Route::group(['prefix'=>'biz-verification','namespace'=>'\Api\V1'], function(){
+        Route::post('/', [
+        'as'=>'api.bizverification.post',
+        'uses'=>'BizVerificationController@post',
+ 
+        ]);
+      });
+
 }); //APIToken middleware
