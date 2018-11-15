@@ -210,4 +210,13 @@ Route::middleware('APIToken')->group(function () {
         ]);
       });
 
+        Route::group(['prefix'=>'invoice' , 'namespace'=>'Api\V1\Invoice'],function(){
+          Route::get('/', [
+           'as'=>'api.invoice.get',
+           'uses'=> 'InvoiceController@get',
+
+          ]);
+
+       });
+
 }); //APIToken middleware

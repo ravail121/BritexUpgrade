@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class SubscriptionAddon extends Model
 {
 	protected $table ='subscription_addon';
-    public function Subscription(){
-   		return response()->json('App\Model\Subscription','id');
-   }
+	protected $fillable = [ 'Subscription_id'];
+
+    public function subscription(){
+    		return $this->hasOne('App\Model\Subscription' , 'id');
+    }
+   
 }

@@ -150,7 +150,7 @@ class OrderController extends Controller
         }
 
 
-    return response()->json(['order_id' => $order->id]);
+    return response()->json(['order_hash' => $order->hash]);
         
         
     }
