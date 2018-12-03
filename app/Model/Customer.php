@@ -37,4 +37,7 @@ class Customer extends Model
      public function tax(){
      	return $this->belongsTo('App\Model\Tax' , 'company_id');
      }
+     public function coupon(){
+        return $this->hasOne('App\Model\coupon', 'id');
+     }
 }

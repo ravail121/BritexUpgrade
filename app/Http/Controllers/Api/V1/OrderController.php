@@ -21,7 +21,10 @@ class OrderController extends Controller
 
 
         $hash = $request->input('order_hash');
-        $order = array(); //'order'=>array(), 'order_groups'=>array());
+        //$order = array(); //'order'=>array(), 'order_groups'=>array());
+
+        $order = [];
+        $ordergroups = [];
         
         if($hash){
             $order_groups = OrderGroup::with(['order', 'sim', 'device'])->whereHas('order', function($query) use ($hash) {
@@ -29,21 +32,50 @@ class OrderController extends Controller
 
                         })->get();
 
+            //print_r($order_groups);
             
             foreach($order_groups as $og){
-                $order = $og->order;
+
+                if($order == []){
+                    
+                    $order =  [
+                        "id" => $og->order->id,
+                        "active_group_id"=> $og->order->active_group_id,
+                        "active_subscription_id"=> $og->order->active_subscription_id,
+                        "order_num"=> $og->order->order_num,
+                        "status"=> $og->order->status,
+                        "customer_id"=> $og->order->customer_id,
+                        'order_groups'=> []
+                    ];
+                }
+               
+
+                
                 $tmp = array(
-                    'sim' => $og->sim,
-                    'device' => $og->device,
-                    'plan' => $og->plan
-                );
-                $order['order_groups'] = $tmp;
+                        'sim' => $og->sim,
+                        'sim_num' => $og->sim_num,
+                        'sim_type' => $og->sim_type,
+                        'device' => $og->device,
+                        'plan' => $og->plan,
+                        'addons' => [],
+                        'porting_number' => $og->porting_number,
+                        'area_code' => $og->area_code
+                    );
+
+                $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
+                foreach ($_addons as $a) {
+                    array_push($tmp['addons'], $a['addon']);
+                }
+
+                array_push($ordergroups, $tmp);
+
                 
                 
             }
 
          }
 
+        $order['order_groups'] = $ordergroups;
         $this->content = $order;
         return response()->json($this->content);
 
@@ -70,7 +102,9 @@ class OrderController extends Controller
                 'sim_num' => 'numeric',
                 'sim_type' => 'string',
                 'addon_id' => 'numeric',
-                'subscription_id' => 'numeric'
+                'subscription_id' => 'numeric',
+                'porting_number' => 'string',
+                'area_code' => 'string'
             ]
         );
 
@@ -79,6 +113,7 @@ class OrderController extends Controller
         }
 
         $data = $request->all();
+        //print_r($data);
 
         // check hash
         if(!isset($data['order_hash'])){
@@ -129,7 +164,11 @@ class OrderController extends Controller
         }
 
         if(isset($data['sim_id'])){
-            $og_params['sim_id'] = $data['sim_id'];
+            $sim_id = $data['sim_id'];
+            if($sim_id == 0){
+                $sim_id = null;
+            }
+            $og_params['sim_id'] = $sim_id;
         }
 
         if(isset($data['sim_num'])){
@@ -138,6 +177,14 @@ class OrderController extends Controller
 
         if(isset($data['sim_type'])){
             $og_params['sim_type'] = $data['sim_type'];
+        }
+
+        if(isset($data['porting_number'])){
+            $og_params['porting_number'] = $data['porting_number'];
+        }
+
+        if(isset($data['area_code'])){
+            $og_params['area_code'] = $data['area_code'];
         }
 
         $order_group->update($og_params);
@@ -149,8 +196,10 @@ class OrderController extends Controller
             ]);
         }
 
+        
 
-    return response()->json(['order_hash' => $order->hash]);
+
+    return response()->json(['id' => $order->id, 'order_hash' => $order->hash]);
         
         
     }

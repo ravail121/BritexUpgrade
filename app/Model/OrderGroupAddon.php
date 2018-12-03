@@ -18,7 +18,7 @@ class OrderGroupAddon extends Model
    }
    public function addon()
     {
-     return $this->hasOne('App\Model\Addon', 'id');
+     return $this->hasOne('App\Model\Addon', 'id', 'addon_id');
    }
 
 }
