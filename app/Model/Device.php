@@ -22,7 +22,7 @@ class Device extends Model
 
     public function device_image()
     {
-     return $this->hasMany('App\Model\DeviceImage', 'id');
+     return $this->hasMany('App\Model\DeviceToImage', 'id');
    }
 
    public function device_to_carrier()

@@ -4,7 +4,7 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 
-class DeviceImage extends Model
+class DeviceToImage extends Model
 {
 
   protected $table = 'device_image';   //

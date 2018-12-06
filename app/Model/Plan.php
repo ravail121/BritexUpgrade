@@ -11,8 +11,8 @@ class Plan extends Model
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }
 
-    public function device(){
-    	return $this->hasOne('App\Model\Device', 'id');
+    public function company(){
+    	return $this->hasOne('App\Model\Company', 'id');
     }
 
      public function device_to_plan()

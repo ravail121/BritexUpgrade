@@ -30,35 +30,31 @@ class PlanController extends Controller
        
       $device_id = $request->input('device_id');
 
-      $plans = Plan::with(['device']);
+      $plans = [];
       if($device_id){
 
-        //get device
         $device = Device::find($device_id);
         if($device->type == 0){
           //Get plans from device_to_plan
-          $device_to_plans = DeviceToPlan::with(['device', 'plan'])->where('device_id', $device_id)->whereHas('device', function($query) use( $device) {
-                                  $query->where('device_id', $device->id);
-                              })->whereHas('plan', function($query) use( $device) {
-                                  $query->where('type', $device->type);
-                              })->get();
+          $device_to_plans = DeviceToPlan::with(['device', 'plan'])->where('device_id', $device_id)
+                              // ->whereHas('device', function($query) use( $device) {
+                              //     $query->where('device_id', $device->id);
+                              // })->whereHas('plan', function($query) use( $device) {
+                              //     $query->where('type', $device->type);
+                              // })
+                              ->get();
           $plans = array();
 
           foreach($device_to_plans as $dp){
             array_push($plans, $dp->plan);
           }
         }else{
-          $plans = $plans->where('device_id', $device_id)->where('type', $device->type)->get();
+          $plans = Plan::where('type', $device->type)->get();
         }
 
 
       }else{
-
-        $plans = $plans->whereHas('device', function($query) use ($company) {
-                                            $query->where('company_id', $company->id);
-
-                        })->get();
-
+        $plans = Plan::where('company_id', $company->id)->get();
       }
       return response()->json($plans);
         

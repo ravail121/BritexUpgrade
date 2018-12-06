@@ -27,25 +27,41 @@ class SimController extends BaseController
 
   private function getSimsByOg($og, $plan)
   {
+    $company = \Request::get('company');
+
     $sims = [];
+    $_sims = [];
     $carrier_id = $plan->carrier_id;
     $device_id = $og->device_id;
-    if($device_id !== 0){
-      $device_to_sims =  DeviceToSim::with(['sim'])->where('device_id', $device_id)->get();
-      foreach ($device_to_sims as $ds) {
-        $sim = $ds->sim;
-        if($sim->carrier_id == $carrier_id){
-          array_push($sims, $sim);
-        }
 
+    if($device_id != 0){
+
+      $device_to_sims =  DeviceToSim::with(['sim'])->where('device_id', $device_id)
+                        ->whereHas('sim', function($query) use ($company, $carrier_id) {
+                                                $query->where(
+                                                  [
+                                                      ['carrier_id', $carrier_id],
+                                                      ['company_id', $company->id]
+                                                  ]
+                                                );
+
+                        })
+                        ->get();
+      foreach ($device_to_sims as $sim) {
+          array_push($sims, $sim->sim);
       }
+
     }else{
+      $_sims = Sim::where(
+          [
+            ['carrier_id', $carrier_id],
+            ['company_id', $company->id],
+          ]
+      )->get();
+    }
 
-      $_sims = Sim::where('carrier_id', $carrier_id)->get();
-      foreach ($_sims as $sim) {
-          array_push($sims, $sim);
-      }
-
+    foreach ($_sims as $sim) {
+        array_push($sims, $sim);
     }
 
     return $sims;
@@ -64,28 +80,27 @@ class SimController extends BaseController
       $plan_id = $request->input('plan_id');
 
       $order = Order::where('hash', $order_hash)->get();
-      if(!$order){
+      if(count($order) < 1){
         return $this->respondError('Invalid order hash');
       }
       $order = $order[0];
 
       $plan = Plan::where('id', $plan_id)->get();
-      if(!$plan){
+      if(count($plan) < 1){
         return $this->respondError('Invalid plan');
       }
       $plan = $plan[0];
         
+
 
       $order_group = OrderGroup::with(['order', 'sim', 'device', 'plan'])->where('id', $order->active_group_id)->get();
 
       $og = $order_group[0];
 
       if($og->sim_id == 0){
-
         $sims = $this->getSimsByOg($og, $plan);
         
       }else{
-
         $_sims = $this->getSimsByOg($og, $plan);
         $sims = $_sims;
 
