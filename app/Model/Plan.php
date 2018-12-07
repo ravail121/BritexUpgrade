@@ -12,7 +12,7 @@ class Plan extends Model
     }
 
     public function company(){
-    	return $this->hasOne('App\Model\Company', 'id');
+    	return $this->hasOne('App\Model\Company', 'id', 'company_id');
     }
 
      public function device_to_plan()

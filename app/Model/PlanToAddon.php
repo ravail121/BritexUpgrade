@@ -10,12 +10,12 @@ class PlanToAddon extends Model
 
    public function plan()
     {
-     return $this->hasOne('App\Model\Plan', 'id');
+     return $this->hasOne('App\Model\Plan', 'id', 'plan_id');
    }
 
    public function addon()
     {
-     return $this->hasOne('App\Model\Addon', 'id');
+     return $this->hasOne('App\Model\Addon', 'id', 'addon_id');
    }
     
 }

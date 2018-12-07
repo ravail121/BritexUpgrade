@@ -12,6 +12,6 @@ class PendingCharge extends Model
 
     public function Customer()
     {
-     return $this->hasOne('App\Model\Customer', 'id');
+     return $this->hasOne('App\Model\Customer', 'id', 'customer_id');
    	}
 }

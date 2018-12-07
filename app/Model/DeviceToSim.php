@@ -10,12 +10,12 @@ class DeviceToSim extends Model
 
    public function device()
     {
-     return $this->hasOne('App\Model\Device', 'id');
+     return $this->hasOne('App\Model\Device', 'id', 'device_id');
    }
 
    public function sim()
     {
-     return $this->hasOne('App\Model\Sim', 'id');
+     return $this->hasOne('App\Model\Sim', 'id', 'sim_id');
    }
     
 }
