@@ -31,6 +31,17 @@ class OrderGroup extends Model
 
    public function order_group_addon()
     {
-     return $this->hasMany('App\Model\OrderGroupAddon', 'id');
+     return $this->hasMany('App\Model\OrderGroupAddon');
+    }
+
+
+    // this is a recommended way to declare event handlers
+    public static function boot() {
+        parent::boot();
+
+        static::deleting(function($ordergroup) { // before delete() method call this
+             $ordergroup->order_group_addon()->delete();
+             // do the rest of the cleanup...
+        });
     }
 }

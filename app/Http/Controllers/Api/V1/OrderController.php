@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\BaseController;
+
 use Validator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,7 +14,7 @@ use App\Model\OrderGroup;
 use App\Model\OrderGroupAddon;
 //use Illuminate\Support\Facades\Auth;
 
-class OrderController extends Controller
+class OrderController extends BaseController
 {
     public function __construct(){
         $this->content = array();
@@ -27,7 +29,7 @@ class OrderController extends Controller
         $ordergroups = [];
         
         if($hash){
-            $order_groups = OrderGroup::with(['order', 'sim', 'device'])->whereHas('order', function($query) use ($hash) {
+            $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                                                 $query->where('hash', $hash);
 
                         })->get();
@@ -89,6 +91,7 @@ class OrderController extends Controller
         $this->content = Order::find($id);
         return response()->json($this->content);
      }
+
 
     public function post(Request $request)
     {
@@ -199,10 +202,47 @@ class OrderController extends Controller
         
 
 
-    return response()->json(['id' => $order->id, 'order_hash' => $order->hash]);
+        return response()->json(['id' => $order->id, 'order_hash' => $order->hash]);
         
         
     }
+
+    public function remove_from_order(Request $request)
+    {
+        /*
+        Delete the input order_group_id from database.  If it is set as the active group id, then set order.active_group_id=0
+        */
+
+        $hash = $request->input('order_hash');
+        $order = Order::where('hash', $hash)->get();
+        if(!count($order)){
+            return $this->respondError('Invalid order_hash', 400);
+        }
+        $order = $order[0];
+
+        $data = $request->all();
+        $order_group_id = $data['order_group_id'];
+        if(!isset($order_group_id)){
+            return $this->respondError('Invalid order_group_id', 400);
+        }
+
+        $og = OrderGroup::find($order_group_id);
+        if(!$og){
+            return $this->respondError('Invalid order_group_id', 400);
+        }
+
+
+        //check if this ordergroup is associated with given order_hash
+        if($og->order_id != $order->id){
+            return $this->respondError('Given order_group_id is not associated with provided order hash', 400);
+        }
+
+
+        $og->delete();
+        $order->update(['active_group_id' => 0]);
+        return $this->respond(['details'=>'Deleted successfully'], 204);
+    }
+
     
 //    public function destroy($id){
 //         Order::find($id)->delete();
