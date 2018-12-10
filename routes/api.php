@@ -197,11 +197,11 @@ Route::middleware('APIToken')->group(function () {
         'uses'=>'CustomerController@post',
         ]);
 
-        Route::get('/subscriptions',[
+        /*Route::get('/subscriptions',[
           'as'=>'api.customer.subscription_list',
           'uses'=>'CustomerSubscriptionController@subscription_list',
            
-          ]);
+          ]);*/
 
       }); 
 
