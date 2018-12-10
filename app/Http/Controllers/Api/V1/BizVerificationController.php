@@ -24,9 +24,9 @@ class BizVerificationController extends BaseController
       $invalidate = $this->validate_input($data, [
        'order_hash'=>'required|string',
        'doc_file'=>'file',
-       'business_name'=>'sting',
+       'business_name'=>'string',
        'tax_id'=> 'numeric',
-       'fname'=> 'sting',
+       'fname'=> 'string',
        'lname'=>'string',
        'email'=>'string',
        'address_line1'=>'string',
