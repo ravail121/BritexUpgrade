@@ -54,6 +54,7 @@ class OrderController extends BaseController
 
                 
                 $tmp = array(
+                        'id' => $og->id,
                         'sim' => $og->sim,
                         'sim_num' => $og->sim_num,
                         'sim_type' => $og->sim_type,
