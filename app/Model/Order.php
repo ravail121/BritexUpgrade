@@ -16,9 +16,18 @@ class Order extends Model
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }
 
+    public function bizVerification()
+    {
+        return $this->belongsTo('App\Model\BusinessVerification');
+    }
+
     public function OG()
     {
-     return $this->hasOne('App\Model\OrderGroup', 'id', 'active_group_id');
-   }
-      
+        return $this->hasOne('App\Model\OrderGroup', 'id', 'active_group_id');
+    }
+
+    public function scopeHash($query, $hash)
+    {
+        return $query->where('hash', $hash);
+    }
 }

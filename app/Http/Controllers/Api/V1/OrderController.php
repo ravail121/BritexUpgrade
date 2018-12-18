@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Model\Order;
 use App\Model\OrderGroup;
 use App\Model\OrderGroupAddon;
+use App\Model\BusinessVerification;
 //use Illuminate\Support\Facades\Auth;
 
 class OrderController extends BaseController
@@ -30,9 +31,7 @@ class OrderController extends BaseController
         
         if($hash){
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
-                                                $query->where('hash', $hash);
-
-                        })->get();
+                        $query->where('hash', $hash);})->get();
 
             //print_r($order_groups);
             
@@ -41,13 +40,14 @@ class OrderController extends BaseController
                 if($order == []){
                     
                     $order =  [
-                        "id" => $og->order->id,
-                        "active_group_id"=> $og->order->active_group_id,
-                        "active_subscription_id"=> $og->order->active_subscription_id,
-                        "order_num"=> $og->order->order_num,
-                        "status"=> $og->order->status,
-                        "customer_id"=> $og->order->customer_id,
-                        'order_groups'=> []
+                        "id"                     => $og->order->id,
+                        "active_group_id"        => $og->order->active_group_id,
+                        "active_subscription_id" => $og->order->active_subscription_id,
+                        "order_num"              => $og->order->order_num,
+                        "status"                 => $og->order->status,
+                        "customer_id"            => $og->order->customer_id,
+                        'order_groups'           => [],
+                        'business_verification'  => null,
                     ];
                 }
                
@@ -70,15 +70,14 @@ class OrderController extends BaseController
                     array_push($tmp['addons'], $a['addon']);
                 }
 
-                array_push($ordergroups, $tmp);
-
-                
-                
+                array_push($ordergroups, $tmp);    
             }
 
-         }
+            $businessVerification = BusinessVerification::where('order_id', $order['id'])->first();
+        }
 
-        $order['order_groups'] = $ordergroups;
+        $order['order_groups']          = $ordergroups;
+        $order['business_verification'] = $businessVerification;
         $this->content = $order;
         return response()->json($this->content);
 

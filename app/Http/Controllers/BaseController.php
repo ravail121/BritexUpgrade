@@ -2,15 +2,22 @@
 
 
 namespace App\Http\Controllers;
+
 use Validator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
+use App\Support\Utilities\FileMoveTrait ;
+use App\Support\Responses\APIResponse;
 
 
 class BaseController extends Controller
 { 
-     public function __construct(){
+    
+    use FileMoveTrait;
+    use APIResponse;
+
+    public function __construct(){
 
     }
 

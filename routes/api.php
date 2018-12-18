@@ -206,15 +206,22 @@ Route::middleware('APIToken')->group(function () {
       }); 
 
 
-       Route::group(['prefix'=>'biz-verification','namespace'=>'\Api\V1'], function(){
+      Route::group(['prefix'=>'biz-verification','namespace'=>'\Api\V1'], function(){
         Route::post('/', [
-        'as'=>'api.bizverification.post',
-        'uses'=>'BizVerificationController@post',
+            'as'=>'api.bizverification.post',
+            'uses'=>'BizVerificationController@post',
  
         ]);
+        
+        Route::get('/confirm', [
+            'as'=>'api.bizverification.confirm',
+            'uses'=>'BizVerificationController@confirm',
+ 
+        ]);
+
       });
 
-        Route::group(['prefix'=>'invoice' , 'namespace'=>'Api\V1\Invoice'],function(){
+      Route::group(['prefix'=>'invoice' , 'namespace'=>'Api\V1\Invoice'],function(){
           Route::get('/', [
            'as'=>'api.invoice.get',
            'uses'=> 'InvoiceController@get',
@@ -222,5 +229,15 @@ Route::middleware('APIToken')->group(function () {
           ]);
 
        });
+
+        Route::post('/confirm',
+        [
+          'as'=>'api.confirm.',
+          //'middleware'=>'auth:api',
+          'uses'=>'AddonController@add',
+        ]);
+
+      //Route::get('/confirm','BizVerificationController@confirm');
+      
 
 }); //APIToken middleware
