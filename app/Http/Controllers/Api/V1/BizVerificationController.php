@@ -50,7 +50,7 @@ class BizVerificationController extends BaseController
 		if($request->hasFile('doc_file')) {
             $uploadedAndInserted = $this->uploadAndInsertDocument($request->doc_file, $businessVerification);
 
-            if ($uploadedAndInserted) {
+            if (!$uploadedAndInserted) {
                 return $this->respondError('File Could not be uploaded.');
 
             }
@@ -125,12 +125,6 @@ class BizVerificationController extends BaseController
     protected function uploadAndInsertDocument($file, $businessVerification)
     {
         $path = BusinessVerificationDocs::directoryLocation($businessVerification->order->company_id, $businessVerification->id);
-
-        // if (!File::makeDirectory($path, $mode = 0777, true, true)) {
-        //     return true;
-        // }
-
-        \Log::info(File::makeDirectory($path, $mode = 0777, true, true));
 
         if ($uploaded = $this->moveOneFile($path, $file)) {
             return BusinessVerificationDocs::create([
