@@ -47,7 +47,7 @@ class BizVerificationApproved extends Notification
      */
     public function toMail($notifiable)
     {
-        $url = url($this->bizVerification->checkoutUrl().$this->bizVerification->hash.'&order_hash='.$this->orderHash);
+        $url = url(env('CHECKOUT_URL').$this->bizVerification->hash.'&order_hash='.$this->orderHash);
 
         $order         = Order::where('hash', $this->orderHash)->first();
         $emailTemplate = EmailTemplate::where('company_id', $order->company_id)->first();

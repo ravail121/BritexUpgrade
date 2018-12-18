@@ -11,6 +11,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $this->call(EmailTemplateTableSeeder::class);
+        $this->call([
+            EmailTemplateTableSeeder::class,
+            SystemGlobalSettingTableSeeder::class,
+        ]);
     }
 }

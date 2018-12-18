@@ -2,7 +2,8 @@
 
 namespace App\Model;
 
-//use App\Model\BusinessVerification;
+use App\Model\SystemGlobalSetting;
+use App\Model\BusinessVerification;
 use Illuminate\Database\Eloquent\Model;
 
 class BusinessVerificationDocs extends Model
@@ -11,7 +12,8 @@ class BusinessVerificationDocs extends Model
 	protected $fillable = ['bus_ver_id','src'];
    
     public function bizverification(){
-    	return $this->belongsTo('App\Model\BusinessVerification')->withTrashed();
+        // return $this->belongsTo('App\Model\BusinessVerification')->withTrashed();
+    	return $this->belongsTo('App\Model\BusinessVerification');
     	
     }
 
@@ -20,17 +22,56 @@ class BusinessVerificationDocs extends Model
         //'address_line1' => 'nddfhf',
     ];
 
-    public function path()
+
+    public static function directoryLocation($companyId = null, $businessVerificationId = null)
     {
-        //
+        $directoryLocation = SystemGlobalSetting::first()->upload_path .'/uploads/';
+        
+        if($companyId){
+            $directoryLocation .= "{$companyId}/bus_ver/";
+        }
+
+        if ($businessVerificationId) {
+            $directoryLocation .= "{$businessVerificationId}/";
+        }
+
+
+        return $directoryLocation; 
+    }
+
+    public function getPathAttribute()
+    {
+
+        return self::directoryLocation($this->bizverification->order->company_id, $this-$this->bizverification->id)  .'/' . $this->src;
     }
 
 
 
-    // public function documentPath()
-    // {
-    //     return public_path(self::directoryLocation() . DIRECTORY_SEPARATOR . $this->src);
-    // }
+    public static function siteUrlLocation($companyId = null, $businessVerificationId = null)
+    {
+        $siteUrlLocation = SystemGlobalSetting::first()->site_url .'/uploads/';
+        
+        if($companyId){
+            $siteUrlLocation .= "{$companyId}/bus_ver/";
+        }
+
+        if ($businessVerificationId) {
+            $siteUrlLocation .= "{$businessVerificationId}/";
+        }
+
+
+        return $siteUrlLocation; 
+    }
+
+    public function getUrlAttribute()
+    {
+
+        return self::siteUrlLocation($this->bizverification->order->company_id, $this-$this->bizverification->id)  .'/' . $this->src;
+    }
+
+
+
+
 
 
     // public static function directoryLocation()

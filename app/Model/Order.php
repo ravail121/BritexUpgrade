@@ -18,7 +18,7 @@ class Order extends Model
 
     public function bizVerification()
     {
-        return $this->belongsTo('App\Model\BusinessVerification');
+        return $this->hasOne(BusinessVerification::class);
     }
 
     public function OG()

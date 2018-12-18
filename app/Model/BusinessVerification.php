@@ -35,12 +35,13 @@ class BusinessVerification extends Model
     
 
     public function bizverificationDocs(){
-        return $this->hasOne('App\Model\BusinessVerification','bus_ver_id','id');
+        // return $this->hasOne('App\Model\BusinessVerification','bus_ver_id','id');
+        return $this->hasOne('App\Model\BusinessVerification');
     }
 
-    public function orders()
+    public function order()
     {
-        return $this->hasMany('App\Model\Order');
+        return $this->belongsTo(Order::class);
     }
 
     // public function checkoutUrl()

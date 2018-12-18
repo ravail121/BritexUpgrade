@@ -5,6 +5,10 @@ use App\Model\SystemGlobalSetting;
 
 class SystemGlobalSettingTableSeeder extends Seeder
 {
+    const SITE_URL    = 'britex.pw';
+    const UPLOAD_PATH = '/var/wwww/html';
+
+    
     /**
      * Run the database seeds.
      *
@@ -12,10 +16,9 @@ class SystemGlobalSettingTableSeeder extends Seeder
      */
     public function run()
     {
-    	$data = [
-    		'site_url'    => 'britex.pw',
-    		'upload_path' => '/var/wwww/html',
-    	];
-        SystemGlobalSetting::create($data);
+        SystemGlobalSetting::create([
+            'site_url'    => self::SITE_URL,
+            'upload_path' => self::UPLOAD_PATH,
+        ]);
     }
 }

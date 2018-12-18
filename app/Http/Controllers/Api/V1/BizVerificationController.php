@@ -10,6 +10,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\File;
 use App\Model\BusinessVerificationDocs;
 use App\Http\Controllers\BaseController;
 use App\Events\BusinessVerificationCreated;
@@ -77,7 +78,7 @@ class BizVerificationController extends BaseController
             return $this->respondError("Invalid User");
 		}
 
-		return redirect()->to(env('CHECKOUT_URL').$orderHash); 
+		return redirect()->to(env('CHECKOUT_URL').$request->businessHash.'&order_hash='.$orderHash); 
 	}
 
 
@@ -118,17 +119,25 @@ class BizVerificationController extends BaseController
     /**
      * Uploads the document to desired path and inserts the file name to database
      * @param  String        $file                  [doc-file]
-     * @param  Collection    $businessVerification
+     * @param  \App\BusinessVerification    $businessVerification
      * @return boolean
      */
     protected function uploadAndInsertDocument($file, $businessVerification)
     {
-        // if ($uploaded = $this->moveOneFile(BusinessVerificationDocs::directoryLocation(), $file)) {
-        //     return BusinessVerificationDocs::create([
-        //         'src'        => $uploaded['name'],
-        //         'bus_ver_id' => $businessVerification->id,
-        //     ]);
+        $path = BusinessVerificationDocs::directoryLocation($businessVerification->order->company_id, $businessVerification->id);
+
+        // if (!File::makeDirectory($path, $mode = 0777, true, true)) {
+        //     return true;
         // }
+
+        \Log::info(File::makeDirectory($path, $mode = 0777, true, true));
+
+        if ($uploaded = $this->moveOneFile($path, $file)) {
+            return BusinessVerificationDocs::create([
+                'src'        => $uploaded['name'],
+                'bus_ver_id' => $businessVerification->id,
+            ]);
+        }
 
         return false;
     }

@@ -118,11 +118,11 @@ class CreateOrderTable extends Migration
            $table->text('fname');
            $table->text('lname');
            $table->text('email');
-           $table->text('address_line1');
-           $table->text('address_line2');
-           $table->text('city');
-           $table->text('state');
-           $table->text('zip');
+           // $table->text('address_line1')->nullable();
+           // $table->text('address_line2')->nullable();
+           // $table->text('city')->nullable();
+           // $table->text('state')->nullable();
+           // $table->text('zip')->nullable();
            $table->timestamps();
                 
 
@@ -460,10 +460,10 @@ class CreateOrderTable extends Migration
             $table->text('to');
             $table->text('subject');
             $table->text('body');
-            $table->text('notes');
-            $table->text('reply_to');
-            $table->text('cc');
-            $table->text('bcc');
+            $table->text('notes')->nullable();
+            $table->text('reply_to')->nullable();
+            $table->text('cc')->nullable();
+            $table->text('bcc')->nullable();
             $table->timestamps();
 
            }); 
