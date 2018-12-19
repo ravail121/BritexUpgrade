@@ -42,7 +42,7 @@ class BusinessVerificationDocs extends Model
     public function getPathAttribute()
     {
 
-        return self::directoryLocation($this->bizverification->order->company_id, $this-$this->bizverification->id)  .'/' . $this->src;
+        return self::directoryLocation($this->bizverification->order->company_id, $this->bizverification->id)  .'/' . $this->src;
     }
 
 
@@ -66,7 +66,7 @@ class BusinessVerificationDocs extends Model
     public function getUrlAttribute()
     {
 
-        return self::siteUrlLocation($this->bizverification->order->company_id, $this-$this->bizverification->id)  .'/' . $this->src;
+        return self::siteUrlLocation($this->bizverification->order->company_id, $this->bizverification->id)  .'/' . $this->src;
     }
 
 
