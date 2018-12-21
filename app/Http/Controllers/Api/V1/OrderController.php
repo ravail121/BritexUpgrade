@@ -72,12 +72,15 @@ class OrderController extends BaseController
 
                 array_push($ordergroups, $tmp);    
             }
+            if (count($order)) {
 
-            $businessVerification = BusinessVerification::where('order_id', $order['id'])->first();
+                $businessVerification = BusinessVerification::where('order_id', $order['id'])->first();
+                $order['business_verification'] = $businessVerification;
+            }
+
         }
 
         $order['order_groups']          = $ordergroups;
-        $order['business_verification'] = $businessVerification;
         $this->content = $order;
         return response()->json($this->content);
 
