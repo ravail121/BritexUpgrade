@@ -44,11 +44,6 @@ class BusinessVerification extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function customer()
-    {
-        return $this->hasOne(Customer::class);
-    }
-
     // public function checkoutUrl()
     // {
     //     return config('custom.checkout_url');

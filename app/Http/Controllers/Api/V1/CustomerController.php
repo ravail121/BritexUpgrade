@@ -1,155 +1,91 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1;
-
 use Validator;
-use App\Model\Order;
-use App\Model\Customer;
-use App\Model\Subscription;
+
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
-use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
-use App\Http\Request\CardValidation;
-use App\Http\Controllers\BaseController;
+use App\Model\Customer;
+use App\Model\Subscription;
+use App\Model\SubscriptionAddon;
 
-class CustomerController extends BaseController
+class CustomerController extends Controller
 {
     public function __construct(){
         $this->content = array();
     }
-   
-    public function post(Request $request)
-    {
-        if($hasError = $this->validateData($request)){
-            return $hasError;
-        }
 
-        $data = $this->addExtraData( $request->except('order_hash') );
+    public function post(Request $request){
+    	$validation = Validator::make($request->all(),[
+          'order_hash'=>'string|required',
+          'user_name'=> 'string|required',
+          'password'=>'string|required',
+          'fname'=>'string|required',
+          'lname'=>'string|required',
+          'email'=>'string|required',
+          'business_verfied'=>'numeric',
+          'business_verification_id'=>'numeric',
+          'company_name'=>'string|required',
+          'pin'   =>'numeric|required',
+          'billing_address1'=>'string|required',
+          'billing_address2'=>'string|required',
+          'billing_city'=>'string|required',
+          'billing_state_id'=>'string|required',
+          'shipping_address1'=>'string|required',
+          'shipping_address2'=>'string',
+          'shipping_city'=>'string|required',
+          'shipping_state_id'=>'string|required'
 
-        return $data;
+    	]);
+    	if($validation->fails()){
+    		return response()->json($validation->getMessageBag()->all());
+    	}
+    	$data= $request->all();
+    	$customer = Customer::create([
+         'billing_address1' => $data['billing_address1'],
+         'billing_address2' => $data['billing_address2'],
+         'billing_city' => $data['billing_city'],
+         'billing_state_id' => $data['billing_state_id'],
+         'shipping_address1' => $data['shipping_address1'],
+         'shipping_address2' => $data['shipping_address2'],
+         'shipping_city' => $data['shipping_city'],
+         'shipping_state_id'=> $data['shipping_state_id'],
+          'hash'=>sha1(time()) 
+    	]);
         
-        $data['billing_start']           = date('y-m-d');
-        $data['billing_end']             = date('y-m-d');
-        $data['subscription_start_date'] = date('d-m-y',strtotime('+30 days'));
-        $data['primary_payment_method']  = 'card';
-        $data['account_suspended']       = 0;
-
-        $order = Order::hash($request->order_hash)->first();
-
-        $companyId = Order::where('hash', $orderHash)->first()->id;
-
-        $data['company_id'] = $companyId;
-
-        $businessVerificationId = $this->getBusinessId($orderHash);
-       
-        $verifyBusiness=Customer::where('business_verification_id',$businessVerificationId)->first();
-        
-        $hasError = $this->validateData($request);
-
-
-
-        if($verifyBusiness){
-          
-            $updation = $this->updateCustomer($data,$businessVerificationId);
-            //dd($updation);
-            if($updation == null){
-                return $this->respondError("problem in updation");
-            }else{
-                return response()->json(['success' => true, 'order_hash' => $orderHash, 'message' => 'successfully updated']);    
-
-            }   
-        }else{
-            $customerInserted=$this->create($data);
-
-            if(!$customerInserted){
-                return $this->respondError("problem in creating a customer");
-            }else{
-                return response()->json(['success' => true, 'customer' => $customerInserted]);
-            }    
-        }    
+       return response()->json(['success'=> true, 'customer'=> $customer]);
     }
 
-    private function addExtraData($data)
-    {
-        $data += [
-            'billing_start'           => date('y-m-d'),
-            'billing_end'             => date('y-m-d'),
-            'subscription_start_date' => date('d-m-y',strtotime('+30 days')),
-            'primary_payment_method'  => 'card',
-            'account_suspended'       => 0
-        ];
 
-        return $data;   
-    }
 
     public function subscription_list(Request $request){
 
-        $output = ['success' => false , 'message' => ''];
+      $output = ['success' => false , 'message' => ''];
 
-        $company = \Request::get('company');
-        $customer_id = $request->input(['customer_id']);
-        $validation = Validator::make($request->all(),[
-         'customer_id'=>'numeric|required']);
+      $company = \Request::get('company');
+      $customer_id = $request->input(['customer_id']);
+      $validation = Validator::make($request->all(),[
+         'customer_id'=>'numeric|required'
 
-        if($validation->fails()){
-            $output['message'] = $validation->getMessageBag()->all();
-            return response()->json($output);
-        }
+      ]);
+      if($validation->fails()){
+        $output['message'] = $validation->getMessageBag()->all();
+        return response()->json($output);
+   
+      }
 
-        $customer = Customer::where('id', $customer_id)->get();
-        $customer = $customer[0];
+      $customer = Customer::where('id', $customer_id)->get();
+      $customer = $customer[0];
 
-        if($customer->company_id != $company->id){
-            return Response()->json(array('error'=>[' customer id does not exist']));
-        }
+      if($customer->company_id != $company->id){
+        return Response()->json(array('error'=>[' customer id does not exist']));
+      }
 
-        $data = Subscription::with(['SubscriptionAddon'])->where('customer_id', $customer_id)->get();
-        $output['success'] = true;
-        return response()->json($data);
-    }
-
-
-    protected function validateData($request) {
-        return $this->validate_input($request->all(), [ 
-            // 'primary_payment_method' => 'required|numeric', 
-            'primary_payment_card'   => 'required|numeric|digits_between:15,25',
-            'billing_address1'       => 'required|string',
-            'billing_address2'       => 'required|string',
-            'billing_city'           => 'required|string',
-            'billing_state_id'       => 'required|string|max:2',
-            'shipping_address1'      => 'required|string',
-            'shipping_address2'      => 'required|string',
-            'shipping_city'          => 'required|string',
-            'shipping_state_id'      => 'required|string|max:2',
-            'hash'                   => 'required|exists:order,hash'
-        ]);
-    }
-
-
-    protected function updateCustomer($data,$businessVerificationId)
-    {   
-        unset($data['company_id']);
-
-        return $updateCustomer = Customer::where('business_verification_id',$businessVerificationId)
-        ->update($data,['hash' => sha1(time())]);
-
-    }
-
-
-    protected function create($data)
-    {           
-        $data['hash'] = sha1(time());
-        return $customer = Customer::create($data);   
-    }
-
-    protected function getBusinessId($orderHash)
-    {   
-        $orderId=Order::where('hash',$orderHash)->first()->id;
-        $orders=Order::find($orderId);
-        return $bizVerificationId=$orders->bizVerification()->first()->id;    
+       $data = Subscription::with(['SubscriptionAddon'])->where('customer_id', $customer_id)->get();
+       $output['success'] = true;
+       return response()->json($data);
     }
 
 

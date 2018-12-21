@@ -15,8 +15,13 @@ class Plan extends Model
     	return $this->hasOne('App\Model\Company', 'id', 'company_id');
     }
 
-     public function device_to_plan()
+    public function device_to_plan()
     {
-     return $this->hasMany('App\Model\DeviceToPlan', 'id');
-   }
+        return $this->hasMany('App\Model\DeviceToPlan', 'id');
+    }
+
+    public function devices()
+    {
+        return $this->belongsToMany('App\Model\Device', 'device_to_plan', 'plan_id', 'device_id');
+    }
 }

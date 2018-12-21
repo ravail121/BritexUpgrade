@@ -12,8 +12,17 @@ class Device extends Model
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }
 
+    // Needs to be deleted
+    // ----------------------------------------------------------
     public function plan(){
     	return $this->belongsTo('App\Model\Plan')->withTrashed();
+    }
+    //-----------------------------------------------------------
+
+
+    public function plans()
+    {
+        return $this->belongsToMany('App\Model\Plan', 'device_to_plan', 'device_id', 'plan_id');
     }
 
     public function company(){

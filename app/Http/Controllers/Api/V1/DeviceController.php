@@ -7,10 +7,10 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Model\Device;
+use App\Model\Plan;
 use App\Model\DeviceToImage;
 use App\Model\DeviceToType;
 use App\Model\Sim;
-use App\Model\Plan;
 
 
 class DeviceController extends Controller
@@ -23,13 +23,19 @@ class DeviceController extends Controller
 		
 		$show_list = ['1', '2'];
 
+
 		$carrier_id = $request->input('carrier_id');
 
-		$plan_id = $request->plan_id;
-    
-    	$companyId = Plan::where('id',$plan_id)->first()->company_id;
 
-		$dev = Device::where('company_id', $companyId);
+		$dev = Device::whereIn('show', $show_list);
+
+		if ($request->plan_id) {
+			
+			$plan      = Plan::find($request->plan_id);
+			$deviceIds = $plan->devices()->pluck('device_id')->toArray();
+			$dev       = $dev->whereIn('id', $deviceIds);
+		}
+
 		if($carrier_id){
 			$dev = $dev->where('carrier_id', $carrier_id);
 		}

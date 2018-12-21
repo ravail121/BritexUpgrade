@@ -13,7 +13,6 @@ use App\Model\Order;
 use App\Model\OrderGroup;
 use App\Model\OrderGroupAddon;
 use App\Model\BusinessVerification;
-use App\Http\Controllers\Api\V1\Company;
 //use Illuminate\Support\Facades\Auth;
 
 class OrderController extends BaseController
@@ -22,6 +21,7 @@ class OrderController extends BaseController
         $this->content = array();
     }
     public function get(Request $request){
+
 
         $hash = $request->input('order_hash');
         //$order = array(); //'order'=>array(), 'order_groups'=>array());
@@ -48,7 +48,6 @@ class OrderController extends BaseController
                         "customer_id"            => $og->order->customer_id,
                         'order_groups'           => [],
                         'business_verification'  => null,
-                        'company'                => $og->order->company
                     ];
                 }
                
@@ -73,16 +72,15 @@ class OrderController extends BaseController
 
                 array_push($ordergroups, $tmp);    
             }
+            if (count($order)) {
 
-            $businessVerification = BusinessVerification::where('order_id', $order['id'])->first();
-
-            // $this->companyDetails($hash);
-
+                $businessVerification = BusinessVerification::where('order_id', $order['id'])->first();
+                $order['business_verification'] = $businessVerification;
+            }
 
         }
 
         $order['order_groups']          = $ordergroups;
-        $order['business_verification'] = $businessVerification;
         $this->content = $order;
         return response()->json($this->content);
 
@@ -137,10 +135,6 @@ class OrderController extends BaseController
             }
             $order = $order[0];
         }
-
-        $companyId=\Request::get('company')->id;
-
-        //dd($companyId);
 
         // check active_group_id
         if(!$order->active_group_id){
@@ -251,14 +245,6 @@ class OrderController extends BaseController
         $order->update(['active_group_id' => 0]);
         return $this->respond(['details'=>'Deleted successfully'], 204);
     }
-
-    // public function companyDetails($orderHash)
-    // {
-    //     $companyId=Order::where('hash',$orderHash)->first()->company_id;
-    //     //dd($companyId);
-    //     $companyDetails=Company::where('id',$companyId)->first();
-    //     dd($companyDetails);
-    // }
 
     
 //    public function destroy($id){

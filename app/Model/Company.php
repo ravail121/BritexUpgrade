@@ -11,9 +11,4 @@ class Company extends Model
      public function device(){
     	return $this->belongsTo('App\Model\Device')->withTrashed();
     }
-
-    public function Order()
-    {
-    	return $this->hasMany('App\Model\Order');
-    }
 }
