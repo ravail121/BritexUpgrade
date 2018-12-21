@@ -125,3 +125,13 @@ class SimController extends BaseController
        return response()->json($this->content);
     }
  }
+
+
+
+
+
+
+ $plan_id = $request->plan_id;
+    //dd($plan_id);
+
+    $companyId = Plan::where('id',$plan_id)->first()->company_id;

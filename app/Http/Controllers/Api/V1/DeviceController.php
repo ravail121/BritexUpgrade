@@ -10,6 +10,7 @@ use App\Model\Device;
 use App\Model\DeviceToImage;
 use App\Model\DeviceToType;
 use App\Model\Sim;
+use App\Model\Plan;
 
 
 class DeviceController extends Controller
@@ -22,11 +23,13 @@ class DeviceController extends Controller
 		
 		$show_list = ['1', '2'];
 
-
 		$carrier_id = $request->input('carrier_id');
 
+		$plan_id = $request->plan_id;
+    
+    	$companyId = Plan::where('id',$plan_id)->first()->company_id;
 
-		$dev = Device::whereIn('show', $show_list);
+		$dev = Device::where('company_id', $companyId);
 		if($carrier_id){
 			$dev = $dev->where('carrier_id', $carrier_id);
 		}

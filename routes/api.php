@@ -18,12 +18,6 @@ use Illuminate\Http\Request;
 // });
 
 
-Route::get('test-email', function(Illuminate\Http\Request $request){
-    dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
-        $message->to($request->to ?: 'vanak.roopak@gmail.com');
-        $message->subject('Email Arrived');
-    }));
-});
 
 
 

@@ -30,4 +30,9 @@ class Order extends Model
     {
         return $query->where('hash', $hash);
     }
+
+    public function company()
+    {
+        return $this->belongsTo('App\Model\Order');
+    }
 }
