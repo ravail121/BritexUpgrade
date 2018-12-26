@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use Config;
 use App\Model\Order;
+use App\Model\Company;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
@@ -52,6 +54,12 @@ class BizVerificationApproved extends Notification
         $order         = Order::where('hash', $this->orderHash)->first();
         $emailTemplate = EmailTemplate::where('company_id', $order->company_id)->first();
 
+        $configurationSet = $this->setMailConfiguration($order);
+
+        if ($configurationSet) {
+            return false;
+        }
+
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]', '[BUSINESS_NAME]', '[HERE]'];
         $replaceWith = [$this->bizVerification->fname, $this->bizVerification->lname, $this->bizVerification->business_name, $url];
 
@@ -80,5 +88,27 @@ class BizVerificationApproved extends Notification
         return [
             //
         ];
+    }
+
+
+
+    /**
+     * This method sets the Configuration of the Mail according to the Company
+     * 
+     * @param Order $order
+     * @return boolean
+     */
+    protected function setMailConfiguration($order)
+    {
+        $company = Company::find($order->company_id);
+        $config = [
+           'host'     => $company->smtp_host,
+           'port'     => $company->smtp_port,
+           'username' => $company->smtp_username,
+           'password' => $company->smtp_password,
+        ];
+
+        Config::set('mail',$config);
+        return false;
     }
 }

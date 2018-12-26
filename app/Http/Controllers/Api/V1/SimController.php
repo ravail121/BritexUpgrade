@@ -95,25 +95,32 @@ class SimController extends BaseController
 
       $order_group = OrderGroup::with(['order', 'sim', 'device', 'plan'])->where('id', $order->active_group_id)->get();
 
-      $og = $order_group[0];
+      if (count($order_group)) {
 
-      if($og->sim_id == 0){
-        $sims = $this->getSimsByOg($og, $plan);
-        
-      }else{
-        $_sims = $this->getSimsByOg($og, $plan);
-        $sims = $_sims;
+        $og = $order_group[0];
 
-        // check if og->sim_id is in $_sims. i.e. already selected
-        // foreach ($_sims as $sim) {
-        //   if($sim->id == $og->sim_id){
-        //     $sim['selected'] = 1;
-        //     array_push($sims, $sim);
-        //   }
+        if($og->sim_id == 0){
+          $sims = $this->getSimsByOg($og, $plan);
           
-        // }
+        }else{
+          $_sims = $this->getSimsByOg($og, $plan);
+          $sims = $_sims;
 
+          // check if og->sim_id is in $_sims. i.e. already selected
+          // foreach ($_sims as $sim) {
+          //   if($sim->id == $og->sim_id){
+          //     $sim['selected'] = 1;
+          //     array_push($sims, $sim);
+          //   }
+            
+          // }
+
+        }
+      } else {
+        $sims = $this->getSimsByCarrierId($plan);
       }
+
+
 
         $this->content = $sims;
         return response()->json($this->content);
@@ -123,5 +130,25 @@ class SimController extends BaseController
     {
        $this->content = Sim::find($id);
        return response()->json($this->content);
+    }
+
+    private function getSimsByCarrierId($plan)
+    {
+      $sims = [];
+      $company = \Request::get('company');
+
+      $_sims = Sim::where(
+        [
+          ['carrier_id', $plan->carrier_id],
+          ['company_id', $company->id],
+        ]
+      )->get();
+
+      foreach ($_sims as $sim) {
+        array_push($sims, $sim);
+      }
+
+      return $sims;
+
     }
  }
