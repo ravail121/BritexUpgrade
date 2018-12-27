@@ -2,9 +2,7 @@
 
 namespace App\Notifications;
 
-use Config;
 use App\Model\Order;
-use App\Model\Company;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
@@ -16,7 +14,7 @@ class BizVerificationApproved extends Notification
 {
     use Queueable;
 
-    public $orderHash;
+    public $order;
     public $bizVerification;
 
     /**
@@ -24,9 +22,9 @@ class BizVerificationApproved extends Notification
      *
      * @return void
      */
-    public function __construct($orderHash, BusinessVerification $bizVerification)
+    public function __construct(Order $order, BusinessVerification $bizVerification)
     {
-        $this->orderHash       = $orderHash;
+        $this->order           = $order;
         $this->bizVerification = $bizVerification;
     }
 
@@ -49,18 +47,12 @@ class BizVerificationApproved extends Notification
      */
     public function toMail($notifiable)
     {
-        $url = url(env('CHECKOUT_URL').$this->bizVerification->hash.'&order_hash='.$this->orderHash);
+        $url = url(env('CHECKOUT_URL').$this->bizVerification->hash.'&order_hash='.$this->order->hash);
 
-        $order         = Order::where('hash', $this->orderHash)->first();
-        $emailTemplate = EmailTemplate::where('company_id', $order->company_id)->first();
-
-        $configurationSet = $this->setMailConfiguration($order);
-
-        if ($configurationSet) {
-            return false;
-        }
+        $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->first();
 
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]', '[BUSINESS_NAME]', '[HERE]'];
+        
         $replaceWith = [$this->bizVerification->fname, $this->bizVerification->lname, $this->bizVerification->business_name, $url];
 
         $body = str_replace($strings,$replaceWith, $emailTemplate->body);
@@ -90,25 +82,4 @@ class BizVerificationApproved extends Notification
         ];
     }
 
-
-
-    /**
-     * This method sets the Configuration of the Mail according to the Company
-     * 
-     * @param Order $order
-     * @return boolean
-     */
-    protected function setMailConfiguration($order)
-    {
-        $company = Company::find($order->company_id);
-        $config = [
-           'host'     => $company->smtp_host,
-           'port'     => $company->smtp_port,
-           'username' => $company->smtp_username,
-           'password' => $company->smtp_password,
-        ];
-
-        Config::set('mail',$config);
-        return false;
-    }
 }

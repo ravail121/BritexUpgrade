@@ -14,6 +14,7 @@ class AddSmtpColumnsToCompanyTable extends Migration
     public function up()
     {
         Schema::table('company', function (Blueprint $table) {
+            $table->text('smtp_driver')->after('sprint_api_key')->nullable();
             $table->text('smtp_host')->after('sprint_api_key')->nullable();
             $table->text('smtp_port')->after('sprint_api_key')->nullable();
             $table->text('smtp_username')->after('sprint_api_key')->nullable();
@@ -30,6 +31,7 @@ class AddSmtpColumnsToCompanyTable extends Migration
     {
         Schema::table('company', function (Blueprint $table) {
             $table->dropColumn([
+                'smtp_driver',
                 'smtp_host',
                 'smtp_port',
                 'smtp_username',
