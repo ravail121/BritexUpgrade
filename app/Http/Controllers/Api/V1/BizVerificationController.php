@@ -44,21 +44,31 @@ class BizVerificationController extends BaseController
 			'order_id' => $orderId,
 		];
 
-        $businessVerification = BusinessVerification::updateOrCreate(['order_id' => $orderId], $dataWithoutDocs);
+        $businessVerification = BusinessVerification::where('order_id', $orderId)->first();
 
-		
-		if($request->hasFile('doc_file')) {
+        if ($businessVerification) {
+            $businessVerification->update($dataWithoutDocs);
+
+
+        } else {
+
+            $businessVerification = BusinessVerification::create($dataWithoutDocs);
+		    event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
+        }
+
+
+        if($request->hasFile('doc_file')) {
             $uploadedAndInserted = $this->uploadAndInsertDocument($request->doc_file, $businessVerification);
 
             if (!$uploadedAndInserted) {
                 return $this->respondError('File Could not be uploaded.');
 
             }
-		}
-				
+        }
+
+                
         // event(new BusinessVerificationCreated($orderHash,$bizHash));
 
-		event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
 			
 		return $this->respond(['order_hash' => $request->order_hash]);
 	}

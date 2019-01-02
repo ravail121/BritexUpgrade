@@ -41,6 +41,7 @@ class OrderController extends BaseController
                     
                     $order =  [
                         "id"                     => $og->order->id,
+                        "order_hash"             => $og->order->hash,
                         "active_group_id"        => $og->order->active_group_id,
                         "active_subscription_id" => $og->order->active_subscription_id,
                         "order_num"              => $og->order->order_num,
