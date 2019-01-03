@@ -31,7 +31,7 @@ class Device extends Model
 
     public function device_image()
     {
-     return $this->hasMany('App\Model\DeviceToImage', 'id');
+     return $this->hasMany('App\Model\DeviceToImage', 'device_id');
    }
 
    public function device_to_carrier()
