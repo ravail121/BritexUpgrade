@@ -137,6 +137,7 @@ class OrderController extends BaseController
             $order = $order[0];
         }
 
+
         // check active_group_id
         if(!$order->active_group_id){
             $order_group = OrderGroup::create([
@@ -201,6 +202,7 @@ class OrderController extends BaseController
                 'addon_id' => $data['addon_id'],
                 'order_group_id' => $order_group->id
             ]);
+
         }
 
         

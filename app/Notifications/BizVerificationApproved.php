@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Model\Order;
+use App\Model\Company;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
@@ -47,7 +48,9 @@ class BizVerificationApproved extends Notification
      */
     public function toMail($notifiable)
     {
-        $url = url(env('CHECKOUT_URL').$this->bizVerification->hash.'&order_hash='.$this->order->hash);
+        $company = Company::find($this->order->company_id);
+
+        $url = url($company->url.env('CHECKOUT_URL').$this->bizVerification->hash.'&order_hash='.$this->order->hash);
 
         $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->first();
 
