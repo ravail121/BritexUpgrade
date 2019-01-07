@@ -14,6 +14,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 class BizVerificationApproved extends Notification
 {
     use Queueable;
+    const URL = '/checkout?verification_hash=';
 
     public $order;
     public $bizVerification;
@@ -50,7 +51,7 @@ class BizVerificationApproved extends Notification
     {
         $company = Company::find($this->order->company_id);
 
-        $url = url($company->url.env('CHECKOUT_URL').$this->bizVerification->hash.'&order_hash='.$this->order->hash);
+        $url = url($company->url.self::URL.$this->bizVerification->hash.'&order_hash='.$this->order->hash);
 
         $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->first();
 
