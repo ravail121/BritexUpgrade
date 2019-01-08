@@ -22,4 +22,21 @@ class Addon extends Model
      return $this->hasMany('App\Model\OrderGroupAddon', 'id');
    	}
 
+
+
+// ----- Not touching the previously created code as they might be in use ----------
+
+    public function orderGroups()
+    {
+     return $this->belongsToMany('App\Model\OrderGroup');
+    }
+
+    public function planToAddonDetails()
+    {
+     return $this->belongsToMany('App\Model\PlanToAddon');
+    }
+
+// ----- Not touching the previously created code as they might be in use ----------
+
+
 }

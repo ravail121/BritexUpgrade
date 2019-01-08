@@ -21,4 +21,19 @@ class OrderGroupAddon extends Model
      return $this->hasOne('App\Model\Addon', 'id', 'addon_id');
    }
 
+
+// ----- Not touching the previously created code as they might be in use ----------
+
+   public function orderGroupDetail()
+   {
+     return $this->belongsTo('App\Model\OrderGroup', 'order_group_id');
+     
+   }
+
+    public function addonDetail()
+   {
+     return $this->belongsTo('App\Model\Addon', 'addon_id');
+     
+   }
+
 }

@@ -34,6 +34,19 @@ class OrderGroup extends Model
      return $this->hasMany('App\Model\OrderGroupAddon');
     }
 
+
+
+// ----- Not touching the previously created code as they might be in use ----------
+
+    public function addons()
+    {
+     return $this->belongsToMany('App\Model\Addon');
+    }
+
+// ----- Not touching the previously created code as they might be in use ----------
+
+
+
     // this is a recommended way to declare event handlers
     public static function boot() {
         parent::boot();

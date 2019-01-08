@@ -17,5 +17,16 @@ class PlanToAddon extends Model
     {
      return $this->hasOne('App\Model\Addon', 'id', 'addon_id');
    }
+
+    public function addonDetails()
+    {
+     return $this->belongsTo('App\Model\Addon', 'addon_id');
+   }
+
+   public function planDetails()
+    {
+     return $this->belongsTo('App\Model\Plan', 'plan_id');
+   }
+
     
 }

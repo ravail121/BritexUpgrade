@@ -5,14 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\BaseController;
 
 use Validator;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
-use App\Http\Controllers\Controller;
 use App\Model\Order;
 use App\Model\OrderGroup;
+use App\Model\PlanToAddon;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Model\OrderGroupAddon;
+use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
+use App\Http\Controllers\Controller;
 //use Illuminate\Support\Facades\Auth;
 
 class OrderController extends BaseController
@@ -162,11 +163,23 @@ class OrderController extends BaseController
         if(isset($data['plan_id'])){
             $og_params['plan_id'] = $data['plan_id'];
             // delete all rows in order_group_addon table associated with this order
-            $_oga = OrderGroupAddon::where('order_group_id',$order_group->id)
+            
+            $_oga = OrderGroupAddon::where('order_group_id', $order_group->id)
             ->get();
 
+            $planToAddon = PlanToAddon::wherePlanId($data['plan_id'])->get();
+
+            $addon_ids = [];
+
+            foreach ($planToAddon as $addon) {
+                array_push($addon_ids, $addon->addon_id);
+            }
+
+
             foreach($_oga as $__oga){
-                $__oga->delete();
+                if (!in_array($__oga->addon_id, $addon_ids)) {
+                    $__oga->delete();
+                }
             }
             
         }

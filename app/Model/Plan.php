@@ -24,4 +24,11 @@ class Plan extends Model
     {
         return $this->belongsToMany('App\Model\Device', 'device_to_plan', 'plan_id', 'device_id');
     }
+
+
+
+    public function planToAddon()
+    {
+     return $this->belongsToMany('App\Model\PlanToAddon');
+    }
 }
