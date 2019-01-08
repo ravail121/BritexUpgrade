@@ -6,6 +6,7 @@ use App\Http\Controllers\BaseController;
 
 use Validator;
 use App\Model\Order;
+use App\Model\Company;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use Illuminate\Http\Request;
@@ -260,6 +261,14 @@ class OrderController extends BaseController
         $og->delete();
         $order->update(['active_group_id' => 0]);
         return $this->respond(['details'=>'Deleted successfully'], 204);
+    }
+
+
+    public function get_company(Request $request)
+    {
+        $apiKey = $request->Authorization;
+        // $businessVerification = Company::where('api_key',$apiKey)->first()->business_verification;
+        return Company::where('api_key', $apiKey)->first();
     }
 
     

@@ -12,4 +12,10 @@ class Company extends Model
     	return $this->belongsTo('App\Model\Device')->withTrashed();
     }
 
+
+    public function company()
+    {
+        return $this->belongsTo('App\Model\Order');
+    }
+
 }

@@ -147,5 +147,47 @@ class BizVerificationController extends BaseController
     }
 
 
+    public function resendBusinessVerificationEmail(Request $request)
+    {
+        $orderHash = $request->order_hash;
+
+        // $validate = $this->validate_input($request->all(), [
+        //    'order_hash' => 'required|exists:order_hash'
+        // ]);
+
+        // if($validate){
+        //     return $validate;
+        // }
+
+        $orderId = Order::where('hash',$orderHash)->first()->id;
+
+        $businessVerification = BusinessVerification::where('order_id' ,$orderId)->first();
+
+        if($businessVerification == null){
+            return $this->respond(['false' => false]); 
+        }
+
+        event(new BusinessVerificationApproved($orderHash, $businessVerification->hash));
+
+        return $this->respond(['email' => $businessVerification->email]);   
+    }
+
+    public function removeDocument($id)
+    {
+        
+        $validate = $this->validate_input(compact('id'), [
+           'id' => 'exists:business_verification_doc',
+        ]);
+
+        if($validate){
+            return $validate;
+        }
+
+        BusinessVerificationDocs::destroy($id);
+
+        return $this->respond(['message' => 'business document removed']);
+    }
+
+
 
 }

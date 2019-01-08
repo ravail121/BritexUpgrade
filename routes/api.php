@@ -62,6 +62,10 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.orders.patch_remove',
           'uses' => 'OrderController@remove_from_order',
         ]);
+        Route::post('/company', [
+          'as' => 'api.orders.get_company',
+          'uses' => 'OrderController@get_company',
+        ]);
       });
 
       // Order-Group API
@@ -196,7 +200,7 @@ Route::middleware('APIToken')->group(function () {
       });
 
 
-       Route::group(['prefix' => 'customer', 'namespace' => '\Api\V1'],function()
+       Route::group(['prefix' => 'create-customer', 'namespace' => '\Api\V1'],function()
       {
         Route::post('/',[
         'as'=>'api.customer.post',
@@ -223,6 +227,16 @@ Route::middleware('APIToken')->group(function () {
             'as'=>'api.bizverification.confirm',
             'uses'=>'BizVerificationController@confirm',
  
+        ]);
+
+        Route::post('/resend-email', [
+            'as'=>'api.bizverification.resendBusinessVerificationEmail',
+            'uses'=>'BizVerificationController@resendBusinessVerificationEmail',
+        ]);
+
+        Route::delete('/remove-document/{id}', [
+            'as'=>'api.bizverification.removeDocument',
+            'uses'=>'BizVerificationController@remove_document',
         ]);
 
       });

@@ -8,7 +8,7 @@ class Customer extends Model
 {
     protected $table ='customer'; 
     protected $fillable=[
-     'billing_address1', 'billing_address2', 'billing_city','billing_state_id','shipping_address1','shipping_address2','shipping_state_id','hash','shipping_city',
+     'billing_address1', 'billing_address2', 'billing_city','billing_state_id','shipping_address1','shipping_address2','shipping_state_id','hash','shipping_city', 'subscription_start_date','billing_start','billing_end','primary_payment_method','primary_payment_card','account_suspended','company_id', 'business_verification_id'
     ];
 
      public function company(){
@@ -40,4 +40,10 @@ class Customer extends Model
      public function coupon(){
         return $this->hasOne('App\Model\coupon', 'id');
      }
+
+
+     public function BizVerification(){
+        return $this->belongsTo('App\Model\BusinessVerification');
+
+    }
 }
