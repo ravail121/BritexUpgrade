@@ -250,12 +250,22 @@ Route::middleware('APIToken')->group(function () {
 
        });
 
+       Route::group(['namespace' => '\Api\V1'],function()
+      {
+        Route::post('/charge-new-card',[
+        'as'=>'api.customer.creditcard',
+        'uses'=>'CustomerController@createCreditCard',
+        ]);
+
+      }); 
+
         Route::post('/confirm',
         [
           'as'=>'api.confirm.',
           //'middleware'=>'auth:api',
           'uses'=>'AddonController@add',
         ]);
+
 
       //Route::get('/confirm','BizVerificationController@confirm');
       

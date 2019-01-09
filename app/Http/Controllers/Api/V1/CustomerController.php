@@ -9,6 +9,7 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Model\SubscriptionAddon;
+use App\Model\CustomerCreditCard;
 use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
@@ -25,10 +26,10 @@ class CustomerController extends BaseController
    
   public function post(Request $request)
   {
-    $hasError = $this->validation($request);
-    if($hasError){
-      return $hasError;
-    }
+    // $hasError = $this->validateData($request);
+    // if($hasError){
+    //   return $hasError;
+    // }
 
     $requestedData = $request->all();
     $data = $this->getConstantData($requestedData);
@@ -55,11 +56,11 @@ class CustomerController extends BaseController
 
       }   
     } else {
-
       $customerInserted = $this->create($data);
 
       if(!$customerInserted) {
         return $this->respondError("problem in creating a customer");
+        
       } else {
         return response()->json(['success' => true, 'customer' => $customerInserted]);
       }    
@@ -94,7 +95,48 @@ class CustomerController extends BaseController
   }
 
 
-  protected function validation($request) { 
+  /**
+   * This function inserts data to customer_credit_card table
+   * 
+   * @param  Request    $request 
+   * @return string     Json Response
+   */
+  public function createCreditCard(Request $request)
+  {
+    $error = $this->validateCredentials($request);
+    if($error){
+      return $error;
+    }
+
+    $creditCard = CustomerCreditCard::create($request->all());
+
+    return $creditCard ?: false; 
+  }
+
+
+  /**
+   * This function validates the Billing info
+   * 
+   * @param  Request $data
+   * @return Respnse
+   */
+  protected function validateCredentials($data)
+  {
+    return $this->validate_input($data->all(), [
+      'api_key'          => 'required',
+      'customer_id'      => 'required',
+      'cardholder'       => 'required',
+      'number'           => 'required|numeric',
+      'expiration'       => 'required|numeric',
+      'cvc'              => 'required|numeric',
+      'billing_address1' => 'required',
+      'billing_zip'      => 'required||numeric',
+    ]);
+  }
+
+
+
+  protected function validateData($request) { 
     
     return $this->validate_input($request->all(), [ 
     
@@ -137,7 +179,7 @@ class CustomerController extends BaseController
     // $orderId=Order::where('hash',$orderHash)->first()->id;
     // $orders=Order::find($orderId);
     $order = Order::whereHash($orderHash)->first();
-    return $order->bizVerification()->id;    
+    return $order->bizVerification->id;    
   }
 
   public function getConstantData($data)
@@ -145,12 +187,16 @@ class CustomerController extends BaseController
     $date = date('y-m-d');
 
     unset($data['order_hash']);
+    $data['subscription_start_date'] = date('d-m-y',strtotime('+30 days'));
     $data['billing_start']           = $date;
     $data['billing_end']             = $date;
-    $data['subscription_start_date'] = date('d-m-y',strtotime('+30 days'))
-    ;
     $data['primary_payment_method']  = 1;
+    $data['primary_payment_card']    = 1;
     $data['account_suspended']       = 0; 
+    $data['billing_address1']        = 'null'; 
+    $data['billing_address2']        = 'null'; 
+    $data['billing_city']            = 'null'; 
+    $data['billing_state_id']        = 'AS'; 
 
     return $data;  
   }

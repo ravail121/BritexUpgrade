@@ -34,16 +34,22 @@ class Customer extends Model
      // public function pending_charge(){
      // 	return $this->belongsTo('App\Model\PendingCharge' , 'customer_id');
      // }
-     public function tax(){
+    public function tax()
+    {
      	return $this->belongsTo('App\Model\Tax' , 'company_id');
      }
-     public function coupon(){
+    public function coupon()
+    {
         return $this->hasOne('App\Model\coupon', 'id');
-     }
+    }
 
-
-     public function BizVerification(){
+    public function BizVerification()
+    {
         return $this->belongsTo('App\Model\BusinessVerification');
+    }
 
+    public function creditCard()
+    {
+        return $this->hasOne(CustomerCreditCard::class);
     }
 }
