@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Model\SubscriptionAddon;
 use App\Model\CustomerCreditCard;
+use App\Services\Payment\UsaEpay;
 use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
@@ -102,15 +103,31 @@ class CustomerController extends BaseController
    * @return string     Json Response
    */
   public function createCreditCard(Request $request)
-  {
-    $error = $this->validateCredentials($request);
-    if($error){
-      return $error;
+  { 
+    $tran = new UsaEpay;
+
+    $this->getStaticData($tran, $request);
+
+    if($tran->Process()) {
+
+      $creditCard = CustomerCreditCard::create([
+        'api_key'          => 'alar324r23423', 
+        'customer_id'      => 1, 
+        'cardholder'       => $request->payment_card_holder,
+        'number'           => str_replace(' ', '', $request->payment_card_no),
+        'expiration'       => str_replace('/', '', $request->expires_mmyy),
+        'cvc'              => $request->payment_cvc,
+        'billing_address1' => $request->billing_address1, 
+        'billing_zip'      => $request->billing_zip,
+      ]);
+      
+    } else {
+      return response()->json(['message' => 'Card Declined: (' . $tran->result . '). Reason: '. $tran->error]);
+
     }
 
-    $creditCard = CustomerCreditCard::create($request->all());
 
-    return $creditCard ?: false; 
+    return $creditCard; 
   }
 
 
@@ -120,20 +137,53 @@ class CustomerController extends BaseController
    * @param  Request $data
    * @return Respnse
    */
-  protected function validateCredentials($data)
-  {
-    return $this->validate_input($data->all(), [
-      'api_key'          => 'required',
-      'customer_id'      => 'required',
-      'cardholder'       => 'required',
-      'number'           => 'required|numeric',
-      'expiration'       => 'required|numeric',
-      'cvc'              => 'required|numeric',
-      'billing_address1' => 'required',
-      'billing_zip'      => 'required||numeric',
-    ]);
-  }
+  // protected function validateCredentials($data)
+  // {
+  //   return $this->validate_input($data->all(), [
+  //     'api_key'          => 'required',
+  //     'customer_id'      => 'required',
+  //     'cardholder'       => 'required',
+  //     'number'           => 'required|numeric',
+  //     'expiration'       => 'required|numeric',
+  //     'cvc'              => 'required|numeric',
+  //     'billing_address1' => 'required',
+  //     'billing_zip'      => 'required||numeric',
+  //   ]);
+  // }
 
+
+
+  protected function getStaticData($tran, $request)
+  {
+      $cardNumber = str_replace(' ', '', $request->payment_card_no);
+      $expiryDate = str_replace('/', '', $request->expires_mmyy);
+
+      $tran->key="qjyphvd6E6hO4gJ1tuVjqTNTa6g1zHbr ";
+
+      $tran->usesandbox=false;    
+      $tran->card        = $cardNumber; 
+      $tran->exp         = $expiryDate;
+      $tran->cvv2        = $request->payment_cvc;
+      $tran->amount      = $request->amount;           
+      $tran->invoice     = "GORIN-TEST1";           
+      $tran->cardholder  = $request->payment_card_holder;
+      $tran->street      = $request->shipping_address1;    
+      $tran->zip         = $request->zip;         
+      $tran->isrecurring = true; 
+      $tran->savecard    = true; 
+      $tran->billfname   = $request->fname;
+      $tran->billlname   = $request->lname;
+      $tran->billcompany = $request->company_name;
+      $tran->billstreet  = $request->billing_address1;
+      $tran->billcity    = $request->billing_city;
+      $tran->billstate   = $request->billing_state_id;
+      $tran->billzip     = $request->billing_zip;
+      $tran->billcountry = "USA";
+      $tran->billphone   = "8636667611";
+      $tran->email       = $request->email;
+      flush();
+      return true;
+  }
 
 
   protected function validateData($request) { 
