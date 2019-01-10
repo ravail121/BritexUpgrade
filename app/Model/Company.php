@@ -13,7 +13,7 @@ class Company extends Model
     }
 
 
-    public function company()
+    public function order()
     {
         return $this->belongsTo('App\Model\Order');
     }

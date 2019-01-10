@@ -31,9 +31,8 @@ class AddOrderIdToBusinessVerificationTable extends Migration
     public function down()
     {
         Schema::table('business_verification', function (Blueprint $table) {
-            $table->dropColumn([
-                'order_id',
-            ]);
+            $table->dropForeign(['order_id']);
+            $table->dropColumn('order_id');
         });
     }
 }

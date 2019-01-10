@@ -21,6 +21,15 @@ use App\Http\Controllers\BaseController;
 
 class CustomerController extends BaseController
 {
+  const TRAN_KEY         = "qjyphvd6E6hO4gJ1tuVjqTNTa6g1zHbr";
+  const TRAN_INVOICE     = "GORIN-TEST1";
+  const TRAN_BILLCOUNTRY = "USA";
+  const TRAN_FALSE       = false;
+  const TRAN_TRUE        = true;
+  const DATA_STATE       = 'NY';
+  const DATA_NULL        = 'null';
+  const DATA_INT         = 0;
+
   public function __construct(){
     $this->content = array();
   }
@@ -37,21 +46,18 @@ class CustomerController extends BaseController
 
     $orderHash = $request->order_hash;
 
-    $companyId = Order::where('hash',$orderHash)->first()->company_id;
+    $order = $this->getOrderClass($orderHash);
 
-    $data['company_id'] = $companyId;
+    $data['company_id'] = $order->company_id;
+    $data['business_verification_id'] = $order->bizVerification->id;
 
-    $businessVerificationId = $this->getBusinessId($orderHash);
-
-    $data['business_verification_id'] = $businessVerificationId;
      
-    $verifyBusiness = Customer::where('business_verification_id',$businessVerificationId)->first();
-
-    if($verifyBusiness) {
+    if($order->customer_id) {
       
-      $updation = $this->updateCustomer($data,$businessVerificationId);
+      $updation = $this->updateCustomer($data, $order->customer_id);
       if($updation == null) {
         return $this->respondError("problem in updation");
+
       } else {
         return response()->json(['success' => true, 'order_hash' => $orderHash, 'message' => 'successfully updated']);    
 
@@ -63,6 +69,7 @@ class CustomerController extends BaseController
         return $this->respondError("problem in creating a customer");
         
       } else {
+        $order->update(['customer_id' => $customerInserted->id]);
         return response()->json(['success' => true, 'customer' => $customerInserted]);
       }    
     }    
@@ -108,11 +115,13 @@ class CustomerController extends BaseController
 
     $this->getStaticData($tran, $request);
 
+    $order = $this->getOrderClass($request->order_hash);
+
     if($tran->Process()) {
 
       $creditCard = CustomerCreditCard::create([
-        'api_key'          => 'alar324r23423', 
-        'customer_id'      => 1, 
+        'api_key'          => $order->company->api_key, 
+        'customer_id'      => $order->customer_id, 
         'cardholder'       => $request->payment_card_holder,
         'number'           => str_replace(' ', '', $request->payment_card_no),
         'expiration'       => str_replace('/', '', $request->expires_mmyy),
@@ -157,20 +166,20 @@ class CustomerController extends BaseController
   {
       $cardNumber = str_replace(' ', '', $request->payment_card_no);
       $expiryDate = str_replace('/', '', $request->expires_mmyy);
+      $phone      = str_replace(['(', ')', ' ', '-'], '', $request->primary_contact);
 
-      $tran->key="qjyphvd6E6hO4gJ1tuVjqTNTa6g1zHbr ";
-
-      $tran->usesandbox=false;    
+      $tran->key         = self::TRAN_KEY;
+      $tran->usesandbox  = self::TRAN_FALSE;    
       $tran->card        = $cardNumber; 
       $tran->exp         = $expiryDate;
       $tran->cvv2        = $request->payment_cvc;
       $tran->amount      = $request->amount;           
-      $tran->invoice     = "GORIN-TEST1";           
+      $tran->invoice     = self::TRAN_INVOICE;           
       $tran->cardholder  = $request->payment_card_holder;
       $tran->street      = $request->shipping_address1;    
       $tran->zip         = $request->zip;         
-      $tran->isrecurring = true; 
-      $tran->savecard    = true; 
+      $tran->isrecurring = self::TRAN_TRUE; 
+      $tran->savecard    = self::TRAN_TRUE; 
       $tran->billfname   = $request->fname;
       $tran->billlname   = $request->lname;
       $tran->billcompany = $request->company_name;
@@ -178,8 +187,8 @@ class CustomerController extends BaseController
       $tran->billcity    = $request->billing_city;
       $tran->billstate   = $request->billing_state_id;
       $tran->billzip     = $request->billing_zip;
-      $tran->billcountry = "USA";
-      $tran->billphone   = "8636667611";
+      $tran->billcountry = self::TRAN_BILLCOUNTRY;
+      $tran->billphone   = $phone;
       $tran->email       = $request->email;
       flush();
       return true;
@@ -206,15 +215,18 @@ class CustomerController extends BaseController
   }
 
 
-  protected function updateCustomer($data,$businessVerificationId)
+  protected function updateCustomer($data, $customerId)
   {   
     unset($data['company_id']);
+    $data['hash'] = sha1(time());
+    
+    return  Customer::find($customerId)->update($data);
+  }
 
-    return Customer::where('business_verification_id', $businessVerificationId)
-                ->update($data, [
-                    'hash' => sha1(time())
-                ]);
 
+  protected function getOrderClass($hash)
+  {
+    return Order::hash($hash)->first();
   }
 
 
@@ -224,15 +236,9 @@ class CustomerController extends BaseController
     return Customer::create($data);   
   }
 
-  protected function getBusinessId($orderHash)
-  {   
-    // $orderId=Order::where('hash',$orderHash)->first()->id;
-    // $orders=Order::find($orderId);
-    $order = Order::whereHash($orderHash)->first();
-    return $order->bizVerification->id;    
-  }
 
-  public function getConstantData($data)
+
+  protected function getConstantData($data)
   {
     $date = date('y-m-d');
 
@@ -240,13 +246,13 @@ class CustomerController extends BaseController
     $data['subscription_start_date'] = date('d-m-y',strtotime('+30 days'));
     $data['billing_start']           = $date;
     $data['billing_end']             = $date;
-    $data['primary_payment_method']  = 1;
-    $data['primary_payment_card']    = 1;
-    $data['account_suspended']       = 0; 
-    $data['billing_address1']        = 'null'; 
-    $data['billing_address2']        = 'null'; 
-    $data['billing_city']            = 'null'; 
-    $data['billing_state_id']        = 'AS'; 
+    $data['primary_payment_method']  = self::DATA_INT;
+    $data['primary_payment_card']    = self::DATA_INT;
+    $data['account_suspended']       = self::DATA_INT; 
+    $data['billing_address1']        = self::DATA_NULL; 
+    $data['billing_address2']        = self::DATA_NULL; 
+    $data['billing_city']            = self::DATA_NULL; 
+    $data['billing_state_id']        = self::DATA_STATE; 
 
     return $data;  
   }

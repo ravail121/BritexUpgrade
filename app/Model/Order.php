@@ -9,7 +9,7 @@ class Order extends Model
     protected $table = 'order';
 
     protected $fillable = [
-        'hash', 'company_id', 'active_group_id'
+        'hash', 'customer_id', 'company_id', 'active_group_id'
     ];
 
     public function order_group(){
@@ -29,5 +29,14 @@ class Order extends Model
     public function scopeHash($query, $hash)
     {
         return $query->where('hash', $hash);
+    }
+
+    public function customer()
+    {
+        return $this->hasOne('App\Model\Customer', 'id', 'customer_id');
+    }
+    public function company()
+    {
+        return $this->hasOne('App\Model\Company', 'id', 'company_id');
     }
 }
