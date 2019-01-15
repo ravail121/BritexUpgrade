@@ -39,4 +39,9 @@ class Order extends Model
     {
         return $this->hasOne('App\Model\Company', 'id', 'company_id');
     }
+
+    public function paymentLog()
+    {
+        return $this->belongsTo(PaymentLog::class);
+    }
 }

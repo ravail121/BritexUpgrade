@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use Validator;
 use App\Model\Order;
+use App\Model\Credit;
 use App\Model\Customer;
+use App\Model\PaymentLog;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -102,13 +104,18 @@ class CustomerController extends BaseController
 
     if($tran->Process()) {
 
+      $paymentLog = PaymentLog::create([
+        'order_id' => $order->id,
+        'status'   => 'success',
+      ]);
+
       $creditCard = CustomerCreditCard::create([
         'token'            => Hash::make(time()),
         'api_key'          => $order->company->api_key, 
         'customer_id'      => $order->customer_id, 
         'cardholder'       => $request->payment_card_holder,
-        'number'           => str_replace(' ', '', $request->payment_card_no),
-        'expiration'       => str_replace('/', '', $request->expires_mmyy),
+        'number'           => $request->payment_card_no,
+        'expiration'       => $request->expires_mmyy,
         'cvc'              => $request->payment_cvc,
         'billing_address1' => $request->billing_address1, 
         'billing_address2' => $request->billing_address2, 
@@ -116,18 +123,28 @@ class CustomerController extends BaseController
         'billing_state_id' => $request->billing_state_id, 
         'billing_zip'      => $request->billing_zip,
       ]);
+
+      $credit = Credit::create([
+        'customer_id' => $order->customer_id,
+        'amount'      => $request->amount,
+        'date'        => date("Y/m/d"),
+        'description' => 'Type is null and Card number: XXXXXXXXXXXX'.substr($request->payment_card_no, -4),
+      ]);
       
     } else {
+      $paymentLog = PaymentLog::create([
+        'order_id' => $order->id,
+        'status'   => 'fail',
+      ]);
       return response()->json(['message' => 'Card Declined: (' . $tran->result . '). Reason: '. $tran->error]);
 
     }
-
 
     return $creditCard; 
   }
 
 
-  /**
+  /**TRAN_FALSE
    * This function validates the Billing info
    * 
    * @param  Request $data
@@ -142,16 +159,25 @@ class CustomerController extends BaseController
 
 
 
+
+  /**
+   * This function validates the Credit Card Credentials
+   * 
+   * @param  object    $tran    UsaEpay Object
+   * @param  Request   $request
+   * @return boolean
+   */
   protected function getStaticData($tran, $request)
   {
-      $cardNumber = $this->stringReplacement([' '], $request->payment_card_no);
-      $expiryDate = $this->stringReplacement(['/'], $request->expires_mmyy);
-      $phone      = $this->stringReplacement(['(', ')', ' ', '-'], $request->primary_contact);
+      $request->payment_card_no = $this->stringReplacement([' '], $request->payment_card_no);
+      $request->expires_mmyy    = $this->stringReplacement(['/'], $request->expires_mmyy);
+      $request->primary_contact = $this->stringReplacement(['(', ')', ' ', '-'], $request->primary_contact);
+      $request->secondary_contact = $this->stringReplacement(['(', ')', ' ', '-'], $request->secondary_contact);
 
       $tran->key         = self::TRAN_KEY;
       $tran->usesandbox  = self::TRAN_FALSE;    
-      $tran->card        = $cardNumber; 
-      $tran->exp         = $expiryDate;
+      $tran->card        = $request->payment_card_no; 
+      $tran->exp         = $request->expires_mmyy;
       $tran->cvv2        = $request->payment_cvc;
       $tran->amount      = $request->amount;           
       $tran->invoice     = self::TRAN_INVOICE;           
@@ -168,13 +194,21 @@ class CustomerController extends BaseController
       $tran->billstate   = $request->billing_state_id;
       $tran->billzip     = $request->billing_zip;
       $tran->billcountry = self::TRAN_BILLCOUNTRY;
-      $tran->billphone   = $phone;
+      $tran->billphone   = $request->primary_contact;
       $tran->email       = $request->email;
       flush();
       return true;
   }
 
 
+
+  /**
+   * This function sets some data for creating a customer
+   * 
+   * @param Class   $order
+   * @param array   $data
+   * @return array
+   */
   protected function setData($order, $data)
   {
     unset($data['order_hash']);
@@ -188,6 +222,14 @@ class CustomerController extends BaseController
   }
 
 
+
+
+  /**
+   * Validates the Create-customer data
+   * 
+   * @param  Request $request
+   * @return Response
+   */
   protected function validateData($request) { 
     
     return $this->validate_input($request->all(), [ 
@@ -208,12 +250,27 @@ class CustomerController extends BaseController
   }
 
 
+
+  /**
+   * This function replaces characters with blank
+   * 
+   * @param  array    $array
+   * @param  string   $string
+   * @return string   Replaced string
+   */
   protected function stringReplacement($array, $string)
   {
     return str_replace($array, '', $string);
   }
 
 
+
+  /**
+   * Gets order from order_hash
+   * 
+   * @param  string    $hash  [order_hash]
+   * @return Response
+   */
   protected function getOrderClass($hash)
   {
     return Order::hash($hash)->first();

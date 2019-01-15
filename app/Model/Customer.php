@@ -84,4 +84,9 @@ class Customer extends Model
     {
         return $this->belongsTo(CustomerCreditCard::class);
     }
+
+    public function credit()
+    {
+        return $this->belongsTo(Credit::class);
+    }
 }
