@@ -8,10 +8,18 @@ class Customer extends Model
 {
     protected $table = 'customer'; 
     protected $fillable = [
-        'order_id',  
         'hash',  
         'company_id',
         'business_verification_id',
+        'business_verified',
+        'fname',
+        'lname',
+        'password',
+        'phone',
+        'alternate_phone',
+        'pin',
+        'email',
+        'company_name',
         'subscription_start_date',
         'billing_start',
         'billing_end',
@@ -26,6 +34,7 @@ class Customer extends Model
         'shipping_address2',
         'shipping_city',
         'shipping_state_id',
+        'shipping_zip',
     ];
 
      public function company()

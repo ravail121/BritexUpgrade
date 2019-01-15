@@ -14,7 +14,8 @@ use App\Services\Payment\UsaEpay;
 use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
-use App\Http\Request\CardValidation;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\CreditCardRequest;
 use App\Http\Controllers\BaseController;
 
 
@@ -26,9 +27,6 @@ class CustomerController extends BaseController
   const TRAN_BILLCOUNTRY = "USA";
   const TRAN_FALSE       = false;
   const TRAN_TRUE        = true;
-  const DATA_STATE       = 'NY';
-  const DATA_NULL        = 'null';
-  const DATA_INT         = 0;
 
   public function __construct(){
     $this->content = array();
@@ -36,43 +34,23 @@ class CustomerController extends BaseController
    
   public function post(Request $request)
   {
-    // $hasError = $this->validateData($request);
-    // if($hasError){
-    //   return $hasError;
-    // }
+    $hasError = $this->validateData($request);
+    if($hasError){
+      return $hasError;
+    }
 
-    $requestedData = $request->all();
-    $data = $this->getConstantData($requestedData);
+    $data         = $request->all();
+    $order        = $this->getOrderClass($data['order_hash']);
+    $customerData = $this->setData($order, $data);
 
-    $orderHash = $request->order_hash;
+    $customer = Customer::updateOrCreate(['id' => $order->customer_id], $customerData);
 
-    $order = $this->getOrderClass($orderHash);
+    if (!$customer) {
+      return $this->respondError("problem in creating/updating a customer");
+    }
+    $order->update(['customer_id' => $customer->id]);
 
-    $data['company_id'] = $order->company_id;
-    $data['business_verification_id'] = $order->bizVerification->id;
-
-     
-    if($order->customer_id) {
-      
-      $updation = $this->updateCustomer($data, $order->customer_id);
-      if($updation == null) {
-        return $this->respondError("problem in updation");
-
-      } else {
-        return response()->json(['success' => true, 'order_hash' => $orderHash, 'message' => 'successfully updated']);    
-
-      }   
-    } else {
-      $customerInserted = $this->create($data);
-
-      if(!$customerInserted) {
-        return $this->respondError("problem in creating a customer");
-        
-      } else {
-        $order->update(['customer_id' => $customerInserted->id]);
-        return response()->json(['success' => true, 'customer' => $customerInserted]);
-      }    
-    }    
+    return response()->json(['success' => true, 'customer' => $customer]); 
   }
 
 
@@ -111,6 +89,11 @@ class CustomerController extends BaseController
    */
   public function createCreditCard(Request $request)
   { 
+    $validation = $this->validateCredentials($request);
+    if ($validation->fails()) {
+      return response()->json($validation->getMessageBag()->all());
+
+    }
     $tran = new UsaEpay;
 
     $this->getStaticData($tran, $request);
@@ -120,6 +103,7 @@ class CustomerController extends BaseController
     if($tran->Process()) {
 
       $creditCard = CustomerCreditCard::create([
+        'token'            => Hash::make(time()),
         'api_key'          => $order->company->api_key, 
         'customer_id'      => $order->customer_id, 
         'cardholder'       => $request->payment_card_holder,
@@ -127,6 +111,9 @@ class CustomerController extends BaseController
         'expiration'       => str_replace('/', '', $request->expires_mmyy),
         'cvc'              => $request->payment_cvc,
         'billing_address1' => $request->billing_address1, 
+        'billing_address2' => $request->billing_address2, 
+        'billing_city'     => $request->billing_city, 
+        'billing_state_id' => $request->billing_state_id, 
         'billing_zip'      => $request->billing_zip,
       ]);
       
@@ -146,27 +133,20 @@ class CustomerController extends BaseController
    * @param  Request $data
    * @return Respnse
    */
-  // protected function validateCredentials($data)
-  // {
-  //   return $this->validate_input($data->all(), [
-  //     'api_key'          => 'required',
-  //     'customer_id'      => 'required',
-  //     'cardholder'       => 'required',
-  //     'number'           => 'required|numeric',
-  //     'expiration'       => 'required|numeric',
-  //     'cvc'              => 'required|numeric',
-  //     'billing_address1' => 'required',
-  //     'billing_zip'      => 'required||numeric',
-  //   ]);
-  // }
+  protected function validateCredentials($data)
+  {
+    $credCardRequest = new CreditCardRequest($data['payment_card_no']);
+    $rules           = $credCardRequest->rules();
+    return Validator::make($data->all(), $rules);
+  }
 
 
 
   protected function getStaticData($tran, $request)
   {
-      $cardNumber = str_replace(' ', '', $request->payment_card_no);
-      $expiryDate = str_replace('/', '', $request->expires_mmyy);
-      $phone      = str_replace(['(', ')', ' ', '-'], '', $request->primary_contact);
+      $cardNumber = $this->stringReplacement([' '], $request->payment_card_no);
+      $expiryDate = $this->stringReplacement(['/'], $request->expires_mmyy);
+      $phone      = $this->stringReplacement(['(', ')', ' ', '-'], $request->primary_contact);
 
       $tran->key         = self::TRAN_KEY;
       $tran->usesandbox  = self::TRAN_FALSE;    
@@ -195,32 +175,42 @@ class CustomerController extends BaseController
   }
 
 
+  protected function setData($order, $data)
+  {
+    unset($data['order_hash']);
+    $data['business_verification_id'] = $order->bizVerification->id;
+    $data['company_id']               = $order->company_id;
+    $data['hash']                     = sha1(time());
+    $data['password']                 = Hash::make($data['password']);
+    $data['pin']                      = Hash::make($data['pin']);
+
+    return $data;
+  }
+
+
   protected function validateData($request) { 
     
     return $this->validate_input($request->all(), [ 
-    
-        'primary_payment_method' => 'required|numeric', 
-        'primary_payment_card'   => 'required|numeric|digits_between:15,25',
-        'account_suspended'      => 'required',
-        'billing_address1'       => 'required|string',
-        'billing_address2'       => 'required|string',
-        'billing_city'           => 'required|string',
-        'billing_state_id'       => 'required|string|max:2',
-        'shipping_address1'      => 'required|string',
-        'shipping_address2'      => 'required|string',
-        'shipping_city'          => 'required|string',
-        'shipping_state_id'      => 'required|string|max:2',
-        'order_hash'             => 'required|exists:order_hash'
+        'fname'              => 'required|string',
+        'lname'              => 'required|string',
+        'email'              => 'required|email',
+        'company_name'       => 'required|string',
+        'phone'              => 'required|string',
+        'alternate_phone'    => 'nullable|string',
+        'password'           => 'required|string',
+        'shipping_address1'  => 'required|string',
+        'shipping_address2'  => 'nullable|string',
+        'shipping_city'      => 'required|string',
+        'shipping_state_id'  => 'required|string|max:2',
+        'shipping_zip'       => 'required|digits:5',
+        'pin'                => 'required|digits:4',
     ]);
   }
 
 
-  protected function updateCustomer($data, $customerId)
-  {   
-    unset($data['company_id']);
-    $data['hash'] = sha1(time());
-    
-    return  Customer::find($customerId)->update($data);
+  protected function stringReplacement($array, $string)
+  {
+    return str_replace($array, '', $string);
   }
 
 
@@ -229,31 +219,4 @@ class CustomerController extends BaseController
     return Order::hash($hash)->first();
   }
 
-
-  protected function create($data)
-  {           
-    $data['hash'] = sha1(time());
-    return Customer::create($data);   
-  }
-
-
-
-  protected function getConstantData($data)
-  {
-    $date = date('y-m-d');
-
-    unset($data['order_hash']);
-    $data['subscription_start_date'] = date('d-m-y',strtotime('+30 days'));
-    $data['billing_start']           = $date;
-    $data['billing_end']             = $date;
-    $data['primary_payment_method']  = self::DATA_INT;
-    $data['primary_payment_card']    = self::DATA_INT;
-    $data['account_suspended']       = self::DATA_INT; 
-    $data['billing_address1']        = self::DATA_NULL; 
-    $data['billing_address2']        = self::DATA_NULL; 
-    $data['billing_city']            = self::DATA_NULL; 
-    $data['billing_state_id']        = self::DATA_STATE; 
-
-    return $data;  
-  }
 }
