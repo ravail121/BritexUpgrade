@@ -9,7 +9,7 @@ class Order extends Model
     protected $table = 'order';
 
     protected $fillable = [
-        'hash', 'customer_id', 'company_id', 'active_group_id'
+        'hash', 'customer_id', 'company_id', 'active_group_id', 'status'
     ];
 
     public function order_group(){

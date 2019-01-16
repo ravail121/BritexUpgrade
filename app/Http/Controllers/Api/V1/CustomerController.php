@@ -93,7 +93,9 @@ class CustomerController extends BaseController
   { 
     $validation = $this->validateCredentials($request);
     if ($validation->fails()) {
-      return response()->json($validation->getMessageBag()->all());
+      return response()->json([
+        'message' => $validation->getMessageBag()->all()
+      ]);
 
     }
     $tran = new UsaEpay;
@@ -103,6 +105,8 @@ class CustomerController extends BaseController
     $order = $this->getOrderClass($request->order_hash);
 
     if($tran->Process()) {
+
+      $order->update(['status' => 1]);
 
       $paymentLog = PaymentLog::create([
         'order_id' => $order->id,
