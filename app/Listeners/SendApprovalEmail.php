@@ -40,11 +40,17 @@ class SendApprovalEmail
         $bizVerification = $event->bizVerification;
         $order           = Order::where('hash', $orderHash)->first();
 
+        \Log::info('Setting Mail Configuration');
+
         $configurationSet = $this->setMailConfiguration($order);
+
+        \Log::info(Config::get('mail'));
 
         if ($configurationSet) {
             return false;
         }
+
+        \Log::info('Notification Triggering.......');
 
         $bizVerification->notify(new BizVerificationApproved($order, $bizVerification));        
     }

@@ -27,34 +27,34 @@ class BizVerificationController extends BaseController
 
 	public function post(Request $request)
 	{
-		$hasError = $this->validateData($request);
+        $hasError = $this->validateData($request);
 
         if ($hasError) {
             return $hasError;
         }
 
-		$order = $this->getOrderId($request->order_hash);
+        $order = $this->getOrderId($request->order_hash);
         if (!$order) {
             return $this->respondError('Oops! Something, went wrong...');
         }
         $orderId = $order->id;
 
-		$dataWithoutDocs = $request->except(['order_hash','doc_file']) + [
-			'hash'     => sha1(time()),
-      'order_id' => $orderId,
-			'approved' => 1,
-		];
+        $dataWithoutDocs = $request->except(['order_hash','doc_file']) + [
+            'hash'     => sha1(time()),
+            'order_id' => $orderId,
+            'approved' => 1,
+        ];
+
 
         $businessVerification = BusinessVerification::where('order_id', $orderId)->where('approved', 1)->first();
 
         if ($businessVerification) {
             $businessVerification->update($dataWithoutDocs);
 
-
         } else {
-
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
-		        event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
+            \Log::info('Send Email Event Triggered....');
+            event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
         }
 
 
@@ -63,14 +63,10 @@ class BizVerificationController extends BaseController
 
             if (!$uploadedAndInserted) {
                 return $this->respondError('File Could not be uploaded.');
-
             }
         }
-
                 
         // event(new BusinessVerificationCreated($orderHash,$bizHash));
-
-			
 		return $this->respond(['order_hash' => $request->order_hash]);
 	}
 
@@ -84,7 +80,6 @@ class BizVerificationController extends BaseController
 			if($bizHash->approved == 0) {
 				BusinessVerification::where('hash', $request->businessHash)->update(['approved' => 1]);    
 			}
-
 		} else {
             return $this->respondError("Invalid User");
 		}
@@ -148,6 +143,13 @@ class BizVerificationController extends BaseController
     }
 
 
+
+    /**
+     * This function resends email for business_verification
+     * 
+     * @param  Request    $request
+     * @return Response
+     */
     public function resendBusinessVerificationEmail(Request $request)
     {
         $orderHash = $request->order_hash;
@@ -162,6 +164,14 @@ class BizVerificationController extends BaseController
         return $this->respond(['email' => $order->bizVerification->email]);   
     }
 
+
+
+    /**
+     * Removes document from database
+     * 
+     * @param  int       $id
+     * @return Response
+     */
     public function removeDocument($id)
     {
         

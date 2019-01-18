@@ -24,10 +24,10 @@ class BusinessVerificationApproved
      */
     public function __construct($orderHash, $bizHash)
     {
-        //\Log::info('hello world');
+        \Log::info('Fetching orderHash and bizVerification object');
         $this->orderHash       = $orderHash;
         $this->bizVerification = BusinessVerification::where('hash', $bizHash)->first();
-        // dd($this->orderHash);
+        \Log::info($this->bizVerification);
 
     }
     /**
