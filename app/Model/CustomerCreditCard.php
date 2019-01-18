@@ -25,6 +25,6 @@ class CustomerCreditCard extends Model
 
     public function customer()
     {
-        return $this->hasOne(Customer::class);
+        return $this->belongsTo('App\Model\Customer');
     }
 }

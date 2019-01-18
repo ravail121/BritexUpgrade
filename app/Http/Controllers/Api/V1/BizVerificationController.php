@@ -41,10 +41,11 @@ class BizVerificationController extends BaseController
 
 		$dataWithoutDocs = $request->except(['order_hash','doc_file']) + [
 			'hash'     => sha1(time()),
-			'order_id' => $orderId,
+      'order_id' => $orderId,
+			'approved' => 1,
 		];
 
-        $businessVerification = BusinessVerification::where('order_id', $orderId)->first();
+        $businessVerification = BusinessVerification::where('order_id', $orderId)->where('approved', 1)->first();
 
         if ($businessVerification) {
             $businessVerification->update($dataWithoutDocs);
@@ -53,7 +54,7 @@ class BizVerificationController extends BaseController
         } else {
 
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
-		    event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
+		        event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
         }
 
 
@@ -76,7 +77,7 @@ class BizVerificationController extends BaseController
 
 	public function confirm(Request $request) {
 
-  		$orderHash = Order::hash($request->orderHash)->first();
+  	$orderHash = Order::hash($request->orderHash)->first();
 		$bizHash   = BusinessVerification::where('hash', $request->businessHash)->first();
 
 		if($orderHash && $bizHash) {

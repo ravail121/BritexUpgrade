@@ -80,9 +80,9 @@ class Customer extends Model
         return $this->belongsTo('App\Model\BusinessVerification');
     }
 
-    public function creditCard()
+    public function customerCreditCards()
     {
-        return $this->belongsTo(CustomerCreditCard::class);
+        return $this->hasMany('App\Model\CustomerCreditCard');
     }
 
     public function credit()

@@ -35,6 +35,7 @@ class CreditCardRequest extends FormRequest
         return [
             'billing_fname'    => 'required',
             'billing_lname'    => 'required',
+            'amount'           => 'required',
             'billing_address1' => 'required|max:5000',
             'billing_address2' => 'nullable|max:5000',
             'billing_city'     => 'required|max:50',
