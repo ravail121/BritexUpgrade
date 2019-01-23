@@ -33,6 +33,9 @@ class BizVerificationController extends BaseController
             return $hasError;
         }
 
+        \Log::info('Error during Validating Data.....');
+        \Log::info($hasError);
+
         $order = $this->getOrderId($request->order_hash);
         if (!$order) {
             return $this->respondError('Oops! Something, went wrong...');
@@ -44,15 +47,22 @@ class BizVerificationController extends BaseController
             'order_id' => $orderId,
             'approved' => 1,
         ];
+        \Log::info('Setting Data without Docs.......');
+        \Log::info($dataWithoutDocs);
 
 
         $businessVerification = BusinessVerification::where('order_id', $orderId)->where('approved', 1)->first();
 
         if ($businessVerification) {
+            \Log::info('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
+            \Log::info('Business-Verification already exists.....Updating the data');
             $businessVerification->update($dataWithoutDocs);
 
         } else {
+            \Log::info('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
+            \Log::info('Now Creating Business-Verification...........');
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
+            \Log::info($businessVerification);
             \Log::info('Send Email Event Triggered....');
             event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
         }
