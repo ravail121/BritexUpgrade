@@ -7,7 +7,12 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Model\Order;
+use App\Model\Plan;
+use App\Model\Device;
+use App\Model\DeviceToSim;
+use App\Model\Sim;
 use App\Model\OrderGroup;
+use App\Model\PlanToAddon;
 
 
 class OrderGroupController extends Controller
@@ -84,6 +89,22 @@ class OrderGroupController extends Controller
     }
 
 
+    public function edit(Request $request)
+    {
+        $orderGroup = OrderGroup::find($request->order_group_id);
+
+        if ($orderGroup->closed == 1) {
+            if ($orderGroup->device_id != null) {
+                $this->content = $this->filterDevices($orderGroup);
+                
+            } elseif ($orderGroup->plan_id != null) {
+                $this->content = $this->filterPlans($orderGroup);
+            }
+        }
+        return response()->json($this->content);
+    }
+
+
     private function checkInvalidHash($order)
     {
         if(!count($order)){
@@ -91,6 +112,91 @@ class OrderGroupController extends Controller
             return response()->json($this->output);
         }
         return null;
+    }
+
+    protected function filterPlans($orderGroup)
+    {
+        $plans = [];
+        $addons = [];
+        $data = [];
+
+        if ($orderGroup->sim_type) {
+            $data['sim_num'] = $orderGroup->sim_num;
+            
+        }
+
+        $simId = $this->getSimId($orderGroup);
+        $sim   = Sim::find($simId);
+        $planIds = Plan::where('carrier_id', $sim->carrier_id)->pluck('id')->toArray();
+
+        if ($orderGroup->addons) {
+            $planId = $orderGroup->plan_id;
+            $addonToPlans = PlanToAddon::with(['plan', 'addon'])->whereHas('plan', function($query) use ($planId) {
+                    $query->where('plan_id', $planId);
+                })->get();
+
+            foreach($addonToPlans as $ap){
+                array_push($addons, $ap->addon);
+            }
+            $data['addons'] = $addons;
+            foreach ($orderGroup->addons as $addon) {
+
+                $planAddonIds = PlanToAddon::where('addon_id', $addon->id)->pluck('plan_id')->toArray();
+            }
+            $planIds = array_intersect($planIds, $planAddonIds);
+        }
+        foreach ($planIds as $id) {
+            $plans[] = Plan::find($id);
+        }
+        $data['plans'] = $plans;
+
+        return $data;
+    }
+
+    protected function filterDevices($orderGroup)
+    {
+        $data    = [];
+        $devices = Device::whereIn('show', ['1', '2']);
+
+        if ($orderGroup->plan != null) {
+            $simId = $this->getSimId($orderGroup);
+
+
+            $data            = $this->filterPlans($orderGroup);
+            $deviceToSimIds  = DeviceToSim::where('sim_id', $simId)->pluck('device_id')->toArray();
+            $plan            = Plan::find($orderGroup->plan_id);
+            $deviceIds       = $plan->devices()->pluck('device_id')->toArray();
+            $ids             = array_intersect($deviceIds, $deviceToSimIds);
+
+            $devices = $devices->whereIn('id', $ids); 
+            $data['devices'] = $devices->with(['device_image', 'device_to_carrier'])->get();
+            
+
+        } else {
+            $data['devices'] = $devices->with(['device_image', 'device_to_carrier'])->get();
+        }
+
+
+        return $data;
+    }
+
+
+    protected function getSimId($orderGroup)
+    {
+        if ($orderGroup->sim_id) {
+            $simId = $orderGroup->sim_id;
+                
+        } elseif ($orderGroup->sim_type) {
+            $simName = strtolower($orderGroup->sim_type);
+            $sims = Sim::all();
+            foreach ($sims as $sim) {
+                if (strtolower($sim->name) === $simName) {
+                    $simId = $sim->id;
+                }
+            }
+        }
+        return $simId;
+        
     }
     
 }

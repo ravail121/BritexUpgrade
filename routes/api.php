@@ -90,6 +90,10 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.order_group.put',
           'uses' => 'OrderGroupController@put',
         ]);
+        Route::post('/edit', [
+          'as' => 'api.order_group.edit',
+          'uses' => 'OrderGroupController@edit',
+        ]);
       });
 
       Route::group(['prefix' => 'devices', 'namespace' => 'Api\V1'], function()

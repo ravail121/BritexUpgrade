@@ -10,7 +10,9 @@ use App\Model\Plan;
 use App\Model\Device;
 use App\Model\DeviceToPlan;
 use App\Model\OrderGroup;
+use App\Model\PlanToAddon;
 use App\Model\Order;
+use App\Model\Sim;
 
 
 /**
@@ -64,6 +66,8 @@ class PlanController extends Controller
         $this->content = Plan::find($id);
         return response()->json($this->content);
     }
+
+
 
 
   public function check_area_code(Request $request)

@@ -99,21 +99,20 @@ class SimController extends BaseController
 
         $og = $order_group[0];
 
-        if($og->sim_id == 0){
+        if($og->sim_id == 0) {
           $sims = $this->getSimsByOg($og, $plan);
           
-        }else{
+        } else {
           $_sims = $this->getSimsByOg($og, $plan);
           $sims = $_sims;
 
           // check if og->sim_id is in $_sims. i.e. already selected
-          // foreach ($_sims as $sim) {
-          //   if($sim->id == $og->sim_id){
-          //     $sim['selected'] = 1;
-          //     array_push($sims, $sim);
-          //   }
-            
-          // }
+          foreach ($_sims as $sim) {
+            if($sim->id == $og->sim_id){
+              $sim['selected'] = 1;
+              array_push($sims, $sim);
+            }
+          }
 
         }
       } else {

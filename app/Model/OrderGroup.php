@@ -40,7 +40,7 @@ class OrderGroup extends Model
 
     public function addons()
     {
-     return $this->belongsToMany('App\Model\Addon');
+     return $this->belongsToMany('App\Model\Addon', 'order_group_addon', 'order_group_id', 'addon_id');
     }
 
 // ----- Not touching the previously created code as they might be in use ----------

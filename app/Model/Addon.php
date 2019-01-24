@@ -28,7 +28,7 @@ class Addon extends Model
 
     public function orderGroups()
     {
-     return $this->belongsToMany('App\Model\OrderGroup');
+     return $this->belongsToMany('App\Model\OrderGroup', 'order_group_addon', 'addon_id', 'order_group_id');
     }
 
     public function planToAddonDetails()

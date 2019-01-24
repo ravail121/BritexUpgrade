@@ -10,17 +10,18 @@ use App\Model\Device;
 use App\Model\Plan;
 use App\Model\DeviceToImage;
 use App\Model\DeviceToType;
+use App\Model\DeviceToSim;
 use App\Model\Sim;
 
 
 class DeviceController extends Controller
 {
 	public function  __construct(){
-		$this->content=array();
+		$this->content = array();
 	}
 
-	public function get(Request $request){
-		
+	public function get(Request $request)
+	{		
 		$show_list = ['1', '2'];
 
 
@@ -59,6 +60,8 @@ class DeviceController extends Controller
 
 		return Response()->json($this->content);
 	}
+
+
 
 	public function find(Request $request, $id){
 		$this->content = Device::find($id);
