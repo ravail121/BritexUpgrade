@@ -104,18 +104,21 @@ class OrderController extends BaseController
         $validation = Validator::make(
             $request->all(),
             [
-                'order_hash' => 'string',
-                'device_id' => 'numeric',
-                'plan_id' => 'numeric',
-                'sim_id' => 'numeric',
-                'sim_num' => 'numeric',
-                'sim_type' => 'string',
-                'addon_id' => 'numeric',
-                'subscription_id' => 'numeric',
-                'porting_number' => 'string',
-                'area_code' => 'string'
+                'order_hash'       => 'string',
+                'device_id'        => 'numeric',
+                'plan_id'          => 'numeric',
+                'sim_id'           => 'numeric',
+                'sim_num'          => 'numeric',
+                'sim_type'         => 'string',
+                'addon_id'         => 'numeric',
+                'subscription_id'  => 'numeric',
+                'porting_number'   => 'string',
+                'area_code'        => 'string',
+                'operating_system' => 'string',
+                'imei_number'      => 'digits_between:14,16',
             ]
         );
+
 
         if ($validation->fails()) {
             return response()->json($validation->getMessageBag()->all());
@@ -209,6 +212,14 @@ class OrderController extends BaseController
             $og_params['area_code'] = $data['area_code'];
         }
 
+        if(isset($data['operating_system'])){
+            $og_params['operating_system'] = $data['operating_system'];
+        }
+
+        if(isset($data['imei_number'])){
+            $og_params['imei_number'] = $data['imei_number'];
+        }
+
         $order_group->update($og_params);
 
         if(isset($data['addon_id'])){
@@ -218,9 +229,6 @@ class OrderController extends BaseController
             ]);
 
         }
-
-        
-
 
         return response()->json(['id' => $order->id, 'order_hash' => $order->hash]);
         

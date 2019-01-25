@@ -9,7 +9,7 @@ class OrderGroup extends Model
    protected $table = 'order_group';
 
    protected $fillable = [
-        'order_id', 'device_id', 'sim_id', 'plan_id', 'sim_num', 'sim_type', 'porting_number', 'area_code'
+        'order_id', 'device_id', 'sim_id', 'plan_id', 'sim_num', 'sim_type', 'porting_number', 'area_code', 'operating_system', 'imei_number'
     ];
 
    public function order()
