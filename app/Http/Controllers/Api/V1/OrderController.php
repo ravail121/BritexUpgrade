@@ -53,20 +53,39 @@ class OrderController extends BaseController
                         'business_verification'  => null,
                     ];
                 }
-               
 
+            
                 
                 $tmp = array(
                         'id' => $og->id,
                         'sim' => $og->sim,
                         'sim_num' => $og->sim_num,
                         'sim_type' => $og->sim_type,
-                        'device' => $og->device,
                         'plan' => $og->plan,
                         'addons' => [],
                         'porting_number' => $og->porting_number,
-                        'area_code' => $og->area_code
+                        'area_code' => $og->area_code,
+                        'device' => $og->device_detail,
                     );
+
+                /*if ($og->device_id === 0) {
+                    $deviceArray = [
+                        'device' => 0
+                    ];
+                }elseif ($og->device_id === null) {
+                    $deviceArray = [
+                        'device' => null
+                    ];
+                } else {
+                    $deviceArray = [
+                        'device' => $og->device
+                    ];
+
+                }
+
+                \Log::info($deviceArray);*/
+
+                // $tmp = array_merge($tmp, $deviceArray);
 
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
@@ -83,8 +102,9 @@ class OrderController extends BaseController
 
         }
 
-        $order['order_groups']          = $ordergroups;
+        $order['order_groups'] = $ordergroups;
         $this->content = $order;
+        // dd($this->content);
         return response()->json($this->content);
 
 

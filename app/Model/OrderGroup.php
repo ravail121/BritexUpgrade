@@ -12,6 +12,19 @@ class OrderGroup extends Model
         'order_id', 'device_id', 'sim_id', 'plan_id', 'sim_num', 'sim_type', 'porting_number', 'area_code', 'operating_system', 'imei_number'
     ];
 
+    public function getDeviceDetailAttribute()
+    {
+      if ($this->device_id === 0) {
+          $device = 0;
+      }elseif ($this->device_id === null) {
+          $device = null;
+      } else {
+          $device = $this->device;
+      }
+
+      return $device;
+    }
+
    public function order()
     {
      return $this->hasOne('App\Model\Order', 'id', 'order_id');
