@@ -504,26 +504,61 @@ class CreateOrderTable extends Migration
           Schema::create('subscription',function(Blueprint $table){
             
             $table->increments('id');
+            $table->unsignedInteger('order_id')->nullable();
             $table->unsignedInteger('customer_id')->nullable();
             $table->unsignedInteger('plan_id')->nullable();
-            $table->foreign('customer_id')->references('id')->on('customer');
-            $table->foreign('plan_id')->references('id')->on('plan'); 
             $table->char('phone_number');
             $table->char('status');      
             $table->char('suspend_restore_status');
             $table->char('upgrade_downgrade_status');
-            $table->char('porting_status');
-            $table->integer('sim_card_product_id');
+            $table->date('upgrade_downgrade_date_submitted');
+            $table->tinyInteger('port_in_progress')->default(0);
+            $table->text('sim_name');
             $table->text('sim_card_num');
             $table->integer('old_plan_id'); 
-            $table->integer('new_plan_id') ;
-            $table->date('downgrade_date'); 
-            $table->text('imei');
+            $table->integer('new_plan_id');
+            $table->date('downgrade_date');
+            $table->integer('tracking_num');
+            $table->unsignedInteger('device_id')->nullable();
+            $table->text('device_os');
+            $table->string('device_imei', 16);
             $table->text('subsequent_porting');
+            $table->integer('requested_area_code');
             $table->unsignedInteger('ban_id')->nullable();
             $table->unsignedInteger('ban_group_id')->nullable();
-            $table->foreign('ban_id')->references('id')->on('ban');
-            $table->foreign('ban_group_id')->references('id')->on('ban_group');
+            $table->date('activation_date');
+            $table->date('suspended_date');
+            $table->date('closed_date');
+
+            $table->foreign('order_id')
+                ->references('id')->on('order')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+
+            $table->foreign('customer_id')
+                ->references('id')->on('customer')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+
+            $table->foreign('plan_id')
+                ->references('id')->on('plan')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+
+            $table->foreign('device_id')
+                ->references('id')->on('device')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+
+            $table->foreign('ban_id')
+                ->references('id')->on('ban')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
+
+            $table->foreign('ban_group_id')
+                ->references('id')->on('ban_group')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
             
            });
 
