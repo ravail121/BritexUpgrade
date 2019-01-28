@@ -28,9 +28,18 @@ class CardController extends BaseController implements ConstantInterface
      * @param  int       $customer_id
      * @return Response
      */
-    public function getCustomerCards($customer_id)
+    public function getCustomerCards(Request $request)
     {
-    	return CustomerCreditCard::where('customer_id', $customer_id)->get();
+    	$customerCreditCard = CustomerCreditCard::where([
+            'api_key'     => $request->api_key,
+            'customer_id' =>  $request->customer_id
+        ])->get();
+
+        foreach ($customerCreditCard as $card) {
+            $card->expiration = $card->addPrefixSlash();
+        }
+
+        return response()->json($customerCreditCard);
     }
 
 
@@ -112,6 +121,7 @@ class CardController extends BaseController implements ConstantInterface
         $this->tran = $this->setUsaEpayData($this->tran, $request);
 
         if($this->tran->Process()) {
+
             $this->response = $this->transactionSuccessful($request);
       
         } else {
@@ -152,7 +162,7 @@ class CardController extends BaseController implements ConstantInterface
     protected function setConstantData($request)
     {
         $request->key         = self::TRAN_KEY;
-        $request->usesandbox  = self::TRAN_FALSE;
+        $request->usesandbox  = self::TRAN_TRUE;
         $request->invoice     = self::TRAN_INVOICE;
         $request->isrecurring = self::TRAN_TRUE; 
         $request->savecard    = self::TRAN_TRUE; 

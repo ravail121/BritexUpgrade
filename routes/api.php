@@ -272,7 +272,7 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'PaymentController@chargeNewCard',
         ]);
 
-        Route::get('/customer-cards/{customer_id}',[
+        Route::get('/customer-cards',[
           'as'   => 'api.get.customercards',
           'uses' => 'CardController@getCustomerCards',
         ]);

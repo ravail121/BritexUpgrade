@@ -78,6 +78,17 @@ class UsaEpay {
 	var $micr;
 
 
+
+
+// ==================== These two variables were added =======================
+	var $cardType;
+	var $last4;
+// ==================== These two variables were added =======================
+
+
+
+
+
 	// Fields required for Secure Vault Payments (Direct Pay)
 	var $svpbank;		// ID of cardholders bank
 	var $svpreturnurl;	// URL that the bank should return the user to when tran is completed
@@ -549,6 +560,17 @@ class UsaEpay {
 		$this->profiler_reason=(isset($tmp["UMprofilerReason"])?$tmp["UMprofilerReason"]:"");
 		$this->cardref=(isset($tmp["UMcardRef"])?$tmp["UMcardRef"]:"");
 		$this->isduplicate=(isset($tmp["UMisDuplicate"])?$tmp["UMisDuplicate"]:"");
+
+
+
+// =================== These two lines were added ===================================
+		$this->cardType = (isset($tmp["UMcardType"])?$tmp["UMcardType"]:"");
+		$this->last4    = (isset($tmp["UMmaskedCardNum"])?$tmp["UMmaskedCardNum"]:"");
+// =================== These two lines were added ===================================
+
+		
+
+
 		
 		// Obsolete variable (for backward compatibility) At some point they will no longer be set.
 		//$this->avs=(isset($tmp["UMavsResult"])?$tmp["UMavsResult"]:"");
