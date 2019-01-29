@@ -38,13 +38,19 @@ class PaymentController extends Controller implements ConstantInterface
             ]);
         }
 
+        if (!$request->order_hash) {
+            return response()->json([
+                'message' => 'order_hash is required'
+            ]);
+        }
+
 
         $order = Order::hash($request->order_hash)->first();
         $this->tran = $this->setUsaEpayData($this->tran, $request);
 
         if($this->tran->Process()) {
             $order->update(['status' => 1]);
-            $msg = $this->transactionSuccessful($request);
+            $msg = $this->transactionSuccessful($request, $this->tran);
       
         } else {
             $msg = $this->transactionFail($order->id, $this->tran);
@@ -65,8 +71,8 @@ class PaymentController extends Controller implements ConstantInterface
     */
     protected function setConstantData($request)
     {
-        $request->key         = self::TRAN_KEY;
-        $request->usesandbox  = self::TRAN_FALSE;
+        $request->key         = env('SOURCE_KEY');
+        $request->usesandbox  = self::TRAN_TRUE;
         $request->invoice     = self::TRAN_INVOICE;
         $request->isrecurring = self::TRAN_TRUE; 
         $request->savecard    = self::TRAN_TRUE; 

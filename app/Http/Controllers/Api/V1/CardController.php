@@ -37,6 +37,7 @@ class CardController extends BaseController implements ConstantInterface
 
         foreach ($customerCreditCard as $card) {
             $card->expiration = $card->addPrefixSlash();
+            $card->last4      = $card->last_four;
         }
 
         return response()->json($customerCreditCard);
@@ -122,7 +123,7 @@ class CardController extends BaseController implements ConstantInterface
 
         if($this->tran->Process()) {
 
-            $this->response = $this->transactionSuccessful($request);
+            $this->response = $this->transactionSuccessful($request, $this->tran);
       
         } else {
             $this->response = $this->transactionFail($order->id, $this->tran);
@@ -161,7 +162,7 @@ class CardController extends BaseController implements ConstantInterface
     */
     protected function setConstantData($request)
     {
-        $request->key         = self::TRAN_KEY;
+        $request->key         = env('SOURCE_KEY');
         $request->usesandbox  = self::TRAN_TRUE;
         $request->invoice     = self::TRAN_INVOICE;
         $request->isrecurring = self::TRAN_TRUE; 

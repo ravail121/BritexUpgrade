@@ -78,12 +78,14 @@ trait UsaEpayTransaction
      * @param  Request   $request
      * @return Response
      */
-    protected function transactionSuccessful($request)
+    protected function transactionSuccessful($request, $tran)
     {
-        $order = $this->createCustomerCard($request);
+        $order = $this->createCustomerCard($request, $tran);
 
         if ($order) {
             $this->createPaymentLogs($order->id, 'success');
+            $request->cardType = $tran->cardType;
+            $request->last4 = $tran->last4;
             $this->createCredits($order, $request);
             $response = response()->json(['success' => true]);
             
@@ -136,12 +138,11 @@ trait UsaEpayTransaction
      */
     protected function createCredits($order, $request)
     {
-        $type = 'Master Card';
         return Credit::create([
             'customer_id' => $order->customer_id,
             'amount'      => $request->amount,
             'date'        => date("Y/m/d"),
-            'description' => 'Type is ' . $type . ' and Card number: XXXXXXXXXXXX'.substr($request->payment_card_no, -4),
+            'description' => $request->cardType . ' '.substr($request->last4, -4),
         ]);
     }
 
@@ -154,7 +155,7 @@ trait UsaEpayTransaction
      * @param  Request $request
      * @return Order object
      */
-    protected function createCustomerCard($request)
+    protected function createCustomerCard($request, $tran)
     {
         $order = Order::hash($request->order_hash)->first();
 
@@ -166,12 +167,14 @@ trait UsaEpayTransaction
 
         if (!$found) {
             $inserted = CustomerCreditCard::create([
-                'token'            => Hash::make(time()),
+                'token'            => $tran->cardref,
                 'api_key'          => $order->company->api_key, 
                 'customer_id'      => $order->customer_id, 
                 'cardholder'       => $request->payment_card_holder,
                 'number'           => $request->payment_card_no,
                 'expiration'       => $request->expires_mmyy,
+                'last4'            => $tran->last4,
+                'card_type'        => $tran->cardType,
                 'cvc'              => $request->payment_cvc,
                 'billing_address1' => $request->billing_address1, 
                 'billing_address2' => $request->billing_address2, 

@@ -40,4 +40,10 @@ class CustomerCreditCard extends Model
         }
         return $month.'/'.$year;
     }
+
+    public function getLastFourAttribute()
+    {
+        return substr($this->last4, -4);
+
+    }
 }

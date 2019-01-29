@@ -83,7 +83,7 @@ class BizVerificationController extends BaseController
 
 	public function confirm(Request $request) {
 
-  	$orderHash = Order::hash($request->orderHash)->first();
+  	    $orderHash = Order::hash($request->orderHash)->first();
 		$bizHash   = BusinessVerification::where('hash', $request->businessHash)->first();
 
 		if($orderHash && $bizHash) {
@@ -124,7 +124,7 @@ class BizVerificationController extends BaseController
 		   'lname'         => 'required|string',
 		   'email'         => 'required|string',
 		   'business_name' => 'required|string',
-		   'tax_id'        => 'required|numeric',
+		   'tax_id'        => '<required></required>',
 		   'doc_file'      => 'required|file',
 		   'order_hash'    => 'required|string',
 		]);

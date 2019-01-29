@@ -4,7 +4,7 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 
-class DeviceType extends Model
+class DeviceToType extends Model
 {
   protected $table = 'device_type';   //
 
