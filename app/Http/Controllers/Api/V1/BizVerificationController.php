@@ -124,7 +124,7 @@ class BizVerificationController extends BaseController
 		   'lname'         => 'required|string',
 		   'email'         => 'required|string',
 		   'business_name' => 'required|string',
-		   'tax_id'        => '<required></required>',
+		   'tax_id'        => 'required|string',
 		   'doc_file'      => 'required|file',
 		   'order_hash'    => 'required|string',
 		]);
