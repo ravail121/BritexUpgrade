@@ -265,27 +265,33 @@ Route::middleware('APIToken')->group(function () {
 
        });
 
-       Route::group(['namespace' => '\Api\V1'],function()
-      {
-        Route::post('/charge-new-card',[
-          'as'   => 'api.customer.creditcard',
-          'uses' => 'PaymentController@chargeNewCard',
-        ]);
+      Route::group(['namespace' => '\Api\V1'],function(){
+          Route::get('/default-imei', [
+            'as'   => 'api.default.imei',
+            'uses' => 'DeviceController@getImei'
+          ]);
+      });
 
-        Route::get('/customer-cards',[
-          'as'   => 'api.get.customercards',
-          'uses' => 'CardController@getCustomerCards',
-        ]);
+      Route::group(['namespace' => '\Api\V1'],function(){
+          Route::post('/charge-new-card',[
+            'as'   => 'api.customer.creditcard',
+            'uses' => 'PaymentController@chargeNewCard',
+          ]);
 
-        Route::post('/add-card',[
-          'as'   => 'api.add.cards',
-          'uses' => 'CardController@addCard',
-        ]);
+          Route::get('/customer-cards',[
+            'as'   => 'api.get.customercards',
+            'uses' => 'CardController@getCustomerCards',
+          ]);
 
-        Route::post('/charge-card',[
-          'as'   => 'api.charge.cards',
-          'uses' => 'CardController@chargeCard',
-        ]);
+          Route::post('/add-card',[
+            'as'   => 'api.add.cards',
+            'uses' => 'CardController@addCard',
+          ]);
+
+          Route::post('/charge-card',[
+            'as'   => 'api.charge.cards',
+            'uses' => 'CardController@chargeCard',
+          ]);
 
       }); 
 

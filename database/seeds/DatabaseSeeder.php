@@ -13,5 +13,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(EmailTemplateTableSeeder::class);
         $this->call(SystemGlobalSettingTableSeeder::class);
+        $this->call(DefaultImeiTableSeeder::class);
     }
 }

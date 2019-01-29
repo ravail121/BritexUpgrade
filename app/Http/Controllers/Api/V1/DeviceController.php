@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Model\Sim;
+use App\Model\Plan;
+use App\Model\Device;
+use App\Model\DefaultImei;
+use App\Model\DeviceToSim;
+use App\Model\DeviceToType;
+use App\Model\DeviceToImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
-use App\Model\Device;
-use App\Model\Plan;
-use App\Model\DeviceToImage;
-use App\Model\DeviceToType;
-use App\Model\DeviceToSim;
-use App\Model\Sim;
-
 
 class DeviceController extends Controller
 {
@@ -66,5 +66,17 @@ class DeviceController extends Controller
 	public function find(Request $request, $id){
 		$this->content = Device::find($id);
         return response()->json($this->content);
+	}
+
+
+	public function getImei(Request $request)
+	{
+		$imeiNumber = DefaultImei::where('type', $request->plan_type)->where('os', $request->os)->first();
+		if ($imeiNumber) {
+			$this->content = ['default_imei' => $imeiNumber->code];
+		} else {
+			$this->content = ['default_imei' => 'not found'];
+		}
+		return response()->json($this->content);
 	}
 }
