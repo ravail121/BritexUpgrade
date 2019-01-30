@@ -262,6 +262,7 @@ class CreateOrderTable extends Migration
           Schema::create('default_imei',function(Blueprint $table){
 
             $table->increments('id');
+            $table->integer('sort')->default(0);
             $table->integer('type');
             $table->char('os');
             $table->text('code');
