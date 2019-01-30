@@ -5,6 +5,11 @@ use Illuminate\Database\Seeder;
 
 class DefaultImeiTableSeeder extends Seeder
 {
+
+    const DEFAULT_IMEI_CODE = '353790070239305';
+    const DEFAULT_PLAN_TYPE = 1;
+    const DEFAULT_SORTING = 0;
+
     /**
      * Run the database seeds.
      *
@@ -13,28 +18,24 @@ class DefaultImeiTableSeeder extends Seeder
     public function run()
     {
     	$os = $this->getArray();
-    	foreach ($os as $key => $value) {
+    	foreach ($os as $os) {
     		DefaultImei::create([
-				'type' => 1,
-				'os'   => $key,
-				'code' => $value,
+				'type' => self::DEFAULT_PLAN_TYPE,
+				'os'   => $os,
+                'code' => self::DEFAULT_IMEI_CODE,
+				'sort' => self::DEFAULT_SORTING,
 		    ]);
-            DefaultImei::create([
-                'type' => 2,
-                'os'   => $key,
-                'code' => $value,
-            ]);
     	}
     }
 
     protected function getArray()
     {
     	return [
-    		'Android'    => '123456789012345',
-    		'iOS'        => '123451234567890',
-    		'Blackberry' => '098765432112345',
-    		'Windows'    => '991154287221432',
-    		'None'       => '834454280291462',
+    		'android',
+    		'ios',
+    		'blackberry',
+    		'windows',
+    		'none',
     	];
     }
 }

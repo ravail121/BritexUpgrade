@@ -71,12 +71,35 @@ class DeviceController extends Controller
 
 	public function getImei(Request $request)
 	{
-		$imeiNumber = DefaultImei::where('type', $request->plan_type)->where('os', $request->os)->first();
+		$imeiNumber = DefaultImei::where('type', $request->plan_type)->get();
 		if ($imeiNumber) {
-			$this->content = ['default_imei' => $imeiNumber->code];
-		} else {
-			$this->content = ['default_imei' => 'not found'];
+			foreach ($imeiNumber as $default) {
+
+				if ($default->os == 'none') {
+					$default->os = 'none (basic phone)';
+				}
+				$data = [
+					'sort'      =>  $default->sort,
+					'os'        =>  strtoupper($default->os),
+					'imei_code' =>  $default->code,
+				];
+				array_push($this->content, $data);
+			}
 		}
+
+		$this->sortOS();
+		
 		return response()->json($this->content);
+	}
+
+	protected function sortOS()
+	{
+		$order = [];
+
+		foreach ($this->content as $key => $row) {
+			$order[$key] = $row['sort'];
+		}
+		array_multisort($order, SORT_ASC, $this->content);
+
 	}
 }

@@ -12,5 +12,6 @@ class DefaultImei extends Model
         'type',
         'os',
         'code', 
+        'sort', 
     ];
 }

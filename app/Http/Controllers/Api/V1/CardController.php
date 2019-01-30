@@ -30,10 +30,19 @@ class CardController extends BaseController implements ConstantInterface
      */
     public function getCustomerCards(Request $request)
     {
-    	$customerCreditCard = CustomerCreditCard::where([
-            'api_key'     => $request->api_key,
-            'customer_id' =>  $request->customer_id
-        ])->get();
+        if ($request->customer_hash) {
+        	$customerCreditCard = CustomerCreditCard::where([
+                'api_key' => $request->api_key,
+                'hash'    =>  $request->customer_hash
+            ])->get();
+
+        } elseif ($request->customer_id) {
+            $customerCreditCard = CustomerCreditCard::where([
+                'api_key'     => $request->api_key,
+                'customer_id' =>  $request->customer_id
+            ])->get();
+
+        }
 
         foreach ($customerCreditCard as $card) {
             $card->expiration = $card->addPrefixSlash();
