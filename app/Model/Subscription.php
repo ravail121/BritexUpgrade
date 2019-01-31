@@ -7,8 +7,33 @@ use Illuminate\Database\Eloquent\Model;
 class Subscription extends Model
 {
     protected $table = 'subscription';
+
     protected$fillable =[
-    'customer_id', 'plan_id', 'status', 'suspend_restore_status', 'upgrade_downgrade_status', 'porting_status', 'sim_card_num', 'old_plan_id', 'new_plan_id', 'downgrade_date','subsequent_porting','updated_at', 'created_at','phone_number', 'sim_card_product_id','imei',
+      'order_id',
+      'customer_id',
+      'plan_id',
+      'phone_number',
+      'status',
+      'suspend_restore_status',
+      'upgrade_downgrade_status',
+      'upgrade_downgrade_date_submitted',
+      'port_in_progress',
+      'sim_name',
+      'sim_card_num',
+      'old_plan_id',
+      'new_plan_id',
+      'downgrade_date',
+      'tracking_num',
+      'device_id',
+      'device_os',
+      'device_imei',
+      'subsequent_porting',
+      'requested_area_code',
+      'ban_id',
+      'ban_group_id',
+      'activation_date',
+      'suspended_date',
+      'closed_date',
     ];
 
    public function Customer()

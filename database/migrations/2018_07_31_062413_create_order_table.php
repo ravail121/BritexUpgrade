@@ -527,9 +527,9 @@ class CreateOrderTable extends Migration
             $table->integer('requested_area_code');
             $table->unsignedInteger('ban_id')->nullable();
             $table->unsignedInteger('ban_group_id')->nullable();
-            $table->date('activation_date');
-            $table->date('suspended_date');
-            $table->date('closed_date');
+            $table->date('activation_date')->nullable();
+            $table->date('suspended_date')->nullable();
+            $table->date('closed_date')->nullable();
 
             $table->foreign('order_id')
                 ->references('id')->on('order')

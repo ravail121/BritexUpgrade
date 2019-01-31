@@ -273,6 +273,7 @@ Route::middleware('APIToken')->group(function () {
       });
 
       Route::group(['namespace' => '\Api\V1'],function(){
+
           Route::post('/charge-new-card',[
             'as'   => 'api.customer.creditcard',
             'uses' => 'PaymentController@chargeNewCard',
@@ -292,8 +293,18 @@ Route::middleware('APIToken')->group(function () {
             'as'   => 'api.charge.cards',
             'uses' => 'CardController@chargeCard',
           ]);
+      });
 
-      }); 
+
+
+      Route::group(['namespace' => '\Api\V1'],function(){
+
+          Route::post('/create-subscription',[
+            'as'   => 'api.create.subscription',
+            'uses' => 'SubscriptionController@createSubscription',
+          ]);
+      });
+      
 
         Route::post('/confirm',
         [

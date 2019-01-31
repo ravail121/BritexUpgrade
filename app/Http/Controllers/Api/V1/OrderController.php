@@ -51,41 +51,28 @@ class OrderController extends BaseController
                         "customer_id"            => $og->order->customer_id,
                         'order_groups'           => [],
                         'business_verification'  => null,
+                        'operating_system'       => null,
+                        'imei_number'            => null,
                     ];
                 }
 
             
                 
                 $tmp = array(
-                        'id' => $og->id,
-                        'sim' => $og->sim,
-                        'sim_num' => $og->sim_num,
-                        'sim_type' => $og->sim_type,
-                        'plan' => $og->plan,
-                        'addons' => [],
-                        'porting_number' => $og->porting_number,
-                        'area_code' => $og->area_code,
-                        'device' => $og->device_detail,
+                        'id'               => $og->id,
+                        'sim'              => $og->sim,
+                        'sim_num'          => $og->sim_num,
+                        'sim_type'         => $og->sim_type,
+                        'plan'             => $og->plan,
+                        'addons'           => [],
+                        'porting_number'   => $og->porting_number,
+                        'area_code'        => $og->area_code,
+                        'device'           => $og->device_detail,
+                        'operating_system' => $og->operating_system,
+                        'imei_number'      => $og->imei_number,
                     );
 
-                /*if ($og->device_id === 0) {
-                    $deviceArray = [
-                        'device' => 0
-                    ];
-                }elseif ($og->device_id === null) {
-                    $deviceArray = [
-                        'device' => null
-                    ];
-                } else {
-                    $deviceArray = [
-                        'device' => $og->device
-                    ];
-
-                }
-
-                \Log::info($deviceArray);*/
-
-                // $tmp = array_merge($tmp, $deviceArray);
+                
 
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
@@ -219,6 +206,10 @@ class OrderController extends BaseController
         if(isset($data['sim_num'])){
             $og_params['sim_num'] = $data['sim_num'];
         }
+
+        // if(isset($data['subscription_id'])){
+        //     $og_params['subscription_id'] = $data['subscription_id'];
+        // }
 
         if(isset($data['sim_type'])){
             $og_params['sim_type'] = $data['sim_type'];
