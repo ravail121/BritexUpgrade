@@ -314,6 +314,15 @@ Route::middleware('APIToken')->group(function () {
         ]);
 
 
+        Route::group(['namespace' => '\Api\V1'],function(){
+          Route::post('/sign-on',[
+            'as'   => 'api.customer.signon',
+            'uses' => 'SignOnController@signOn',
+          ]);
+
+      }); 
+
+
       //Route::get('/confirm','BizVerificationController@confirm');
       
 
