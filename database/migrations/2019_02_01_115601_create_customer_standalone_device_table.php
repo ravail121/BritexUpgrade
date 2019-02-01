@@ -20,7 +20,7 @@ class CreateCustomerStandaloneDeviceTable extends Migration
             $table->unsignedInteger('order_id')->nullable();
             $table->string('status');
             $table->bigInteger('tracking_num');
-            $table->increments('imei');
+            $table->text('imei');
             $table->timestamps();
 
             $table->foreign('customer_id')
