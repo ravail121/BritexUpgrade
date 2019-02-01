@@ -303,6 +303,11 @@ Route::middleware('APIToken')->group(function () {
             'as'   => 'api.create.subscription',
             'uses' => 'SubscriptionController@createSubscription',
           ]);
+
+          Route::post('/create-subscription-addon',[
+            'as'   => 'api.create.subscription',
+            'uses' => 'SubscriptionController@subscriptionAddons',
+          ]);
       });
       
 
