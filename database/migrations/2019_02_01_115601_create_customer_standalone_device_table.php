@@ -1,4 +1,4 @@
-<?php
+    <?php
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -18,7 +18,7 @@ class CreateCustomerStandaloneDeviceTable extends Migration
             $table->unsignedInteger('customer_id')->nullable();
             $table->unsignedInteger('device_id')->nullable();
             $table->unsignedInteger('order_id')->nullable();
-            $table->string('status');
+            $table->string('status')->default('shipping');
             $table->bigInteger('tracking_num');
             $table->text('imei');
             $table->timestamps();

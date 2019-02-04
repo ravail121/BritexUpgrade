@@ -41,17 +41,19 @@ class DeviceController extends Controller
 			$dev = $dev->where('carrier_id', $carrier_id);
 		}
 		
-		$dev = $dev->with(['device_image', 'device_to_carrier'])->get();
+		$dev = $dev->with(['device_image', 'device_to_carrier'])->orderBy('sort')->get();
 		$_sims = Sim::where('show', $show_list )->get();
 
 		$sims = array();
 		foreach($_sims as $sim){
 			array_push($sims, array(
-				'id'=>$sim->id,
-				'amount'=>$sim->amount_alone,
-				'company_id'=>$sim->company_id,
-				'carrier_id'=>$sim->carrier_id,
-				'name'=>$sim->name,
+				'id'          => $sim->id,
+				'amount'      => $sim->amount_alone,
+				'company_id'  => $sim->company_id,
+				'carrier_id'  => $sim->carrier_id,
+				'name'        => $sim->name,
+				'description' => $sim->description,
+				'image'       => $sim->image,
 			));
 		}
 

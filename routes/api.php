@@ -305,9 +305,20 @@ Route::middleware('APIToken')->group(function () {
           ]);
 
           Route::post('/create-subscription-addon',[
-            'as'   => 'api.create.subscription',
+            'as'   => 'api.create.subscriptionaddon',
             'uses' => 'SubscriptionController@subscriptionAddons',
           ]);
+
+          Route::post('/create-device-record',[
+            'as'   => 'api.create.devicerecord',
+            'uses' => 'StandaloneRecordController@createDeviceRecord',
+          ]);
+
+          Route::post('/create-sim-record',[
+            'as'   => 'api.create.simrecord',
+            'uses' => 'StandaloneRecordController@createSimRecord',
+          ]);
+
       });
       
 
