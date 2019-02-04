@@ -64,7 +64,7 @@ class CardController extends BaseController implements ConstantInterface
     public function addCard(Request $request)
     {
         $this->setConstantData($request);
-        $request->amount = self::TRAN_AMOUNT;
+        $request['amount'] = self::TRAN_AMOUNT;
         $validation = $this->validateCredentials($request);
 
         if ($validation->fails()) {
@@ -127,15 +127,18 @@ class CardController extends BaseController implements ConstantInterface
 
     protected function processTransaction($request)
     {
-        $order = Order::hash($request->order_hash)->first();
-        $this->tran = $this->setUsaEpayData($this->tran, $request);
+        $order = Order::where('customer_id', $request->customer_id)->first();
+        if ($order) {
+            $this->tran = $this->setUsaEpayData($this->tran, $request);
 
-        if($this->tran->Process()) {
-
-            $this->response = $this->transactionSuccessful($request, $this->tran);
-      
+            if($this->tran->Process()) {
+                $this->response = $this->transactionSuccessful($request, $this->tran);
+          
+            } else {
+                $this->response = $this->transactionFail($order->id, $this->tran);
+            }
         } else {
-            $this->response = $this->transactionFail($order->id, $this->tran);
+            $this->response = $this->transactionFail(null, $this->tran);
         }
 
         return $this->response;

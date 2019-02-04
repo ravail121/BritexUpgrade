@@ -81,7 +81,6 @@ trait UsaEpayTransaction
     protected function transactionSuccessful($request, $tran)
     {
         $order = $this->createCustomerCard($request, $tran);
-
         if ($order) {
             $this->createPaymentLogs($order->id, 'success');
             $request->cardType = $tran->cardType;
@@ -157,7 +156,9 @@ trait UsaEpayTransaction
      */
     protected function createCustomerCard($request, $tran)
     {
-        $order = Order::hash($request->order_hash)->first();
+        $order = Order::where('customer_id', $request->customer_id)->orWhere('hash', $request->order_hash)->first();
+
+
 
         $found = CustomerCreditCard::where('cardholder', $request->payment_card_holder)
                             ->where('number', $request->payment_card_no)

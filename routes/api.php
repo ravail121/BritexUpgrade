@@ -336,6 +336,16 @@ Route::middleware('APIToken')->group(function () {
             'uses' => 'SignOnController@signOn',
           ]);
 
+          Route::get('customer',[
+            'as'   => 'api.customer.details',
+            'uses' => 'CustomerController@customerDetails',
+          ]);
+
+          Route::post('update-customer',[
+            'as'   => 'api.customer.update',
+            'uses' => 'CustomerController@update',
+          ]);
+          
       }); 
 
 

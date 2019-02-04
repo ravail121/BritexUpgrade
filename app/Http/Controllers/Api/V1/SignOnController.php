@@ -6,8 +6,9 @@ use Auth;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 
-class SignOnController extends Controller
+class SignOnController extends BaseController
 {
     /**
      * Display a listing of the resource.
@@ -16,95 +17,24 @@ class SignOnController extends Controller
      */
     public function signOn(Request $request)
     {
-        $email=$request->email;
-        if (filter_var($email, FILTER_VALIDATE_INT)) {
-            $mail = Customer::whereId($email)->get(['email']);
-            if(!isset($mail[0])){
-                return null;
+        $userdata=$request->validate([
+            'email'   => 'required',
+            'password'   => 'required',
+            ]);
+        if (filter_var($userdata['email'], FILTER_VALIDATE_INT)) {
+            $mail = Customer::find($userdata['email']);
+            if(!isset($mail['email'])){
+                return $this->respondError("Invalid Customer ID");
             }
-            $email=$mail[0]['email'];
-
+            $userdata['email']=$mail['email'];
         }     
-        $userdata = array(
-            'email'  => $email,
-            'password' => $request->password
-        );
-
-        
         if(Auth::validate($userdata))
         {
-            $user = Customer::whereEmail($email)->get(['id','hash']);
-            // return $user[0];
-            return response()->json($user[0]);
+            $user = Customer::whereEmail($userdata['email'])->get(['id','hash']);
+            return $this->respond($user[0]);
         }
         else{
-            return null;
+            return $this->respondError("Invalid Email or Password");
         }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
     }
 }

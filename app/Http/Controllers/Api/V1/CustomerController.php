@@ -123,4 +123,14 @@ class CustomerController extends BaseController
     ]);
   }
 
+  public function customerDetails(Request $request){
+
+    $customer = Customer::where(['hash'=>$request->hash])->get();
+    return $customer;
+  }
+
+  public function update(Request $request){
+    $data    = $request->all();
+    Customer::wherehash($data['hash'])->update($data);
+  }
 }
