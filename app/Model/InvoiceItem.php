@@ -10,4 +10,10 @@ class InvoiceItem extends Model
 
 
     protected $fillable = [ 'invoice_id', 'subscription_id', 'product_type', 'product_id', 'type', 'start_date', 'description', 'amount', 'taxable'];
+    
+
+    public function subscription()
+   	{
+        return $this->hasOne('App\Model\Subscription', 'id', 'subscription_id');
+    }
 }

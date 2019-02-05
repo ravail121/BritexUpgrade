@@ -131,13 +131,17 @@ class CustomerController extends BaseController
 
   public function update(Request $request){
     $data    = $request->all();
-    Validator::make($data, [
+    $validation = Validator::make($data, [
         'fname'             => 'sometimes|required',
         'lname'             => 'sometimes|required',
         'email'             => 'sometimes|required|email',
         'billing_address1'  => 'sometimes|required',
         'billing_city'      => 'sometimes|required',
     ]);
+    if ($validation->fails()) {
+      return $this->respondError("Validation Failed");
+    }
     Customer::wherehash($data['hash'])->update($data);
+      return response()->json('sucessfully Updated');
   }
 }

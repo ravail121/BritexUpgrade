@@ -256,11 +256,16 @@ Route::middleware('APIToken')->group(function () {
 
       });
 
-      Route::group(['prefix'=>'invoice' , 'namespace'=>'Api\V1\Invoice'],function(){
-          Route::get('/', [
+      Route::group(['namespace'=>'Api\V1\Invoice'],function(){
+          Route::get('/invoice', [
            'as'=>'api.invoice.get',
            'uses'=> 'InvoiceController@get',
 
+          ]);
+
+          Route::post('/start-billing',[
+            'as'   => 'api.start.billing',
+            'uses' => 'InvoiceController@startBilling',
           ]);
 
        });

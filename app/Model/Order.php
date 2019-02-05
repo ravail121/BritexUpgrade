@@ -9,7 +9,7 @@ class Order extends Model
     protected $table = 'order';
 
     protected $fillable = [
-        'hash', 'customer_id', 'company_id', 'active_group_id', 'status'
+        'active_group_id', 'active_subscription_id', 'order_num', 'status', 'invoice_id', 'hash', 'company_id', 'customer_id', 'date_processed' 
     ];
 
     public function order_group(){
@@ -38,6 +38,11 @@ class Order extends Model
     public function company()
     {
         return $this->hasOne('App\Model\Company', 'id', 'company_id');
+    }
+
+    public function invoice()
+    {
+        return $this->hasOne('App\Model\Invoice', 'id', 'company_id');
     }
 
     public function paymentLog()
