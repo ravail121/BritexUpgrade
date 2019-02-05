@@ -7,8 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class SubscriptionCoupon extends Model
 {
     protected $table = 'subscription_coupon';
-    protected $fillable = [ 'Subscription_id'];
-    public function subscription() {
-    return $this->hasOne('App\Model\Subscription', 'id');
-  }
+
+    protected $fillable = [ 'subscription_id', 'coupon_id', 'cycles_remaining'];
+
+
+    public function subscription() 
+    {
+    	return $this->hasOne('App\Model\Subscription', 'id');
+  	}
 }

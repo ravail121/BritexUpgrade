@@ -304,6 +304,7 @@ class CreateOrderTable extends Migration
             $table->tinyinteger('associate_with_plan');
             $table->tinyinteger('show');
             $table->text('sku');
+            $table->text('os');
             $table->timestamps();
 
            });
@@ -483,6 +484,7 @@ class CreateOrderTable extends Migration
             $table->double('total_due');
             $table->double('prev_balance');
             $table->text('payment_method');
+            $table->text('notes');
             $table->text('business_name');
             $table->text('billing_fname');
             $table->text('billing_lname');

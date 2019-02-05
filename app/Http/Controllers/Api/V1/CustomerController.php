@@ -123,14 +123,21 @@ class CustomerController extends BaseController
     ]);
   }
 
-  public function customerDetails(Request $request){
+  public function details(Request $request){
 
-    $customer = Customer::where(['hash'=>$request->hash])->get();
+    $customer = Customer::where(['hash'=>$request->hash])->first();
     return $customer;
   }
 
   public function update(Request $request){
     $data    = $request->all();
+    Validator::make($data, [
+        'fname'             => 'sometimes|required',
+        'lname'             => 'sometimes|required',
+        'email'             => 'sometimes|required|email',
+        'billing_address1'  => 'sometimes|required',
+        'billing_city'      => 'sometimes|required',
+    ]);
     Customer::wherehash($data['hash'])->update($data);
   }
 }

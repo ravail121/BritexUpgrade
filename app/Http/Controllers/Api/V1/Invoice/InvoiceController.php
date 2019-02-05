@@ -1,24 +1,26 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1\Invoice;
+
 use Validator;
-use App\Classes\GenerateMonthlyInvoiceClass;
-use App\Http\Controllers\BaseController;
+use App\Model\Tax;
+use App\Model\Coupon;
+use App\Model\Company;
+use App\Model\Invoice;
+use App\Model\Customer;
+use App\Model\InvoiceItem;
+use App\Model\Subscription;
+use App\Model\PendingCharge;
+use App\Model\CustomerCoupon;
+use App\Model\SubscriptionAddon;
+use App\Model\SubscriptionCoupon;
+
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
-use App\Model\Invoice;
-use App\Model\Customer;
-use App\Model\Subscription;
-use App\Model\InvoiceItem;
-use App\Model\PendingCharge;
-use App\Model\SubscriptionAddon;
-use App\Model\Company;
-use App\Model\CustomerCoupon;
-use App\Model\Coupon;
-use App\Model\subscriptionCoupon;
-use App\Model\Tax;
+use App\Http\Controllers\BaseController;
+use App\Classes\GenerateMonthlyInvoiceClass;
 
 
 
