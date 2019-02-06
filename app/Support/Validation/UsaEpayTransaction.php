@@ -156,7 +156,16 @@ trait UsaEpayTransaction
      */
     protected function createCustomerCard($request, $tran)
     {
-        $order = Order::where('customer_id', $request->customer_id)->orWhere('hash', $request->order_hash)->first();
+        if ($request->customer_id) {
+            $order = Order::where('customer_id', $request->customer_id)->first();
+
+        } elseif ($request->order_hash) {
+            $order = Order::where('hash', $request->order_hash)->first();
+            
+        } else {
+            return false;
+        }
+        
 
 
 
@@ -185,7 +194,7 @@ trait UsaEpayTransaction
             ]);
 
             if (!$inserted) {
-                $order = null;
+                $order = false;
             }
 
         }
