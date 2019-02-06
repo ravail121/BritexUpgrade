@@ -77,14 +77,7 @@ class PaymentController extends BaseController implements ConstantInterface
                 'status'     => 1, 
                 'invoice_id' => $invoice->id
             ]);
-            $created = $this->createInvoiceItem($order);
-            
-            if (!$created) {
-                $msg = $this->respond([
-                    'message' => 'Failed to generate invoice items.'
-                ]);
-
-            }
+            $this->createInvoiceItem($order);
             
       
         } else {
@@ -98,6 +91,8 @@ class PaymentController extends BaseController implements ConstantInterface
 
     protected function createInvoiceItem($order)
     {
+        $invoiceItem = [];
+        
         $subscriptions = Subscription::where('order_id', $order->id)->get();
         foreach ($subscriptions as $subscription) {
             $input = [

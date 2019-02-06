@@ -16,14 +16,14 @@
       	<h2>Logo</h2>
       </div>
       <div class="col-sm-4">
-      	<h5>Contact : 1-800-555-1212 &#60;{{ '' }}&#62;</h5>
+      	<h5>Contact : 1-800-555-1212 &#60;{{ 'Test URL' }}&#62;</h5>
       </div>
       <div class="col-sm-5">
       	<table class="table table-bordered">
 		    <tbody>
 		       <tr>
 		        <td>Invoice #</td>
-		        <td>{{ '' }}</td>
+		        <td>{{ 'TEST INVOICE NUMBER: 1234567890' }}</td>
 		      </tr>
 		      <tr>
 		        <td>Period Beginning</td>
@@ -44,7 +44,7 @@
       </div>
     </div>
     <div class="row">
-    	<p>Your Monthly Bill As Of {{ 'adfd' }} {{ 'fff' }}, {{ 'sdd' }}			
+    	<p>Your Monthly Bill As Of {{ 'test' }} {{ 'hi' }}, {{ 'test' }}			
 			<br><strong>Important Information </strong>
 			<br>1. You are &#60;not&#62; enrolled in autopay. Amount will &#60;not&#62; be forwarded for automatic processing.				
 			<br>2. Pay online {{ 'sd' }}		
@@ -115,7 +115,7 @@
 			        <td>Due {{ $invoice['due_date'] }}</td>
 			      </tr>
 			      <tr>
-			        <td>Let's Talk! Call us anytime 	</td>
+			        <td>Let's Talk! Call us anytime</td>
 			        <td></td>
 			      </tr>
 			      <tr>

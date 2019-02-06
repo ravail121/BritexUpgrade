@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Model\BusinessVerification;
+use App\Model\Order;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -11,21 +11,21 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class BusinessVerificationApproved
+class InvoiceGenerated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $orderHash;
-    public $bizVerification;
+    public $order;
+
+
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($orderHash, $bizHash)
+    public function __construct(Order $order)
     {
-        $this->orderHash       = $orderHash;
-        $this->bizVerification = BusinessVerification::where('hash', $bizHash)->first();
+        $this->order = $order;
 
     }
     /**

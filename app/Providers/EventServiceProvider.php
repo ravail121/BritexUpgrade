@@ -22,6 +22,10 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\SendApprovalEmail',
         ],
 
+        'App\Events\InvoiceGenerated' => [
+            'App\Listeners\SendEmailWithInvoice',
+        ],
+
        
     ];
 

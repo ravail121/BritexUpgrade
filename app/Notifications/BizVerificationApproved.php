@@ -52,21 +52,16 @@ class BizVerificationApproved extends Notification
         $company = Company::find($this->order->company_id);
 
         $url = url($company->url.self::URL.$this->bizVerification->hash.'&order_hash='.$this->order->hash);
-        \Log::info('Url: '.$url);
 
-        $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->first();
+        $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'biz-verification-approved')->first();
 
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]', '[BUSINESS_NAME]', '[HERE]'];
         
         $replaceWith = [$this->bizVerification->fname, $this->bizVerification->lname, $this->bizVerification->business_name, $url];
 
-        \Log::info('Fetching Mail Body.....');
 
-        $body = str_replace($strings,$replaceWith, $emailTemplate->body);
-        \Log::info($body);
+        $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
-
-        \Log::info('Now Mail sending......');
 
         return (new MailMessage)
                     ->subject($emailTemplate->subject)

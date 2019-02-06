@@ -6,6 +6,7 @@ use PDF;
 use Validator;
 use App\Model\Tax;
 use Carbon\Carbon;
+use App\Model\Order;
 use App\Model\Coupon;
 use App\Model\Company;
 use App\Model\Invoice;
@@ -19,11 +20,11 @@ use App\Model\SubscriptionCoupon;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Events\InvoiceGenerated;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 use App\Classes\GenerateMonthlyInvoiceClass;
-
 
 
 class InvoiceController extends BaseController
@@ -59,8 +60,15 @@ class InvoiceController extends BaseController
      * @return [type]           [description]
      */
     public function startBilling(Request $request)
-    {         
-        $customer = Customer::find($request->customer_id);
+    {
+        if ($request->customer_id) {
+            $customer = Customer::find($request->customer_id);
+            $order    = Order::where('customer_id', $request->customer_id)->first();
+            
+        } elseif ($request->hash) {
+            $order = Order::hash($request->hash)->first();
+            $customer = Customer::find($order->customer_id);
+        }
 
         if (!$customer) {
             return $this->respond(['message' => 'Customer not found']);
@@ -70,6 +78,8 @@ class InvoiceController extends BaseController
             'billing_start'           => $this->carbon->toDateString(),
             'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
         ]);
+
+        event(new InvoiceGenerated($order));
 
         return $this->respond($customer);
     }
@@ -324,16 +334,19 @@ class InvoiceController extends BaseController
 
     public function get(Request $request){
 
+        $order = Order::hash($request->order_hash)->first();
+        $data = Invoice::find($order->invoice_id);
+
 
         // PDF::loadFile(public_path().'/templates/invoice.html')->save('templates/invoice.pdf')->stream('download.pdf');
         
-         $data = Invoice::find($request->invoice_id);
+         // $data = Invoice::find($request->invoice_id);
          $invoice = [
             'start_date' => $data->start_date,
-            'end_date' => $data->end_date,
-            'due_date' => $data->due_date,
-            'total_due' => $data->total_due,
-            'subtotal' => $data->subtotal,
+            'end_date'   => $data->end_date,
+            'due_date'   => $data->due_date,
+            'total_due'  => $data->total_due,
+            'subtotal'   => $data->subtotal,
          ];
         $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
         $pdf->setPaper([0, 0, 1000, 1000], 'landscape');

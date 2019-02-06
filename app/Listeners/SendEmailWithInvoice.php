@@ -2,19 +2,19 @@
 
 namespace App\Listeners;
 
+use PDF;
 use Mail;
 use Config;
 use App\Model\Order;
 use App\Model\Company;
-use App\Model\BusinessVerification;
+use App\Events\InvoiceGenerated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
+use App\Notifications\EmailWithAttachment;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Events\BusinessVerificationApproved;
-use App\Notifications\BizVerificationApproved;
 
-class SendApprovalEmail
+class SendEmailWithInvoice
 {
     use Notifiable;
 
@@ -34,11 +34,18 @@ class SendApprovalEmail
      * @param  BusinessVerificationCreated  $event
      * @return void
      */
-    public function handle(BusinessVerificationApproved $event)
+    public function handle(InvoiceGenerated $event)
     {
-        $orderHash       = $event->orderHash;
-        $bizVerification = $event->bizVerification;
-        $order           = Order::where('hash', $orderHash)->first();
+        $order = $event->order;
+
+        $invoice = [
+            'start_date' => $order->invoice->start_date,
+            'end_date'   => $order->invoice->end_date,
+            'due_date'   => $order->invoice->due_date,
+            'total_due'  => $order->invoice->total_due,
+            'subtotal'   => $order->invoice->subtotal,
+         ];
+        $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape')->stream();
 
         $configurationSet = $this->setMailConfiguration($order);
 
@@ -46,7 +53,7 @@ class SendApprovalEmail
             return false;
         }
 
-        $bizVerification->notify(new BizVerificationApproved($order, $bizVerification));        
+        $order->bizVerification->notify(new EmailWithAttachment($order, $pdf));        
     }
 
 
