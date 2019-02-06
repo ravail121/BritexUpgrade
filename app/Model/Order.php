@@ -49,4 +49,9 @@ class Order extends Model
     {
         return $this->belongsTo(PaymentLog::class);
     }
+
+    public function orderGroup()
+    {
+        return $this->belongsTo('App\Model\OrderGroup', 'id', 'order_id');
+    }
 }

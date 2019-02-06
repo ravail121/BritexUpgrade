@@ -350,6 +350,11 @@ Route::middleware('APIToken')->group(function () {
             'as'   => 'api.customer.update',
             'uses' => 'CustomerController@update',
           ]);
+
+          Route::get('customer-plan',[
+            'as'   => 'api.customer.plan',
+            'uses' => 'CustomerPlanController@get',
+          ]);
           
       }); 
 

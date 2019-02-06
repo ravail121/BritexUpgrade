@@ -123,25 +123,36 @@ class CustomerController extends BaseController
     ]);
   }
 
-  public function details(Request $request){
-
+  public function details(Request $request)
+  {
     $customer = Customer::where(['hash'=>$request->hash])->first();
     return $customer;
   }
 
-  public function update(Request $request){
+  public function update(Request $request)
+  {
     $data    = $request->all();
+    $validation = $this->validateUpdate($data);
+    if ($validation->fails()) {
+      return $this->respondError("Validation Failed");
+    }
+    if(isset($data['password'])){
+      $data['password']= bcrypt($data['password']);
+    }
+    Customer::wherehash($data['hash'])->update($data);
+      return response()->json('sucessfully Updated');
+  }
+
+  protected function validateUpdate($data) 
+  { 
     $validation = Validator::make($data, [
         'fname'             => 'sometimes|required',
         'lname'             => 'sometimes|required',
         'email'             => 'sometimes|required|email',
         'billing_address1'  => 'sometimes|required',
         'billing_city'      => 'sometimes|required',
+        'password'          => 'sometimes|required',
     ]);
-    if ($validation->fails()) {
-      return $this->respondError("Validation Failed");
-    }
-    Customer::wherehash($data['hash'])->update($data);
-      return response()->json('sucessfully Updated');
+    return $validation;
   }
 }
