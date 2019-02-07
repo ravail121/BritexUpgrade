@@ -126,7 +126,8 @@ class CustomerController extends BaseController
   public function details(Request $request)
   {
     $customer = Customer::where(['hash'=>$request->hash])->first();
-    return $customer;
+    // return $customer;
+    return response()->json($customer);
   }
 
   public function update(Request $request)

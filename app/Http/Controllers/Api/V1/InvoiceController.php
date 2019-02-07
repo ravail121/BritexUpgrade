@@ -283,9 +283,56 @@ class InvoiceController extends BaseController
 
         
         }
+    }
 
+    public function getDetails(Request $request){
 
+        $customerId = Customer::whereHash($request->hash)->first();
+        return $this->getInvoice($customerId);
 
+    }
+
+    private function getInvoice($customerId){
+
+        $invoicesDetails = Invoice::where('customer_id' , $customerId['id'])->where('status', '<', 2)->get();
+
+        return $this->getTotalAmount($customerId , $invoicesDetails);
+
+    }
+
+    private function getTotalAmount($customerId , $invoicesDetails){
+        $billing_start = $customerId['billing_start'];
+        $billing_end   = $customerId['billing_end'];
+        $total         = 0;
+        $subtotal      = 0;
+        $past_due      = 0;
+
+        foreach ($invoicesDetails as $key => $invoice) {
+            $total = $total + $invoice['total_due'];
+            if($invoice['start_date'] == $billing_start){
+                $subtotal = $subtotal + $invoice['subtotal'];
+            }
+            if($invoice['status'] == 0 && strtotime( $invoice['start_date']) < strtotime($billing_start)){
+                $past_due = $past_due + $invoice['subtotal'];
+            }
+        }
+
+        $subtotal = (explode(".",$subtotal));
+        $past_due = (explode(".",$past_due));
+        $total = (explode(".",$total));
+
+        if(!isset($past_due[1])){
+            $past_due[1]= "00";
+        }
+
+        if(!isset($subtotal[1])){
+            $subtotal[1]= "00";
+        }
+
+        if(!isset($total[1])){
+            $total[1]= "00";
+        }
         
-  }
+        return response()->json(['charges' => $subtotal , 'past_due' => $past_due , 'total' => $total , 'billing_start' => $billing_start , 'billing_end'=> $billing_end]);
+    }
 }
