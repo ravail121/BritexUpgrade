@@ -8,6 +8,7 @@ use Config;
 use App\Model\Order;
 use App\Model\Company;
 use App\Events\InvoiceGenerated;
+use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
@@ -53,7 +54,9 @@ class SendEmailWithInvoice
             return false;
         }
 
-        $order->bizVerification->notify(new EmailWithAttachment($order, $pdf));        
+        $bizVerification = BusinessVerification::find($order->customer->business_verification_id);
+
+        $bizVerification->notify(new EmailWithAttachment($order, $pdf));        
     }
 
 

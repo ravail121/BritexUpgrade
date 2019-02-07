@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Model\Order;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
+use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -48,13 +49,15 @@ class EmailWithAttachment extends Notification
     {
 
         $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'generate-invoice')->first();
+        $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
         
-        $replaceWith = [$this->order->bizVerification->fname, $this->order->bizVerification->lname];
+        $replaceWith = [$bizVerification->fname, $bizVerification->lname];
 
 
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
+        \Log::info('here');
 
 
         return (new MailMessage)

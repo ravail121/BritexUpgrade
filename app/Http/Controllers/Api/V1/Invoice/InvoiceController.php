@@ -17,6 +17,8 @@ use App\Model\PendingCharge;
 use App\Model\CustomerCoupon;
 use App\Model\SubscriptionAddon;
 use App\Model\SubscriptionCoupon;
+use App\Model\CustomerStandaloneSim;
+use App\Model\CustomerStandaloneDevice;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -78,38 +80,41 @@ class InvoiceController extends BaseController
      */
     public function oneTimeInvoice(Request $request)
     {
-        if (isset($request->data_to_invoice['subscription_id'])) {
+        if ($request->data_to_invoice) {
+            $invoice = $request->data_to_invoice;
+            if (isset($invoice['subscription_id'])) {
 
-            $subscriptionIds = $request->data_to_invoice['subscription_id'];
+                $subscription = Subscription::find($invoice['subscription_id'][0]);
+                $order = Order::find($subscription->order_id);
 
-            foreach ($subscriptionIds as $index => $subscriptionId) {
+                $this->updateCustomerDates($subscription);
 
-                $subscription = Subscription::find($subscriptionId);
+                 $subscriptionIds = $invoice['subscription_id'];
 
-                $customer     = Customer::find($subscription->customer_id);
-                $order        = Order::find($subscription->order_id);
+                foreach ($subscriptionIds as $index => $subscriptionId) {
+                        
+                    $invoiceItem = $this->createInvoiceItem($order, $subscription);
 
-                if ($index == 0) {
-
-                    if ($customer->subscription_start_date == null && $customer->billing_start && $customer->billing_end == null) {
-                        $customer->update([
-                            'subscription_start_date' => $this->carbon->toDateString(),
-                            'billing_start'           => $this->carbon->toDateString(),
-                            'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
-                        ]);
+                    if (!$invoiceItem) {
+                        \Log::info('Invoice item was not generated');
                     }
                 }
-                $invoiceItem = $this->createInvoiceItem($order, $subscription);
+                
+            } elseif (isset($invoice['customer_standalone_device_id'])) {
+
+                $standaloneDevice = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'][0]);
+
+                $this->updateCustomerDates($standaloneDevice);
+
+
+            } elseif (isset($invoice['customer_standalone_sim_id'])) {
+
+                $standaloneSim = CustomerStandaloneSim::find($invoice['customer_standalone_sim_id'][0]);
+                $this->updateCustomerDates($standaloneSim);
+
+
             }
-            
         }
-
-
-        if (!$invoiceItem) {
-            \Log::info('Invoice item was not generated');
-        }
-
-        event(new InvoiceGenerated($order));
 
         return $this->respond('Invoice item generated successfully.');
     }
@@ -183,6 +188,24 @@ class InvoiceController extends BaseController
      
         // return $this->respond(['Done']);
         
+    }
+
+
+
+    protected function updateCustomerDates($obj)
+    {
+        $customer = Customer::find($obj->customer_id);
+        $order    = Order::find($obj->order_id);
+
+        if ($customer->subscription_start_date == null && $customer->billing_start && $customer->billing_end == null) {
+            $customer->update([
+                'subscription_start_date' => $this->carbon->toDateString(),
+                'billing_start'           => $this->carbon->toDateString(),
+                'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
+            ]);
+        }
+        event(new InvoiceGenerated($order));
+        return true;
     }
 
 
