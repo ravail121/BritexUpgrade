@@ -13,7 +13,7 @@ class Invoice extends Model
 
 	public function order()
 	{
-		return $this->belongsTo('App\Model\Order');
+		return $this->belongsTo(Order::class);
 	}
 
 }

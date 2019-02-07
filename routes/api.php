@@ -263,6 +263,11 @@ Route::middleware('APIToken')->group(function () {
 
 					]);
 
+          Route::post('/generate-one-time-invoice',[
+            'as'   => 'api.onetime.invoice',
+            'uses' => 'InvoiceController@oneTimeInvoice',
+          ]);
+
 					Route::post('/start-billing',[
 						'as'   => 'api.start.billing',
 						'uses' => 'InvoiceController@startBilling',
@@ -371,5 +376,4 @@ Route::middleware('APIToken')->group(function () {
 
 			//Route::get('/confirm','BizVerificationController@confirm');
 			
-
 }); //APIToken middleware

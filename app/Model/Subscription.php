@@ -46,6 +46,12 @@ class Subscription extends Model
   	return $this->hasmany('App\Model\SubscriptionAddon', 'id');
   }
 
+  public function subscriptionAddon(){
+
+    return $this->hasMany('App\Model\SubscriptionAddon', 'subscription_id', 'id');
+  }
+
+
   public function plan(){
   	return $this->hasone('App\Model\Plan', 'id', 'plan_id');
   }

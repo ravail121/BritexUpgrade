@@ -42,7 +42,7 @@ class Order extends Model
 
     public function invoice()
     {
-        return $this->hasOne('App\Model\Invoice', 'id', 'company_id');
+        return $this->hasOne('App\Model\Invoice', 'id', 'invoice_id');
     }
 
     public function paymentLog()

@@ -91,7 +91,6 @@ class OrderController extends BaseController
 
         $order['order_groups'] = $ordergroups;
         $this->content = $order;
-        // dd($this->content);
         return response()->json($this->content);
 
 

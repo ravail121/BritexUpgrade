@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Model\Order;
+use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Model\CustomerCreditCard;
 use App\Services\Payment\UsaEpay;
@@ -30,11 +31,9 @@ class CardController extends BaseController implements ConstantInterface
      */
     public function getCustomerCards(Request $request)
     {
-        if ($request->customer_hash) {
-        	$customerCreditCard = CustomerCreditCard::where([
-                'api_key' => $request->api_key,
-                'hash'    =>  $request->customer_hash
-            ])->get();
+        if ($request->hash) {
+            $customer = Customer::where('hash', $request->hash)->first();
+            $customerCreditCard =  $customer->customerCreditCards;
 
         } elseif ($request->customer_id) {
             $customerCreditCard = CustomerCreditCard::where([
@@ -44,12 +43,18 @@ class CardController extends BaseController implements ConstantInterface
 
         }
 
+        if (!$customerCreditCard) {
+            return $this->respond(['message' => 'no cards available']);
+
+        } 
+
         foreach ($customerCreditCard as $card) {
             $card->expiration = $card->addPrefixSlash();
             $card->last4      = $card->last_four;
         }
 
-        return response()->json($customerCreditCard);
+
+        return $this->respond($customerCreditCard);
     }
 
 
@@ -68,7 +73,7 @@ class CardController extends BaseController implements ConstantInterface
         $validation = $this->validateCredentials($request);
 
         if ($validation->fails()) {
-            return response()->json([
+            return $this->respond([
                 'message' => $validation->getMessageBag()->all()
             ]);
         }

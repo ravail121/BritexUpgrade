@@ -31,9 +31,9 @@ class InvoiceController extends BaseController
 {
 
     /**
-     * Carbon Date-Time variable
+     * Date-Time variable
      * 
-     * @var DATE
+     * @var $carbon
      */
     public $carbon;
 
@@ -54,34 +54,193 @@ class InvoiceController extends BaseController
 
 
     /**
-     * Updates the customer table with curent_date & (curent_date + 1 Month - 1 Day) and then generates invoice
+     * Updates the customer table with curent_date & (curent_date + 1 Month - 1 Day)
      *  
      * @param  Request $request [description]
      * @return [type]           [description]
      */
     public function startBilling(Request $request)
     {
-        if ($request->customer_id) {
-            $customer = Customer::find($request->customer_id);
-            $order    = Order::where('customer_id', $request->customer_id)->first();
+        $customer = null;
+
+        return $this->respond($customer);
+    }
+
+
+
+
+
+    /**
+     * Creates invoice_item and sends email with invoice.pdf attachment
+     * 
+     * @param  Request    $request
+     * @return Response
+     */
+    public function oneTimeInvoice(Request $request)
+    {
+        if (isset($request->data_to_invoice['subscription_id'])) {
+
+            $subscriptionIds = $request->data_to_invoice['subscription_id'];
+
+            foreach ($subscriptionIds as $index => $subscriptionId) {
+
+                $subscription = Subscription::find($subscriptionId);
+
+                $customer     = Customer::find($subscription->customer_id);
+                $order        = Order::find($subscription->order_id);
+
+                if ($index == 0) {
+
+                    if ($customer->subscription_start_date == null && $customer->billing_start && $customer->billing_end == null) {
+                        $customer->update([
+                            'subscription_start_date' => $this->carbon->toDateString(),
+                            'billing_start'           => $this->carbon->toDateString(),
+                            'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
+                        ]);
+                    }
+                }
+                $invoiceItem = $this->createInvoiceItem($order, $subscription);
+            }
             
-        } elseif ($request->hash) {
-            $order = Order::hash($request->hash)->first();
-            $customer = Customer::find($order->customer_id);
         }
 
-        if (!$customer) {
-            return $this->respond(['message' => 'Customer not found']);
+
+        if (!$invoiceItem) {
+            \Log::info('Invoice item was not generated');
         }
-        $customer->update([
-            'subscription_start_date' => $this->carbon->toDateString(),
-            'billing_start'           => $this->carbon->toDateString(),
-            'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
-        ]);
 
         event(new InvoiceGenerated($order));
 
-        return $this->respond($customer);
+        return $this->respond('Invoice item generated successfully.');
+    }
+
+
+
+
+
+
+
+    /**
+     * Generates the Invoice template and downloads the invoice.pdf file
+     * 
+     * @param  Request    $request
+     * @return Response
+     */
+    public function get(Request $request){
+
+        $order = Order::hash($request->order_hash)->first();
+        // $data = Invoice::find($order->invoice_id);
+
+
+        // PDF::loadFile(public_path().'/templates/invoice.html')->save('templates/invoice.pdf')->stream('download.pdf');
+        
+         $invoice = [
+            'start_date' => $order->invoice->start_date,
+            'end_date'   => $order->invoice->end_date,
+            'due_date'   => $order->invoice->due_date,
+            'total_due'  => $order->invoice->total_due,
+            'subtotal'   => $order->invoice->subtotal,
+         ];
+        $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
+        $pdf->setPaper([0, 0, 1000, 1000], 'landscape');
+        return $pdf->download('invoice.pdf');
+        // $pdf->save('invoice/invoice.pdf');
+
+        // return $this->respondError(['No such invoice']);
+
+        // $invoice_id =  $request->input('invoice_id');
+        // $invoice = false;
+        // if($invoice_id == null){
+        //     $today = date("y-m-d");
+        //     $fivedayaftertoday = date('Y-m-d', strtotime($today. ' + 5 days'));
+
+        //     $customers = Customer::with(['company', 'subscription', 'subscription.plan', 'subscription.new_plan', 'subscription.subscription_addon', 'subscription.subscription_addon.addon', 'subscription.subscription_addon.subscription.plan', 'pending_charge', 'invoice' , 'coupon'])->where(
+        //             [
+        //               ['billing_end' , '<=' , $fivedayaftertoday],
+        //               ['billing_end', '>=', $today]
+        //             ]
+        //         )->whereHas('subscription', function($query)  { 
+        //             $query->whereIn('status', ['active', 'shipping', 'for-activation']);
+        //         })->orWhereHas('pending_charge', function($query) {
+        //             $query->where('invoice_id', null);
+        //         })->get();
+
+        //     //print_r($customers);
+        //     //echo count($customers);
+        //     $this->generate_new_invoice($customers);
+
+        // } else {
+
+        //     $invoice = Invoice::find($invoice_id);
+        //     if(count($invoice) < 1){
+        //         return $this->respondError(['No such invoice']);
+        //     }
+        //     $customer = Customer::with(['company', 'subscription', 'subscription.plan', 'subscription.new_plan', 'subscription.subscription_addon', 'subscription.subscription_addon.subscription.plan', 'pending_charge', 'invoice' , 'coupon'])->find($invoice->customer_id);
+        //     $this->generate_customer_invoice($invoice, $customer);
+
+        // }
+    
+     
+        // return $this->respond(['Done']);
+        
+    }
+
+
+
+
+
+    /**
+     * Creates inovice_item
+     * 
+     * @param  Order     $order
+     * @return Response
+     */
+    protected function createInvoiceItem($order, $subscription)
+    {
+        $invoiceItem = null;
+        
+        $input = [
+            'invoice_id'      => $order->invoice_id, 
+            'subscription_id' => $subscription->id,
+            'type'            => 1, 
+            'start_date'      => $order->invoice->start_date, 
+            'description'     => 'Activation Fee', 
+            'amount'          => '30.00', 
+            'taxable'         => 1,
+        ];
+        if ($subscription->device_id !== null) {
+            $array = [
+                'product_type' => 'device',
+                'product_id'   => $subscription->device_id,
+            ];
+            $invoiceItem = InvoiceItem::create(array_merge($input, $array));
+            
+        }
+
+        if ($subscription->plan_id != null) {
+            $array = [
+                'product_type' => 'plan',
+                'product_id'   => $subscription->plan_id,
+            ];
+
+            $invoiceItem = InvoiceItem::create(array_merge($input, $array));
+        }
+
+
+        if ($subscription->subscriptionAddon) {
+            foreach ($subscription->subscriptionAddon as $addon) {
+                $array = [
+                    'product_type' => 'addon',
+                    'product_id'   => $addon->addon_id,
+                ];
+
+                $invoiceItem = InvoiceItem::create(array_merge($input, $array));
+            }
+        }
+
+
+        return $invoiceItem;
+        
     }
 
 
@@ -329,67 +488,6 @@ class InvoiceController extends BaseController
             ]);
             $this->generate_customer_invoice($invoice, $customer);
         }
-    }
-
-
-    public function get(Request $request){
-
-        $order = Order::hash($request->order_hash)->first();
-        $data = Invoice::find($order->invoice_id);
-
-
-        // PDF::loadFile(public_path().'/templates/invoice.html')->save('templates/invoice.pdf')->stream('download.pdf');
-        
-         // $data = Invoice::find($request->invoice_id);
-         $invoice = [
-            'start_date' => $data->start_date,
-            'end_date'   => $data->end_date,
-            'due_date'   => $data->due_date,
-            'total_due'  => $data->total_due,
-            'subtotal'   => $data->subtotal,
-         ];
-        $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
-        $pdf->setPaper([0, 0, 1000, 1000], 'landscape');
-        return $pdf->download('invoice.pdf');
-        // $pdf->save('invoice/invoice.pdf');
-
-        // return $this->respondError(['No such invoice']);
-
-        // $invoice_id =  $request->input('invoice_id');
-        // $invoice = false;
-        // if($invoice_id == null){
-        //     $today = date("y-m-d");
-        //     $fivedayaftertoday = date('Y-m-d', strtotime($today. ' + 5 days'));
-
-        //     $customers = Customer::with(['company', 'subscription', 'subscription.plan', 'subscription.new_plan', 'subscription.subscription_addon', 'subscription.subscription_addon.addon', 'subscription.subscription_addon.subscription.plan', 'pending_charge', 'invoice' , 'coupon'])->where(
-        //             [
-        //               ['billing_end' , '<=' , $fivedayaftertoday],
-        //               ['billing_end', '>=', $today]
-        //             ]
-        //         )->whereHas('subscription', function($query)  { 
-        //             $query->whereIn('status', ['active', 'shipping', 'for-activation']);
-        //         })->orWhereHas('pending_charge', function($query) {
-        //             $query->where('invoice_id', null);
-        //         })->get();
-
-        //     //print_r($customers);
-        //     //echo count($customers);
-        //     $this->generate_new_invoice($customers);
-
-        // } else {
-
-        //     $invoice = Invoice::find($invoice_id);
-        //     if(count($invoice) < 1){
-        //         return $this->respondError(['No such invoice']);
-        //     }
-        //     $customer = Customer::with(['company', 'subscription', 'subscription.plan', 'subscription.new_plan', 'subscription.subscription_addon', 'subscription.subscription_addon.subscription.plan', 'pending_charge', 'invoice' , 'coupon'])->find($invoice->customer_id);
-        //     $this->generate_customer_invoice($invoice, $customer);
-
-        // }
-    
-     
-        // return $this->respond(['Done']);
-        
     }
 
 

@@ -65,19 +65,20 @@ class PaymentController extends BaseController implements ConstantInterface
         if($this->tran->Process()) {
             $msg     = $this->transactionSuccessful($request, $this->tran);
             $data    = $this->setInvoiceData($order);
-            $invoice = Invoice::updateOrCreate($data);
+            $invoice = Invoice::create($data);
 
-            if (!$invoice) {
+            if ($invoice) {
+
+                $order->update([
+                    'status'     => 1, 
+                    'invoice_id' => $invoice->id
+                ]);
+
+            } else {
                 $msg = $this->respond([
-                    'message' => 'Failed to generate invoice.'
+                    'invoice' => 'Failed to generate invoice.'
                 ]);
             }
-
-            $order->update([
-                'status'     => 1, 
-                'invoice_id' => $invoice->id
-            ]);
-            $this->createInvoiceItem($order);
             
       
         } else {
@@ -89,47 +90,6 @@ class PaymentController extends BaseController implements ConstantInterface
 
 
 
-    protected function createInvoiceItem($order)
-    {
-        $invoiceItem = [];
-        
-        $subscriptions = Subscription::where('order_id', $order->id)->get();
-        foreach ($subscriptions as $subscription) {
-            $input = [
-                'invoice_id'      => $order->invoice_id, 
-                'subscription_id' => $subscription->id,
-                'type'            => 1, 
-                'start_date'      => $order->invoice->start_date, 
-                'description'     => 'Activation Fee', 
-                'amount'          => '30.00', 
-                'taxable'         => 1,
-            ];
-            if ($subscription->device_id !== null) {
-                $array = [
-                    'product_type' => 'device',
-                    'product_id'   => $subscription->device_id,
-                ];
-            } elseif ($subscription->plan_id !== null) {
-                $array = [
-                    'product_type' => 'plan',
-                    'product_id'   => $subscription->plan_id,
-                ];
-
-            } else {
-                $array = [
-                    'product_type' => 'null',
-                    'product_id'   => 0,
-                ];
-
-            }
-            $invoiceItem = InvoiceItem::create(array_merge($input, $array));
-        }
-
-
-        return $invoiceItem;
-        
-    }
-
 
     /**
      * Sets data for `invoice` table
@@ -140,8 +100,12 @@ class PaymentController extends BaseController implements ConstantInterface
     {
         $arr = [];
         $customer = Customer::find($order->customer_id);
+        if (!$customer) {
+            return $arr;
+        }
         $credit = Credit::where('customer_id', $customer->id)->latest()->first();
         $card = CustomerCreditCard::where('customer_id', $customer->id)->latest()->first();
+        
 
         if ($customer || $credit || $card) {
             $arr = [

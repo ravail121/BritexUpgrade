@@ -12,5 +12,9 @@ class SubscriptionAddon extends Model
     public function subscription(){
     		return $this->hasOne('App\Model\Subscription' , 'id');
     }
+
+    public function subscriptionDetail(){
+    		return $this->belongsTo('App\Model\Subscription');
+    }
    
 }

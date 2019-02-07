@@ -26,13 +26,24 @@ class CustomerController extends BaseController
    
   public function post(Request $request)
   {
+    if ($request->customer_id) {
+      $done = $this->updateOrder($request);
+      if (!$done) {
+        return $this->respondError('Customer was not created.');
+      }
+      return $this->respond(['success' => true]);
+
+    }
     $hasError = $this->validateData($request);
     if($hasError){
       return $hasError;
     }
 
-    $data         = $request->all();
-    $order        = Order::hash($data['order_hash'])->first();
+
+    $data  = $request->all();
+    $order = Order::hash($data['order_hash'])->first();
+
+
     $customerData = $this->setData($order, $data);
 
     $customer = Customer::updateOrCreate(['id' => $order->customer_id], $customerData);
@@ -42,7 +53,7 @@ class CustomerController extends BaseController
     }
     $order->update(['customer_id' => $customer->id]);
 
-    return response()->json(['success' => true, 'customer' => $customer]); 
+    return $this->respond(['success' => true, 'customer' => $customer]); 
   }
 
 
@@ -97,6 +108,17 @@ class CustomerController extends BaseController
 
 
 
+  protected function updateOrder($request)
+  {
+    if ($request->customer_id) {
+      $order = Order::hash($request->order_hash)->first();
+      $order->update(['customer_id' => $request->customer_id]);
+      return $order;
+       
+    }
+  }
+
+
 
   /**
    * Validates the Create-customer data
@@ -123,37 +145,66 @@ class CustomerController extends BaseController
     ]);
   }
 
-  public function details(Request $request)
+
+
+
+  /**
+   * Get customer Details
+   * 
+   * @param  Request   $request
+   * @return Response
+   */
+  public function customerDetails(Request $request)
   {
-    $customer = Customer::where(['hash'=>$request->hash])->first();
-    // return $customer;
-    return response()->json($customer);
+    $customer = 'Hash is required';
+    if ($request->hash) {
+      $customer = Customer::where(['hash' => $request->hash])->first();
+    }
+    return $this->respond($customer);
   }
 
+
+
+
+  /**
+   * Updates customer details
+   * 
+   * @param  Request    $request
+   * @return Response   json
+   */
   public function update(Request $request)
   {
     $data    = $request->all();
     $validation = $this->validateUpdate($data);
-    if ($validation->fails()) {
-      return $this->respondError("Validation Failed");
+    if ($validation) {
+      return $validation;
     }
     if(isset($data['password'])){
-      $data['password']= bcrypt($data['password']);
+      $data['password'] = bcrypt($data['password']);
     }
     Customer::wherehash($data['hash'])->update($data);
-      return response()->json('sucessfully Updated');
+    return $this->respond('sucessfully Updated');
   }
 
+
+
+
+  /**
+   * Validates the data
+   * 
+   * @param  array      $data
+   * @return Response   validation response
+   */
   protected function validateUpdate($data) 
   { 
-    $validation = Validator::make($data, [
+    return $this->validate_input($data, [
         'fname'             => 'sometimes|required',
         'lname'             => 'sometimes|required',
         'email'             => 'sometimes|required|email',
         'billing_address1'  => 'sometimes|required',
         'billing_city'      => 'sometimes|required',
         'password'          => 'sometimes|required',
+        'hash'              => 'required',
     ]);
-    return $validation;
   }
 }

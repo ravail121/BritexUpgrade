@@ -31,7 +31,7 @@ class SubscriptionController extends BaseController
             return $validation;
         }
 
-        $request->status = ($request->sim_id != 0 || $request->device_id != 0) ? 'shipping' : 'for-activation' ;
+        $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
 
         $insertData = $this->generateSubscriptionData($request);
 
@@ -68,7 +68,7 @@ class SubscriptionController extends BaseController
             'removal_date'     => date('Y-m-d'),
 
         ]);
-        return $this->respond($subscriptionAddon);
+        return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
     }
 
 

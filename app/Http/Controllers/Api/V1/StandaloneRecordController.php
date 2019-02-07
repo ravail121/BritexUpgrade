@@ -60,7 +60,7 @@ class StandaloneRecordController extends BaseController
         ]));
 
 
-        return $this->respond($record);
+        return $this->respond(['device_id' => $record->id]);
     }
 
 
@@ -87,7 +87,7 @@ class StandaloneRecordController extends BaseController
             'sim_num' => 'null', 
         ]));
 
-        return $this->respond($record);
+        return $this->respond(['sim_id' => $record->id]);
     }
 
 
