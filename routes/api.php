@@ -363,7 +363,7 @@ Route::middleware('APIToken')->group(function () {
 
 				Route::get('customer-invoice',[
 					'as'   => 'api.customer.invoice',
-					'uses' =>'InvoiceController@getDetails',
+					'uses' =>'InvoiceController@invoiceDetails',
 				]);
 
 				Route::get('forgot-password',[

@@ -23,4 +23,10 @@ class InvoiceItem extends Model
     }
 
 
+    public function totalAmount()
+    {
+        return $this->amount;
+    }
+
+
 }

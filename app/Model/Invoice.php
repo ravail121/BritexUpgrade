@@ -16,9 +16,75 @@ class Invoice extends Model
 		return $this->belongsTo(Order::class);
 	}
 
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
 	public function invoiceItem()
    	{
         return $this->hasMany('App\Model\InvoiceItem');
+    }
+
+
+    /**
+     * Fetches Invoice Details from invoice table if status < 2
+     * 
+     * @param  Query   $query      
+     * @param  int     $customerId
+     * @return query
+     */
+    public function scopeGetDues($query, $customerId)
+    {
+        return $query->where('customer_id' , $customerId)->where('status', '<', 2);
+    }
+
+
+
+    /**
+     * Returns total_due amount with 2 decimal places
+     * 
+     * @return float 
+     */
+    public function getTotalAttribute()
+    {
+        return self::toTwoDecimals($this->total_due);
+    }
+
+
+
+    public function getSubTotalAttribute()
+    {
+        $subtotal = 0;
+
+        if ($this->start_date == $this->customer->billing_start) {
+            $subtotal = $this->subtotal;
+        }
+        return self::toTwoDecimals($subtotal);
+    }
+
+
+    public function getPastDueAttribute()
+    {
+        $pastDue = 0;
+
+        if ($this->status == 0 && strtotime($this->start_date) < strtotime($this->customer->billing_start)) {
+
+            $pastDue = $this->subtotal;
+        }
+        return self::toTwoDecimals($pastDue);
+    }
+
+
+
+    /**
+     * [toTwoDecimals description]
+     * @param  [type] $amount [description]
+     * @return [type]         [description]
+     */
+    public static function toTwoDecimals($amount)
+    {
+        return number_format((float)$amount, 2, '.', '');
     }
 
 }

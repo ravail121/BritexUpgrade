@@ -69,6 +69,11 @@ class Customer extends Authenticatable
         return $this->belongsTo('App\Model\Order');
     }
 
+     public function scopeHash($query, $hash)
+    {
+        return $query->where('hash', $hash)->first();
+    }
+
      // public function pending_charge(){
      // 	return $this->belongsTo('App\Model\PendingCharge' , 'customer_id');
      // }

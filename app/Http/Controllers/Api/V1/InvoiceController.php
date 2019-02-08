@@ -22,6 +22,17 @@ use App\Model\Tax;
 
 class InvoiceController extends BaseController
 {
+
+    public $content;
+
+
+    public function __construct()
+    {
+        $this->content = [];
+    }
+
+
+
 	public function get(Request $request){
 		
 		    $lastdayofmonth = ['1'=>31 , '2'=>28 , '3'=>31 , '4'=>30 , '5'=>31, '6'=> 30 , '7'=>31 , '8'=>31, '9'=>30, '10'=>31 , '11'=>30 , '12'=>31 ];
@@ -285,54 +296,72 @@ class InvoiceController extends BaseController
         }
     }
 
-    public function getDetails(Request $request){
 
-        $customerId = Customer::whereHash($request->hash)->first();
-        return $this->getInvoice($customerId);
 
+    /**
+     * GET Invoice Details
+     * 
+     * @param  Request    $request
+     * @return Response
+     */
+    public function invoiceDetails(Request $request)
+    {
+        $customer        = Customer::hash($request->hash);
+        $invoicesDetails = Invoice::getDues($customer->id)->get();
+
+        $this->getTotalAmount($invoicesDetails);
+        return $this->respond($this->content);
     }
 
-    private function getInvoice($customerId){
 
-        $invoicesDetails = Invoice::where('customer_id' , $customerId['id'])->where('status', '<', 2)->get();
 
-        return $this->getTotalAmount($customerId , $invoicesDetails);
-
-    }
-
-    private function getTotalAmount($customerId , $invoicesDetails){
-        $billing_start = $customerId['billing_start'];
-        $billing_end   = $customerId['billing_end'];
-        $total         = 0;
-        $subtotal      = 0;
-        $past_due      = 0;
-
-        foreach ($invoicesDetails as $key => $invoice) {
-            $total = $total + $invoice['total_due'];
-            if($invoice['start_date'] == $billing_start){
-                $subtotal = $subtotal + $invoice['subtotal'];
-            }
-            if($invoice['status'] == 0 && strtotime( $invoice['start_date']) < strtotime($billing_start)){
-                $past_due = $past_due + $invoice['subtotal'];
-            }
-        }
-
-        $subtotal = (explode(".",$subtotal));
-        $past_due = (explode(".",$past_due));
-        $total = (explode(".",$total));
-
-        if(!isset($past_due[1])){
-            $past_due[1]= "00";
-        }
-
-        if(!isset($subtotal[1])){
-            $subtotal[1]= "00";
-        }
-
-        if(!isset($total[1])){
-            $total[1]= "00";
-        }
+    /**
+     * Calculates the Total Amount
+     * 
+     * @param  Invoice $invoicesDetails
+     * @return array
+     */
+    protected function getTotalAmount($invoicesDetails)
+    {
+        $total = $subTotal = $pastDue  = 0;
         
-        return $this->respond(['charges' => $subtotal , 'past_due' => $past_due , 'total' => $total , 'billing_start' => $billing_start , 'billing_end'=> $billing_end]);
+        foreach ($invoicesDetails as $key => $invoice) {
+
+            if ($key == 0) {
+                $array = [
+                    'billing_start' => $invoice->customer->billing_start,
+                    'billing_end'   => $invoice->customer->billing_end,
+                ];
+            }
+            $total    += $invoice->total;
+            $subTotal += $invoice->subTotal;
+            $pastDue  += $invoice->past_due;
+
+        }
+
+        $subTotal = explode(".", (string)self::toTwoDecimals($subTotal));
+        $pastDue  = explode(".", (string)self::toTwoDecimals($pastDue));
+        $total    = explode(".", (string)self::toTwoDecimals($total));
+
+
+        return $this->content = array_merge([
+            'charges'  => $subTotal, 
+            'past_due' => $pastDue,
+            'total'    => $total,
+        ], $array);
+        
+    }
+
+
+
+    /**
+     * Generates Float numbers upto 2 decimals
+     * 
+     * @param  int   $amount
+     * @return float
+     */
+    protected static function toTwoDecimals($amount)
+    {
+        return number_format((float)$amount, 2, '.', '');
     }
 }
