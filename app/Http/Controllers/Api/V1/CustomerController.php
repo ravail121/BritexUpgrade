@@ -182,7 +182,7 @@ class CustomerController extends BaseController
     if(isset($data['password'])){
       $data['password'] = bcrypt($data['password']);
     }
-    Customer::wherehash($data['hash'])->update($data);
+    Customer::whereHash($data['hash'])->update($data);
     return $this->respond('sucessfully Updated');
   }
 
@@ -205,6 +205,11 @@ class CustomerController extends BaseController
         'billing_city'      => 'sometimes|required',
         'password'          => 'sometimes|required',
         'hash'              => 'required',
+        'shipping_address1' => 'sometimes|required',
+        'shipping_city'     => 'sometimes|required',
+        'shipping_zip'      => 'sometimes|required',
+        'phone'             => 'sometimes|required',
+        'pin'               => 'sometimes|required',
     ]);
   }
 }

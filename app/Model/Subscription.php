@@ -44,7 +44,7 @@ class Subscription extends Model
 
   public function subscription_addon(){
 
-  	return $this->hasmany('App\Model\SubscriptionAddon', 'id');
+  	return $this->hasMany('App\Model\SubscriptionAddon', 'id');
   }
 
   public function subscriptionAddon(){
@@ -58,7 +58,7 @@ class Subscription extends Model
   }
 
   public function device(){
-    return $this->hasone('App\Model\Device', 'id', 'device_id');
+    return $this->hasOne('App\Model\Device', 'id', 'device_id');
   }
 
   public function new_plan(){

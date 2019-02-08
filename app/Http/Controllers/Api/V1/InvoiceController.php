@@ -333,6 +333,6 @@ class InvoiceController extends BaseController
             $total[1]= "00";
         }
         
-        return response()->json(['charges' => $subtotal , 'past_due' => $past_due , 'total' => $total , 'billing_start' => $billing_start , 'billing_end'=> $billing_end]);
+        return $this->respond(['charges' => $subtotal , 'past_due' => $past_due , 'total' => $total , 'billing_start' => $billing_start , 'billing_end'=> $billing_end]);
     }
 }

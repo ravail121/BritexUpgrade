@@ -7,17 +7,18 @@ use App\Model\Customer;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseController;
 
-class CustomerPlanController extends Controller
+class CustomerPlanController extends BaseController
 {
     public function get(Request $request){
 
     	$customerId = Customer::whereHash($request->hash)->first(['id']);
 
-    	return $this->getsubscriptions($customerId['id']);
+    	return $this->getSubscriptions($customerId['id']);
     }
 
-    public function getsubscriptions($customerId){
+    public function getSubscriptions($customerId){
 
     	$subscriptions = Subscription::whereCustomerId($customerId)->get();
 
@@ -26,6 +27,6 @@ class CustomerPlanController extends Controller
     		$subscriptions[$key]['device'] = $subscription->device;
     	}
     	
-    	return response()->json($subscriptions);
+    	return $this->respond($subscriptions);
     }
 }

@@ -16,4 +16,11 @@ class InvoiceItem extends Model
    	{
         return $this->hasOne('App\Model\Subscription', 'id', 'subscription_id');
     }
+
+    public function invoice()
+   	{
+        return $this->belongsTo('App\Model\Invoice');
+    }
+
+
 }
