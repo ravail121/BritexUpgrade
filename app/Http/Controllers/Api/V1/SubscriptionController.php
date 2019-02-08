@@ -37,6 +37,10 @@ class SubscriptionController extends BaseController
 
         $subscription = Subscription::create($insertData);
 
+        if(!$subscription) {
+            return $this->respondError(['message' => 'error in creating subscription']);
+        }
+
         if ($request->porting_number) {
             $arr = $this->generatePortData($request->porting_number, $subscription->id);
             $port = Port::create($arr);
