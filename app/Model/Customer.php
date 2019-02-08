@@ -35,6 +35,7 @@ class Customer extends Authenticatable
         'billing_address2', 
         'billing_city',
         'billing_state_id',
+        'billing_zip',
         'shipping_address1',
         'shipping_address2',
         'shipping_city',

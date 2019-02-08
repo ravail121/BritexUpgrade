@@ -8,7 +8,7 @@ class Subscription extends Model
 {
     protected $table = 'subscription';
 
-    protected$fillable =[
+    protected $fillable = [
       'order_id',
       'customer_id',
       'plan_id',
@@ -18,6 +18,7 @@ class Subscription extends Model
       'upgrade_downgrade_status',
       'upgrade_downgrade_date_submitted',
       'port_in_progress',
+      'sim_id',
       'sim_name',
       'sim_card_num',
       'old_plan_id',

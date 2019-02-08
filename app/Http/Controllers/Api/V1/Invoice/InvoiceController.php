@@ -6,7 +6,11 @@ use PDF;
 use Validator;
 use App\Model\Tax;
 use Carbon\Carbon;
+use App\Model\Sim;
+use App\Model\Plan;
 use App\Model\Order;
+use App\Model\Addon;
+use App\Model\Device;
 use App\Model\Coupon;
 use App\Model\Company;
 use App\Model\Invoice;
@@ -31,6 +35,13 @@ use App\Classes\GenerateMonthlyInvoiceClass;
 
 class InvoiceController extends BaseController
 {
+    const DEFAULT_INT = 1;
+    const DEFAULT_ID  = 0;
+    const SIM_TYPE    = 'sim';
+    const PLAN_TYPE   = 'plan';
+    const ADDON_TYPE  = 'addon';
+    const DEVICE_TYPE = 'device';
+    const DESCRIPTION = 'Activation Fee';
 
     /**
      * Date-Time variable
@@ -38,6 +49,9 @@ class InvoiceController extends BaseController
      * @var $carbon
      */
     public $carbon;
+
+
+    public $input;
 
 
 
@@ -49,6 +63,7 @@ class InvoiceController extends BaseController
     public function __construct(Carbon $carbon)
     {
         $this->carbon = $carbon;
+        $this->input  = [];
     }
 
 
@@ -56,10 +71,10 @@ class InvoiceController extends BaseController
 
 
     /**
-     * Updates the customer table with curent_date & (curent_date + 1 Month - 1 Day)
+     * []
      *  
-     * @param  Request $request [description]
-     * @return [type]           [description]
+     * @param  Request $request
+     * @return void
      */
     public function startBilling(Request $request)
     {
@@ -80,43 +95,49 @@ class InvoiceController extends BaseController
      */
     public function oneTimeInvoice(Request $request)
     {
+        $msg = '';
         if ($request->data_to_invoice) {
             $invoice = $request->data_to_invoice;
             if (isset($invoice['subscription_id'])) {
 
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
-                $order = Order::find($subscription->order_id);
+                $order        = $this->updateCustomerDates($subscription);
 
-                $this->updateCustomerDates($subscription);
+                $invoiceItem = $this->subscriptionInvoiceItem($invoice['subscription_id']);
 
-                 $subscriptionIds = $invoice['subscription_id'];
-
-                foreach ($subscriptionIds as $index => $subscriptionId) {
-                        
-                    $invoiceItem = $this->createInvoiceItem($order, $subscription);
-
-                    if (!$invoiceItem) {
-                        \Log::info('Invoice item was not generated');
-                    }
-                }
+                $msg = (!$invoiceItem) ? 'Subscription Invoice item was not generated' : 'Invoice item generated successfully.'; 
                 
-            } elseif (isset($invoice['customer_standalone_device_id'])) {
+            }
+            if (isset($invoice['customer_standalone_device_id'])) {
 
                 $standaloneDevice = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'][0]);
 
-                $this->updateCustomerDates($standaloneDevice);
+                $order = $this->updateCustomerDates($standaloneDevice);
+                        
+                $invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
+
+                $msg = (!$invoiceItem) ? 'Standalone Device Invoice item was not generated' : 'Invoice item generated successfully.' ;
 
 
-            } elseif (isset($invoice['customer_standalone_sim_id'])) {
+            }
+
+            if (isset($invoice['customer_standalone_sim_id'])) {
 
                 $standaloneSim = CustomerStandaloneSim::find($invoice['customer_standalone_sim_id'][0]);
-                $this->updateCustomerDates($standaloneSim);
+                $order = $this->updateCustomerDates($standaloneSim);
+                        
+                $invoiceItem = $this->standaloneSimInvoiceItem($invoice['customer_standalone_sim_id']);
 
+                $msg = (!$invoiceItem) ? 'Standalone Sim Invoice item was not generated' : 'Invoice item generated successfully.';
 
             }
         }
 
-        return $this->respond('Invoice item generated successfully.');
+        if($order) {
+            event(new InvoiceGenerated($order));
+        }
+
+        return $this->respond($msg);
     }
 
 
@@ -192,6 +213,13 @@ class InvoiceController extends BaseController
 
 
 
+
+    /**
+     * Updates the customer subscription_date, billing_start and billing_end if null
+     * 
+     * @param  Object  $obj   Subscription, CustomerStandaloneDevice, CustomerStandaloneSim
+     * @return Object  $order
+     */
     protected function updateCustomerDates($obj)
     {
         $customer = Customer::find($obj->customer_id);
@@ -204,8 +232,15 @@ class InvoiceController extends BaseController
                 'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
             ]);
         }
-        event(new InvoiceGenerated($order));
-        return true;
+        $this->input = [
+            'invoice_id'  => $order->invoice_id, 
+            'type'        => self::DEFAULT_INT, 
+            'start_date'  => $order->invoice->start_date, 
+            'description' => self::DESCRIPTION, 
+            'taxable'     => self::DEFAULT_INT,
+
+        ];
+        return $order;
     }
 
 
@@ -213,57 +248,163 @@ class InvoiceController extends BaseController
 
 
     /**
-     * Creates inovice_item
+     * Creates inovice_item for subscription
      * 
-     * @param  Order     $order
+     * @param  Order      $order
+     * @param  int        $subscriptionIds
      * @return Response
      */
-    protected function createInvoiceItem($order, $subscription)
+    protected function subscriptionInvoiceItem($subscriptionIds)
     {
         $invoiceItem = null;
-        
-        $input = [
-            'invoice_id'      => $order->invoice_id, 
-            'subscription_id' => $subscription->id,
-            'type'            => 1, 
-            'start_date'      => $order->invoice->start_date, 
-            'description'     => 'Activation Fee', 
-            'amount'          => '30.00', 
-            'taxable'         => 1,
-        ];
-        if ($subscription->device_id !== null) {
-            $array = [
-                'product_type' => 'device',
-                'product_id'   => $subscription->device_id,
+
+        foreach ($subscriptionIds as $index => $subscriptionId) {
+            $subscription = Subscription::find($subscriptionId);
+
+            $subarray = [
+                'subscription_id' => $subscription->id,
+
             ];
-            $invoiceItem = InvoiceItem::create(array_merge($input, $array));
-            
-        }
+                
+            if ($subscription->device_id !== null) {
 
-        if ($subscription->plan_id != null) {
-            $array = [
-                'product_type' => 'plan',
-                'product_id'   => $subscription->plan_id,
-            ];
-
-            $invoiceItem = InvoiceItem::create(array_merge($input, $array));
-        }
-
-
-        if ($subscription->subscriptionAddon) {
-            foreach ($subscription->subscriptionAddon as $addon) {
                 $array = [
-                    'product_type' => 'addon',
-                    'product_id'   => $addon->addon_id,
+                    'product_type'    => self::DEVICE_TYPE,
+                    'product_id'      => $subscription->device_id,
                 ];
 
-                $invoiceItem = InvoiceItem::create(array_merge($input, $array));
+                if ($subscription->device_id === 0) {
+                    $array = array_merge($array, [
+                        'amount' => '0',
+                    ]);
+                } else {
+                    $device = Device::find($subscription->device_id);
+                    $array = array_merge($array, [
+                        'amount' => $device->amount_w_plan,
+                    ]);
+                    
+                }
+
+                $array = array_merge($subarray, $array);
+                $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                
+            }
+
+            if ($subscription->plan_id != null) {
+                $plan = Plan::find($subscription->plan_id);
+                $array = [
+                    'product_type' => self::PLAN_TYPE,
+                    'product_id'   => $subscription->plan_id,
+                    'amount'       => $plan->amount_recurring, 
+                ];
+
+                $array = array_merge($subarray, $array);
+
+                $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+            }
+
+            if ($subscription->sim_id != null) {
+                $sim = Sim::find($subscription->sim_id);
+                $array = [
+                    'product_type' => self::SIM_TYPE,
+                    'product_id'   => $subscription->sim_id,
+                    'amount'       => $sim->amount_w_plan, 
+                ];
+
+                $array = array_merge($subarray, $array);
+
+                $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+            }
+
+
+            if ($subscription->subscriptionAddon) {
+                foreach ($subscription->subscriptionAddon as $subAddon) {
+                    $addon = Addon::find($subAddon->addon_id);
+                    $array = [
+                        'product_type' => self::ADDON_TYPE,
+                        'product_id'   => $addon->id,
+                        'amount'       => $addon->amount_recurring, 
+                    ];
+                    $array = array_merge($subarray, $array);
+
+
+                    $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                }
             }
         }
 
 
         return $invoiceItem;
         
+    }
+
+
+
+
+
+    /**
+     * Creates inovice_item for customer_standalone_device
+     * 
+     * @param  Order      $order
+     * @param  int        $deviceIds
+     * @return Response
+     */
+    protected function standaloneDeviceInvoiceItem($standaloneDeviceIds)
+    {
+        $invoiceItem = null;
+        $subArray = [
+            'subscription_id' => 0,
+            'product_type'    => self::DEVICE_TYPE,
+        ];
+
+        foreach ($standaloneDeviceIds as $index => $standaloneDeviceId) {
+            $standaloneDevice = CustomerStandaloneDevice::find($standaloneDeviceId);
+            $device           = Device::find($standaloneDevice->device_id);
+
+            $array = array_merge($subArray, [
+                'product_id' => $device->id,
+                'amount'     => $device->amount,
+            ]);
+            $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                
+        }
+
+        return $invoiceItem;   
+    }
+
+
+
+
+
+    /**
+     * Creates inovice_item for customer_standalone_sim
+     * 
+     * @param  Order      $order
+     * @param  int        $simIds
+     * @return Response
+     */
+    protected function standaloneSimInvoiceItem($standaloneSimIds)
+    {
+        $invoiceItem = null;
+        $subArray = [
+            'subscription_id' => 0,
+            'product_type'    => self::SIM_TYPE,
+        ];
+
+        foreach ($standaloneSimIds as $index => $standaloneSimId) {
+            $standaloneSim = CustomerStandaloneSim::find($standaloneSimId);
+            $sim           = Sim::find($standaloneSim->sim_id);
+
+            $array = array_merge($subArray, [
+                'product_id' => $sim->id,
+                'amount'     => $sim->amount_alone,
+            ]);
+
+            $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                
+        }
+
+        return $invoiceItem;   
     }
 
 

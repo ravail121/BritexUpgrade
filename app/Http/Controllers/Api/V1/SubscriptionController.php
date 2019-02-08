@@ -102,6 +102,7 @@ class SubscriptionController extends BaseController
             'suspend_restore_status'           =>  'active',
             'upgrade_downgrade_status'         =>  '',
         	'upgrade_downgrade_date_submitted' =>  date('Y-m-d'),
+            'sim_id'                           =>  $request->sim_id,
             'sim_name'                         =>  $request->sim_type,
             'sim_card_num'                     =>  ($request->sim_num) ?: '',
             'old_plan_id'                      =>  self::DEFAULT_INT,

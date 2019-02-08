@@ -49,6 +49,7 @@ class EmailWithAttachment extends Notification
     {
 
         $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'generate-invoice')->first();
+        
         $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
@@ -57,7 +58,6 @@ class EmailWithAttachment extends Notification
 
 
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
-        \Log::info('here');
 
 
         return (new MailMessage)
