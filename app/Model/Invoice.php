@@ -58,7 +58,7 @@ class Invoice extends Model
 
     }
 
-    public function getSubTotalAttribute()
+    public function getSubTotalAmountAttribute()
     {
         $sub_total = 0;
 

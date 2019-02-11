@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\PasswordReset;
 use App\Model\Customer;
 use Illuminate\Http\Request;
+use App\Events\ForgotPassword;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
@@ -19,9 +20,23 @@ class ForgotPasswordController extends BaseController
             }
             $email=$mail['email'];
         }else{
-            $count =
+            $count = Customer::whereEmail($email)->count();
+            if($count < 1){
+                return $this->respondError("Invalid Email ID");
+            }
         }
+        $this->insertToken($email);
+    }
+
+
+    protected function insertToken($email)
+    {
         $hash = sha1(time());
-        dd($hash);
+        $user = [
+                'email' => $email,
+                'token' => $hash
+            ];
+        PasswordReset::create($user);
+        event(new ForgotPassword($user));
     }
 }

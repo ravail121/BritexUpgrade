@@ -387,6 +387,11 @@ Route::middleware('APIToken')->group(function () {
 					'as'   => 'api.customer.checkPassword',
 					'uses' => 'CustomerController@checkPassword',
 				]);
+
+				Route::get('reset-password',[
+					'as'   => 'api.customer.resetPassword',
+					'uses' => 'CustomerController@resetPassword',
+				]);
 					
 			}); 
 

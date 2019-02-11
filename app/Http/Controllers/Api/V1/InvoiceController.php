@@ -334,7 +334,7 @@ class InvoiceController extends BaseController
                 ];
             }
             $total    += $invoice->total;
-            $subTotal += $invoice->subTotal;
+            $subTotal += $invoice->sub_total_amount;
             $pastDue  += $invoice->past_due;
 
         }

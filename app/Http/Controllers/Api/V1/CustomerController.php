@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Validator;
+use App\PasswordReset;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\Subscription;
@@ -225,8 +226,8 @@ class CustomerController extends BaseController
     return $this->respond(['num' => $num]);
   }
 
-  public function checkPassword(Request $request){
-
+  public function checkPassword(Request $request)
+  {
     $currentPassword = Customer::whereHash($request->hash)->first(['password']);
     if(Hash::check($request->password, $currentPassword['password'])){
         return $this->respond(['status' => 0]);
@@ -235,4 +236,19 @@ class CustomerController extends BaseController
         return $this->respond(['status' => 1]);
     }
   }
+  public function resetPassword(Request $request){
+    $data=$request->validate([
+        'token'   => 'required',
+        'password'   => 'required',
+        ]);
+    $email=PasswordReset::whereToken($data['token'])->first(['email']);
+    if($email['email']){
+        $password['password'] = bcrypt($data['password']);
+        Customer::whereEmail($email['email'])->update($password);
+        PasswordReset::whereEmail($email['email'])->delete();
+        return $this->respond('sucessfully Updated');
+      }else{
+        return $this->respondError('Incorrect Token');
+    }
+  }  
 }
