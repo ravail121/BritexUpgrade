@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -99,5 +100,17 @@ class Customer extends Authenticatable
     public function credit()
     {
         return $this->belongsTo(Credit::class);
+    }
+
+
+    public function getFiveDaysBeforeAttribute()
+    {
+        $today          = Carbon::today();
+        $endDate        = Carbon::parse($this->billing_end);
+        $fiveDaysBefore = $endDate->subDays(5);
+
+        // return $today->lessThanOrEqualTo($fiveDaysBefore);
+        return $today->gte($fiveDaysBefore);
+
     }
 }

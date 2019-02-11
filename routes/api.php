@@ -44,6 +44,7 @@ Route::get('/', function (Request $request) {
 				], 200);
 });
 
+
 Route::middleware('APIToken')->group(function () {
 
 
@@ -260,6 +261,12 @@ Route::middleware('APIToken')->group(function () {
 					Route::get('/invoice', [
 					 'as'=>'api.invoice.get',
 					 'uses'=> 'InvoiceController@get',
+
+					]);
+
+					Route::get('/cron-jobs', [
+					 'as'=>'api.monthly.invoice',
+					 'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
 
 					]);
 

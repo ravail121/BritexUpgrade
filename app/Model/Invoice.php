@@ -52,15 +52,20 @@ class Invoice extends Model
     }
 
 
+    public function getTypeNotOneAttribute()
+    {
+        return ($this->type != 1 && $this->start_date > $this->customer->billing_end) ;
+
+    }
 
     public function getSubTotalAttribute()
     {
-        $subtotal = 0;
+        $sub_total = 0;
 
         if ($this->start_date == $this->customer->billing_start) {
-            $subtotal = $this->subtotal;
+            $sub_total = $this->subtotal;
         }
-        return self::toTwoDecimals($subtotal);
+        return self::toTwoDecimals($sub_total);
     }
 
 

@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class EmailWithAttachment extends Notification
+class GenerateMonthlyInvoice extends Notification
 {
     use Queueable;
 
@@ -48,7 +48,7 @@ class EmailWithAttachment extends Notification
     public function toMail($notifiable)
     {
 
-        $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'one-time-invoice')->first();
+        $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'monthly-invoice')->first();
         
         $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
@@ -64,7 +64,7 @@ class EmailWithAttachment extends Notification
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
                     ->line($body)
-                    ->attachData(base64_decode($this->pdf), 'invoice.pdf', [
+                    ->attachData(base64_decode($this->pdf), 'monthly-invoice.pdf', [
                         'mime' => 'application/pdf',
                     ]);
     }
