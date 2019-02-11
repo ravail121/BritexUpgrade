@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\PasswordReset;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -17,6 +18,8 @@ class ForgotPasswordController extends BaseController
                 return $this->respondError("Invalid Customer ID");
             }
             $email=$mail['email'];
+        }else{
+            $count =
         }
         $hash = sha1(time());
         dd($hash);

@@ -180,7 +180,14 @@ class CustomerController extends BaseController
       return $validation;
     }
     if(isset($data['password'])){
-      $data['password'] = bcrypt($data['password']);
+        $currentPassword = Customer::whereHash($data['hash'])->first(['password']);
+
+        if(Hash::check($data['password'], $currentPassword['password'])){
+        $data['password'] = bcrypt($data['password']);    
+        }
+        else{
+            return $this->respondError('Incorrect Current Password');
+        }
     }
     Customer::whereHash($data['hash'])->update($data);
     return $this->respond('sucessfully Updated');
@@ -211,5 +218,21 @@ class CustomerController extends BaseController
         'phone'             => 'sometimes|required',
         'pin'               => 'sometimes|required',
     ]);
+  }
+
+  public function checkEmail(Request $request){
+    $num = Customer::where('email','=', $request->newEmail)->count();
+    return $this->respond(['num' => $num]);
+  }
+
+  public function checkPassword(Request $request){
+
+    $currentPassword = Customer::whereHash($request->hash)->first(['password']);
+    if(Hash::check($request->password, $currentPassword['password'])){
+        return $this->respond(['status' => 0]);
+    }
+    else{
+        return $this->respond(['status' => 1]);
+    }
   }
 }

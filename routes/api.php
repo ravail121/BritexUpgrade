@@ -370,6 +370,16 @@ Route::middleware('APIToken')->group(function () {
 					'as'   => 'api.customer.forgotPassword',
 					'uses' =>'ForgotPasswordController@password',
 				]);
+
+				Route::get('check-email',[
+					'as'   => 'api.customer.checkEmail',
+					'uses' => 'CustomerController@checkEmail',
+				]);
+
+				Route::get('check-password',[
+					'as'   => 'api.customer.checkPassword',
+					'uses' => 'CustomerController@checkPassword',
+				]);
 					
 			}); 
 

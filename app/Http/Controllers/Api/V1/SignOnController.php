@@ -21,6 +21,7 @@ class SignOnController extends BaseController
             'email'   => 'required',
             'password'   => 'required',
             ]);
+        
         if (filter_var($userdata['email'], FILTER_VALIDATE_INT)) {
             $mail = Customer::find($userdata['email']);
             if(!isset($mail['email'])){
