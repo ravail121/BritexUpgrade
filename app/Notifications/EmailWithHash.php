@@ -5,7 +5,7 @@ namespace App\Notifications;
 use App\Model\Company;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
-use App\Model\BusinessVerification;
+use App\Model\Customer;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -48,13 +48,21 @@ class EmailWithHash extends Notification
         $company = Company::find($this->user['company_id']);
 
         $url = url($company->url.self::URL.$this->user['token']);
-        
+
         $emailTemplate = EmailTemplate::where('company_id', $this->user['company_id'])->where('code', 'reset-password')->first();
+
+        $customer = Customer::whereEmail($this->user['email'])->first();
+
+        $strings     = ['[FIRST_NAME]', '[LAST_NAME]','[EMAIL]'];
+        
+        $replaceWith = [$customer['fname'], $customer['lname'], $customer['email']];
+
+        $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
         return (new MailMessage)
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
-                    ->line($emailTemplate->body)
+                    ->line($body)
                     ->action('Verify', $url);
     }
 
