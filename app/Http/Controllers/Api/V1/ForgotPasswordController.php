@@ -11,8 +11,10 @@ use App\Http\Controllers\BaseController;
 
 class ForgotPasswordController extends BaseController
 {
-    public function password(Request $request){
+    public function password(Request $request)
+    {
     	$email = $request->email;
+
     	if (filter_var($email, FILTER_VALIDATE_INT)) {
             $mail = Customer::find($email);
             if(!isset($mail['email'])){
@@ -36,6 +38,7 @@ class ForgotPasswordController extends BaseController
                 'email' => $email,
                 'token' => $hash
             ];
+            \Log::info($user);
         PasswordReset::create($user);
         event(new ForgotPassword($user));
     }

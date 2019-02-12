@@ -45,12 +45,12 @@ class EmailWithHash extends Notification
      */
     public function toMail($notifiable)
     {
+        \Log::info("notify");
+        \Log::info($this->user);
         $company = Company::find($this->user['company_id']);
 
         $url = url($company->url.self::URL.$this->user['token']);
-
-        // $url =  route('api.customer.resetPassword', ['token' => $this->user['token']]);
-
+        \Log::info($url);
         return (new MailMessage)
                     ->subject("Reset Password")
                     ->from("admin@admin.com")
