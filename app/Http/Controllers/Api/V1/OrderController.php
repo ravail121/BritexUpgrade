@@ -7,6 +7,7 @@ use App\Http\Controllers\BaseController;
 use Validator;
 use App\Model\Order;
 use App\Model\Company;
+use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use Illuminate\Http\Request;
@@ -53,23 +54,25 @@ class OrderController extends BaseController
                         'business_verification'  => null,
                         'operating_system'       => null,
                         'imei_number'            => null,
+                        'customer'               => $og->customer,
                     ];
                 }
 
             
                 
                 $tmp = array(
-                        'id'               => $og->id,
-                        'sim'              => $og->sim,
-                        'sim_num'          => $og->sim_num,
-                        'sim_type'         => $og->sim_type,
-                        'plan'             => $og->plan,
-                        'addons'           => [],
-                        'porting_number'   => $og->porting_number,
-                        'area_code'        => $og->area_code,
-                        'device'           => $og->device_detail,
-                        'operating_system' => $og->operating_system,
-                        'imei_number'      => $og->imei_number,
+                        'id'                => $og->id,
+                        'sim'               => $og->sim,
+                        'sim_num'           => $og->sim_num,
+                        'sim_type'          => $og->sim_type,
+                        'plan'              => $og->plan,
+                        'addons'            => [],
+                        'porting_number'    => $og->porting_number,
+                        'area_code'         => $og->area_code,
+                        'device'            => $og->device_detail,
+                        'operating_system'  => $og->operating_system,
+                        'imei_number'       => $og->imei_number,
+                        'plan_prorated_amt' => $og->plan_prorated_amt,
                     );
 
                 
@@ -148,6 +151,14 @@ class OrderController extends BaseController
             $order = $order[0];
         }
 
+        if (isset($data['customer_hash'])) {
+            $customer = Customer::hash($data['customer_hash']);
+            if ($customer) {
+
+                $order->update(['customer_id' => $customer->id]);
+            }
+        }
+
 
         // check active_group_id
         if(!$order->active_group_id){
@@ -166,12 +177,18 @@ class OrderController extends BaseController
 
 
         $og_params = [];
+
+
         if(isset($data['device_id'])){
             $og_params['device_id'] = $data['device_id'];
         }
 
         if(isset($data['plan_id'])){
             $og_params['plan_id'] = $data['plan_id'];
+
+            if ($order->customer && $order->compare_dates) {
+                $og_params['plan_prorated_amt'] = $order->calProRatedAmount($data['plan_id']);
+            }
             // delete all rows in order_group_addon table associated with this order
             
             $_oga = OrderGroupAddon::where('order_group_id', $order_group->id)
@@ -240,7 +257,7 @@ class OrderController extends BaseController
 
         }
 
-        return response()->json(['id' => $order->id, 'order_hash' => $order->hash]);
+        return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);
         
         
     }

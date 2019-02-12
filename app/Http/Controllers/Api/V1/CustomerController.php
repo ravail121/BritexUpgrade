@@ -157,11 +157,18 @@ class CustomerController extends BaseController
    */
   public function customerDetails(Request $request)
   {
-    $customer = 'Hash is required';
+    $msg = $this->respond(['error' => 'Hash is required']);
     if ($request->hash) {
       $customer = Customer::where(['hash' => $request->hash])->first();
+      if ($customer) {
+        $msg = $this->respond($customer);
+
+      } else {
+        $msg = $this->respond(['error' => 'customer not found']);
+
+      }
     }
-    return $this->respond($customer);
+    return $msg;
   }
 
 

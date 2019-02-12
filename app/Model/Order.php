@@ -2,6 +2,8 @@
 
 namespace App\Model;
 
+use Carbon\Carbon;
+use App\Model\Plan;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -54,4 +56,30 @@ class Order extends Model
     {
         return $this->belongsTo('App\Model\OrderGroup', 'id', 'order_id');
     }
+
+    public function getCompareDatesAttribute()
+    {
+        $today     = Carbon::today();
+        $startDate = Carbon::parse($this->customer->billing_start);
+
+        return ($this->customer->billing_start != null && $today->gt($startDate));
+    }
+
+
+    public function calProRatedAmount($planId)
+    {
+        $plan = Plan::find($planId);
+        $amount = $plan->amount_recurring;
+
+        $today     = Carbon::today();
+        $startDate = Carbon::parse($this->customer->billing_start);
+        $endDate   = Carbon::parse($this->customer->billing_end);
+
+        $numberOfDaysLeft  = $endDate->diffInDays($today);
+        $totalNumberOfDays = $endDate->diffInDays($startDate);
+
+        return ($numberOfDaysLeft + 1)/$totalNumberOfDays*$amount;
+    }
+
+
 }

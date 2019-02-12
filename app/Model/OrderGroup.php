@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use App\Model\Customer;
 use Illuminate\Database\Eloquent\Model;
 
 class OrderGroup extends Model
@@ -9,7 +10,7 @@ class OrderGroup extends Model
    protected $table = 'order_group';
 
    protected $fillable = [
-        'order_id', 'device_id', 'sim_id', 'plan_id', 'sim_num', 'sim_type', 'porting_number', 'area_code', 'operating_system', 'imei_number'
+        'order_id', 'device_id', 'sim_id', 'plan_id', 'plan_prorated_amt', 'sim_num', 'sim_type', 'porting_number', 'area_code', 'operating_system', 'imei_number'
     ];
 
     public function getDeviceDetailAttribute()
@@ -58,6 +59,15 @@ class OrderGroup extends Model
 
 // ----- Not touching the previously created code as they might be in use ----------
 
+
+  public function getCustomerAttribute()
+  {
+    if ($this->order->customer_id != null) {
+      return Customer::find($this->order->customer_id);
+
+    }
+    return $this->hasMany('App\Model\OrderGroupAddon');
+  }
 
 
     // this is a recommended way to declare event handlers
