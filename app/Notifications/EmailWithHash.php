@@ -50,10 +50,12 @@ class EmailWithHash extends Notification
         $company = Company::find($this->user['company_id']);
 
         $url = url($company->url.self::URL.$this->user['token']);
+
         \Log::info($url);
+
         return (new MailMessage)
                     ->subject("Reset Password")
-                    ->from("admin@admin.com")
+                    ->from("admin@teltik.pw")
                     ->line('Please reset you password by clicking on the link')
                     ->action('Verify', $url);
     }
