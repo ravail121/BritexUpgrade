@@ -25,7 +25,6 @@ class ForgotPassword
     public function __construct($user)
     {
         $this->user = $user;
-        \Log::info($user);
 
     }
     /**

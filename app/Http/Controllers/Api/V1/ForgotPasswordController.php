@@ -38,7 +38,6 @@ class ForgotPasswordController extends BaseController
                 'email' => $email,
                 'token' => $hash
             ];
-            \Log::info($user);
         PasswordReset::create($user);
         event(new ForgotPassword($user));
     }

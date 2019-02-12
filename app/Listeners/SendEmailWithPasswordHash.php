@@ -38,19 +38,14 @@ class SendEmailWithPasswordHash
     {
         $user = $event->user;
 
-        \Log::info("Listeners");
-        \Log::info($user);
-
         $customer = Customer::where('email', $user['email'])->first();
         $configurationSet = $this->setMailConfiguration($customer['company_id']);
         $user['company_id'] = $customer['company_id'];
-        \Log::info("configurationSet");
-        \Log::info($configurationSet);
 
         if ($configurationSet) {
             return false;
         }
-        \Log::info("ListenersNotify");
+        
         $customer->notify(new EmailWithHash($user));        
     }
 

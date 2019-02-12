@@ -45,18 +45,16 @@ class EmailWithHash extends Notification
      */
     public function toMail($notifiable)
     {
-        \Log::info("notify");
-        \Log::info($this->user);
         $company = Company::find($this->user['company_id']);
 
         $url = url($company->url.self::URL.$this->user['token']);
-
-        \Log::info($url);
+        
+        $emailTemplate = EmailTemplate::where('company_id', $this->user['company_id'])->where('code', 'reset-password')->first();
 
         return (new MailMessage)
-                    ->subject("Reset Password")
-                    ->from("admin@teltik.pw")
-                    ->line('Please reset you password by clicking on the link')
+                    ->subject($emailTemplate->subject)
+                    ->from($emailTemplate->from)
+                    ->line($emailTemplate->body)
                     ->action('Verify', $url);
     }
 
