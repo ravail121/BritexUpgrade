@@ -390,11 +390,9 @@ Route::middleware('APIToken')->group(function () {
 
 				Route::get('reset-password',[
 					'as'   => 'api.customer.resetPassword',
-					'uses' => 'CustomerController@resetPassword',
+					'uses' => 'ForgotPasswordController@resetPassword',
 				]);
-					
 			}); 
-
 
 			//Route::get('/confirm','BizVerificationController@confirm');
 			

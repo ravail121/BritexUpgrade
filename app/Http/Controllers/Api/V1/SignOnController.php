@@ -18,17 +18,18 @@ class SignOnController extends BaseController
     public function signOn(Request $request)
     {
         $userdata=$request->validate([
-            'email'   => 'required',
+            'email'      => 'required',
             'password'   => 'required',
             ]);
-        
+
         if (filter_var($userdata['email'], FILTER_VALIDATE_INT)) {
             $mail = Customer::find($userdata['email']);
             if(!isset($mail['email'])){
                 return $this->respondError("Invalid Customer ID");
             }
             $userdata['email']=$mail['email'];
-        }     
+        }
+          
         if(Auth::validate($userdata))
         {
             $user = Customer::whereEmail($userdata['email'])->get(['id','hash']);

@@ -38,12 +38,14 @@ class SendEmailWithPasswordHash
     {
         $user = $event->user;
 
-        $configurationSet = $this->setMailConfiguration();
+        $customer = Customer::where('email', $user['email'])->first();
+        $configurationSet = $this->setMailConfiguration($customer['company_id']);
+        $user['company_id'] = $customer['company_id'];
 
         if ($configurationSet) {
             return false;
         }
-        $customer = Customer::where('email', $user['email'])->first();
+
         $customer->notify(new EmailWithHash($user));        
     }
 
@@ -54,9 +56,9 @@ class SendEmailWithPasswordHash
      * @param Order $order
      * @return boolean
      */
-    protected function setMailConfiguration()
+    protected function setMailConfiguration($companyId)
     {
-        $company = Company::find(1);
+        $company = Company::find($companyId);
         $config = [
             'driver'   => $company->smtp_driver,
             'host'     => $company->smtp_host,

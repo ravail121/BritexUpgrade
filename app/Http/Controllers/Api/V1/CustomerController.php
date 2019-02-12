@@ -183,8 +183,10 @@ class CustomerController extends BaseController
     if(isset($data['password'])){
         $currentPassword = Customer::whereHash($data['hash'])->first(['password']);
 
-        if(Hash::check($data['password'], $currentPassword['password'])){
-        $data['password'] = bcrypt($data['password']);    
+        if(Hash::check($data['oldPassword'], $currentPassword['password'])){
+            $password['password'] = bcrypt($data['password']);
+            Customer::whereHash($data['hash'])->update($password);
+            return $this->respond('sucessfully Updated');    
         }
         else{
             return $this->respondError('Incorrect Current Password');
@@ -222,33 +224,18 @@ class CustomerController extends BaseController
   }
 
   public function checkEmail(Request $request){
-    $num = Customer::where('email','=', $request->newEmail)->count();
-    return $this->respond(['num' => $num]);
+    $emailCount = Customer::whereEmail($request->newEmail)->count();
+    return $this->respond(['num' => $emailCount]);
   }
 
   public function checkPassword(Request $request)
   {
-    $currentPassword = Customer::whereHash($request->hash)->first(['password']);
+    $currentPassword = Customer::whereHash($request->hash)->first();
     if(Hash::check($request->password, $currentPassword['password'])){
         return $this->respond(['status' => 0]);
     }
     else{
         return $this->respond(['status' => 1]);
-    }
-  }
-  public function resetPassword(Request $request){
-    $data=$request->validate([
-        'token'   => 'required',
-        'password'   => 'required',
-        ]);
-    $email=PasswordReset::whereToken($data['token'])->first(['email']);
-    if($email['email']){
-        $password['password'] = bcrypt($data['password']);
-        Customer::whereEmail($email['email'])->update($password);
-        PasswordReset::whereEmail($email['email'])->delete();
-        return $this->respond('sucessfully Updated');
-      }else{
-        return $this->respondError('Incorrect Token');
     }
   }  
 }

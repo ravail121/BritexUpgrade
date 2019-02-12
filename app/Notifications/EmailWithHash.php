@@ -45,7 +45,7 @@ class EmailWithHash extends Notification
      */
     public function toMail($notifiable)
     {
-        $company = Company::find(1);
+        $company = Company::find($this->user['company_id']);
 
         $url = url($company->url.self::URL.$this->user['token']);
 
