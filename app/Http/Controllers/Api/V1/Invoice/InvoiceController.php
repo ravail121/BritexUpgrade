@@ -100,6 +100,7 @@ class InvoiceController extends BaseController
             $invoice = $request->data_to_invoice;
             if (isset($invoice['subscription_id'])) {
 
+
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
                 $order        = $this->updateCustomerDates($subscription);
 
@@ -109,6 +110,7 @@ class InvoiceController extends BaseController
                 
             }
             if (isset($invoice['customer_standalone_device_id'])) {
+
 
                 $standaloneDevice = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'][0]);
 
@@ -122,6 +124,7 @@ class InvoiceController extends BaseController
             }
 
             if (isset($invoice['customer_standalone_sim_id'])) {
+
 
                 $standaloneSim = CustomerStandaloneSim::find($invoice['customer_standalone_sim_id'][0]);
                 $order = $this->updateCustomerDates($standaloneSim);
@@ -155,21 +158,26 @@ class InvoiceController extends BaseController
     public function get(Request $request){
 
         $order = Order::hash($request->order_hash)->first();
+        if ($order) {
+            $invoice = [
+                'start_date' => $order->invoice->start_date,
+                'end_date'   => $order->invoice->end_date,
+                'due_date'   => $order->invoice->due_date,
+                'total_due'  => $order->invoice->total_due,
+                'subtotal'   => $order->invoice->subtotal,
+             ];
+            $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
+            $pdf->setPaper([0, 0, 1000, 1000], 'landscape');
+            return $pdf->download('invoice.pdf');
+
+        }
+        return false;
         // $data = Invoice::find($order->invoice_id);
 
 
         // PDF::loadFile(public_path().'/templates/invoice.html')->save('templates/invoice.pdf')->stream('download.pdf');
         
-         $invoice = [
-            'start_date' => $order->invoice->start_date,
-            'end_date'   => $order->invoice->end_date,
-            'due_date'   => $order->invoice->due_date,
-            'total_due'  => $order->invoice->total_due,
-            'subtotal'   => $order->invoice->subtotal,
-         ];
-        $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
-        $pdf->setPaper([0, 0, 1000, 1000], 'landscape');
-        return $pdf->download('invoice.pdf');
+         
         // $pdf->save('invoice/invoice.pdf');
 
         // return $this->respondError(['No such invoice']);

@@ -489,14 +489,14 @@ class CreateOrderTable extends Migration
             $table->text('billing_fname');
             $table->text('billing_lname');
             $table->text('billing_address_line_1');
-            $table->text('billing_address_line_2');
+            $table->text('billing_address_line_2')->nullable();
             $table->text('billing_city');
             $table->text('billing_state');
             $table->text('billing_zip');
             $table->text('shipping_fname');
             $table->text('shipping_lname');
             $table->text('shipping_address_line_1');
-            $table->text('shipping_address_line_2');
+            $table->text('shipping_address_line_2')->nullable();
             $table->text('shipping_city');
             $table->text('shipping_state');
             $table->text('shipping_zip');
