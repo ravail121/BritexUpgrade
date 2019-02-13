@@ -220,7 +220,7 @@ class CustomerController extends BaseController
         'email'             => 'sometimes|required|email',
         'billing_address1'  => 'sometimes|required',
         'billing_city'      => 'sometimes|required',
-        'password'          => 'sometimes|required',
+        'password'          => 'sometimes|required|min:6',
         'hash'              => 'required',
         'shipping_address1' => 'sometimes|required',
         'shipping_city'     => 'sometimes|required',

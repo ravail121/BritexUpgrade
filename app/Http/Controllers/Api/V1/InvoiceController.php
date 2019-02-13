@@ -324,6 +324,7 @@ class InvoiceController extends BaseController
     protected function getTotalAmount($invoicesDetails)
     {
         $total = $subTotal = $pastDue  = 0;
+        $array = [];
         
         foreach ($invoicesDetails as $key => $invoice) {
 

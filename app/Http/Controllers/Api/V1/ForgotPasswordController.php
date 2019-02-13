@@ -46,8 +46,8 @@ class ForgotPasswordController extends BaseController
     public function resetPassword(Request $request)
     {
         $data=$request->validate([
-            'token'   => 'required',
-            'password'   => 'required',
+            'token'      => 'required',
+            'password'   => 'required|min:6',
             ]);
 
         $email=PasswordReset::whereToken($data['token'])->first(['email']);

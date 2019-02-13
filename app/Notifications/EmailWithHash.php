@@ -63,7 +63,7 @@ class EmailWithHash extends Notification
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
                     ->line($body)
-                    ->action('Verify', $url);
+                    ->action('Reset Password', $url);
     }
 
     /**
