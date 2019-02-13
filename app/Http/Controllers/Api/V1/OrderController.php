@@ -154,7 +154,6 @@ class OrderController extends BaseController
         if (isset($data['customer_hash'])) {
             $customer = Customer::hash($data['customer_hash']);
             if ($customer) {
-
                 $order->update(['customer_id' => $customer->id]);
             }
         }

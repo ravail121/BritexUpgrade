@@ -233,7 +233,9 @@ class InvoiceController extends BaseController
         $customer = Customer::find($obj->customer_id);
         $order    = Order::find($obj->order_id);
 
-        if ($customer->subscription_start_date == null && $customer->billing_start && $customer->billing_end == null) {
+
+        if ($customer->subscription_start_date == null && $customer->billing_start == null  && $customer->billing_end == null) {
+
             $customer->update([
                 'subscription_start_date' => $this->carbon->toDateString(),
                 'billing_start'           => $this->carbon->toDateString(),

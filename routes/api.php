@@ -264,6 +264,12 @@ Route::middleware('APIToken')->group(function () {
 
 					]);
 
+					Route::get('/sample-invoice', [
+					 'as'=>'api.sample.invoice',
+					 'uses'=> 'SampleInvoiceGenerationController@get',
+
+					]);
+
 					Route::get('/cron-jobs', [
 					 'as'=>'api.monthly.invoice',
 					 'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',

@@ -10,33 +10,46 @@ use App\Http\Controllers\BaseController;
 
 class SignOnController extends BaseController
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    
     public function signOn(Request $request)
     {
-        $userdata=$request->validate([
-            'email'      => 'required',
+        $data = $request->validate([
+            'identifier' => 'required',
             'password'   => 'required',
-            ]);
+        ]);
 
-        if (filter_var($userdata['email'], FILTER_VALIDATE_INT)) {
-            $mail = Customer::find($userdata['email']);
-            if(!isset($mail['email'])){
+        if ($this->isNumeric($data['identifier'])) {
+            $customer = Customer::find($data['identifier']);
+
+            if(!$customer){
                 return $this->respondError("Invalid Customer ID");
             }
-            $userdata['email']=$mail['email'];
+
+            $data['email'] = $customer->email;
+        }else {
+            $data['email'] = $data['identifier'];
         }
+
+        unset($data['identifier']);
           
-        if(Auth::validate($userdata))
+        if(Auth::validate($data))
         {
-            $user = Customer::whereEmail($userdata['email'])->get(['id','hash']);
+            $user = Customer::whereEmail($data['email'])->get(['id','hash']);
             return $this->respond($user[0]);
         }
         else{
             return $this->respondError("Invalid Email or Password");
         }
+    }
+
+
+    /**
+     * [isNumeric description]
+     * @param  [type]  $value [description]
+     * @return boolean        [return true for nunmaric value false for rest]
+     */
+    private function isNumeric($value)
+    {
+        return (filter_var($value, FILTER_VALIDATE_INT));
     }
 }

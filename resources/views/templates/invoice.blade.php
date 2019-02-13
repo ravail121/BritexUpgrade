@@ -2,8 +2,9 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
     <title>Teltik</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="{{ asset('pdf/css/81style.css') }}" type="text/css" rel="stylesheet">
 </head>
 
@@ -135,29 +136,29 @@
                                     </td>
                                     <td class="titlebx">
                                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                            <div>
-                                                <tbody>
-                                                    <tr>
-                                                        <td>Payments (Mar 1)</td>
-                                                        <td class="detail">$90.00</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Due Mar 1</td>
-                                                        <td class="detail">$0.00</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <div class="seprator"></div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td colspan="2">Let’s talk!<span> Call us anytime</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td colspan="2">Reseller Phone Number</td>
-                                                    </tr>
-                                                </tbody>
-                                            </div>
+                                            
+                                            <tbody>
+                                                <tr>
+                                                    <td>Payments (Mar 1)</td>
+                                                    <td class="detail">$90.00</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Due Mar 1</td>
+                                                    <td class="detail">$0.00</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <div class="seprator"></div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="2">Let’s talk!<span> Call us anytime</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="2">Reseller Phone Number</td>
+                                                </tr>
+                                            </tbody>
+                                            
                                         </table>
                                     </td>
                                 </tr>
@@ -220,7 +221,7 @@
                             </tbody>
                             <tr><td colspan="7" class="lh0">
                             	<div class="total_img">
-		                            <img src="img/shape.png" alt="shape">
+		                            <img src="{{ asset('pdf/img/shape.png') }}" alt="shape">
 		                        </div></td>
 		                    </tr>
                             
@@ -235,7 +236,7 @@
                                 </tr>
                             <tr>
                             	<td colspan="7" class="lh0"><div class="total_img2">
-		                        	<img src="img/shape.png" alt="shape">
+		                        	<img src="{{ asset('pdf/img/shape.png') }}" alt="shape">
 		                        </div></td>
                             </tr>
                             <tr>

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Validator;
-use App\PasswordReset;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\Subscription;
@@ -188,9 +187,9 @@ class CustomerController extends BaseController
       return $validation;
     }
     if(isset($data['password'])){
-        $currentPassword = Customer::whereHash($data['hash'])->first(['password']);
+        $currentPassword = Customer::whereHash($data['hash'])->first();
 
-        if(Hash::check($data['oldPassword'], $currentPassword['password'])){
+        if(Hash::check($data['old_password'], $currentPassword['password'])){
             $password['password'] = bcrypt($data['password']);
             Customer::whereHash($data['hash'])->update($password);
             return $this->respond('sucessfully Updated');    
@@ -230,19 +229,20 @@ class CustomerController extends BaseController
     ]);
   }
 
-  public function checkEmail(Request $request){
-    $emailCount = Customer::whereEmail($request->newEmail)->count();
-    return $this->respond(['num' => $emailCount]);
-  }
+    public function checkEmail(Request $request){
+        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('id', '!=' , $request->id)->count();
+        return $this->respond(['emailCount' => $emailCount]);
+    }
 
-  public function checkPassword(Request $request)
-  {
-    $currentPassword = Customer::whereHash($request->hash)->first();
-    if(Hash::check($request->password, $currentPassword['password'])){
-        return $this->respond(['status' => 0]);
-    }
-    else{
-        return $this->respond(['status' => 1]);
-    }
-  }  
+    public function checkPassword(Request $request)
+    {
+        $currentPassword = Customer::whereHash($request->hash)->first();
+
+        if(Hash::check($request->password, $currentPassword['password'])){
+            return $this->respond(['status' => 0]);
+        }
+        else{
+            return $this->respond(['status' => 1]);
+        }
+    }  
 }

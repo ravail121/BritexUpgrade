@@ -13,21 +13,36 @@ class ForgotPasswordController extends BaseController
 {
     public function password(Request $request)
     {
-    	$email = $request->email;
+        $data=$request->validate([
+            'identifier'     => 'required'
+        ]);
 
-    	if (filter_var($email, FILTER_VALIDATE_INT)) {
-            $mail = Customer::find($email);
-            if(!isset($mail['email'])){
+        if ($this->isNumeric($data['identifier'])) {
+            $customer = Customer::find($data['identifier']);
+            if(!$customer){
                 return $this->respond("Sorry Customer ID is not valid");
             }
-            $email=$mail['email'];
-        }else{
+
+            $email=$customer['email'];
+
+        }else {
+            $email=$data['identifier'];
             $count = Customer::whereEmail($email)->count();
             if($count < 1){
                 return $this->respond("Sorry Email ID is not Valid");
             }
         }
         $this->insertToken($email);
+    }
+
+    /**
+     * [isNumeric description]
+     * @param  [type]  $value [description]
+     * @return boolean        [return true for nunmaric value false for rest]
+     */
+    private function isNumeric($value)
+    {
+        return (filter_var($value, FILTER_VALIDATE_INT));
     }
 
 
@@ -48,11 +63,11 @@ class ForgotPasswordController extends BaseController
         $data=$request->validate([
             'token'      => 'required',
             'password'   => 'required|min:6',
-            ]);
+        ]);
 
-        $email=PasswordReset::whereToken($data['token'])->first(['email']);
+        $email=PasswordReset::whereToken($data['token'])->first();
 
-        if($email['email']){
+        if(isset($email['email'])){
             $password['password'] = bcrypt($data['password']);
             Customer::whereEmail($email['email'])->update($password);
             PasswordReset::whereEmail($email['email'])->delete();
