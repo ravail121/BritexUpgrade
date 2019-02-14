@@ -72,7 +72,7 @@ class ForgotPasswordController extends BaseController
             Customer::whereEmail($email['email'])->update($password);
             PasswordReset::whereEmail($email['email'])->delete();
         }else{
-            return $this->respond('Sorry link to Reset Password is no more valid');
+            return $this->respond('Sorry Reset Password is no longer valid');
         }
     }
 }
