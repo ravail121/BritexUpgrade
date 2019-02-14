@@ -64,9 +64,12 @@ class EmailWithAttachment extends Notification
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
                     ->line($body)
-                    ->attachData($this->pdf, 'invoice.pdf', [
+                    ->attachData($this->pdf->output(), 'invoice.pdf', [
                         'mime' => 'application/pdf',
                     ]);
+                    // ->attachData($this->pdf, 'invoice.pdf', [
+                    //     'mime' => 'application/pdf',
+                    // ]);
     }
 
     /**

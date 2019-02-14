@@ -44,11 +44,15 @@ class Customer extends Authenticatable
         'shipping_zip',
     ];
 
-     public function company()
-     {
-     	return $this->hasOne('App\Model\Company', 'id');
+    protected $attributes = [
+        'auto_pay' => 0,
+    ];
 
-     }
+    public function company()
+    {
+    	return $this->hasOne('App\Model\Company', 'id');
+
+    }
 
     public function subscription()
     {

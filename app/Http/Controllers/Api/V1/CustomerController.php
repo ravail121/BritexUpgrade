@@ -212,11 +212,12 @@ class CustomerController extends BaseController
    * @return Response   validation response
    */
   protected function validateUpdate($data) 
-  { 
+  {
+    $id = $data['id'];
     return $this->validate_input($data, [
         'fname'             => 'sometimes|required',
         'lname'             => 'sometimes|required',
-        'email'             => 'sometimes|required|email',
+        'email'             => 'sometimes|required|unique:customer,email,'.$id,
         'billing_address1'  => 'sometimes|required',
         'billing_city'      => 'sometimes|required',
         'password'          => 'sometimes|required|min:6',

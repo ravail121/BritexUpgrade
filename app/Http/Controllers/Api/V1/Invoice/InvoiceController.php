@@ -167,10 +167,11 @@ class InvoiceController extends BaseController
                 'subtotal'   => $order->invoice->subtotal,
                 'today_date' => $this->carbon->toFormattedDateString(),
              ];
-            $pdf = PDF::loadView('templates/invoice', compact('invoice'))
-                        ->setOption('images', true)
-                        ->setOption('enable-javascript', true)
-                        ->setOption('javascript-delay', 100);
+             $pdf = PDF::loadView('templates/invoice', compact('invoice'));
+            // $pdf = PDF::loadView('templates/invoice', compact('invoice'))
+            //             ->setOption('images', true)
+            //             ->setOption('enable-javascript', true)
+            //             ->setOption('javascript-delay', 100);
             return $pdf->download('invoice.pdf');
 
         }

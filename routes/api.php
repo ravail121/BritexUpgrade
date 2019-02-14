@@ -312,6 +312,11 @@ Route::middleware('APIToken')->group(function () {
 						'uses' => 'CardController@addCard',
 					]);
 
+					Route::post('/remove-card',[
+						'as'   => 'api.add.cards',
+						'uses' => 'CardController@removeCard',
+					]);
+
 					Route::post('/charge-card',[
 						'as'   => 'api.charge.cards',
 						'uses' => 'CardController@chargeCard',
