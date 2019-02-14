@@ -197,9 +197,7 @@ class CustomerController extends BaseController
         else{
             return $this->respondError('Incorrect Current Password');
         }
-    }    
-    \Log::info("Backend CustomerController Update");
-    \Log::info($data);
+    } 
     Customer::whereHash($data['hash'])->update($data);
     return $this->respond('sucessfully Updated');
   }
@@ -233,8 +231,6 @@ class CustomerController extends BaseController
 
     public function checkEmail(Request $request){
         $emailCount = Customer::where('email', '=' , $request->newEmail)->where('id', '!=' , $request->id)->count();
-        \Log::info("Backend Js CustomerController Update");
-        \Log::info($emailCount);
         return $this->respond(['emailCount' => $emailCount]);
     }
 
