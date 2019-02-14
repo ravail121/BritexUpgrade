@@ -5,6 +5,7 @@ namespace App\Listeners;
 use PDF;
 use Mail;
 use Config;
+use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Company;
 use App\Events\InvoiceGenerated;
@@ -20,13 +21,22 @@ class SendEmailWithInvoice
     use Notifiable;
 
     /**
+     * Date-Time variable
+     * 
+     * @var $carbon
+     */
+    public $carbon;
+
+
+
+    /**
      * Create the event listener.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(Carbon $carbon)
     {
-        //
+        $this->carbon = $carbon;
     }
 
     /**
@@ -45,8 +55,13 @@ class SendEmailWithInvoice
             'due_date'   => $order->invoice->due_date,
             'total_due'  => $order->invoice->total_due,
             'subtotal'   => $order->invoice->subtotal,
+            'today_date' => $this->carbon->toFormattedDateString(),
          ];
-        $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape')->stream();
+        $pdf = PDF::loadView('templates/invoice', compact('invoice'))
+                    ->setOption('images', true)
+                    ->setOption('enable-javascript', true)
+                    ->setOption('javascript-delay', 100);
+        $pdf = $pdf->output();
 
         $configurationSet = $this->setMailConfiguration($order);
 
