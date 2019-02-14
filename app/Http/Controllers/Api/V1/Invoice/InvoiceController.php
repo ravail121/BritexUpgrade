@@ -165,14 +165,16 @@ class InvoiceController extends BaseController
                 'due_date'   => $order->invoice->due_date,
                 'total_due'  => $order->invoice->total_due,
                 'subtotal'   => $order->invoice->subtotal,
+                'today_date' => $this->carbon->toFormattedDateString(),
              ];
-            $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
-            $pdf->setPaper([0, 0, 1000, 1000], 'landscape');
+            $pdf = PDF::loadView('templates/invoice', compact('invoice'))
+                        ->setOption('images', true)
+                        ->setOption('enable-javascript', true)
+                        ->setOption('javascript-delay', 100);
             return $pdf->download('invoice.pdf');
 
         }
         return false;
-        // $data = Invoice::find($order->invoice_id);
 
 
         // PDF::loadFile(public_path().'/templates/invoice.html')->save('templates/invoice.pdf')->stream('download.pdf');

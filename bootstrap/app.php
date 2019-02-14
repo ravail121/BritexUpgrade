@@ -15,6 +15,8 @@ $app = new Illuminate\Foundation\Application(
     realpath(__DIR__.'/../')
 );
 
+// class_alias('Barryvdh\Snappy\Facades\SnappyPdf', 'PDF');
+// $app->register(Barryvdh\Snappy\LumenServiceProvider::class);
 /*
 |--------------------------------------------------------------------------
 | Bind Important Interfaces
