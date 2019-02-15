@@ -13,9 +13,12 @@ class CustomerPlanController extends BaseController
 {
     public function get(Request $request){
 
+        $InvoiceController = new InvoiceController();
+        $innvoice = $InvoiceController->invoiceDetails($request);
+
     	$customerId = Customer::whereHash($request->hash)->first(['id']);
 
-    	return $this->getSubscriptions($customerId['id']);
+    	return $this->respond(['customer-invoice' =>$innvoice,'customer-plans' => $this->getSubscriptions($customerId['id'])]);
     }
 
     public function getSubscriptions($customerId){
@@ -25,8 +28,9 @@ class CustomerPlanController extends BaseController
     	foreach ($subscriptions as $key => $subscription) {
     		$subscriptions[$key]['plan'] = $subscription->plan;
     		$subscriptions[$key]['device'] = $subscription->device;
+            $subscriptions[$key]['addons'] = $subscription->subscriptionAddon;
     	}
     	
-    	return $this->respond($subscriptions);
+    	return $subscriptions;
     }
 }

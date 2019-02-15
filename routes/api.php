@@ -374,12 +374,12 @@ Route::middleware('APIToken')->group(function () {
 					'uses' => 'CustomerController@update',
 				]);
 
-				Route::get('customer-plan',[
+				Route::get('customer-subscriptions',[
 					'as'   => 'api.customer.plan',
 					'uses' => 'CustomerPlanController@get',
 				]);
 
-				Route::get('customer-invoice',[
+				Route::get('customer-current-invoice',[
 					'as'   => 'api.customer.invoice',
 					'uses' =>'InvoiceController@invoiceDetails',
 				]);

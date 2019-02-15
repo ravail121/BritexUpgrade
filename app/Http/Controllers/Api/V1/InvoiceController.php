@@ -310,7 +310,7 @@ class InvoiceController extends BaseController
         $invoicesDetails = Invoice::getDues($customer->id)->get();
 
         $this->getTotalAmount($invoicesDetails);
-        return $this->respond($this->content);
+        return $this->content;
     }
 
 
