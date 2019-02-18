@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\V1;
 use Validator;
 use App\Model\Order;
 use App\Model\Customer;
+use App\Model\OrderGroup;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
@@ -245,5 +247,13 @@ class CustomerController extends BaseController
         else{
             return $this->respond(['status' => 1]);
         }
+    }
+
+    public function customerOrder(Request $request)
+    {
+        $customer = Customer::whereHash($request->hash)->first();
+        $orders = Order::whereCustomerId($customer['id'])->with('allOrderGroup.sim', 'allOrderGroup.device', 'allOrderGroup.plan','allOrderGroup.order_group_addon.addon','invoice')->get();
+
+        return $this->respond($orders);
     }  
 }

@@ -45,7 +45,7 @@ class OrderGroup extends Model
 
    public function order_group_addon()
     {
-     return $this->hasMany('App\Model\OrderGroupAddon');
+     return $this->hasMany('App\Model\OrderGroupAddon', 'order_group_id', 'id');
     }
 
 

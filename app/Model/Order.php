@@ -57,6 +57,11 @@ class Order extends Model
         return $this->belongsTo('App\Model\OrderGroup', 'id', 'order_id');
     }
 
+    public function allOrderGroup()
+    {
+        return $this->hasMany('App\Model\OrderGroup', 'order_id', 'id');
+    }
+
     public function getCompareDatesAttribute()
     {
         $today     = Carbon::today();

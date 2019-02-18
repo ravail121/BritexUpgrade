@@ -321,6 +321,7 @@ Route::middleware('APIToken')->group(function () {
 						'as'   => 'api.charge.cards',
 						'uses' => 'CardController@chargeCard',
 					]);
+
 			});
 
 
@@ -402,6 +403,11 @@ Route::middleware('APIToken')->group(function () {
 				Route::get('reset-password',[
 					'as'   => 'api.customer.resetPassword',
 					'uses' => 'ForgotPasswordController@resetPassword',
+				]);
+
+				Route::get('/customer-orders',[
+					'as'   => 'api.customer.orders',
+					'uses' => 'CustomerController@customerOrder',
 				]);
 			}); 
 
