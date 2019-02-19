@@ -9,24 +9,24 @@
 
         @font-face {
             font-family: 'Avenir LT Std';
-            src: url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Black.eot');
-            src: url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Black.eot?#iefix') format('embedded-opentype'),
-                url('http://teltik.pw/public/pdf./fonts/AvenirLTStd-Black.woff2') format('woff2'),
-                url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Black.woff') format('woff'),
-                url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Black.ttf') format('truetype'),
-                url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Black.svg#AvenirLTStd-Black') format('svg');
+            src: url('https://teltik.pw/pdf/fonts/AvenirLTStd-Black.eot');
+            src: url('https://teltik.pw/pdf/fonts/AvenirLTStd-Black.eot?#iefix') format('embedded-opentype'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Black.woff2') format('woff2'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Black.woff') format('woff'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Black.ttf') format('truetype'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Black.svg#AvenirLTStd-Black') format('svg');
             font-weight: 900;
             font-style: normal;
         }
 
         @font-face {
             font-family: 'Avenir LT Std';
-            src: url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Medium.eot');
-            src: url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Medium.eot?#iefix') format('embedded-opentype'),
-                url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Medium.woff2') format('woff2'),
-                url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Medium.woff') format('woff'),
-                url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Medium.ttf') format('truetype'),
-                url('http://teltik.pw/public/pdf/fonts/AvenirLTStd-Medium.svg#AvenirLTStd-Medium') format('svg');
+            src: url('https://teltik.pw/pdf/fonts/AvenirLTStd-Medium.eot');
+            src: url('https://teltik.pw/pdf/fonts/AvenirLTStd-Medium.eot?#iefix') format('embedded-opentype'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Medium.woff2') format('woff2'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Medium.woff') format('woff'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Medium.ttf') format('truetype'),
+                url('https://teltik.pw/pdf/fonts/AvenirLTStd-Medium.svg#AvenirLTStd-Medium') format('svg');
             font-weight: 500;
             font-style: normal;
         }
@@ -59,6 +59,8 @@
         .containerin {
             padding: 0 20px;
         }
+
+
         /*.logo {
             width: 100%;
             float: left;
@@ -180,7 +182,7 @@
             font-style: italic;
         }
         .bill_detail table .seprator { 
-            background: url(http://teltik.pw/public/pdf/img/bdr.png) -200px 0 no-repeat;
+            background: url(https://teltik.pw/pdf/img/bdr.png) -200px 0 no-repeat;
             width: 100%;
             height: 1px;
         }
@@ -189,7 +191,7 @@
         }
         .account_info {
             background: #4c00ac;
-            padding: 0px 0px 15px;
+            padding: 0px 0px 15px 0px;
         }
         .account_info center {
             font-size: 28px;
@@ -212,7 +214,7 @@
         .account_info th {
             color: #FFFFFF;
             font-size: 12px;
-            padding: 12px 0px 12px 2px;
+            padding: 12px 12px 12px 2px;
             font-weight: 700;
             text-align: center;
         }
@@ -224,7 +226,7 @@
             color: #FFFFFF;
             font-size: 12px;
             font-weight: 500;
-            padding: 10px 0px 8px;
+            padding: 10px 0px 8px 0px;
             text-align: center;
         }
         .account_info p a {
@@ -237,11 +239,11 @@
         }
         .account_info .total_img img {
             height: 0.3px;
-            width: 765px;
+            width: 700px;
         }
         .account_info .total_img2 img {
             height: 0.3px;
-            width: 765px
+            width: 700px
         }
         .lh0 {
             line-height: 0;
@@ -249,9 +251,9 @@
         }
 
         .linksfooter {
-            width: 32%;
+            width: 30%;
             /*float: left;*/
-            margin-left: 225px;
+            margin-left: 215px;
             margin-top: -135px;
             border: 2px dashed #4c00ac;
             border-radius: 18px;
@@ -576,12 +578,12 @@
 
 <body>
     <div class="wrapper">
-        <div class="container" style="width: 800px; float: none; margin: 0px auto;">
+        <div class="container" style="width: 100%; float: none; margin: 0px auto;">
             <div class="boxmain">
                 <div class="head" style="padding: 0px 0px 0px;">
                     <div class="containerin">
                         <div class="logo" style=" width: 100%; text-align: center;">
-                            <img src="http://teltik.pw/public/pdf/img/logo.png" style="padding: 20px 0px; width: 200px;" alt="logo">
+                            <img src="https://teltik.pw/pdf/img/logo.png" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
                         </div>
                         <div class="invoice">
                             <h2>INVOICE</h2>
@@ -782,7 +784,7 @@
                             <tr>
                                 <td colspan="7" class="lh0">
                                     <div class="total_img">
-                                        <img src="http://teltik.pw/public/pdf/img/shape.png" alt="shape">
+                                        <img src="https://teltik.pw/pdf/img/shape.png" alt="shape">
                                     </div>
                                 </td>
                             </tr>
@@ -799,7 +801,7 @@
                             <tr>
                                 <td colspan="7" class="lh0">
                                     <div class="total_img2">
-                                        <img src="http://teltik.pw/public/pdf/img/shape.png" alt="shape">
+                                        <img src="https://teltik.pw/pdf/img/shape.png" alt="shape">
                                     </div>
                                 </td>
                             </tr>
