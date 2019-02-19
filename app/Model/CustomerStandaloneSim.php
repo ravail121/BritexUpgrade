@@ -16,4 +16,9 @@ class CustomerStandaloneSim extends Model
     	'tracking_num',
     	'sim_num',
     ];
+
+    public function sim()
+    {
+    	return $this->belongsTo('App\Model\Sim', 'sim_id', 'id');
+  	}
 }

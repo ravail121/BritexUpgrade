@@ -82,10 +82,8 @@ trait UsaEpayTransaction
     {
         $order = $this->createCustomerCard($request, $tran);
         if ($order) {
-            $this->createPaymentLogs($order->id, 'success');
-            $request->cardType = $tran->cardType;
-            $request->last4 = $tran->last4;
-            $this->createCredits($order, $request);
+            $this->createPaymentLogs($order, $tran, 1);
+            $this->createCredits($order->customer_id, $tran);
             $response = response()->json(['success' => true]);
             
         } else {
@@ -104,9 +102,9 @@ trait UsaEpayTransaction
      * @param  UsaEpay   $tranFail
      * @return string
      */
-    protected function transactionFail($id, $tranFail)
+    protected function transactionFail($order, $tranFail)
     {
-        $this->createPaymentLogs($id, 'fail');
+        $this->createPaymentLogs($order, $tranFail, 0);
         return response()->json(['message' => 'Card Declined: (' . $tranFail->result . '). Reason: '. $tranFail->error]);
     }
 
@@ -118,11 +116,21 @@ trait UsaEpayTransaction
      * @param  int  $order_id
      * @return Response
      */
-    protected function createPaymentLogs($id, $response)
+    protected function createPaymentLogs($order, $tran, $response)
     {
         return PaymentLog::create([
-            'order_id' => $id,
-            'status'   => $response,
+            'customer_id'            => $order->customer_id, 
+            'order_id'               => $order->id,
+            // 'invoice_id'             => $order->invoice_id, 
+            'transaction_num'        => $tran->authcode, 
+            'processor_customer_num' => $tran->card, 
+            'status'                 => $response,
+            'error'                  => $tran->error,
+            'exp'                    => $tran->exp,
+            'last4'                  => substr($tran->last4, -4),
+            'card_type'              => $tran->cardType,
+            'amount'                 => $tran->amount,
+            'card_token'             => $tran->cardref,
         ]);
     }
 
@@ -135,13 +143,13 @@ trait UsaEpayTransaction
      * @param  Request     $request
      * @return Response
      */
-    protected function createCredits($order, $request)
+    protected function createCredits($customerId, $tran)
     {
         return Credit::create([
-            'customer_id' => $order->customer_id,
-            'amount'      => $request->amount,
+            'customer_id' => $customerId,
+            'amount'      => $tran->amount,
             'date'        => date("Y/m/d"),
-            'description' => $request->cardType . ' '.substr($request->last4, -4),
+            'description' => $tran->cardType . ' '.substr($tran->last4, -4),
         ]);
     }
 
@@ -166,8 +174,6 @@ trait UsaEpayTransaction
             return false;
         }
         
-
-
 
         $found = CustomerCreditCard::where('cardholder', $request->payment_card_holder)
                                     ->where('number', $request->payment_card_no)

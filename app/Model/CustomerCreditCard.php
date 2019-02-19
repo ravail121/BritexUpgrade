@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomerCreditCard extends Model
 {
-    protected $table = 'customer_credit_cards'; 
+    protected $table = 'customer_credit_card'; 
 
     protected $fillable = [
         'token',

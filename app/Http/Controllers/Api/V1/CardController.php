@@ -140,7 +140,7 @@ class CardController extends BaseController implements ConstantInterface
                 $this->response = $this->transactionSuccessful($request, $this->tran);
           
             } else {
-                $this->response = $this->transactionFail($order->id, $this->tran);
+                $this->response = $this->transactionFail($order, $this->tran);
             }
         } else {
             $this->response = $this->transactionFail(null, $this->tran);

@@ -57,12 +57,7 @@ class SendEmailWithInvoice
             'subtotal'   => $order->invoice->subtotal,
             'today_date' => $this->carbon->toFormattedDateString(),
          ];
-         $pdf = PDF::loadView('templates/invoice', compact('invoice'));
-        // $pdf = PDF::loadView('templates/invoice', compact('invoice'))
-        //             ->setOption('images', true)
-        //             ->setOption('enable-javascript', true)
-        //             ->setOption('javascript-delay', 100);
-        // $pdf = $pdf->output();
+         $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('letter', 'portrait');
 
         $configurationSet = $this->setMailConfiguration($order);
 

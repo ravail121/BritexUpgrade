@@ -79,10 +79,12 @@ class OrderController extends BaseController
 
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
-                    array_push($tmp['addons'], $a['addon']);
+                    $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt']]);
+                    
+                    array_push($tmp['addons'], collect($a['addon']));
                 }
 
-                array_push($ordergroups, $tmp);    
+                array_push($ordergroups, $tmp);
             }
             if (count($order)) {
 
@@ -186,7 +188,7 @@ class OrderController extends BaseController
             $og_params['plan_id'] = $data['plan_id'];
 
             if ($order->customer && $order->compare_dates) {
-                $og_params['plan_prorated_amt'] = $order->calProRatedAmount($data['plan_id']);
+                $og_params['plan_prorated_amt'] = $order->planProRate($data['plan_id']);
             }
             // delete all rows in order_group_addon table associated with this order
             
@@ -249,10 +251,15 @@ class OrderController extends BaseController
         $order_group->update($og_params);
 
         if(isset($data['addon_id'])){
-            $oga = OrderGroupAddon::create([
-                'addon_id' => $data['addon_id'],
+            $ogData = [
+                'addon_id'       => $data['addon_id'],
                 'order_group_id' => $order_group->id
-            ]);
+            ];
+
+            if ($order->customer && $order->compare_dates) {
+                $amt = $order->addonProRate($data['addon_id']);
+            }
+            $oga = OrderGroupAddon::create(array_merge($ogData, ['prorated_amt' => $amt]));
 
         }
 

@@ -4,6 +4,7 @@ namespace App\Model;
 
 use Carbon\Carbon;
 use App\Model\Plan;
+use App\Model\Addon;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -44,7 +45,7 @@ class Order extends Model
 
     public function invoice()
     {
-        return $this->hasOne('App\Model\Invoice', 'id', 'invoice_id');
+        return $this->belongsTo('App\Model\Invoice', 'invoice_id' ,'id');
     }
 
     public function paymentLog()
@@ -71,11 +72,25 @@ class Order extends Model
     }
 
 
-    public function calProRatedAmount($planId)
+    public function planProRate($planId)
     {
         $plan = Plan::find($planId);
         $amount = $plan->amount_recurring;
+        return $this->calProRatedAmount($amount);
+    }
 
+
+    public function addonProRate($addonId)
+    {
+        $addon = Addon::find($addonId);
+        $amount = $addon->amount_recurring;
+        return $this->calProRatedAmount($amount);
+    }
+
+
+
+    public function calProRatedAmount($amount)
+    {
         $today     = Carbon::today();
         $startDate = Carbon::parse($this->customer->billing_start);
         $endDate   = Carbon::parse($this->customer->billing_end);
@@ -83,7 +98,7 @@ class Order extends Model
         $numberOfDaysLeft  = $endDate->diffInDays($today);
         $totalNumberOfDays = $endDate->diffInDays($startDate);
 
-        return ($numberOfDaysLeft + 1)/$totalNumberOfDays*$amount;
+        return ($numberOfDaysLeft + 1)/($totalNumberOfDays + 1)*$amount;
     }
 
 

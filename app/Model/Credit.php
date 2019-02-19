@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Credit extends Model
 {
-    protected $table = 'credits'; 
+    protected $table = 'credit'; 
 
     protected $fillable = [
         'customer_id', 
@@ -22,6 +22,6 @@ class Credit extends Model
 
     public function customer()
     {
-        return $this->hasOne(Customer::class);
+        return $this->belongsTo('App\Model\Customer','customer_id','id');
     }
 }

@@ -29,6 +29,11 @@ class Device extends Model
     	return $this->hasOne('App\Model\Company');
     }
 
+    public function customerStandaloneDevice()
+    {
+        return $this->hasOne('App\Model\CustomerStandaloneDevice','device_id');
+    }
+
     public function device_image()
     {
      return $this->hasMany('App\Model\DeviceToImage', 'device_id');

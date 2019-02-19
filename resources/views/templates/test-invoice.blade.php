@@ -2,12 +2,10 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
+    {{-- <meta charset="utf-8"> --}}
     <title>Teltik</title>
     {{-- <link href="http://teltik.pw/public/pdf/css/81style.css" type="text/css" rel="stylesheet"> --}}
     <style>
-        @import url('https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i');
-        @import url('https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i');
 
         @font-face {
             font-family: 'Avenir LT Std';

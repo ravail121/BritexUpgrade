@@ -101,6 +101,11 @@ class Customer extends Authenticatable
         return $this->hasMany('App\Model\CustomerCreditCard');
     }
 
+    public function creditAmount()
+    {
+        return $this->hasMany('App\Model\Credit','customer_id');
+    }
+
     public function credit()
     {
         return $this->belongsTo(Credit::class);

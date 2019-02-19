@@ -16,4 +16,9 @@ class CustomerStandaloneDevice extends Model
     	'tracking_num',
     	'imei',
     ];
+
+    public function device()
+    {
+    	return $this->belongsTo('App\Model\Device',  'device_id' , 'id');
+  	}
 }

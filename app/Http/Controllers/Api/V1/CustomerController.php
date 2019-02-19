@@ -252,8 +252,9 @@ class CustomerController extends BaseController
     public function customerOrder(Request $request)
     {
         $customer = Customer::whereHash($request->hash)->first();
-        $orders = Order::whereCustomerId($customer['id'])->with('allOrderGroup.sim', 'allOrderGroup.device', 'allOrderGroup.plan','allOrderGroup.order_group_addon.addon','invoice')->get();
-
-        return $this->respond($orders);
+        $orders = Order::whereCustomerId($customer['id'])->with('allOrderGroup.sim', 'allOrderGroup.device', 'allOrderGroup.plan','allOrderGroup.order_group_addon.addon','invoice', 'allOrderGroup.plan.subscription', 'allOrderGroup.device.customerStandaloneDevice' ,'allOrderGroup.sim.customerStandaloneSim')->get();
+        $billingDetails = Customer::whereId($customer['id'])->with('invoice','creditAmount','invoice.order')->first();
+        
+        return $this->respond(['billingDetails' => $billingDetails, 'orders' => $orders ]);
     }  
 }

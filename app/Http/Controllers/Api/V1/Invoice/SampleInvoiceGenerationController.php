@@ -16,8 +16,9 @@ class SampleInvoiceGenerationController extends Controller
      */
     public function get()
     {
-        $pdf = PDF::loadView('templates/test-invoice')->setPaper([0,0,950,950], 'landscape');
-        return $pdf->stream('invoice.pdf');
+        $pdf = PDF::loadView('templates/test-invoice')->setPaper('letter', 'portrait');
+        // return $pdf->stream('invoice.pdf');
+        return $pdf->download('invoice.pdf');
         // return view('templates.test-invoice');
     }
 }

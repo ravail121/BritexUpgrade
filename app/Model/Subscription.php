@@ -54,7 +54,7 @@ class Subscription extends Model
 
 
   public function plan(){
-  	return $this->hasone('App\Model\Plan', 'id', 'plan_id');
+  	return $this->belongsTo('App\Model\Plan', 'plan_id', 'id');
   }
 
   public function device(){
