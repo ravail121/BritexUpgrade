@@ -79,15 +79,12 @@ class Order extends Model
         return $this->calProRatedAmount($amount);
     }
 
-
     public function addonProRate($addonId)
     {
         $addon = Addon::find($addonId);
         $amount = $addon->amount_recurring;
         return $this->calProRatedAmount($amount);
     }
-
-
 
     public function calProRatedAmount($amount)
     {
@@ -101,5 +98,9 @@ class Order extends Model
         return ($numberOfDaysLeft + 1)/($totalNumberOfDays + 1)*$amount;
     }
 
+    public function getCreatedAtAttribute($value)
+    {
+        return Carbon::parse($value)->format('M-d-Y h:i A');
+    }
 
 }

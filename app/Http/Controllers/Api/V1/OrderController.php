@@ -258,8 +258,11 @@ class OrderController extends BaseController
 
             if ($order->customer && $order->compare_dates) {
                 $amt = $order->addonProRate($data['addon_id']);
+                $oga = OrderGroupAddon::create(array_merge($ogData, ['prorated_amt' => $amt]));
+            } else {
+                $oga = OrderGroupAddon::create($ogData);
+
             }
-            $oga = OrderGroupAddon::create(array_merge($ogData, ['prorated_amt' => $amt]));
 
         }
 

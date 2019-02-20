@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class CustomerStandaloneSim extends Model
@@ -15,10 +16,19 @@ class CustomerStandaloneSim extends Model
     	'status',
     	'tracking_num',
     	'sim_num',
+        'shipping_date',
     ];
 
     public function sim()
     {
     	return $this->belongsTo('App\Model\Sim', 'sim_id', 'id');
   	}
+
+    public function getShippingDateAttribute($value)
+    {
+        if (isset($value)) {
+            return Carbon::parse($value)->format('M-d-Y');
+        }
+        return "NA";
+    }
 }

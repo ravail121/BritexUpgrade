@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
@@ -90,6 +91,19 @@ class Invoice extends Model
     public static function toTwoDecimals($amount)
     {
         return number_format((float)$amount, 2, '.', '');
+    }
+
+    public function getTypeAttribute($value)
+    {
+        if ($value == 1) {
+            return 'One-time invoice';
+        }
+        return 'Monthly invoice';
+    }
+
+    public function getCreatedAtAttribute($value)
+    {
+        return Carbon::parse($value)->format('M-d-Y h:i A');
     }
 
 }

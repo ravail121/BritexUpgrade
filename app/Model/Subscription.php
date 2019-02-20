@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model
@@ -35,6 +36,7 @@ class Subscription extends Model
       'activation_date',
       'suspended_date',
       'closed_date',
+      'shipping_date',
     ];
 
    public function Customer()
@@ -42,40 +44,51 @@ class Subscription extends Model
      return $this->hasOne('App\Model\Customer', 'id');
    }
 
-  public function subscription_addon(){
+    public function subscription_addon(){
 
-  	return $this->hasMany('App\Model\SubscriptionAddon', 'id');
-  }
-
-  public function subscriptionAddon(){
-
-    return $this->hasMany('App\Model\SubscriptionAddon', 'subscription_id', 'id');
-  }
-
-
-  public function plan(){
-  	return $this->belongsTo('App\Model\Plan', 'plan_id', 'id');
-  }
-
-  public function device(){
-    return $this->hasOne('App\Model\Device', 'id', 'device_id');
-  }
-
-  public function new_plan(){
-    return $this->hasone('App\Model\Plan', 'id' );
-  }
-
-  public function plans(){
-    return $this->belongsTo('App\Model\plan', 'plan_id');
-  }
-
-  
- 
- public function addon(){
-      return $this->belongsTo('App\Model\Addon' , 'id');
-
+    	return $this->hasMany('App\Model\SubscriptionAddon', 'id');
     }
-  public function subscription_coupon(){
-    return $this->belongsTo('App\Model\SubscriptionCoupon', 'subscription_id');
-  }
+
+    public function subscriptionAddon()
+    {
+        return $this->hasMany('App\Model\SubscriptionAddon', 'subscription_id', 'id');
+    }
+
+
+    public function plan()
+    {
+    	return $this->belongsTo('App\Model\Plan', 'plan_id', 'id');
+    }
+
+    public function device()
+    {
+        return $this->hasOne('App\Model\Device', 'id', 'device_id');
+    }
+
+    public function new_plan()
+    {
+        return $this->hasone('App\Model\Plan', 'id' );
+    }
+
+    public function plans()
+    {
+        return $this->belongsTo('App\Model\plan', 'plan_id');
+    }
+
+    public function addon()
+    {
+        return $this->belongsTo('App\Model\Addon' , 'id');
+    }
+    public function subscription_coupon()
+    {
+        return $this->belongsTo('App\Model\SubscriptionCoupon', 'subscription_id');
+    }
+
+    public function getShippingDateAttribute($value)
+    {
+        if (isset($value)) {
+            return Carbon::parse($value)->format('M-d-Y');
+        }
+        return "NA";
+    }
 }
