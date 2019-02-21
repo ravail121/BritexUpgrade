@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class SubscriptionAddon extends Model
@@ -15,6 +16,13 @@ class SubscriptionAddon extends Model
 
     public function subscriptionDetail(){
     		return $this->belongsTo('App\Model\Subscription');
+    }
+
+
+    public function scopeTodayEqualsRemovalDate($query)
+    {
+    	$today = Carbon::today();
+        return $query->where('removal_date', $today->toDateString());
     }
    
 }

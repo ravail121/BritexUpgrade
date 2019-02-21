@@ -84,6 +84,21 @@ class Subscription extends Model
         return $this->belongsTo('App\Model\SubscriptionCoupon', 'subscription_id');
     }
 
+
+    public function scopeTodayEqualsDowngradeDate($query)
+    {
+      $today = Carbon::today();
+      return $query->where('downgrade_date', $today->toDateString());
+    }
+
+    public function checkGracePeriod($grace)
+    {
+      $today = Carbon::today();
+      $date  = Carbon::parse($this->suspended_date);
+      $value = $today->diffInDays($date);
+      return $value > $grace;
+    }
+
     public function getShippingDateAttribute($value)
     {
         if (isset($value)) {

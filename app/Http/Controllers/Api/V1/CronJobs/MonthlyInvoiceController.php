@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use Validator;
 use App\Model\Tax;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -22,9 +21,7 @@ use App\Events\MonthlyInvoice;
 use App\Model\SubscriptionAddon;
 use App\Model\SubscriptionCoupon;
 use App\Model\BusinessVerification;
-use App\Model\CustomerStandaloneSim;
 use App\Http\Controllers\Controller;
-use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 
 class MonthlyInvoiceController extends BaseController

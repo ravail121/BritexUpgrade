@@ -132,21 +132,21 @@ class Customer extends Authenticatable
     public function getTodayGreaterThanBillingEndAttribute()
     {
         $today    = self::currentDate();
-        $endDate  = self::parseEndDate();
+        $endDate  = $this->parseEndDate();
         return $today->gt($endDate);
 
     }
 
     public function getAddDayToBillingEndAttribute()
     {
-        $endDate = self::parseEndDate();
+        $endDate = $this->parseEndDate();
         return $endDate->addDay()->toDateString();
 
     }
 
     public function getAddMonthToBillingEndAttribute()
     {
-        $endDate = self::parseEndDate();
+        $endDate = $this->parseEndDate();
         return $endDate->addMonth()->toDateString();
 
     }
@@ -158,7 +158,7 @@ class Customer extends Authenticatable
     }
 
 
-    public static function parseEndDate()
+    public function parseEndDate()
     {
         return Carbon::parse($this->billing_end);
     }

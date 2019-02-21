@@ -322,6 +322,11 @@ Route::middleware('APIToken')->group(function () {
 						'uses' => 'CardController@chargeCard',
 					]);
 
+					Route::post('/primary-card',[
+						'as'   => 'api.charge.cards',
+						'uses' => 'CardController@primaryCard',
+					]);
+
 			});
 
 
