@@ -253,7 +253,7 @@ class CustomerController extends BaseController
     {
         $customer = Customer::whereHash($request->hash)->first();
 
-        $billingDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan.subscription', 'orders.allOrderGroup.device.customerStandaloneDevice','orders.allOrderGroup.sim.customerStandaloneSim','orders.allOrderGroup.order_group_addon.addon')->find($customer['id']);
+        $billingDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan.subscription', 'orders.allOrderGroup.device.customerStandaloneDevice','orders.allOrderGroup.sim.customerStandaloneSim','orders.allOrderGroup.order_group_addon.addon','orders.invoice')->find($customer['id']);
         
         return $this->respond($billingDetails);
     }  

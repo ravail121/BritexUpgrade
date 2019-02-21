@@ -83,6 +83,21 @@ class Invoice extends Model
 
 
 
+    public function getTodayGreaterThanDueDateAttribute()
+    {
+        $today   = self::currentDate();
+        $dueDate = Carbon::parse($this->due_date); 
+        return $today->gt($dueDate);
+    }
+
+
+    public static function currentDate()
+    {
+        return Carbon::today();
+    }
+
+
+
     /**
      * [toTwoDecimals description]
      * @param  [type] $amount [description]

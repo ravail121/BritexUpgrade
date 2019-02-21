@@ -24,7 +24,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->call('App\Http\Controllers\Api\V1\Invoice\MonthlyInvoiceController@generateMonthlyInvoice')->daily();
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice')->daily();
         // $schedule->call('App\Http\Controllers\Api\V1\Invoice\MonthlyInvoiceController@generateMonthlyInvoice')->everyMinute();
     }
 

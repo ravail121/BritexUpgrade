@@ -119,12 +119,47 @@ class Customer extends Authenticatable
 
     public function getFiveDaysBeforeAttribute()
     {
-        $today          = Carbon::today();
-        $endDate        = Carbon::parse($this->billing_end);
+        $today          = self::currentDate();
+        $endDate        = self::parseEndDate();
         $fiveDaysBefore = $endDate->subDays(5);
 
         // return $today->lessThanOrEqualTo($fiveDaysBefore);
         return $today->gte($fiveDaysBefore);
 
+    }
+
+
+    public function getTodayGreaterThanBillingEndAttribute()
+    {
+        $today    = self::currentDate();
+        $endDate  = self::parseEndDate();
+        return $today->gt($endDate);
+
+    }
+
+    public function getAddDayToBillingEndAttribute()
+    {
+        $endDate = self::parseEndDate();
+        return $endDate->addDay()->toDateString();
+
+    }
+
+    public function getAddMonthToBillingEndAttribute()
+    {
+        $endDate = self::parseEndDate();
+        return $endDate->addMonth()->toDateString();
+
+    }
+
+
+    public static function currentDate()
+    {
+        return Carbon::today();
+    }
+
+
+    public static function parseEndDate()
+    {
+        return Carbon::parse($this->billing_end);
     }
 }

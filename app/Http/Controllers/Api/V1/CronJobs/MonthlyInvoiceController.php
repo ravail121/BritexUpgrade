@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Invoice;
+namespace App\Http\Controllers\Api\V1\CronJobs;
 
 use Validator;
-use Carbon\Carbon;
 use App\Model\Tax;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -28,14 +27,8 @@ use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 
-
 class MonthlyInvoiceController extends BaseController
 {
-    /**
-     * Date-Time variable
-     * @var $carbon
-     */
-    public $carbon;
 
 
     /**
@@ -52,10 +45,9 @@ class MonthlyInvoiceController extends BaseController
      * 
      * @param Carbon $carbon
      */
-    public function __construct(Carbon $carbon)
+    public function __construct()
     {
-        $this->carbon   = $carbon;
-        $this->response = false;
+        $this->response = ['error' => 'Email was not sent'];
     }
 
 
@@ -70,11 +62,12 @@ class MonthlyInvoiceController extends BaseController
         $customers = Customer::whereNotNull('billing_end')->get();
 
         foreach ($customers as $customer) {
-            if ($customer->five_days_before) {
+            if ($customer->five_days_before) {  // $today->greaterThanOrEqualTo($fiveDaysBefore) is used instead of $today->lessThanOrEqualTo($fiveDaysBefore)
                 if ($customer->subscription) {
                     foreach ($customer->subscription as $subscription) {
                         if ($subscription->status == 'active' || $subscription->status == 'shipping' || $subscription->status == 'for-activation') {
                             $this->response = $this->triggerEvent($customer);
+                            break;
                         }
                     }
                 } elseif ($customer->pending_charge) {
@@ -82,6 +75,7 @@ class MonthlyInvoiceController extends BaseController
                         if ($pendingCharge->invoice_id == 0) {
 
                             $this->response = $this->triggerEvent($customer);
+                            break;
                             
                         }
                     }
@@ -106,6 +100,7 @@ class MonthlyInvoiceController extends BaseController
             foreach ($customer->invoice as $invoice) {
                 if ($invoice->type_not_one) {
                     $this->response = event(new MonthlyInvoice($customer));
+                    break;
                 }
             }
         }
