@@ -18,10 +18,21 @@ class CardTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function getCard()
+    public static $Headerdata = ['Authorization' => 'alar324r23423'];
+
+    public function testgetCard()
     {
-    	$response = $this->get('/api/customer-cards?customer_id=97&api_key=alar324r23423');
+        $response = $this->withHeaders(self::$Headerdata)->get('/api/customer-cards?customer_id=112');
 
     	$response->assertStatus(200);
+    }
+
+    public function test_get_card_without_customer_id()
+    {
+        $response = $this->withHeaders(self::$Headerdata)->get('/api/customer-cards');
+
+        $response->assertJson([
+            'message' => 'CustomerId or customer_hash request',
+        ]);
     }
 }

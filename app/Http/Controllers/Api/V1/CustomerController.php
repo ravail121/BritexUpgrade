@@ -48,7 +48,7 @@ class CustomerController extends BaseController
 
     $customerData = $this->setData($order, $data);
 
-    $customer = Customer::updateOrCreate(['id' => $order->customer_id], $customerData);
+    $customer = Customer::create($customerData);
 
     if (!$customer) {
       return $this->respondError("problem in creating/updating a customer");
@@ -97,13 +97,22 @@ class CustomerController extends BaseController
   protected function setData($order, $data)
   {
     unset($data['order_hash']);
+
+    if ($order->bizVerification) {
+      $data['business_verification_id'] = $order->bizVerification->id;
+      $data['business_verified']        = $order->bizVerification->approved;
+
+    } elseif ($order->company->business_verification == 0) {
+      $data['business_verification_id'] = null;
+      $data['business_verified']        = 1;
+
+    }
     
-    $data['business_verification_id'] = $order->bizVerification->id;
-    $data['business_verified']        = $order->bizVerification->approved;
-    $data['company_id']               = $order->company_id;
-    $data['password']                 = Hash::make($data['password']);
-    $data['hash']                     = sha1(time());
-    $data['pin']                      = Hash::make($data['pin']);
+    
+    $data['company_id'] = $order->company_id;
+    $data['password']   = Hash::make($data['password']);
+    $data['hash']       = sha1(time());
+    $data['pin']        = $data['pin'];
 
     return $data;
   }
@@ -233,12 +242,22 @@ class CustomerController extends BaseController
   }
 
     public function checkEmail(Request $request){
-        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('id', '!=' , $request->id)->count();
+        $data =  $request->validate([
+            'newEmail'   => 'required',
+            'hash'       => 'required',
+        ]);
+
+        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
         return $this->respond(['emailCount' => $emailCount]);
     }
 
     public function checkPassword(Request $request)
     {
+        $data =  $request->validate([
+            'hash'       => 'required',
+            'password'   => 'required',
+        ]);
+
         $currentPassword = Customer::whereHash($request->hash)->first();
 
         if(Hash::check($request->password, $currentPassword['password'])){

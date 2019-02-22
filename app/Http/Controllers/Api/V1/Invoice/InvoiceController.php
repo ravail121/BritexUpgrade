@@ -70,18 +70,18 @@ class InvoiceController extends BaseController
 
 
 
-    /**
-     * []
-     *  
-     * @param  Request $request
-     * @return void
-     */
-    public function startBilling(Request $request)
-    {
-        $customer = null;
+    // /**
+    //  * []
+    //  *  
+    //  * @param  Request $request
+    //  * @return void
+    //  */
+    // public function startBilling(Request $request)
+    // {
+    //     $customer = null;
 
-        return $this->respond($customer);
-    }
+    //     return $this->respond($customer);
+    // }
 
 
 
@@ -159,23 +159,40 @@ class InvoiceController extends BaseController
 
         $order = Order::hash($request->order_hash)->first();
         if ($order) {
-            $invoice = [
-                'start_date' => $order->invoice->start_date,
-                'end_date'   => $order->invoice->end_date,
-                'due_date'   => $order->invoice->due_date,
-                'total_due'  => $order->invoice->total_due,
-                'subtotal'   => $order->invoice->subtotal,
-                'today_date' => $this->carbon->toFormattedDateString(),
-             ];
-             $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('letter', 'portrait');
-            // $pdf = PDF::loadView('templates/invoice', compact('invoice'))
-            //             ->setOption('images', true)
-            //             ->setOption('enable-javascript', true)
-            //             ->setOption('javascript-delay', 100);
-            return $pdf->download('invoice.pdf');
+            if ($order->invoice->type == 2) {
+
+                $serviceCharges = $order->invoice->cal_service_charges;
+                $taxes          = $order->invoice->cal_taxes;
+                $credits        = $order->invoice->cal_credits;
+                $totalCharges   = $order->invoice->cal_total_charges;
+
+
+                $invoice = [
+                    'invoice_num'           => $order->invoice->id,
+                    'start_date'            => $order->invoice->start_date,
+                    'end_date'              => $order->invoice->end_date,
+                    'due_date'              => $order->invoice->due_date,
+                    'total_due'             => $order->invoice->total_due,
+                    'subtotal'              => $order->invoice->subtotal,
+                    'today_date'            => $this->carbon->toFormattedDateString(),
+                    'customer_name'         => $order->customer->full_name,
+                    'customer_address'      => $order->customer->shipping_address1,
+                    'customer_zip_address'  => $order->customer->zip_address,
+                    'service_charges'       => number_format($serviceCharges, 2),
+                    'taxes'                 => number_format($taxes, 2),
+                    'credits'               => number_format($credits, 2),
+                    'total_charges'         => number_format($totalCharges, 2),
+                 ];
+                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+                // $pdf = PDF::loadView('templates/invoice', compact('invoice'))
+                //             ->setOption('images', true)
+                //             ->setOption('enable-javascript', true)
+                //             ->setOption('javascript-delay', 100);
+                return $pdf->download('invoice.pdf');
+            }
 
         }
-        return false;
+        return 'Sorry, something went wrong please try again later......';
 
 
         // PDF::loadFile(public_path().'/templates/invoice.html')->save('templates/invoice.pdf')->stream('download.pdf');

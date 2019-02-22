@@ -25,7 +25,7 @@ class GenerateMonthlyInvoice extends Notification
     public function __construct(Order $order, $pdf)
     {
         $this->order = $order;
-        $this->pdf   = base64_encode($pdf);
+        $this->pdf   = $pdf;
     }
 
     /**
@@ -64,7 +64,7 @@ class GenerateMonthlyInvoice extends Notification
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
                     ->line($body)
-                    ->attachData(base64_decode($this->pdf), 'monthly-invoice.pdf', [
+                    ->attachData($this->pdf->output(), 'monthly-invoice.pdf', [
                         'mime' => 'application/pdf',
                     ]);
     }

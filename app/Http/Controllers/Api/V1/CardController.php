@@ -41,6 +41,8 @@ class CardController extends BaseController implements ConstantInterface
                 'customer_id' =>  $request->customer_id
             ])->get();
 
+        }else{
+             return $this->respond(['message' => 'CustomerId or customer_hash request']);
         }
 
         if (!$customerCreditCard) {

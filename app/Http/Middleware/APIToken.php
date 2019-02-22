@@ -16,14 +16,10 @@ class APIToken
      * @param  \Closure  $next
      * @return mixed
      */
-
     public function handle($request, Closure $next)
     {
-        $authorization='alar324r23423';
-        // dd($authorization);
-        if($authorization){
-        $company = Company::where('api_key',$authorization)->first();
-        //dd($company);
+      if($request->header('Authorization')){
+        $company = Company::where('api_key',$request->header('Authorization'))->first();
         if($company){
             $request->attributes->add(['company' => $company]);
             return $next($request);

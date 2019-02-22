@@ -15,9 +15,8 @@ class SignOnTest extends TestCase
      */
     public function testExample()
     {
-      	$response = $this->post('/api/sign-on?email=10&password=Craft@2017');
+      	$response = $this->post('/api/sign-on?email=112&password=qwerty');
 
-        //$response->assertRedirect('/home');
         $response->assertStatus(200);
     }
 }

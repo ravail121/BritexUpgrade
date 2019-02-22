@@ -57,7 +57,7 @@ class SendMonthlyInvoiceMail
          //    'total_due'  => $order->invoice->total_due,
          //    'subtotal'   => $order->invoice->subtotal,
          // ];
-        $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape')->stream();
+        $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');
 
         $configurationSet = $this->setMailConfiguration($order);
 

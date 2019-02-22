@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 use App\Model\Tax;
-use App\Model\Sim;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Model\Addon;
@@ -16,11 +15,9 @@ use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\PendingCharge;
-use App\Model\CustomerCoupon;
 use App\Events\MonthlyInvoice;
 use App\Model\SubscriptionAddon;
 use App\Model\SubscriptionCoupon;
-use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
@@ -33,7 +30,6 @@ class MonthlyInvoiceController extends BaseController
      * @var $response
      */
     public $response;
-
 
 
 

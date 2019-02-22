@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8">
     <title>Teltik</title>
-    {{-- <link href="http://teltik.pw/public/pdf/css/81style.css" type="text/css" rel="stylesheet"> --}}
-    <style>
+    <link href="https://teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
+    {{-- <style>
 
         @font-face {
             font-family: 'Avenir LT Std';
@@ -573,7 +573,7 @@
             padding-top: 10px;
         }
 
-    </style>
+    </style> --}}
 </head>
 
 <body>

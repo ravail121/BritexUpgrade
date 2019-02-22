@@ -5,6 +5,7 @@ namespace App\Support\Validation;
 use Validator;
 use App\Model\Order;
 use App\Model\Credit;
+use App\Model\Customer;
 use App\Model\PaymentLog;
 use App\Model\CustomerCreditCard;
 use Illuminate\Support\Facades\Hash;
@@ -198,6 +199,19 @@ trait UsaEpayTransaction
                 'billing_state_id' => $request->billing_state_id, 
                 'billing_zip'      => $request->billing_zip,
             ]);
+
+            $customer = Customer::find($order->customer_id);
+
+            if ($customer->billing_address1 == null) {
+                $customer->update([
+                    'billing_address1' => $request->billing_address1, 
+                    'billing_address2' => $request->billing_address2, 
+                    'billing_city'     => $request->billing_city, 
+                    'billing_state_id' => $request->billing_state_id, 
+                    'billing_zip'      => $request->billing_zip,
+
+                ]);
+            }
 
             if (!$inserted) {
                 $order = false;

@@ -306,6 +306,10 @@ class InvoiceController extends BaseController
      */
     public function invoiceDetails(Request $request)
     {
+        $data =  $request->validate([
+            'hash'       => 'required',
+        ]);
+        
         $customer        = Customer::hash($request->hash);
         $invoicesDetails = Invoice::getDues($customer->id)->get();
 

@@ -22,6 +22,29 @@ class InvoiceItem extends Model
         return $this->belongsTo('App\Model\Invoice');
     }
 
+    public function scopeServices($query)
+    {
+        return $query->where('type', [1,2,3,4]);
+    }
+
+    public function scopeTaxes($query)
+    {
+        return $query->where('type', [5,7]);
+    }
+
+    public function scopeCredits($query)
+    {
+        return $query->where('type', [6,8]);
+    }
+
+
+
+
+    public static function toTwoDecimals($amount)
+    {
+        return number_format((float)$amount, 2, '.', '');
+    }
+
 
     public function totalAmount()
     {

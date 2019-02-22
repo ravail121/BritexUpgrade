@@ -27,6 +27,47 @@ class Invoice extends Model
         return $this->hasMany('App\Model\InvoiceItem');
     }
 
+    public function getCalServiceChargesAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->services()->get();
+        return $this->calAmount($invoiceItems);
+    }
+
+    public function getCalTaxesAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->taxes()->get();
+        return $this->calAmount($invoiceItems);
+    }
+
+
+     public function getCalCreditsAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->credits()->get();
+        return $this->calAmount($invoiceItems);
+        
+    }
+
+    public function getCalTotalChargesAttribute()
+    {
+        $total = [];
+        array_push($total, $this->cal_taxes);
+        array_push($total, $this->cal_credits);
+        array_push($total, $this->cal_service_charges);
+        return array_sum($total);
+
+    }
+
+
+    protected function calAmount($invoiceItems)
+    {
+        $amount = [];
+        foreach ($invoiceItems as $invoiceItem) {
+            array_push($amount, $invoiceItem->amount);
+        }
+        $total = array_sum($amount);
+        return self::toTwoDecimals($total);
+    }
+
 
     /**
      * Fetches Invoice Details from invoice table if status < 2
@@ -108,7 +149,7 @@ class Invoice extends Model
         return number_format((float)$amount, 2, '.', '');
     }
 
-    public function getTypeAttribute($value)
+    public function getTypeDescriptionAttribute($value)
     {
         if ($value == 1) {
             return 'One-time invoice';

@@ -117,6 +117,17 @@ class Customer extends Authenticatable
     }
 
 
+    public function getFullNameAttribute()
+    {
+        return $this->fname.' '.$this->lname;
+    }
+
+    public function getZipAddressAttribute()
+    {
+        return $this->shipping_city.', '.$this->shipping_state_id.' '.$this->shipping_zip;
+    }
+
+
     public function getFiveDaysBeforeAttribute()
     {
         $today          = self::currentDate();

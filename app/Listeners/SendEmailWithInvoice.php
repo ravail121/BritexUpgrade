@@ -49,15 +49,9 @@ class SendEmailWithInvoice
     {
         $order = $event->order;
 
-        $invoice = [
-            'start_date' => $order->invoice->start_date,
-            'end_date'   => $order->invoice->end_date,
-            'due_date'   => $order->invoice->due_date,
-            'total_due'  => $order->invoice->total_due,
-            'subtotal'   => $order->invoice->subtotal,
-            'today_date' => $this->carbon->toFormattedDateString(),
-         ];
-         $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('letter', 'portrait');
+        $invoice = $this->setData($order);
+
+         $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
 
         $configurationSet = $this->setMailConfiguration($order);
 
@@ -90,6 +84,44 @@ class SendEmailWithInvoice
 
         Config::set('mail',$config);
         return false;
+    }
+
+
+    /**
+     * Sets invoice data for pdf generation
+     * 
+     * @param Order     $order
+     */
+    protected function setData($order)
+    {
+        $data = [];
+        if ($order) {
+            if ($order->invoice->type == 2) {
+                $serviceCharges = $order->invoice->cal_service_charges;
+                $taxes          = $order->invoice->cal_taxes;
+                $credits        = $order->invoice->cal_credits;
+                $totalCharges   = $order->invoice->cal_total_charges;
+
+
+                $data = [
+                    'invoice_num'           => $order->invoice->id,
+                    'start_date'            => $order->invoice->start_date,
+                    'end_date'              => $order->invoice->end_date,
+                    'due_date'              => $order->invoice->due_date,
+                    'total_due'             => $order->invoice->total_due,
+                    'subtotal'              => $order->invoice->subtotal,
+                    'today_date'            => $this->carbon->toFormattedDateString(),
+                    'customer_name'         => $order->customer->full_name,
+                    'customer_address'      => $order->customer->shipping_address1,
+                    'customer_zip_address'  => $order->customer->zip_address,
+                    'service_charges'       => number_format($serviceCharges, 2),
+                    'taxes'                 => number_format($taxes, 2),
+                    'credits'               => number_format($credits, 2),
+                    'total_charges'         => number_format($totalCharges, 2),
+                ];
+            }
+        }
+        return $data;
     }
 
 }
