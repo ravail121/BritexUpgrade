@@ -192,7 +192,7 @@ class CardController extends BaseController implements ConstantInterface
     public function removeCard(Request $request)
     {
         $data    = $request->all();
-        if($this->validateCardId($$data['id'])){
+        if($this->validateCardId($data['id'])){
             CustomerCreditCard::whereId($data['id'])->delete();
             return $this->respond('Card Sucessfully Deleted');
         }

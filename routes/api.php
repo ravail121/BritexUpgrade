@@ -258,74 +258,73 @@ Route::middleware('APIToken')->group(function () {
 			});
 
 			Route::group(['namespace'=>'Api\V1\Invoice'],function(){
-					Route::get('/invoice', [
-					 'as'=>'api.invoice.get',
-					 'uses'=> 'InvoiceController@get',
+				Route::get('/invoice', [
+				 'as'=>'api.invoice.get',
+				 'uses'=> 'InvoiceController@get',
 
-					]);
+				]);
 
-					Route::get('/sample-invoice', [
-					 'as'=>'api.sample.invoice',
-					 'uses'=> 'SampleInvoiceGenerationController@get',
+				Route::get('/sample-invoice', [
+				 'as'=>'api.sample.invoice',
+				 'uses'=> 'SampleInvoiceGenerationController@get',
 
-					]);
+				]);
 
-					Route::get('/cron-jobs', [
-					 'as'=>'api.monthly.invoice',
-					 'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
+				Route::get('/cron-jobs', [
+				 'as'=>'api.monthly.invoice',
+				 'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
 
-					]);
+				]);
 
-          Route::post('/generate-one-time-invoice',[
-            'as'   => 'api.onetime.invoice',
-            'uses' => 'InvoiceController@oneTimeInvoice',
-          ]);
+				Route::post('/generate-one-time-invoice',[
+				'as'   => 'api.onetime.invoice',
+				'uses' => 'InvoiceController@oneTimeInvoice',
+				]);
 
-					Route::post('/start-billing',[
-						'as'   => 'api.start.billing',
-						'uses' => 'InvoiceController@startBilling',
-					]);
-
+				Route::post('/start-billing',[
+					'as'   => 'api.start.billing',
+					'uses' => 'InvoiceController@startBilling',
+				]);
 			 });
 
 			Route::group(['namespace' => '\Api\V1'],function(){
-					Route::get('/default-imei', [
-						'as'   => 'api.default.imei',
-						'uses' => 'DeviceController@getImei'
-					]);
+				Route::get('/default-imei', [
+					'as'   => 'api.default.imei',
+					'uses' => 'DeviceController@getImei'
+				]);
 			});
 
 			Route::group(['namespace' => '\Api\V1'],function(){
 
-					Route::post('/charge-new-card',[
-						'as'   => 'api.customer.creditcard',
-						'uses' => 'PaymentController@chargeNewCard',
-					]);
+				Route::post('/charge-new-card',[
+					'as'   => 'api.customer.creditcard',
+					'uses' => 'PaymentController@chargeNewCard',
+				]);
 
-					Route::get('/customer-cards',[
-						'as'   => 'api.get.customercards',
-						'uses' => 'CardController@getCustomerCards',
-					]);
+				Route::get('/customer-cards',[
+					'as'   => 'api.get.customercards',
+					'uses' => 'CardController@getCustomerCards',
+				]);
 
-					Route::post('/add-card',[
-						'as'   => 'api.add.cards',
-						'uses' => 'CardController@addCard',
-					]);
+				Route::post('/add-card',[
+					'as'   => 'api.add.cards',
+					'uses' => 'CardController@addCard',
+				]);
 
-					Route::post('/remove-card',[
-						'as'   => 'api.add.cards',
-						'uses' => 'CardController@removeCard',
-					]);
+				Route::post('/remove-card',[
+					'as'   => 'api.add.cards',
+					'uses' => 'CardController@removeCard',
+				]);
 
-					Route::post('/charge-card',[
-						'as'   => 'api.charge.cards',
-						'uses' => 'CardController@chargeCard',
-					]);
+				Route::post('/charge-card',[
+					'as'   => 'api.charge.cards',
+					'uses' => 'CardController@chargeCard',
+				]);
 
-					Route::post('/primary-card',[
-						'as'   => 'api.charge.cards',
-						'uses' => 'CardController@primaryCard',
-					]);
+				Route::post('/primary-card',[
+					'as'   => 'api.charge.cards',
+					'uses' => 'CardController@primaryCard',
+				]);
 
 			});
 
@@ -333,25 +332,25 @@ Route::middleware('APIToken')->group(function () {
 
 			Route::group(['namespace' => '\Api\V1'],function(){
 
-					Route::post('/create-subscription',[
-						'as'   => 'api.create.subscription',
-						'uses' => 'SubscriptionController@createSubscription',
-					]);
+				Route::post('/create-subscription',[
+					'as'   => 'api.create.subscription',
+					'uses' => 'SubscriptionController@createSubscription',
+				]);
 
-					Route::post('/create-subscription-addon',[
-						'as'   => 'api.create.subscriptionaddon',
-						'uses' => 'SubscriptionController@subscriptionAddons',
-					]);
+				Route::post('/create-subscription-addon',[
+					'as'   => 'api.create.subscriptionaddon',
+					'uses' => 'SubscriptionController@subscriptionAddons',
+				]);
 
-					Route::post('/create-device-record',[
-						'as'   => 'api.create.devicerecord',
-						'uses' => 'StandaloneRecordController@createDeviceRecord',
-					]);
+				Route::post('/create-device-record',[
+					'as'   => 'api.create.devicerecord',
+					'uses' => 'StandaloneRecordController@createDeviceRecord',
+				]);
 
-					Route::post('/create-sim-record',[
-						'as'   => 'api.create.simrecord',
-						'uses' => 'StandaloneRecordController@createSimRecord',
-					]);
+				Route::post('/create-sim-record',[
+					'as'   => 'api.create.simrecord',
+					'uses' => 'StandaloneRecordController@createSimRecord',
+				]);
 
 			});
 			
