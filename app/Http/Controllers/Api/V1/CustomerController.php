@@ -210,7 +210,7 @@ class CustomerController extends BaseController
         }
     } 
     Customer::whereHash($data['hash'])->update($data);
-    return $this->respond('sucessfully Updated');
+    return $this->respond(['message' => 'sucessfully Updated']);
   }
 
 
@@ -244,18 +244,20 @@ class CustomerController extends BaseController
     public function checkEmail(Request $request){
         $data =  $request->validate([
             'newEmail'   => 'required',
-            'hash'       => 'required',
+            // 'hash'       => 'required',
+
         ]);
 
-        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+        // $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+        $emailCount = Customer::where('email', '=' , $request->newEmail)->count();
         return $this->respond(['emailCount' => $emailCount]);
     }
 
     public function checkPassword(Request $request)
     {
         $data =  $request->validate([
-            'hash'       => 'required',
-            'password'   => 'required',
+            'hash'     => 'required',
+            'password' => 'required',
         ]);
 
         $currentPassword = Customer::whereHash($request->hash)->first();
@@ -270,6 +272,9 @@ class CustomerController extends BaseController
 
     public function customerOrder(Request $request)
     {
+        $data =  $request->validate([
+            'hash'       => 'required',
+        ]);
         $customer = Customer::whereHash($request->hash)->first();
 
         $billingDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan.subscription', 'orders.allOrderGroup.device.customerStandaloneDevice','orders.allOrderGroup.sim.customerStandaloneSim','orders.allOrderGroup.order_group_addon.addon','orders.invoice')->find($customer['id']);

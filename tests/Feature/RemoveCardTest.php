@@ -7,16 +7,15 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
-class CardTest extends TestCase
+class RemoveCardTest extends TestCase
 {
 
     use WithFaker;
     use DatabaseTransactions;
 
-    const HEADER_DATA = ['Authorization' => 'alar324r23423'];
-    public $customerId;
-
-    public function testgetCard()
+	const HEADER_DATA = ['Authorization' => 'alar324r23423'];
+    
+    public function test_remove_card()
     {
         $customerData = [
             'order_hash'        => '0058f7836a86d7cb60e4017c3f34758b3ce5cd87',
@@ -34,8 +33,8 @@ class CardTest extends TestCase
             'pin'               => rand(1000,1200)
         ];
 
-        $response = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query($customerData));
-        $customer =  $response->json();
+        $customerResponse = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query($customerData));
+        $customer =  $customerResponse->json();
         $this->customerId = $customer['customer']['id'];
 
         $cardData = [
@@ -52,19 +51,29 @@ class CardTest extends TestCase
             'customer_id'            => $this->customerId
         ];
 
-        $this->withHeaders(self::HEADER_DATA)->post('api/add-card?'.http_build_query($cardData));
+        $cardResponse = $this->withHeaders(self::HEADER_DATA)->post('api/add-card?'.http_build_query($cardData));
+        $card =  $cardResponse->json();
+        
+        $response = $this->withHeaders(self::HEADER_DATA)->post('/api/remove-card?customer_credit_card_id='.$card['card']['id']);
 
-        $getCardResponse = $this->withHeaders(self::HEADER_DATA)->get('/api/customer-cards?customer_id='.$this->customerId);
-
-        $getCardResponse->assertStatus(200);
+        $response->assertJson([            
+            'details' => 'Card Sucessfully Deleted'
+        ]);
     }
 
-    public function test_get_card_without_customer_id()
+    public function test_remove_card_without_card_id()
     {
-        $response = $this->withHeaders(self::HEADER_DATA)->get('/api/customer-cards');
+    	$response = $this->withHeaders(self::HEADER_DATA)->post('/api/remove-card');
 
-        $response->assertJson([
-            'message' => 'CustomerId or customer_hash request',
+    	$response->assertStatus(302);
+    }
+
+    public function test_remove_non_existing_card($value='')
+    {
+       $response = $this->withHeaders(self::HEADER_DATA)->post('/api/remove-card?customer_credit_card_id=3432');
+
+       $response->assertJson([            
+            'details' => 'Card Not Found'
         ]);
     }
 }

@@ -81,11 +81,12 @@ trait UsaEpayTransaction
      */
     protected function transactionSuccessful($request, $tran)
     {
-        $order = $this->createCustomerCard($request, $tran);
+        $responce = $this->createCustomerCard($request, $tran);
+        $order = $responce['order'];
         if ($order) {
             $this->createPaymentLogs($order, $tran, 1);
-            $this->createCredits($order->customer_id, $tran);
-            $response = response()->json(['success' => true]);
+            $card = $this->createCredits($order->customer_id, $tran);
+            $response = response()->json(['success' => true, 'card' => $responce['card']]);
             
         } else {
             $response = response()->json(['message' => 'unsuccessful']);
@@ -219,7 +220,7 @@ trait UsaEpayTransaction
 
         }
 
-        return $order;
+        return ['order' => $order, 'card' => $inserted ];
     }
 
 

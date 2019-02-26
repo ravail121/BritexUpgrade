@@ -7,18 +7,14 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
-class CustomerSubcriptionTest extends TestCase
+class ResetPasswordTest extends TestCase
 {
-    use WithFaker;
+	use WithFaker;
     use DatabaseTransactions;
 
 	const HEADER_DATA = ['Authorization' => 'alar324r23423'];
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
-    public function testSubcription()
+
+    public function test_reset_password()
     {
         $customerData = [
             'order_hash'        => '0058f7836a86d7cb60e4017c3f34758b3ce5cd87',
@@ -39,18 +35,18 @@ class CustomerSubcriptionTest extends TestCase
         $customerResponse = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query($customerData));
         $customer =  $customerResponse->json();
 
-    	$response = $this->withHeaders(self::HEADER_DATA)->get('api/customer-subscriptions?hash='.$customer['customer']['hash']);
+        $userResponse = $customerResponse = $this->withHeaders(self::HEADER_DATA)->get('api/forgot-password?identifier='.$customer['customer']['id']);
+        $user =  $userResponse->json();
 
-    	$response->assertStatus(200)->assertJson([
-            'customer-invoice' => true,
-        ]);
+        $response = $this->withHeaders(self::HEADER_DATA)->get('/api/reset-password?token='.$user['token'].'&password=qwerty');
+
+       $response->assertStatus(200);
     }
 
-    public function test_customer_without_hash()
+    public function test_reset_password_without_token()
     {
-    	$response = $this->withHeaders(self::HEADER_DATA)->get('/api/customer-subscriptions');
+    	$response = $this->withHeaders(self::HEADER_DATA)->get('/api/reset-password');
 
     	$response->assertStatus(302);
     }
 }
-

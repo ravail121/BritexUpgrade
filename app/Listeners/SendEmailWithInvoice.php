@@ -105,6 +105,7 @@ class SendEmailWithInvoice
 
                 $data = [
                     'invoice_num'           => $order->invoice->id,
+                    'subscriptions'         => [],
                     'start_date'            => $order->invoice->start_date,
                     'end_date'              => $order->invoice->end_date,
                     'due_date'              => $order->invoice->due_date,
@@ -119,6 +120,25 @@ class SendEmailWithInvoice
                     'credits'               => number_format($credits, 2),
                     'total_charges'         => number_format($totalCharges, 2),
                 ];
+            }
+        }
+        if ($order->subscriptions) {
+            \Log::info('inside Subscription');
+
+            foreach ($order->subscriptions as $subscription) {
+                $planCharges    = $subscription->cal_plan_charges;
+                $onetimeCharges = $subscription->cal_onetime_charges;
+
+                $subscriptionData = [
+                    'subscription_id' => $subscription->id,
+                    'plan_charges'    => number_format($planCharges, 2),
+                    'onetime_charges' => number_format($onetimeCharges, 2),
+                ];
+
+                \Log::info($subscriptionData);
+
+
+                array_push($data['subscriptions'], $subscriptionData);
             }
         }
         return $data;

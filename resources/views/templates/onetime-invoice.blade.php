@@ -55,7 +55,7 @@
                         </div>
                         
                         <div class="bill_info">
-                            <h2>Your Monthly Bill As Of</h2>
+                            <h2>Bill for</h2>
                             <h3>{{ $invoice['today_date'] }}</h3>
                         </div>
                         <div class="info">
@@ -121,11 +121,11 @@
                                                 </tr>
                                                 <tr>
                                                     <td>Credits</td>
-                                                    <td class="detail">$ {{ $invoice['credits'] }}</td>
+                                                    <td class="detail">- $ {{ $invoice['credits'] }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>Total Charges This Bill</td>
-                                                    <td class="detail">{{ $invoice['total_charges'] }}</td>
+                                                    <td class="detail">$ {{ $invoice['total_charges'] }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -135,7 +135,7 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Payments ({{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }})</td>
-                                                    <td class="detail">$90.00</td>
+                                                    <td class="detail">$ {{ $invoice['total_charges'] }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>Due {{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }}</td>
@@ -185,15 +185,19 @@
                                     <td>$0.00</td>
                                     <td>$50.00</td>
                                 </tr>
-                                <tr>
-                                    <td>863-666-9879</td>
-                                    <td>$30.00</td>
-                                    <td>$0.00</td>
-                                    <td>$0.00</td>
-                                    <td>$5.49</td>
-                                    <td>$0.00</td>
-                                    <td>$35.49</td>
-                                </tr>
+                                @if (count($invoice['subscriptions']))
+                                    @foreach ($invoice['subscriptions'] as $subscription)
+                                        <tr>
+                                            <td>{{ $subscription['subscription_id'] }}</td>
+                                            <td>$ {{ $subscription['plan_charges'] }}</td>
+                                            <td>$ {{ $subscription['onetime_charges'] }}</td>
+                                            <td>$ 0.00</td>
+                                            <td>$ 0.00</td>
+                                            <td>$0.00</td>
+                                            <td>$35.49</td>
+                                        </tr>
+                                    @endforeach
+                                @endif
                             </tbody>
                             <tr>
                                 <td colspan="7" class="lh0">

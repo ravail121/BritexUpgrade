@@ -7,6 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
+    const TYPE = [
+        'monthly_invoice'  => 1,
+        'one_time_invoice' => 2,
+    ];
+
+    const STATUS = [
+        'closed'          => 0,
+        'pending_payment' => 1,
+        'closed_and_paid' => 2,
+    ];
+
+
     protected $table = 'invoice';
 
     protected $fillable = [ 'customer_id', 'type', 'status', 'start_date', 'end_date', 'due_date', 'subtotal', 'total_due', 'prev_balance', 'payment_method', 'notes', 'business_name', 'billing_fname', 'billing_lname', 'billing_address_line_1', 'billing_address_line_2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_fname', 'shipping_lname', 'shipping_address_line_1', 'shipping_address_line_2', 'shipping_city', 'shipping_state', 'shipping_zip'
@@ -53,7 +65,8 @@ class Invoice extends Model
         array_push($total, $this->cal_taxes);
         array_push($total, $this->cal_credits);
         array_push($total, $this->cal_service_charges);
-        return array_sum($total);
+        $totalCharges = array_sum($total);
+        return self::toTwoDecimals($totalCharges);
 
     }
 
@@ -78,7 +91,7 @@ class Invoice extends Model
      */
     public function scopeGetDues($query, $customerId)
     {
-        return $query->where('customer_id' , $customerId)->where('status', '<', 2);
+        return $query->where('customer_id' , $customerId)->where('status', '<', self::STATUS['closed_and_paid']);
     }
 
 
@@ -96,7 +109,7 @@ class Invoice extends Model
 
     public function getTypeNotOneAttribute()
     {
-        return ($this->type != 1 && $this->start_date > $this->customer->billing_end) ;
+        return ($this->type != self::TYPE['monthly_invoice'] && $this->start_date > $this->customer->billing_end) ;
 
     }
 

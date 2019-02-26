@@ -44,10 +44,22 @@ Route::get('/', function (Request $request) {
 				], 200);
 });
 
+Route::group(['namespace'=>'Api\V1\Invoice'],function(){
+	Route::get('/invoice', [
+	 'as'=>'api.invoice.get',
+	 'uses'=> 'InvoiceController@get',
+
+	]);
+
+	Route::get('/sample-invoice', [
+	 'as'=>'api.sample.invoice',
+	 'uses'=> 'SampleInvoiceGenerationController@get',
+
+	]);
+});
+
 
 Route::middleware('APIToken')->group(function () {
-
-
 			// Orders API
 			Route::group(['prefix' => 'order', 'namespace' => '\Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
 			{
@@ -258,17 +270,17 @@ Route::middleware('APIToken')->group(function () {
 			});
 
 			Route::group(['namespace'=>'Api\V1\Invoice'],function(){
-				Route::get('/invoice', [
-				 'as'=>'api.invoice.get',
-				 'uses'=> 'InvoiceController@get',
+				// Route::get('/invoice', [
+				//  'as'=>'api.invoice.get',
+				//  'uses'=> 'InvoiceController@get',
 
-				]);
+				// ]);
 
-				Route::get('/sample-invoice', [
-				 'as'=>'api.sample.invoice',
-				 'uses'=> 'SampleInvoiceGenerationController@get',
+				// Route::get('/sample-invoice', [
+				//  'as'=>'api.sample.invoice',
+				//  'uses'=> 'SampleInvoiceGenerationController@get',
 
-				]);
+				// ]);
 
 				Route::get('/cron-jobs', [
 				 'as'=>'api.monthly.invoice',
@@ -414,6 +426,7 @@ Route::middleware('APIToken')->group(function () {
 					'uses' => 'CustomerController@customerOrder',
 				]);
 			}); 
+
 
 			//Route::get('/confirm','BizVerificationController@confirm');
 			

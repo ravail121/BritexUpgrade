@@ -155,8 +155,8 @@ class InvoiceController extends BaseController
      * @param  Request    $request
      * @return Response
      */
-    public function get(Request $request){
-
+    public function get(Request $request)
+    {
         $order = Order::hash($request->order_hash)->first();
         if ($order) {
             if ($order->invoice->type == 2) {
@@ -166,77 +166,83 @@ class InvoiceController extends BaseController
                 $credits        = $order->invoice->cal_credits;
                 $totalCharges   = $order->invoice->cal_total_charges;
 
+                $data = $this->setInvoiceData($order);
 
                 $invoice = [
-                    'invoice_num'           => $order->invoice->id,
-                    'start_date'            => $order->invoice->start_date,
-                    'end_date'              => $order->invoice->end_date,
-                    'due_date'              => $order->invoice->due_date,
-                    'total_due'             => $order->invoice->total_due,
-                    'subtotal'              => $order->invoice->subtotal,
-                    'today_date'            => $this->carbon->toFormattedDateString(),
-                    'customer_name'         => $order->customer->full_name,
-                    'customer_address'      => $order->customer->shipping_address1,
-                    'customer_zip_address'  => $order->customer->zip_address,
-                    'service_charges'       => number_format($serviceCharges, 2),
-                    'taxes'                 => number_format($taxes, 2),
-                    'credits'               => number_format($credits, 2),
-                    'total_charges'         => number_format($totalCharges, 2),
-                 ];
-                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
-                // $pdf = PDF::loadView('templates/invoice', compact('invoice'))
-                //             ->setOption('images', true)
-                //             ->setOption('enable-javascript', true)
-                //             ->setOption('javascript-delay', 100);
+                    'service_charges' => self::formatNumber($serviceCharges),
+                    'taxes'           => self::formatNumber($taxes),
+                    'credits'         => self::formatNumber($credits),
+                    'total_charges'   => self::formatNumber($totalCharges),
+                ];
+
+                $invoice = array_merge($data, $invoice);
+
+
+                $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+
                 return $pdf->download('invoice.pdf');
             }
 
         }
         return 'Sorry, something went wrong please try again later......';
-
-
-        // PDF::loadFile(public_path().'/templates/invoice.html')->save('templates/invoice.pdf')->stream('download.pdf');
         
-         
-        // $pdf->save('invoice/invoice.pdf');
+    }
 
-        // return $this->respondError(['No such invoice']);
 
-        // $invoice_id =  $request->input('invoice_id');
-        // $invoice = false;
-        // if($invoice_id == null){
-        //     $today = date("y-m-d");
-        //     $fivedayaftertoday = date('Y-m-d', strtotime($today. ' + 5 days'));
 
-        //     $customers = Customer::with(['company', 'subscription', 'subscription.plan', 'subscription.new_plan', 'subscription.subscription_addon', 'subscription.subscription_addon.addon', 'subscription.subscription_addon.subscription.plan', 'pending_charge', 'invoice' , 'coupon'])->where(
-        //             [
-        //               ['billing_end' , '<=' , $fivedayaftertoday],
-        //               ['billing_end', '>=', $today]
-        //             ]
-        //         )->whereHas('subscription', function($query)  { 
-        //             $query->whereIn('status', ['active', 'shipping', 'for-activation']);
-        //         })->orWhereHas('pending_charge', function($query) {
-        //             $query->where('invoice_id', null);
-        //         })->get();
 
-        //     //print_r($customers);
-        //     //echo count($customers);
-        //     $this->generate_new_invoice($customers);
+    protected function setInvoiceData($order)
+    {
 
-        // } else {
+        $arr = [
+            'invoice_num'           => $order->invoice->id,
+            'subscriptions'         => [],
+            'start_date'            => $order->invoice->start_date,
+            'end_date'              => $order->invoice->end_date,
+            'due_date'              => $order->invoice->due_date,
+            'total_due'             => $order->invoice->total_due,
+            'subtotal'              => $order->invoice->subtotal,
+            'today_date'            => $this->carbon->toFormattedDateString(),
+            'customer_name'         => $order->customer->full_name,
+            'customer_address'      => $order->customer->shipping_address1,
+            'customer_zip_address'  => $order->customer->zip_address,
+        ];
 
-        //     $invoice = Invoice::find($invoice_id);
-        //     if(count($invoice) < 1){
-        //         return $this->respondError(['No such invoice']);
-        //     }
-        //     $customer = Customer::with(['company', 'subscription', 'subscription.plan', 'subscription.new_plan', 'subscription.subscription_addon', 'subscription.subscription_addon.subscription.plan', 'pending_charge', 'invoice' , 'coupon'])->find($invoice->customer_id);
-        //     $this->generate_customer_invoice($invoice, $customer);
+        if ($order->subscriptions) {
+            foreach ($order->subscriptions as $subscription) {
+                $planCharges    = $subscription->cal_plan_charges;
+                $onetimeCharges = $subscription->cal_onetime_charges;
 
-        // }
-    
-     
-        // return $this->respond(['Done']);
-        
+                $subscriptionData = [
+                    'subscription_id' => $subscription->id,
+                    'plan_charges'    => self::formatNumber($planCharges),
+                    'onetime_charges' => self::formatNumber($onetimeCharges),
+                ];
+
+                \Log::info($subscriptionData);
+
+
+                array_push($arr['subscriptions'], $subscriptionData);
+            }
+        }
+
+        return $arr;
+
+
+    }
+
+
+
+
+    /**
+     * Formats the amount to USA standard style
+     * 
+     * @param  float    $amount
+     * @return float         
+     */
+    public static function formatNumber($amount)
+    {
+        return number_format($amount, 2);
     }
 
 

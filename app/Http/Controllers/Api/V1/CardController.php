@@ -193,10 +193,13 @@ class CardController extends BaseController implements ConstantInterface
 
     public function removeCard(Request $request)
     {
-        $data    = $request->all();
-        if($this->validateCardId($data['id'])){
-            CustomerCreditCard::whereId($data['id'])->delete();
-            return $this->respond('Card Sucessfully Deleted');
+        $data=$request->validate([
+            'customer_credit_card_id'   => 'required',
+        ]);
+
+        if($this->validateCardId($data)){
+            CustomerCreditCard::whereId($data['customer_credit_card_id'])->delete();
+            return $this->respond(['details' => 'Card Sucessfully Deleted']);
         }
         else{
             return $this->respondError("Card Not Found");
@@ -205,21 +208,25 @@ class CardController extends BaseController implements ConstantInterface
 
     protected function validateCardId($data)
     {
-        return CustomerCreditCard::whereId($data)->exists();
+        return CustomerCreditCard::whereId($data['customer_credit_card_id'])->exists();
     }
 
     public function primaryCard(Request $request)
     {
-       $data    = $request->all();
-        if($this->validateCardId($data['cardId'])){
-            CustomerCreditCard::whereCustomerId($data['id'])->update(['default' => '0']);
-            CustomerCreditCard::whereId($data['cardId'])->update(['default' => '1']);
-            return $this->respond('Card Sucessfully Updated');
+        $data=$request->validate([
+            'customer_credit_card_id'   => 'required',
+            'id'                        => 'required'
+        ]);
+
+        if($customerCreditCard = CustomerCreditCard::find($data['customer_credit_card_id'])){
+            CustomerCreditCard::whereCustomerId($data['id'])->update(['default' => '0']); 
+            $customerCreditCard->update(['default' => '1']);
+            return $this->respond(['details' => 'Card Sucessfully Updated']); 
         }
         else{
             return $this->respondError("Card Not Found");
         } 
     }
-
-
 }
+
+

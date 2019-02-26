@@ -7,18 +7,14 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
-class CustomerSubcriptionTest extends TestCase
+class CustomerOrderTest extends TestCase
 {
     use WithFaker;
     use DatabaseTransactions;
 
 	const HEADER_DATA = ['Authorization' => 'alar324r23423'];
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
-    public function testSubcription()
+	
+    public function test_customer_order()
     {
         $customerData = [
             'order_hash'        => '0058f7836a86d7cb60e4017c3f34758b3ce5cd87',
@@ -39,18 +35,17 @@ class CustomerSubcriptionTest extends TestCase
         $customerResponse = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query($customerData));
         $customer =  $customerResponse->json();
 
-    	$response = $this->withHeaders(self::HEADER_DATA)->get('api/customer-subscriptions?hash='.$customer['customer']['hash']);
+        $response = $this->withHeaders(self::HEADER_DATA)->get('/api/customer-orders?hash='.$customer['customer']['hash']);
 
     	$response->assertStatus(200)->assertJson([
-            'customer-invoice' => true,
+            'orders' => true,
         ]);
     }
 
-    public function test_customer_without_hash()
+    public function test_customer_order_without_hash()
     {
-    	$response = $this->withHeaders(self::HEADER_DATA)->get('/api/customer-subscriptions');
+    	$response = $this->withHeaders(self::HEADER_DATA)->get('/api/customer-orders');
 
     	$response->assertStatus(302);
     }
 }
-

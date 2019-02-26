@@ -39,10 +39,10 @@ class Subscription extends Model
       'shipping_date',
     ];
 
-   public function Customer()
+    public function Customer()
     {
-     return $this->hasOne('App\Model\Customer', 'id');
-   }
+        return $this->hasOne('App\Model\Customer', 'id');
+    }
 
     public function subscription_addon(){
 
@@ -52,6 +52,11 @@ class Subscription extends Model
     public function subscriptionAddon()
     {
         return $this->hasMany('App\Model\SubscriptionAddon', 'subscription_id', 'id');
+    }
+
+    public function invoiceItemDetail()
+    {
+        return $this->hasMany('App\Model\InvoiceItem', 'subscription_id', 'id');
     }
 
 
@@ -69,6 +74,11 @@ class Subscription extends Model
     {
         return $this->hasone('App\Model\Plan', 'id' );
     }
+
+    public function order()
+    {
+     return $this->belongsTo('App\Model\Order');
+   }
 
     public function plans()
     {
@@ -99,11 +109,64 @@ class Subscription extends Model
       return $value > $grace;
     }
 
+    public function getStatusShippingOrForActivationAttribute()
+    {
+      return ($this->status == 'shipping' || $this->status == 'for-activation');
+    }
+
+    public function getStatusActiveNotUpgradeDowngradeStatusAttribute()
+    {
+      return ($this->status == 'active' && $this->upgrade_downgrade_status != 'downgrade-scheduled');
+    }
+
+    public function getStatusActiveAndUpgradeDowngradeStatusAttribute()
+    {
+      return ($this->status == 'active' && $this->upgrade_downgrade_status == 'downgrade-scheduled');
+    }
+
     public function getShippingDateAttribute($value)
     {
         if (isset($value)) {
             return Carbon::parse($value)->format('M-d-Y');
         }
         return "NA";
+    }
+
+
+    public function getCalPlanChargesAttribute()
+    {
+        $plans = $this->invoiceItemDetail()->planCharges()->get();
+        return $this->calCharges($plans);
+    }
+
+
+    public function getCalOnetimeChargesAttribute()
+    {
+        $products = $this->invoiceItemDetail()->onetimeCharges()->get();
+        return $this->calCharges($products);
+    }
+
+
+    protected function calCharges($products)
+    {
+        $charges = [];
+
+        foreach ($products as $product) {
+            array_push($charges, $product->amount);
+        }
+
+        $total = array_sum($charges);
+        return self::toTwoDecimals($total);
+    }
+
+
+    /**
+     * [toTwoDecimals description]
+     * @param  [type] $amount [description]
+     * @return [type]         [description]
+     */
+    public static function toTwoDecimals($amount)
+    {
+        return number_format((float)$amount, 2, '.', '');
     }
 }
