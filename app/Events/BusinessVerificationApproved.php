@@ -15,17 +15,15 @@ class BusinessVerificationApproved
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $orderHash;
     public $bizVerification;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($orderHash, $bizHash)
+    public function __construct($bizHash)
     {
-        $this->orderHash       = $orderHash;
-        $this->bizVerification = BusinessVerification::where('hash', $bizHash)->first();
+        $this->bizVerification = BusinessVerification::hash($bizHash)->first();
 
     }
     /**

@@ -23,10 +23,8 @@ class BusinessVerificationCreated
      */
     public function __construct($orderHash,$bizHash)
     {
-        //\Log::info('hello world');
         $this->orderHash = $orderHash;
         $this->bizHash   = $bizHash;
-        //dd($this->biz_hash);
 
     }
     /**

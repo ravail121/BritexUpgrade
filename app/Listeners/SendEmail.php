@@ -4,8 +4,7 @@ namespace App\Listeners;
 
 
 use Mail;
-
-//use App\Notifications\InvoicePaid;
+use App\Model\Order;
 use App\Model\BusinessVerification;
 use App\Notifications\BizVerification;
 use Illuminate\Queue\InteractsWithQueue;
@@ -13,10 +12,11 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use App\Events\BusinessVerificationCreated;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Support\Configuration\MailConfiguration;
 
 class SendEmail
 {
-    use Notifiable;
+    use Notifiable, MailConfiguration;
 
     /**
      * Create the event listener.
@@ -36,15 +36,19 @@ class SendEmail
      */
     public function handle(BusinessVerificationCreated $event)
     {
-        
         $orderHash    = $event->orderHash;
         $businessHash = $event->bizHash;
 
-        $businessVerification = BusinessVerification::where('hash', $businessHash) -> first();
-        $businessVerification->notify(new BizVerification($orderHash,$businessHash));
-        //Notification::send($BusinessVerification, new BizVerification($orderHash,$businessHash));
-        
+        $order                = Order::hash($orderHash)->first();
+        $businessVerification = BusinessVerification::hash($businessHash)->first();
 
+        $configurationSet = $this->setMailConfiguration($order);
+
+        if ($configurationSet) {
+            return false;
+        }
+
+        $businessVerification->notify(new BizVerification($order, $businessVerification));
    
     }
 

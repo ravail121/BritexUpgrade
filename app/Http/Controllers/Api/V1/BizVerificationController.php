@@ -42,18 +42,18 @@ class BizVerificationController extends BaseController
         $dataWithoutDocs = $request->except(['order_hash','doc_file']) + [
             'hash'     => sha1(time()),
             'order_id' => $orderId,
-            'approved' => 1,
+            // 'approved' => 1,
         ];
 
 
-        $businessVerification = BusinessVerification::where('order_id', $orderId)->where('approved', 1)->first();
+        $businessVerification = BusinessVerification::where('order_id', $orderId)->where('approved', 0)->first();
 
         if ($businessVerification) {
             $businessVerification->update($dataWithoutDocs);
 
         } else {
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
-            event(new BusinessVerificationApproved($request->order_hash, $businessVerification->hash));
+            event(new BusinessVerificationCreated($request->order_hash, $businessVerification->hash));
         }
 
 
@@ -65,25 +65,43 @@ class BizVerificationController extends BaseController
             }
         }
                 
-        // event(new BusinessVerificationCreated($orderHash,$bizHash));
 		return $this->respond(['order_hash' => $request->order_hash]);
 	}
 
 
-	public function confirm(Request $request) {
 
-  	    $orderHash = Order::hash($request->orderHash)->first();
-		$bizHash   = BusinessVerification::where('hash', $request->businessHash)->first();
 
-		if($orderHash && $bizHash) {
-			if($bizHash->approved == 0) {
-				BusinessVerification::where('hash', $request->businessHash)->update(['approved' => 1]);    
-			}
+    /**
+     * Approves the Business of Customer
+     * 
+     * @param  Request    $request
+     * @return Response
+     */
+	public function approveBusiness(Request $request) 
+    {
+        $msg = 'Something went wrong';
+
+		$businessVerification = BusinessVerification::where('hash', $request->business_hash)->first();
+
+		if($businessVerification) {
+			if($businessVerification->approved == 0) {
+
+				$response = $businessVerification->update(['approved' => 1]);
+                event(new BusinessVerificationApproved($businessVerification->hash));
+
+                if ($response) {
+                    $msg = 'Approved Successfully';
+                }
+
+			} else {
+                $msg = 'Business is already verified';
+            }
+
 		} else {
-            return $this->respondError("Invalid User");
+            $msg = 'Invalid User';
 		}
 
-		return redirect()->to(env('CHECKOUT_URL').$request->businessHash.'&order_hash='.$orderHash); 
+		return $this->respond(['message' => $msg]); 
 	}
 
 
@@ -158,7 +176,8 @@ class BizVerificationController extends BaseController
             return $this->respond(['false' => false]);
 
         }
-        event(new BusinessVerificationApproved($orderHash, $order->bizVerification->hash));
+        event(new BusinessVerificationCreated($orderHash, $order->bizVerification->hash));
+        // event(new BusinessVerificationApproved($orderHash, $order->bizVerification->hash));
 
         return $this->respond(['email' => $order->bizVerification->email]);   
     }

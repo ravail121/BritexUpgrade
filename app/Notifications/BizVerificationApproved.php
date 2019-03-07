@@ -14,6 +14,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 class BizVerificationApproved extends Notification
 {
     use Queueable;
+    
     const URL = '/checkout?verification_hash=';
 
     public $order;
@@ -67,12 +68,6 @@ class BizVerificationApproved extends Notification
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
                     ->line($body);
-                    // ->markdown('mail.biz-verification-approved', [
-                    //     'url'           => $url,
-                    //     'first_name'    => $this->bizVerification->fname,
-                    //     'last_name'     => $this->bizVerification->lname,
-                    //     'business_name' => $this->bizVerification->business_name,
-                    // ]);
     }
 
     /**

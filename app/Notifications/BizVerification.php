@@ -2,8 +2,11 @@
 
 namespace App\Notifications;
 
+use App\Model\Order;
+use App\Model\Company;
+use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notifiable;
+use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,28 +15,22 @@ class BizVerification extends Notification
 {
     use Queueable;
     
-    use Notifiable;
+    public $order;
+    public $bizVerification;
 
-    public $businessHash;
-    public $orderHash;
+
     /**
      * Create a new notification instance.
      *
      * @return void
      */
 
-     public function __construct($order_hash,$business_hash)
-        {
-            //\Log::info('hello world');
-            $this->orderHash = $order_hash;
-            $this->businessHash= $business_hash;
-            //dd($this->biz_hash);
-        }
+    public function __construct(Order $order, BusinessVerification $bizVerification)
+    {
+        $this->order           = $order;
+        $this->bizVerification = $bizVerification;
+    }
 
-    // public function __construct()
-    // {
-    //     //
-    // }
 
     /**
      * Get the notification's delivery channels.
@@ -53,18 +50,23 @@ class BizVerification extends Notification
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
     public function toMail($notifiable)
-    {   
+    {
+        $company = Company::find($this->order->company_id);
+
+        $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'biz-verification-submitted')->first();
+
+        $strings     = ['[FIRST_NAME]', '[LAST_NAME]', '[BUSINESS_NAME]'];
         
+        $replaceWith = [$this->bizVerification->fname, $this->bizVerification->lname, $this->bizVerification->business_name];
 
-    
 
-        $url =  route('api.bizverification.confirm', ['businessHash' => $this->businessHash,'orderHash' => $this->orderHash]);
-        // $url = url('api/biz-verification/confirm'.$this->orderHash);
-        //dd($url);
+        $body = str_replace($strings, $replaceWith, $emailTemplate->body);
+
+
         return (new MailMessage)
-            ->greeting('business Verification ')
-            ->line('you need to verify your business by clicking on this link')
-            ->action('Verify', $url);
+                    ->subject($emailTemplate->subject)
+                    ->from($emailTemplate->from)
+                    ->line($body);
     }
 
     /**

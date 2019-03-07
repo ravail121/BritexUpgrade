@@ -39,9 +39,9 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 
 
 Route::get('/', function (Request $request) {
-		return  response()->json([
-						'message' => 'BriteX Backend !!'
-				], 200);
+	return  response()->json([
+		'message' => 'BriteX Backend !!'
+	], 200);
 });
 
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
@@ -53,7 +53,13 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 	Route::get('/sample-invoice', [
 	 'as'=>'api.sample.invoice',
-	 'uses'=> 'SampleInvoiceGenerationController@get',
+	 'uses'=> 'SampleInvoiceGenerationController@getInvoice',
+
+	]);
+
+	Route::get('/sample-statement-invoice', [
+	 'as'=>'api.sample.statement',
+	 'uses'=> 'SampleInvoiceGenerationController@getStatement',
 
 	]);
 });
@@ -251,9 +257,9 @@ Route::middleware('APIToken')->group(function () {
  
 				]);
 				
-				Route::get('/confirm', [
-						'as'=>'api.bizverification.confirm',
-						'uses'=>'BizVerificationController@confirm',
+				Route::get('/approve', [
+						'as'=>'api.bizverification.approve',
+						'uses'=>'BizVerificationController@approveBusiness',
  
 				]);
 
@@ -367,10 +373,9 @@ Route::middleware('APIToken')->group(function () {
 			});
 			
 
-			Route::post('/confirm',
+			Route::post('/addon',
 			[
-				'as'=>'api.confirm.',
-				//'middleware'=>'auth:api',
+				'as'=>'api.addon.',
 				'uses'=>'AddonController@add',
 			]);
 

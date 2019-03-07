@@ -68,7 +68,8 @@ class CreateOrderTable extends Migration
             $table->unsignedInteger('company_id')->nullable();
             $table->foreign('company_id')->references('id')->on('company');
             $table->integer('level');
-            $table->text('name');
+            $table->text('fname');
+            $table->text('lname');
             $table->char('email');
             $table->char('password');
             $table->char('reset_hash');

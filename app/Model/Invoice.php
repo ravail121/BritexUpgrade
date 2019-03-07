@@ -4,21 +4,10 @@ namespace App\Model;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use App\libs\Constants\ConstantInterface;
 
-class Invoice extends Model
+class Invoice extends Model implements ConstantInterface
 {
-    const TYPE = [
-        'monthly_invoice'  => 1,
-        'one_time_invoice' => 2,
-    ];
-
-    const STATUS = [
-        'closed'          => 0,
-        'pending_payment' => 1,
-        'closed_and_paid' => 2,
-    ];
-
-
     protected $table = 'invoice';
 
     protected $fillable = [ 'customer_id', 'type', 'status', 'start_date', 'end_date', 'due_date', 'subtotal', 'total_due', 'prev_balance', 'payment_method', 'notes', 'business_name', 'billing_fname', 'billing_lname', 'billing_address_line_1', 'billing_address_line_2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_fname', 'shipping_lname', 'shipping_address_line_1', 'shipping_address_line_2', 'shipping_city', 'shipping_state', 'shipping_zip'
@@ -82,6 +71,47 @@ class Invoice extends Model
     }
 
 
+
+    public function scopeMonthly($query)
+    {
+        return $query->where('type', self::INVOICE_TYPES['monthly']);
+    }
+
+
+    public function scopeOnetime($query)
+    {
+        return $query->where('type', self::INVOICE_TYPES['one_time']);
+    }
+
+
+    public function scopeClosedAndUnpaid($query)
+    {
+        return $query->where('status', self::STATUS['closed_and_unpaid']);
+    }
+
+    public function scopePendingPayment($query)
+    {
+        return $query->where('status', self::STATUS['pending_payment']);
+    }
+
+
+    public function scopeClosedAndPaid($query)
+    {
+        return $query->where('status', self::STATUS['closed_and_paid']);
+    }
+
+
+    public function scopePendingAndUnpaid($query)
+    {
+        return $query->whereIn('status', [
+            self::STATUS['pending_payment'],
+            self::STATUS['closed_and_unpaid'],
+        ]);
+    }
+
+
+
+
     /**
      * Fetches Invoice Details from invoice table if status < 2
      * 
@@ -91,7 +121,19 @@ class Invoice extends Model
      */
     public function scopeGetDues($query, $customerId)
     {
-        return $query->where('customer_id' , $customerId)->where('status', '<', self::STATUS['closed_and_paid']);
+        return $query->where('customer_id' , $customerId)->pendingAndUnpaid();
+    }
+
+
+    public function scopeMonthlyInvoicePending($query)
+    {
+        return $query->monthly()->pendingPayment();
+    }
+
+
+    public function scopeMonthlyInvoicePaid($query)
+    {
+        return $query->monthly()->closedAndPaid();
     }
 
 

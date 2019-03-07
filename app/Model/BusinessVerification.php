@@ -49,6 +49,11 @@ class BusinessVerification extends Model
         return $this->hasOne(Customer::class);
     }
 
+    public function scopeHash($query, $hash)
+    {
+        return $query->where('hash', $hash);
+    }
+
     // public function checkoutUrl()
     // {
     //     return config('custom.checkout_url');

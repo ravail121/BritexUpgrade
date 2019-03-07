@@ -3,9 +3,7 @@
 namespace App\Listeners;
 
 use Mail;
-use Config;
 use App\Model\Order;
-use App\Model\Company;
 use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
@@ -13,10 +11,11 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Events\BusinessVerificationApproved;
 use App\Notifications\BizVerificationApproved;
+use App\Support\Configuration\MailConfiguration;
 
 class SendApprovalEmail
 {
-    use Notifiable;
+    use Notifiable, MailConfiguration;
 
     /**
      * Create the event listener.
@@ -36,9 +35,8 @@ class SendApprovalEmail
      */
     public function handle(BusinessVerificationApproved $event)
     {
-        $orderHash       = $event->orderHash;
         $bizVerification = $event->bizVerification;
-        $order           = Order::where('hash', $orderHash)->first();
+        $order           = Order::find($bizVerification->order_id);
 
         $configurationSet = $this->setMailConfiguration($order);
 
@@ -47,28 +45,6 @@ class SendApprovalEmail
         }
 
         $bizVerification->notify(new BizVerificationApproved($order, $bizVerification));        
-    }
-
-
-    /**
-     * This method sets the Configuration of the Mail according to the Company
-     * 
-     * @param Order $order
-     * @return boolean
-     */
-    protected function setMailConfiguration($order)
-    {
-        $company = Company::find($order->company_id);
-        $config = [
-            'driver'   => $company->smtp_driver,
-            'host'     => $company->smtp_host,
-            'port'     => $company->smtp_port,
-            'username' => $company->smtp_username,
-            'password' => $company->smtp_password,
-        ];
-
-        Config::set('mail',$config);
-        return false;
     }
 
 }

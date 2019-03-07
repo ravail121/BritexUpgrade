@@ -113,7 +113,7 @@ class Customer extends Authenticatable
 
     public function credit()
     {
-        return $this->belongsTo(Credit::class);
+        return $this->hasMany('App\Model\Credit');
     }
 
 
@@ -131,11 +131,10 @@ class Customer extends Authenticatable
     public function getFiveDaysBeforeAttribute()
     {
         $today          = self::currentDate();
-        $endDate        = self::parseEndDate();
+        $endDate        = $this->parseEndDate();
         $fiveDaysBefore = $endDate->subDays(5);
 
-        // return $today->lessThanOrEqualTo($fiveDaysBefore);
-        return $today->gte($fiveDaysBefore);
+        return ($today->gte($fiveDaysBefore) && $today->lte($endDate));
 
     }
 

@@ -8,17 +8,34 @@ use App\Http\Controllers\Controller;
 
 class SampleInvoiceGenerationController extends Controller
 {
-      /**
+    /**
      * Generates the Invoice template and downloads the invoice.pdf file
      * 
      * @param  Request    $request
      * @return Response
      */
-    public function get()
+    public function getInvoice()
     {
         $pdf = PDF::loadView('templates/test-invoice')->setPaper('letter', 'portrait');
-        // return $pdf->stream('invoice.pdf');
         return $pdf->download('invoice.pdf');
-        // return view('templates.test-invoice');
     }
+
+
+
+
+    /**
+     * Generates the Invoice template and downloads the invoice.pdf file
+     * 
+     * @param  Request    $request
+     * @return Response
+     */
+    public function getStatement()
+    {
+        $view1 = view('templates.test-statement');
+        $view2 = view('templates.test-statement-2');
+
+        $pdf = PDF::loadHTML($view1 . $view2)->setPaper('letter', 'portrait');
+        return $pdf->download('statement.pdf');
+    }
+
 }

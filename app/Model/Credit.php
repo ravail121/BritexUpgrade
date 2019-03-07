@@ -23,7 +23,7 @@ class Credit extends Model
 
     public function customer()
     {
-        return $this->belongsTo('App\Model\Customer','customer_id','id');
+        return $this->belongsTo('App\Model\Customer', 'customer_id', 'id');
     }
 
     public function getCreatedAtAttribute($value)

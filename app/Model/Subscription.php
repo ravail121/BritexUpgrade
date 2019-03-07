@@ -77,8 +77,8 @@ class Subscription extends Model
 
     public function order()
     {
-     return $this->belongsTo('App\Model\Order');
-   }
+        return $this->belongsTo('App\Model\Order');
+    }
 
     public function plans()
     {
@@ -97,31 +97,31 @@ class Subscription extends Model
 
     public function scopeTodayEqualsDowngradeDate($query)
     {
-      $today = Carbon::today();
-      return $query->where('downgrade_date', $today->toDateString());
+        $today = Carbon::today();
+        return $query->where('downgrade_date', $today->toDateString());
     }
 
     public function checkGracePeriod($grace)
     {
-      $today = Carbon::today();
-      $date  = Carbon::parse($this->suspended_date);
-      $value = $today->diffInDays($date);
-      return $value > $grace;
+        $today = Carbon::today();
+        $date  = Carbon::parse($this->suspended_date);
+        $value = $today->diffInDays($date);
+        return $value > $grace;
     }
 
     public function getStatusShippingOrForActivationAttribute()
     {
-      return ($this->status == 'shipping' || $this->status == 'for-activation');
+        return ($this->status == 'shipping' || $this->status == 'for-activation');
     }
 
     public function getStatusActiveNotUpgradeDowngradeStatusAttribute()
     {
-      return ($this->status == 'active' && $this->upgrade_downgrade_status != 'downgrade-scheduled');
+        return ($this->status == 'active' && $this->upgrade_downgrade_status != 'downgrade-scheduled');
     }
 
     public function getStatusActiveAndUpgradeDowngradeStatusAttribute()
     {
-      return ($this->status == 'active' && $this->upgrade_downgrade_status == 'downgrade-scheduled');
+        return ($this->status == 'active' && $this->upgrade_downgrade_status == 'downgrade-scheduled');
     }
 
     public function getShippingDateAttribute($value)
