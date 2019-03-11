@@ -2,31 +2,33 @@
 
 namespace App\Http\Controllers\Api\V1;
 use Validator;
+use App\Model\Sim;
+use App\Model\Plan;
+use App\Model\Order;
+use App\Model\Device;
+use App\Model\OrderGroup;
+use App\Model\PlanToAddon;
+use App\Model\Subscription;
+use App\Model\DeviceToPlan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
-use App\Model\Plan;
-use App\Model\Device;
-use App\Model\DeviceToPlan;
-use App\Model\OrderGroup;
-use App\Model\PlanToAddon;
-use App\Model\Order;
-use App\Model\Sim;
+use App\Http\Controllers\BaseController;
 
 
 /**
  * 
  */
-class PlanController extends Controller
+class PlanController extends BaseController
 {
   
-  function __construct()
-  {
+    function __construct()
+    {
     $this->content = array();
-  }
-  
-   public function get(Request $request){
+    }
+
+    public function get(Request $request){
 
       $company = \Request::get('company');
        
@@ -60,9 +62,9 @@ class PlanController extends Controller
       }
       return response()->json($plans);
         
-  }
+    }
 
-   public function find(Request $request, $id){
+    public function find(Request $request, $id){
         $this->content = Plan::find($id);
         return response()->json($this->content);
     }
@@ -70,8 +72,8 @@ class PlanController extends Controller
 
 
 
-  public function check_area_code(Request $request)
-  {
+    public function check_area_code(Request $request)
+    {
      /*
         Check porting
     */
@@ -96,36 +98,57 @@ class PlanController extends Controller
         })->get();
 
     if(!count($order)){
-      return response()->json(array('error' =>['invalid order_hash or plan_id']));
+        return response()->json(array('error' =>['invalid order_hash or plan_id']));
      
      }else{
-      $order = $order[0];
-      $area_code = $order->og->area_code;
-      $plan = Plan::find($order->og->plan_id);
-      $plan_area_code = $plan->area_code;
+        $order = $order[0];
+        $area_code = $order->og->area_code;
+        $plan = Plan::find($order->og->plan_id);
+        $plan_area_code = $plan->area_code;
 
 
-      if($plan_area_code == 0 && $area_code != ''){
-        return response()->json(array('show_area_code'=>false , 'clear_area_code'=>true));
+        if($plan_area_code == 0 && $area_code != ''){
+            return response()->json(array('show_area_code'=>false , 'clear_area_code'=>true));
 
-      }else if($plan_area_code == 1 && $area_code != ''){
-         return response()->json(array('show_area_code'=>true , 'area_code'=>$area_code,'require_area_code'=>false));
+        }else if($plan_area_code == 1 && $area_code != ''){
+            return response()->json(array('show_area_code'=>true , 'area_code'=>$area_code,'require_area_code'=>false));
 
-      }else if($plan_area_code == 2 && $area_code!='') {
-        return response()->json(array('show_area_code'=>true, 'area_code'=>$area_code, 'require_area_code'=>true));
+        }else if($plan_area_code == 2 && $area_code!='') {
+            return response()->json(array('show_area_code'=>true, 'area_code'=>$area_code, 'require_area_code'=>true));
 
-      }else if($plan_area_code == 0 &&  $area_code == ''){
-        return response()->json(['show_area_code'=>false]);
+        }else if($plan_area_code == 0 &&  $area_code == ''){
+            return response()->json(['show_area_code'=>false]);
 
-      }else if($plan_area_code == 1 && $area_code == ''){
-        return response()->json(array('show_area_code' => true, 'require_area_code' => false));
+        }else if($plan_area_code == 1 && $area_code == ''){
+            return response()->json(array('show_area_code' => true, 'require_area_code' => false));
 
-      }else if($plan_area_code == 2 && $area_code == ''){
-        return response()->json(array('show_area_code' => true, 'require_area_code' => true));
-      }
+        }else if($plan_area_code == 2 && $area_code == ''){
+            return response()->json(array('show_area_code' => true, 'require_area_code' => true));
+        }
 
-      return response()->json([]) ;
+        return response()->json([]) ;
+        }
     }
-  }
+
+    public function compatiblePlans(Request $request)
+    {
+        $data = $request->validate([
+            'subscriptionId' => 'required',
+        ]);
+
+        $subscription = Subscription::with('plan')->find($data['subscriptionId']);
+
+        if(!$subscription){
+            return $this->respondError('Invalid Subcription ID');
+        }
+
+        $plans = Plan::where([
+            ['carrier_id', '=', $subscription->plan->carrier_id],
+            ['company_id', '=', $subscription->plan->company_id],
+            ['type', '=', $subscription->plan->type],
+        ])->get();
+
+        return $this->respond($plans);
+    }
   
 }

@@ -430,6 +430,11 @@ Route::middleware('APIToken')->group(function () {
 					'as'   => 'api.customer.orders',
 					'uses' => 'CustomerController@customerOrder',
 				]);
+
+				Route::get('/compatible-plans',[
+					'as'   => 'api.compatibles.plans',
+					'uses' => 'PlanController@compatiblePlans',
+				]);
 			}); 
 
 
