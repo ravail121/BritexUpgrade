@@ -133,10 +133,12 @@ class PlanController extends BaseController
     public function compatiblePlans(Request $request)
     {
         $data = $request->validate([
-            'subscriptionId' => 'required',
+            'subscription_id' => 'required',
         ]);
 
-        $subscription = Subscription::with('plan')->find($data['subscriptionId']);
+        $subscription = Subscription::with('plan','order.allOrderGroup.orderGroupAddon')->find($data['subscription_id']);
+
+        $activeAddon = $this->activeAddons($subscription->order->allOrderGroup);
 
         if(!$subscription){
             return $this->respondError('Invalid Subcription ID');
@@ -146,9 +148,37 @@ class PlanController extends BaseController
             ['carrier_id', '=', $subscription->plan->carrier_id],
             ['company_id', '=', $subscription->plan->company_id],
             ['type', '=', $subscription->plan->type],
-        ])->get();
+        ])->orderBy('amount_recurring')->get();
+
+        $plans['active_plan'] = $subscription->plan_id;
+        $plans['active_addons'] = $activeAddon;
 
         return $this->respond($plans);
+    }
+
+    public function compatibleAddons(Request $request)
+    {
+        $data = $request->validate([
+            'plan_id' => 'required',
+        ]);
+
+        $addons = PlanToAddon::with('addon')->where([
+            ['plan_id', '=', $data['plan_id']],
+        ])->get();
+
+        return $addons;
+
+    }
+
+    public function activeAddons($orderGroups)
+    {
+        $allActiveAddon = [];
+        foreach ($orderGroups as $key => $orderGroup) {
+                $addonArray = $orderGroup->order_group_addon->toArray();
+                $addon = array_column($addonArray, 'addon_id');
+                $allActiveAddon = array_merge($allActiveAddon, $addon);
+        }
+        return implode(",", $allActiveAddon);
     }
   
 }

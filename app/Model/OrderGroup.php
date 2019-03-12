@@ -79,4 +79,9 @@ class OrderGroup extends Model
              // do the rest of the cleanup...
         });
     }
+
+    public function orderGroupAddon()
+    {
+        return $this->hasMany('App\Model\OrderGroupAddon', 'order_group_id', 'id');
+    }
 }

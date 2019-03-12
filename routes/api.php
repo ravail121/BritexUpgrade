@@ -435,6 +435,11 @@ Route::middleware('APIToken')->group(function () {
 					'as'   => 'api.compatibles.plans',
 					'uses' => 'PlanController@compatiblePlans',
 				]);
+
+				Route::get('/compatible-addons',[
+					'as'   => 'api.compatibles.addons',
+					'uses' => 'PlanController@compatibleAddons',
+				]);
 			}); 
 
 
