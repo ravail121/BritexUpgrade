@@ -92,7 +92,6 @@ class InvoiceController extends BaseController
                     // echo $customer->billing_end;
                      
                      if($invoice->start_date > $customer->billing_end && $invoice->type!= 1){
-                        
                         //echo "success";
                         $_enddate = $customer->end_date;
                         $start_date = date ("Y-m-d", strtotime ($_enddate ."+1 days"));
