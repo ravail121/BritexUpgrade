@@ -122,9 +122,16 @@ class CustomerController extends BaseController
   protected function updateOrder($request)
   {
     if ($request->customer_id) {
-      $order = Order::hash($request->order_hash)->first();
-      $order->update(['customer_id' => $request->customer_id]);
-      return $order;
+        $order = Order::hash($request->order_hash)->first();
+        $customer = Customer::find($request->customer_id);;
+        $order->update(['customer_id' => $request->customer_id,
+                'shipping_address1'   => $customer->shipping_address1,
+                'shipping_address2'   => $customer->shipping_address2,
+                'shipping_city'       => $customer->shipping_city,
+                'shipping_state_id'   => $customer->shipping_state_id,
+                'shipping_zip'        => $customer->shipping_zip
+            ]);
+        return $order;
        
     }
   }
