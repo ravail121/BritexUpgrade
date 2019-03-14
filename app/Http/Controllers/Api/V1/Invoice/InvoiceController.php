@@ -159,7 +159,13 @@ class InvoiceController extends BaseController
     {
         $order = Order::hash($request->order_hash)->first();
         if ($order) {
-            if ($order->invoice['type'] == 2) {
+            \Log::info("Invoice");
+            \Log::info($order->invoice);
+            \Log::info("TYPE ARRAY");
+            \Log::info($order->invoice['type']);
+            \Log::info("TYPE");
+            \Log::info($order->invoice->type);
+            if ($order->invoice->type == 2) {
 
                 $serviceCharges = $order->invoice->cal_service_charges;
                 $taxes          = $order->invoice->cal_taxes;
