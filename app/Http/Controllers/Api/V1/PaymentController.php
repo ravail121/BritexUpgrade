@@ -111,8 +111,14 @@ class PaymentController extends BaseController implements ConstantInterface
         if (!$customer) {
             return $arr;
         }
+        \Log::info("--------CUSTOMER DATA PAYMRNT--------");
+        \Log::info($customer);
         $credit = Credit::where('customer_id', $customer->id)->latest()->first();
         $card = CustomerCreditCard::where('customer_id', $customer->id)->latest()->first();
+        \Log::info("--------CARD DATA PAYMRNT--------");
+        \Log::info($card);
+        \Log::info("--------CREDIT DATA PAYMRNT--------");
+        \Log::info($credit);
         
 
         if ($customer || $credit || $card) {
