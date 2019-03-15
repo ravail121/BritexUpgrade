@@ -177,11 +177,10 @@ trait UsaEpayTransaction
             return false;
         }
         
-
         $found = CustomerCreditCard::where('cardholder', $request->payment_card_holder)
                                     ->where('number', $request->payment_card_no)
                                     ->where('expiration', $request->expires_mmyy)
-                                    ->where('cvc', $request->payment_cvc)
+                                    ->where('cvc', $request->payment_cvc)->where('customer_id', $order->customer_id)
                                     ->first();
 
         if (!$found) {

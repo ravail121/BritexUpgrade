@@ -60,15 +60,13 @@ class PaymentController extends BaseController implements ConstantInterface
 
 
         $order = Order::hash($request->order_hash)->first();
-        \Log::info("--------ORDER DATA PAYMRNT--------");
-        \Log::info($order);
+        
         $this->tran = $this->setUsaEpayData($this->tran, $request);
 
         if($this->tran->Process()) {
             $msg     = $this->transactionSuccessful($request, $this->tran);
             $data    = $this->setInvoiceData($order);
-            \Log::info("--------INVOICE DATA PAYMRNT--------");
-            \Log::info($data);
+
             $invoice = Invoice::create($data);
 
             if ($invoice) {
@@ -111,14 +109,9 @@ class PaymentController extends BaseController implements ConstantInterface
         if (!$customer) {
             return $arr;
         }
-        \Log::info("--------CUSTOMER DATA PAYMRNT--------");
-        \Log::info($customer);
+
         $credit = Credit::where('customer_id', $customer->id)->latest()->first();
         $card = CustomerCreditCard::where('customer_id', $customer->id)->latest()->first();
-        \Log::info("--------CARD DATA PAYMRNT--------");
-        \Log::info($card);
-        \Log::info("--------CREDIT DATA PAYMRNT--------");
-        \Log::info($credit);
         
 
         if ($customer || $credit || $card) {
