@@ -60,12 +60,14 @@ class PaymentController extends BaseController implements ConstantInterface
 
 
         $order = Order::hash($request->order_hash)->first();
+        \Log::info("--------ORDER DATA PAYMRNT--------");
+        \Log::info($order);
         $this->tran = $this->setUsaEpayData($this->tran, $request);
 
         if($this->tran->Process()) {
             $msg     = $this->transactionSuccessful($request, $this->tran);
             $data    = $this->setInvoiceData($order);
-            \Log::info("INVOICE DATA");
+            \Log::info("--------INVOICE DATA PAYMRNT--------");
             \Log::info($data);
             $invoice = Invoice::create($data);
 

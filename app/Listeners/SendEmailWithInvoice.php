@@ -123,7 +123,6 @@ class SendEmailWithInvoice
             }
         }
         if ($order->subscriptions) {
-            \Log::info('inside Subscription');
 
             foreach ($order->subscriptions as $subscription) {
                 $planCharges    = $subscription->cal_plan_charges;
@@ -134,9 +133,6 @@ class SendEmailWithInvoice
                     'plan_charges'    => number_format($planCharges, 2),
                     'onetime_charges' => number_format($onetimeCharges, 2),
                 ];
-
-                \Log::info($subscriptionData);
-
 
                 array_push($data['subscriptions'], $subscriptionData);
             }
