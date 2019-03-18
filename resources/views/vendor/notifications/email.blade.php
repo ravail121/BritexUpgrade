@@ -1,6 +1,13 @@
-@component('mail::message')
-{{-- Greeting --}}
-@if (! empty($greeting))
+@component('mail::layout')
+    {{-- Header --}}
+    @slot('header')
+        @component('mail::header', ['url' => config('app.url')])
+        @isset($company)
+            <img src="{{$company->email_header}}" />
+        @endisset
+        @endcomponent
+    @endslot
+    @if (! empty($greeting))
 # {{ $greeting }}
 @else
 @if ($level == 'error')
@@ -55,4 +62,12 @@ If you’re having trouble clicking the "{{ $actionText }}" button, copy and pas
 into your web browser: [{{ $actionUrl }}]({{ $actionUrl }})
 @endcomponent
 @endisset
+{{-- Footer --}}
+    @slot('footer')
+        @component('mail::footer')
+            @isset($company)
+                {!! $company->email_footer !!}
+            @endisset
+        @endcomponent
+    @endslot
 @endcomponent

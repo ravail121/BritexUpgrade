@@ -4,12 +4,13 @@ namespace App\Listeners;
 
 
 use Mail;
+use Notification;
 use App\Model\Order;
+use App\Model\EmailTemplate;
 use App\Model\BusinessVerification;
 use App\Notifications\BizVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
 use App\Events\BusinessVerificationCreated;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Support\Configuration\MailConfiguration;
@@ -39,7 +40,10 @@ class SendEmail
         $orderHash    = $event->orderHash;
         $businessHash = $event->bizHash;
 
-        $order                = Order::hash($orderHash)->first();
+        $order = Order::hash($orderHash)->first();
+
+        $email = EmailTemplate::where('company_id', $order->company_id)->where('code', 'biz-verification-submitted')->first();
+
         $businessVerification = BusinessVerification::hash($businessHash)->first();
 
         $configurationSet = $this->setMailConfiguration($order);
@@ -48,7 +52,7 @@ class SendEmail
             return false;
         }
 
-        $businessVerification->notify(new BizVerification($order, $businessVerification));
+        Notification::route('mail', $email->to)->notify(new BizVerification($order, $businessVerification));  
    
     }
 
