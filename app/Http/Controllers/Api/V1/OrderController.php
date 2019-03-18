@@ -308,6 +308,31 @@ class OrderController extends BaseController
         return $this->respond(['details'=>'Deleted successfully'], 204);
     }
 
+    public function updateShipping(Request $request)
+    {
+        $data = $request->all();
+
+        $validation = Validator::make(
+            $data,
+            [   
+                'hash'       => 'required|exists:order,hash',
+                'shipping_address1'=> 'string',
+                'shipping_address2'=> 'string',
+                'shipping_city'    => 'string',
+                'shipping_state_id'=> 'string',
+                'shipping_zip'     => 'numeric',
+            ]
+        );
+
+        if ($validation->fails()) {
+            return response()->json($validation->getMessageBag()->all());
+        }
+
+
+        Order::whereHash($data['hash'])->update($data);
+        
+        return $this->respond(['message' => 'sucessfully Updated']);
+    }
 
     public function get_company(Request $request)
     {

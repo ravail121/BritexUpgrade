@@ -66,8 +66,8 @@ class BizVerification extends Notification
         return (new MailMessage)
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
-                    ->line($body)
-                    ->markdown('vendor.notifications.email', ['company' => $company]);
+                    ->line($body);
+                    /*->markdown('vendor.notifications.email', ['company' => $company]);*/
     }
 
     /**

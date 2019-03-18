@@ -2,8 +2,8 @@
     {{-- Header --}}
     @slot('header')
         @component('mail::header', ['url' => config('app.url')])
-        @isset($company)
-            <img src="{{$company->email_header}}" />
+        @isset($companyDetail)
+            <img src="{{$companyDetail->email_header}}" />
         @endisset
         @endcomponent
     @endslot
@@ -65,8 +65,8 @@ into your web browser: [{{ $actionUrl }}]({{ $actionUrl }})
 {{-- Footer --}}
     @slot('footer')
         @component('mail::footer')
-            @isset($company)
-                {!! $company->email_footer !!}
+            @isset($companyDetail)
+                {!! $companyDetail->email_footer !!}
             @endisset
         @endcomponent
     @endslot

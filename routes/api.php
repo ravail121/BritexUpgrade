@@ -96,6 +96,10 @@ Route::middleware('APIToken')->group(function () {
 					'as' => 'api.orders.get_company',
 					'uses' => 'OrderController@get_company',
 				]);
+				Route::post('/update-shipping', [
+					'as' => 'api.order.update.shipping.',
+					'uses' => 'OrderController@updateShipping'
+				]);
 			});
 
 			// Order-Group API
