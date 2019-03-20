@@ -59,13 +59,14 @@ class BizVerification extends Notification
         
         $replaceWith = [$this->bizVerification->fname, $this->bizVerification->lname, $this->bizVerification->business_name];
 
-
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
-
-
+            
         return (new MailMessage)
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
+                    ->replyTo($emailTemplate->reply_to)
+                    ->cc($emailTemplate->cc)
+                    ->bcc($emailTemplate->bcc)
                     ->line($body);
                     /*->markdown('vendor.notifications.email', ['company' => $company]);*/
     }

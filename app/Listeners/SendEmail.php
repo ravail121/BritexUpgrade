@@ -43,7 +43,7 @@ class SendEmail
         $order = Order::hash($orderHash)->first();
 
         $email = EmailTemplate::where('company_id', $order->company_id)->where('code', 'biz-verification-submitted')->first();
-
+        
         $businessVerification = BusinessVerification::hash($businessHash)->first();
 
         $configurationSet = $this->setMailConfiguration($order);
