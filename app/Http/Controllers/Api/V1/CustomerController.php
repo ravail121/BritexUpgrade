@@ -248,14 +248,15 @@ class CustomerController extends BaseController
     ]);
   }
 
-    public function checkEmail(Request $request){
+    public function checkEmail(Request $request)
+    {
         $data =  $request->validate([
             'newEmail'   => 'required',
-            'hash'       => 'required',
+            //'hash'       => 'required',
 
         ]);
 
-        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+        $emailCount = Customer::where('email', '=' , $request->newEmail)/*->where('hash', '!=' , $request->hash)*/->count();
         // $emailCount = Customer::where('email', '=' , $request->newEmail)->count();
         return $this->respond(['emailCount' => $emailCount]);
     }
