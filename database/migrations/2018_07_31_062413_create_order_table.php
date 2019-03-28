@@ -512,7 +512,7 @@ class CreateOrderTable extends Migration
             $table->unsignedInteger('customer_id')->nullable();
             $table->unsignedInteger('plan_id')->nullable();
             $table->char('phone_number');
-            $table->char('status');      
+            $table->char('status')->nullable();      
             $table->char('suspend_restore_status');
             $table->char('upgrade_downgrade_status');
             $table->date('upgrade_downgrade_date_submitted');
@@ -521,7 +521,7 @@ class CreateOrderTable extends Migration
             $table->text('sim_card_num');
             $table->integer('old_plan_id'); 
             $table->integer('new_plan_id');
-            $table->date('downgrade_date');
+            $table->date('downgrade_date')->nullable();
             $table->integer('tracking_num');
             $table->unsignedInteger('device_id')->nullable();
             $table->text('device_os');

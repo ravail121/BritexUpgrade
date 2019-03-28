@@ -19,14 +19,16 @@ use App\Events\BusinessVerificationApproved;
 class BizVerificationController extends BaseController
 { 
 
-	public function __construct()
-	{
-		$this->content = array();
+    public function __construct()
+    {
+        $this->content = array();
 
-	}
+    }
 
-	public function post(Request $request)
-	{
+    public function post(Request $request)
+    {
+        \Log::info('......function 1.........api');
+		\Log::info($request->all());
         $hasError = $this->validateData($request);
 
         if ($hasError) {
@@ -65,8 +67,8 @@ class BizVerificationController extends BaseController
             }
         }
                 
-		return $this->respond(['order_hash' => $request->order_hash]);
-	}
+        return $this->respond(['order_hash' => $request->order_hash]);
+    }
 
 
 
@@ -77,32 +79,32 @@ class BizVerificationController extends BaseController
      * @param  Request    $request
      * @return Response
      */
-	public function approveBusiness(Request $request) 
+    public function approveBusiness(Request $request) 
     {
         $msg = 'Something went wrong';
 
-		$businessVerification = BusinessVerification::where('hash', $request->business_hash)->first();
+        $businessVerification = BusinessVerification::where('hash', $request->business_hash)->first();
 
-		if($businessVerification) {
-			if($businessVerification->approved == 0) {
+        if($businessVerification) {
+            if($businessVerification->approved == 0) {
 
-				$response = $businessVerification->update(['approved' => 1]);
+                $response = $businessVerification->update(['approved' => 1]);
                 event(new BusinessVerificationApproved($businessVerification->hash));
 
                 if ($response) {
                     $msg = 'Approved Successfully';
                 }
 
-			} else {
+            } else {
                 $msg = 'Business is already verified';
             }
 
-		} else {
+        } else {
             $msg = 'Invalid User';
-		}
+        }
 
-		return $this->respond(['message' => $msg]); 
-	}
+        return $this->respond(['message' => $msg]); 
+    }
 
 
 
@@ -124,9 +126,9 @@ class BizVerificationController extends BaseController
      * @param  Request      $request
      * @return Response
      */
-	protected function validateData($request)
-	{
-		return $this->validate_input($request->all(), [
+    protected function validateData($request)
+    {
+        return $this->validate_input($request->all(), [
 		   'fname'         => 'required|string',
 		   'lname'         => 'required|string',
 		   'email'         => 'required|string',
