@@ -15,7 +15,7 @@ class Subscription extends Model
       'plan_id',
       'phone_number',
       'status',
-      'suspend_restore_status',
+      'sub_status',
       'upgrade_downgrade_status',
       'upgrade_downgrade_date_submitted',
       'port_in_progress',

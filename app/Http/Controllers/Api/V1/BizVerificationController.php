@@ -151,6 +151,8 @@ class BizVerificationController extends BaseController
     {
         $path = BusinessVerificationDocs::directoryLocation($businessVerification->order->company_id, $businessVerification->id);
 
+        \Log::info($path);
+
         if ($uploaded = $this->moveOneFile($path, $file)) {
             return BusinessVerificationDocs::create([
                 'src'        => $uploaded['name'],

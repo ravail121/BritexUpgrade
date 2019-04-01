@@ -160,7 +160,7 @@ class UpdateController extends BaseController
 
 
     /**
-     * Updates subscription.suspend_restore_status = for-suspension
+     * Updates subscription.sub_status = for-suspension
      * 
      * @param  int      $customerId
      * @return Response
@@ -168,7 +168,7 @@ class UpdateController extends BaseController
     private function updateSubscriptions($customerId)
     {
     	$subscriptions = Subscription::where('customer_id', $customerId)->update([
-            'suspend_restore_status' => 'for-suspension',
+            'sub_status' => 'for-suspension',
         ]);
 
 		return $subscriptions;

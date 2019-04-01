@@ -103,7 +103,7 @@ class SubscriptionController extends BaseController
         	'plan_id'                          =>  $request->plan_id,
         	'phone_number'                     =>  $phone,
             'status'                           =>  $request->status,
-            'suspend_restore_status'           =>  'active',
+            'sub_status'                       =>  'active',
             'upgrade_downgrade_status'         =>  '',
         	'upgrade_downgrade_date_submitted' =>  date('Y-m-d'),
             'sim_id'                           =>  $request->sim_id,
