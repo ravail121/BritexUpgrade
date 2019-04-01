@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class SubscriptionAddon extends Model
 {
+    const STATUSES = [
+        'active'            => 'active',
+        'for-adding'        => 'for-adding',
+        'removal-scheduled' => 'removal-scheduled',
+        'for-removal'       => 'for-removal',
+        'removed'           => 'removed'
+    ];
+
 	protected $table ='subscription_addon';
 	protected $fillable = [ 'subscription_id', 'addon_id', 'status', 'removal_date'];
 

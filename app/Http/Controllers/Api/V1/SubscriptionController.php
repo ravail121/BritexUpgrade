@@ -61,17 +61,18 @@ class SubscriptionController extends BaseController
     public function subscriptionAddons(Request $request)
     {
         $validation = $this->validateAddonData($request);
+        
         if ($validation) {
             return $validation;
         }
 
         $subscriptionAddon = SubscriptionAddon::create([
-            'subscription_id'  => $request->subscription_id,
-            'addon_id'         => $request->addon_id,
-            'status'           => 'null',
-            'removal_date'     => date('Y-m-d'),
-
+            'subscription_id' => $request->subscription_id,
+            'addon_id'        => $request->addon_id,
+            'status'          => SubscriptionAddon::STATUSES['active'],
+            'removal_date'    => date('Y-m-d')
         ]);
+
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
     }
 
