@@ -54,21 +54,33 @@ class BizVerification extends Notification
         $company = Company::find($this->order->company_id);
 
         $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'biz-verification-submitted')->first();
-
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]', '[BUSINESS_NAME]'];
         
         $replaceWith = [$this->bizVerification->fname, $this->bizVerification->lname, $this->bizVerification->business_name];
 
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
             
-        return (new MailMessage)
+        $mailMessage = (new MailMessage)
                     ->subject($emailTemplate->subject)
-                    ->from($emailTemplate->from)
-                    ->replyTo($emailTemplate->reply_to)
-                    ->cc($emailTemplate->cc)
-                    ->bcc($emailTemplate->bcc)
-                    ->line($body);
-                    /*->markdown('vendor.notifications.email', ['company' => $company]);*/
+                    ->from($emailTemplate->from);
+        
+        if($emailTemplate->reply_to){
+            $mailMessage->replyTo($emailTemplate->reply_to);
+        }
+
+        if($emailTemplate->cc){
+            $mailMessage->cc($emailTemplate->cc);
+        }
+
+        if($emailTemplate->bcc){
+            $mailMessage->bcc($emailTemplate->bcc);
+        }
+
+        $mailMessage->line($body);
+
+        /*$mailMessage->markdown('vendor.notifications.email', ['company' => $company]);*/
+
+        return $mailMessage;
     }
 
     /**
