@@ -13,6 +13,10 @@ class Invoice extends Model implements ConstantInterface
     protected $fillable = [ 'customer_id', 'type', 'status', 'start_date', 'end_date', 'due_date', 'subtotal', 'total_due', 'prev_balance', 'payment_method', 'notes', 'business_name', 'billing_fname', 'billing_lname', 'billing_address_line_1', 'billing_address_line_2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_fname', 'shipping_lname', 'shipping_address_line_1', 'shipping_address_line_2', 'shipping_city', 'shipping_state', 'shipping_zip'
 	];
 
+    protected $dates = [
+        'due_date'
+    ];
+
 	public function order()
 	{
 		return $this->hasOne(Order::class);
@@ -136,6 +140,11 @@ class Invoice extends Model implements ConstantInterface
         return $query->monthly()->closedAndPaid();
     }
 
+    public function scopeOverDue($query)
+    {
+        return $query->where('due_date', '<', self::currentDate());
+    }
+
 
 
     /**
@@ -182,7 +191,7 @@ class Invoice extends Model implements ConstantInterface
     public function getTodayGreaterThanDueDateAttribute()
     {
         $today   = self::currentDate();
-        $dueDate = Carbon::parse($this->due_date); 
+        $dueDate = Carbon::parse($this->due_date);
         return $today->gt($dueDate);
     }
 

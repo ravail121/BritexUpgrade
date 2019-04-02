@@ -30,8 +30,8 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\SendMonthlyInvoiceMail',
         ],
 
-        'App\Events\AccountSuspend' => [
-            'App\Listeners\SendAccountSuspendMail',
+        'App\Events\AccountSuspended' => [
+            'App\Listeners\AccountSuspended\SendEmailToCustomerAndAdmin',
         ],
 
         'App\Events\ForgotPassword' => [

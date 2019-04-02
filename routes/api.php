@@ -64,6 +64,15 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 	]);
 });
 
+/*Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
+	Route::group(['namespace' => 'CronJobs'], function(){
+	    Route::get('/process-suspensions', [
+	        'as'=>'api.cron.suspensions',
+	        'uses'=> 'ProcessController@processSuspensions',
+	    ]);
+	});
+});*/
+
 
 Route::middleware('APIToken')->group(function () {
 			// Orders API
@@ -278,6 +287,8 @@ Route::middleware('APIToken')->group(function () {
 				]);
 
 			});
+
+
 
 			Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 				// Route::get('/invoice', [

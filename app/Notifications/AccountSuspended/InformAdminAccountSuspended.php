@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Notifications;
+namespace App\Notifications\AccountSuspended;
 
 use App\Model\Order;
 use App\Model\EmailTemplate;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\AccountSuspended;
 
 use Mail;
 use Config;
@@ -8,14 +8,14 @@ use Notification;
 use App\Model\Order;
 use App\Model\Company;
 use App\Model\EmailTemplate;
-use App\Events\AccountSuspend;
+use App\Events\AccountSuspended;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Notifications\InformAdminAccountSuspended;
-use App\Notifications\InformCustomerAccountSuspended;
+use App\Notifications\AccountSuspended\InformAdminAccountSuspended;
+use App\Notifications\AccountSuspended\InformCustomerAccountSuspended;
 
-class SendAccountSuspendMail
+class SendEmailToCustomerAndAdmin
 {
     use Notifiable;
 
@@ -35,7 +35,7 @@ class SendAccountSuspendMail
      * @param  BusinessVerificationCreated  $event
      * @return void
      */
-    public function handle(AccountSuspend $event)
+    public function handle(AccountSuspended $event)
     {
         $customer = $event->customer;
         
@@ -50,7 +50,8 @@ class SendAccountSuspendMail
         $email = EmailTemplate::where('company_id', $order->company_id)->where('code', 'account-suspension-admin')->first();
 
 
-        $customer->notify(new InformCustomerAccountSuspended($order));        
+        $customer->notify(new InformCustomerAccountSuspended($order));
+
         Notification::route('mail', $email->from)->notify(new InformAdminAccountSuspended($order));        
     }
 
@@ -64,6 +65,7 @@ class SendAccountSuspendMail
     protected function setMailConfiguration($order)
     {
         $company = Company::find($order->company_id);
+
         $config = [
             'driver'   => $company->smtp_driver,
             'host'     => $company->smtp_host,
@@ -72,7 +74,8 @@ class SendAccountSuspendMail
             'password' => $company->smtp_password,
         ];
 
-        Config::set('mail',$config);
+        Config::set('mail', $config);
+
         return $config;
     }
 

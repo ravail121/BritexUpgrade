@@ -18,6 +18,7 @@ class Subscription extends Model
       'sub_status',
       'upgrade_downgrade_status',
       'upgrade_downgrade_date_submitted',
+      'account_past_due_date',
       'port_in_progress',
       'sim_id',
       'sim_name',
@@ -25,6 +26,8 @@ class Subscription extends Model
       'old_plan_id',
       'new_plan_id',
       'downgrade_date',
+      'scheduled_suspend_date',
+      'scheduled_close_date',
       'tracking_num',
       'device_id',
       'device_os',
@@ -37,6 +40,22 @@ class Subscription extends Model
       'suspended_date',
       'closed_date',
       'shipping_date',
+    ];
+
+    protected $dates = [
+        'account_past_due_date',
+        'scheduled_suspend_date',
+        'scheduled_close_date'
+    ];
+
+    const SUB_STATUSES = [
+        'active'            => 'active',
+        'suspend-scheduled' => 'suspend-scheduled',
+        'close-scheduled'   => 'close-scheduled',
+        'account-past-due'  => 'account-past-due',
+        'for-restoration'   => 'for-restoration',
+        'closed'            => 'closed',
+        'confirm-closing'   => 'confirm-closing'
     ];
 
     public function Customer()

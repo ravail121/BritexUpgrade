@@ -11,7 +11,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class AccountSuspend
+class AccountSuspended
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -27,14 +27,5 @@ class AccountSuspend
     {
         $this->customer = $customer;
 
-    }
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return Channel|array
-     */
-    public function broadcastOn()
-    {
-        return new PrivateChannel('channel-name');
     }
 }

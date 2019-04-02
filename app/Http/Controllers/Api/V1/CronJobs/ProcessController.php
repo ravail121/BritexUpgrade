@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use Carbon\Carbon;
+use App\Model\Invoice;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Events\AccountSuspended;
 use App\Model\SubscriptionAddon;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
@@ -13,7 +16,8 @@ class ProcessController extends BaseController
     public function processSubscriptions()
     {
     	$this->processDowngrades();
-    	$this->processAddonRemovals();
+        $this->processAddonRemovals();
+    	$this->processSuspensions();
 
     	return $this->respond(['message' => 'Processed Successfully']);
     }
@@ -42,6 +46,29 @@ class ProcessController extends BaseController
     	SubscriptionAddon::todayEqualsRemovalDate()->update([
     		'status' => 'for-removal',
     	]);
+
     	return true;
+    }
+
+    public function processSuspensions()
+    {
+        $pendingMonthlyInvoices = Invoice::monthly()->pendingPayment()->overDue()->get();
+
+        foreach($pendingMonthlyInvoices as $pendingMonthlyInvoice){
+            $customer = $pendingMonthlyInvoice->customer;
+            
+            $pendingMonthlyInvoice->update(['status' => Invoice::STATUS['closed_and_unpaid']]);
+
+            $customer->update(['account_suspended' => true]);
+
+            foreach($customer->subscription as $subscription){
+                $subscription->update([
+                    'sub_status'            => Subscription::SUB_STATUSES['account-past-due'],
+                    'account_past_due_date' => Carbon::today()
+                ]);
+            }
+
+            event(new AccountSuspended($customer));
+        }
     }
 }
