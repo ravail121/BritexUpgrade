@@ -12,7 +12,7 @@ class Order extends Model
     protected $table = 'order';
 
     protected $fillable = [
-        'active_group_id', 'active_subscription_id', 'order_num', 'status', 'invoice_id', 'hash', 'company_id', 'customer_id', 'date_processed' , 'shipping_address1', 'shipping_address2', 'shipping_city', 'shipping_state_id', 'shipping_zip'
+        'active_group_id', 'active_subscription_id', 'order_num', 'status', 'invoice_id', 'hash', 'company_id', 'customer_id', 'date_processed' ,'shipping_fname','shipping_lname', 'shipping_address1', 'shipping_address2', 'shipping_city', 'shipping_state_id', 'shipping_zip'
     ];
 
     public function order_group(){

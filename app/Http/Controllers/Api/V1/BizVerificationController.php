@@ -27,8 +27,6 @@ class BizVerificationController extends BaseController
 
     public function post(Request $request)
     {
-        \Log::info('......function 1.........api');
-		\Log::info($request->all());
         $hasError = $this->validateData($request);
 
         if ($hasError) {

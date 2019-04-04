@@ -28,11 +28,14 @@ class CustomerController extends BaseController
    
   public function post(Request $request)
   {
+
     if ($request->customer_id) {
       $done = $this->updateOrder($request);
       if (!$done) {
+        
         return $this->respondError('Customer was not created.');
       }
+      
       return $this->respond(['success' => true]);
 
     }
@@ -121,9 +124,10 @@ class CustomerController extends BaseController
 
   protected function updateOrder($request)
   {
+
     if ($request->customer_id) {
         $order = Order::hash($request->order_hash)->first();
-        $customer = Customer::find($request->customer_id);;
+        $customer = Customer::find($request->customer_id);
         $order->update(['customer_id' => $request->customer_id,
                 'shipping_address1'   => $customer->shipping_address1,
                 'shipping_address2'   => $customer->shipping_address2,

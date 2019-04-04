@@ -311,11 +311,12 @@ class OrderController extends BaseController
     public function updateShipping(Request $request)
     {
         $data = $request->all();
-
         $validation = Validator::make(
             $data,
             [   
-                'hash'       => 'required|exists:order,hash',
+                'hash'             => 'required|exists:order,hash',
+                'shipping_fname'   => 'string',
+                'shipping_lname'   => 'string',
                 'shipping_address1'=> 'string',
                 'shipping_address2'=> 'string',
                 'shipping_city'    => 'string',

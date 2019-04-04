@@ -110,7 +110,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         $this->debitInvoiceItems($invoice);
                         $this->response = event(new MonthlyInvoice($customer));
 
-                    } elseif (!$$invoice && $this->flag == 'error') {
+                    } elseif (!$invoice && $this->flag == 'error') {
                         \Log::error('Invoice not created/found.');
 
                     }
@@ -136,7 +136,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $invoicePaid    = Invoice::monthlyInvoicePaid()->first();
 
         if (!$invoicePaid && !$invoicePending) {
-
             $customer = Customer::find($customerId);
             $data     = getInvoiceData($customer);
             $invoice  = Invoice::create($data);
