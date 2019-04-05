@@ -14,7 +14,7 @@ class AddProcessedColoumToSubscriptionTable extends Migration
     public function up()
     {
         Schema::table('subscription', function (Blueprint $table) {
-            $table->boolean('processed')->after('order_id')->nullable();
+            $table->boolean('shipping_processed')->after('order_id')->nullable();
         });
     }
 
@@ -27,7 +27,7 @@ class AddProcessedColoumToSubscriptionTable extends Migration
     {
         Schema::table('subscription', function (Blueprint $table) {
             $table->dropColumn([
-                'processed'
+                'shipping_processed'
             ]);
         });
     }
