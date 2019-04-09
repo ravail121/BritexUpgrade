@@ -113,12 +113,6 @@ class Subscription extends Model
         return $this->belongsTo('App\Model\SubscriptionCoupon', 'subscription_id');
     }
 
-    public function scopeBillabe($query)
-    {
-        return $query->where('status', 'active')
-                      ->orWhere('status', 'shipping')
-                      ->orWhere('status', 'for-activation');
-    }
 
     public function scopeTodayEqualsDowngradeDate($query)
     {

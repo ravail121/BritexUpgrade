@@ -55,32 +55,29 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
      */
     public function generateMonthlyInvoice()
     {
-        $customers = Customer::InBillablePeriod();
+        $customers = Customer::whereNotNull('billing_end')->get();
 
         foreach ($customers as $customer) {
-            if( $customer->openMonthlyInvoice ){
+            if ($customer->five_days_before) {
 
-            } else {
-                
-            }
-
-            if ($customer->subscription) {
-                foreach ($customer->subscription as $subscription) {
-                    if( in_array($subscription->status, ['active', 'shipping', 'for-activation']) ) {
-                        $this->response = $this->triggerEvent($customer);
-                        break;
+                if ($customer->subscription) {
+                    foreach ($customer->subscription as $subscription) {
+                        if ($subscription->status == 'active' || $subscription->status == 'shipping' || $subscription->status == 'for-activation') {
+                            $this->response = $this->triggerEvent($customer);
+                            break;
+                        }
                     }
-                }
-            } elseif ($customer->pending_charge) {
-                foreach ($customer->pending_charge as $pendingCharge) {
-                    if ($pendingCharge->invoice_id == 0) {
+                } elseif ($customer->pending_charge) {
+                    foreach ($customer->pending_charge as $pendingCharge) {
+                        if ($pendingCharge->invoice_id == 0) {
 
-                        $this->response = $this->triggerEvent($customer);
-                        break;
-                        
+                            $this->response = $this->triggerEvent($customer);
+                            break;
+                            
+                        }
                     }
+                    
                 }
-                
             }
 
         }
@@ -107,12 +104,13 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         $this->response = event(new MonthlyInvoice($customer));
 
                     } elseif ($invoice && $this->flag == 'pending') {
+
                         $this->deleteOldInvoiceItems($invoice); // This need to be changed when plan is neither upgraded nor downgraded
 
                         $this->debitInvoiceItems($invoice);
                         $this->response = event(new MonthlyInvoice($customer));
 
-                    } elseif (!$invoice && $this->flag == 'error') {
+                    } elseif (!$$invoice && $this->flag == 'error') {
                         \Log::error('Invoice not created/found.');
 
                     }

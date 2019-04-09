@@ -51,21 +51,12 @@ class Customer extends Authenticatable
     public function company()
     {
     	return $this->hasOne('App\Model\Company', 'id');
+
     }
 
     public function subscription()
     {
-        return $this->hasMany('App\Model\Subscription');
-    }
-
-    public function openMonthlyInvoice()
-    {
-        return $this->hasOne(Invoice::class)->monthly()->pendingPayment();
-    }
-
-    public function billableSubscription()
-    {
-        return $this->subscription()->billabe();
+     return $this->hasMany('App\Model\Subscription');
     }
 
     public function pending_charge()
@@ -136,37 +127,15 @@ class Customer extends Authenticatable
         return $this->shipping_city.', '.$this->shipping_state_id.' '.$this->shipping_zip;
     }
 
-    public static function inBillablePeriod()
-    {
-        $today     = self::currentDate();
-        $customers = self::whereNotNull('billing_end')
-                        /*->has('billableSubscription')*/
-                        ->with([
-                            'billableSubscription',
-                            'openMonthlyInvoice'
-                        ])
-                        ->get();
 
-        $customers = $customers->filter(function($customer, $i) use ($today){
-            $billingEndParsed = Carbon::parse($customer->billing_end);
-            $billingEndFiveDaysBefore   = $billingEndParsed->copy()->subDays(5);
-
-            // Is today between customer.billing_date and -5 days
-            return 
-                $today >= $billingEndFiveDaysBefore &&
-                $today <= $billingEndParsed;
-        });
-
-        return $customers;
-    }
-
-    public function getIsTodayFiveDaysBeforeBillingAttribute()
+    public function getFiveDaysBeforeAttribute()
     {
         $today          = self::currentDate();
         $endDate        = $this->parseEndDate();
         $fiveDaysBefore = $endDate->subDays(5);
 
         return ($today->gte($fiveDaysBefore) && $today->lte($endDate));
+
     }
 
 
@@ -199,8 +168,8 @@ class Customer extends Authenticatable
     }
 
 
-    public function parseEndDate($billingEnd = null)
+    public function parseEndDate()
     {
-        return Carbon::parse($billingEnd ?: $this->billing_end);
+        return Carbon::parse($this->billing_end);
     }
 }

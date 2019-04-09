@@ -17,6 +17,10 @@ class Invoice extends Model implements ConstantInterface
         'due_date'
     ];
 
+    protected $appends = [
+        'type_description'
+    ];
+
 	public function order()
 	{
 		return $this->hasOne(Order::class);
@@ -213,8 +217,9 @@ class Invoice extends Model implements ConstantInterface
         return number_format((float)$amount, 2, '.', '');
     }
 
-    public function getTypeDescriptionAttribute($value)
+    public function getTypeDescriptionAttribute()
     {
+        $value = $this->type;
         if ($value == 1) {
             return 'One-time invoice';
         }

@@ -21,6 +21,10 @@ class Credit extends Model
         'subscription_id',
     ];
 
+    protected $appends = [
+        'type_description'
+    ];
+
     public function customer()
     {
         return $this->belongsTo('App\Model\Customer', 'customer_id', 'id');
@@ -31,8 +35,9 @@ class Credit extends Model
         return Carbon::parse($value)->format('M-d-Y h:i A');
     }
 
-    public function getTypeAttribute($value)
+    public function getTypeDescriptionAttribute($value)
     {
+        $value = $this->type;
         if ($value == 1) {
             return 'Payment';
         }
