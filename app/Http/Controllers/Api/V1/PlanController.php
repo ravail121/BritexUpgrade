@@ -29,7 +29,9 @@ class PlanController extends BaseController
     }
 
     public function get(Request $request){
-
+      // ToDo:
+      // After checking realised that company
+      // is not considered in some cases
       $company = \Request::get('company');
        
       $device_id = $request->input('device_id');
@@ -60,6 +62,13 @@ class PlanController extends BaseController
       }else{
         $plans = Plan::where('company_id', $company->id)->get();
       }
+
+      // ToDo: Testing database has some plans without price
+      // so added condition to hide those plans
+      $plans = $plans->filter(function($plan){
+        return $plan->amount_recurring > 0;
+      });
+
       return response()->json($plans);
         
     }
