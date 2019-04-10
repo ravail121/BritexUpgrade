@@ -40,7 +40,6 @@ class DeviceController extends Controller
 		if($carrier_id){
 			$dev = $dev->where('carrier_id', $carrier_id);
 		}
-		
 		$dev = $dev->with(['device_image', 'device_to_carrier'])->orderBy('sort')->get();
 		$_sims = Sim::where('show', $show_list )->get();
 
