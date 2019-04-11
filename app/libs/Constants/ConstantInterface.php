@@ -46,4 +46,13 @@ interface ConstantInterface {
         'monthly'  => 1,
         'one_time' => 2,
     ];
+
+    /**
+     * Used in both Sim and Device models
+     */
+    const SHOW_COLUMN_VALUES = [
+        'not-visible'             => 0,
+        'visible-and-orderable'   => 1,
+        'visible-and-unorderable' => 2
+    ];
 }

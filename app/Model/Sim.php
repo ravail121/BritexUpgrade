@@ -3,10 +3,25 @@
 namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\libs\Constants\ConstantInterface;
 
-class Sim extends Model
+class Sim extends Model implements ConstantInterface
 {
     protected $table = 'sim';
+
+    /**
+     * Visible Sims
+     * (Similar function in Device model as well)
+     * @param  [type] $query
+     * @return 
+     */
+    public function scopeVisible($query)
+    {
+        return $query->whereIn('show', [
+            self::SHOW_COLUMN_VALUES['visible-and-orderable'],
+            self::SHOW_COLUMN_VALUES['visible-and-unorderable'],
+        ]);
+    }
 
     public function order_group()
     {

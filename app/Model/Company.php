@@ -12,6 +12,25 @@ class Company extends Model
     	return $this->belongsTo('App\Model\Device')->withTrashed();
     }
 
+    public function devices()
+    {
+        return $this->hasMany('App\Model\Device', 'company_id', 'id');
+    }
+
+    public function visibleDevices()
+    {
+        return $this->devices()->visible()->orderBy('device.sort');
+    }
+
+    public function sims()
+    {
+        return $this->hasMany('App\Model\Sim', 'company_id', 'id');
+    }
+
+    public function visibleSims()
+    {
+        return $this->sims()->visible();
+    }
 
     public function order()
     {

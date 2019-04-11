@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Request as RequestFacade;
 
 class DeviceController extends Controller
 {
@@ -21,30 +22,29 @@ class DeviceController extends Controller
 	}
 
 	public function get(Request $request)
-	{		
-		$show_list = ['1', '2'];
-
-
-		$carrier_id = $request->input('carrier_id');
-
-
-		$dev = Device::whereIn('show', $show_list);
+	{
+		$company = RequestFacade::get('company')->load([
+			'visibleDevices.device_image',
+			'visibleDevices.device_to_carrier',
+			'visibleSims'
+		]);
+		
+		$visibleDevices = $company->visibleDevices;
+		$visibleSims    = $company->visibleSims;
 
 		if ($request->plan_id) {
-			
 			$plan      = Plan::find($request->plan_id);
 			$deviceIds = $plan->devices()->pluck('device_id')->toArray();
-			$dev       = $dev->whereIn('id', $deviceIds);
+			$visibleDevices = $visibleDevices->whereIn('id', $deviceIds);
 		}
 
-		if($carrier_id){
-			$dev = $dev->where('carrier_id', $carrier_id);
+		if($carrierId = $request->input('carrier_id')){
+			$visibleDevices = $visibleDevices->where('carrier_id', $carrierId);
 		}
-		$dev = $dev->with(['device_image', 'device_to_carrier'])->orderBy('sort')->get();
-		$_sims = Sim::where('show', $show_list )->get();
 
 		$sims = array();
-		foreach($_sims as $sim){
+
+		foreach($visibleSims as $sim){
 			array_push($sims, array(
 				'id'          => $sim->id,
 				'amount'      => $sim->amount_alone,
@@ -56,10 +56,10 @@ class DeviceController extends Controller
 			));
 		}
 
-		$this->content['devices'] = $dev;
-		$this->content['sims'] = $sims;
+		$this->content['devices'] = $visibleDevices;
+		$this->content['sims']    = $sims;
 
-		return Response()->json($this->content);
+		return response()->json($this->content);
 	}
 
 
