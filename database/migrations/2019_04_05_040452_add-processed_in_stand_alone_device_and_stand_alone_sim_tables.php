@@ -14,10 +14,10 @@ class AddProcessedInStandAloneDeviceAndStandAloneSimTables extends Migration
     public function up()
     {
         Schema::table('customer_standalone_device', function (Blueprint $table) {
-            $table->boolean('shipping_processed')->after('order_id')->nullable();
+            $table->boolean('processed')->after('order_id')->nullable();
         });
         Schema::table('customer_standalone_sim', function (Blueprint $table) {
-            $table->boolean('shipping_processed')->after('order_id')->nullable();
+            $table->boolean('processed')->after('order_id')->nullable();
         });
     }
 
@@ -30,12 +30,12 @@ class AddProcessedInStandAloneDeviceAndStandAloneSimTables extends Migration
     {
         Schema::table('customer_standalone_device', function (Blueprint $table) {
             $table->dropColumn([
-                'shipping_processed'
+                'processed'
             ]);
         });
         Schema::table('customer_standalone_sim', function (Blueprint $table) {
             $table->dropColumn([
-                'shipping_processed'
+                'processed'
             ]);
         });
     }
