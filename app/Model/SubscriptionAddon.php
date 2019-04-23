@@ -32,5 +32,9 @@ class SubscriptionAddon extends Model
     	$today = Carbon::today();
         return $query->where('removal_date', $today->toDateString());
     }
-   
+
+    public function addons()
+    {
+        return $this->belongsTo('App\Model\Addon', 'addon_id');
+    }
 }
