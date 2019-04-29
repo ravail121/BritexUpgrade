@@ -94,7 +94,7 @@ class CreateOrderTable extends Migration
             $table->increments('id');
             $table->unsignedInteger('ban_id')->nullable();
             $table->foreign('ban_id')->references('id')->on('ban');
-            $table->char('group_id');
+            $table->char('number');
             $table->timestamps();
           });
 
