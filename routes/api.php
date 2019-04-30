@@ -455,6 +455,13 @@ Route::middleware('APIToken')->group(function () {
 					'as'   => 'api.compatibles.addons',
 					'uses' => 'PlanController@compatibleAddons',
 				]);
+				//NEW API 
+				Route::group([],function(){
+					Route::get('/update-port',[
+						'as'   => 'api.update.port',
+						'uses' => 'CustomerPlanController@updatePort',
+					]);
+				});
 			}); 
 
 

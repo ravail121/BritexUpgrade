@@ -22,5 +22,6 @@ class Port extends Model
         'state',
         'zip',
         'ssn_taxid',
+        'account_pin_porting_from',
     ];
 }
