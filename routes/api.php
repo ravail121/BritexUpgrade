@@ -457,7 +457,7 @@ Route::middleware('APIToken')->group(function () {
 				]);
 				//NEW API 
 				Route::group([],function(){
-					Route::get('/update-port',[
+					Route::post('/update-port',[
 						'as'   => 'api.update.port',
 						'uses' => 'CustomerPlanController@updatePort',
 					]);
