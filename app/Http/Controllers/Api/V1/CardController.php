@@ -139,10 +139,18 @@ class CardController extends BaseController implements ConstantInterface
             $this->tran = $this->setUsaEpayData($this->tran, $request);
 
             if($this->tran->Process()) {
-                $this->response = $this->transactionSuccessful($request, $this->tran);
+                if($request->without_order){
+                    $this->response = $this->transactionSuccessfulWithoutOrder($request, $this->tran);
+                }else{
+                    $this->response = $this->transactionSuccessful($request, $this->tran);
+                }
           
             } else {
-                $this->response = $this->transactionFail($order, $this->tran);
+                if($request->without_order){
+                    return response()->json(['message' => 'Card  ' . $this->tran->result . ', Because '. $this->tran->error]);
+                }else{
+                    $this->response = $this->transactionFail($order, $this->tran);
+                }
             }
         } else {
             $this->response = $this->transactionFail(null, $this->tran);
@@ -165,7 +173,6 @@ class CardController extends BaseController implements ConstantInterface
         return $this->validate_input($request->all(), [
             'amount'         => 'required',
             'credit_card_id' => 'required',
-            'order_hash'     => 'required',
         ]);
     }
 

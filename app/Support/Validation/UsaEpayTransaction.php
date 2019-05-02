@@ -27,9 +27,6 @@ trait UsaEpayTransaction
         return Validator::make($data->all(), $rules);
     }
 
-
-
-
     /**
     * This function validates the Credit Card Credentials
     * 
@@ -85,7 +82,7 @@ trait UsaEpayTransaction
         $order = $res['order'];
         if ($order) {
             $this->createPaymentLogs($order, $tran, 1);
-            $card = $this->createCredits($order->customer_id, $tran);
+            $card = $this->createCredits($order, $tran);
             $response = response()->json(['success' => true, 'card' => $res['card']]);
             
         } else {
@@ -94,6 +91,26 @@ trait UsaEpayTransaction
 
         return $response;
     }
+
+    /**
+     * This function charges now card without order which is done by admin
+     * from admin portal
+     * inserts data to credits and customer_credit_cards table
+     * 
+     * @param  Order     $order
+     * @param  Request   $request
+     * @return Response
+     */
+
+    protected function transactionSuccessfulWithoutOrder($request, $tran)
+    {
+        $card = $this->createCredits($request, $tran, $request->description);
+        $response = response()->json(['success' => true,]);
+
+        return $response;
+    }
+
+
 
 
 
@@ -145,16 +162,25 @@ trait UsaEpayTransaction
      * @param  Request     $request
      * @return Response
      */
-    protected function createCredits($customerId, $tran)
+    protected function createCredits($request, $tran)
     {
-        return Credit::create([
-            'customer_id' => $customerId,
+        $credit = [
+            'customer_id' => $request->customer_id,
             'amount'      => $tran->amount,
             'date'        => date("Y/m/d"),
             'description' => $tran->cardType . ' '.substr($tran->last4, -4),
-        ]);
-    }
+        ];
 
+        if($request->without_order){
+            $credit ['staff_id'] = $request->staff_id;
+            $credit ['applied_to_invoice'] = '0';
+            $credit ['type'] = self::CREDIT_TYPE['manual-credit'];
+        }else{
+            $credit ['order_id'] = $request->id;
+        }
+
+        return Credit::create($credit);
+    }
 
 
 

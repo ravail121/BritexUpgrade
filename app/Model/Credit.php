@@ -19,6 +19,8 @@ class Credit extends Model
         'description', 
         'account_level',
         'subscription_id',
+        'staff_id',
+        'order_id'
     ];
 
     protected $appends = [
