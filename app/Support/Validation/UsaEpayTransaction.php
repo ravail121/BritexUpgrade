@@ -174,7 +174,7 @@ trait UsaEpayTransaction
         if($request->without_order){
             $credit ['staff_id'] = $request->staff_id;
             $credit ['applied_to_invoice'] = '0';
-            $credit ['type'] = self::CREDIT_TYPE['manual-credit'];
+            $credit ['description'] = $credit ['description']. ' '.$request->description;
         }else{
             $credit ['order_id'] = $request->id;
         }

@@ -11,10 +11,4 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests, UsaEpayTransaction;
-
-    const CREDIT_TYPE = [
-        'payment'        => 1,
-        'manual-credit'  => 2,
-        'closed invoice' => 3
-    ];
 }
