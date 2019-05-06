@@ -23,5 +23,6 @@ class Port extends Model
         'zip',
         'ssn_taxid',
         'account_pin_porting_from',
+        'date_submitted',
     ];
 }

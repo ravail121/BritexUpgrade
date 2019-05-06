@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Port;
 use App\Model\Customer;
@@ -41,7 +42,6 @@ class CustomerPlanController extends BaseController
             'zip'                           => 'numeric|required',
             'state'                         => 'required',
             'ssn_taxid'                     => 'sometimes|required',
-            // 'sim_card_number'               => 'required',
             'number_to_port'                => 'numeric|required',
             'company_porting_from'          => 'required',
             'account_number_porting_from'   => 'required',
@@ -49,6 +49,7 @@ class CustomerPlanController extends BaseController
             'account_pin_porting_from'      => 'required',
 
         ]);
+        $data['date_submitted'] = Carbon::now();
 
         $updatePort = Port::find($data['id'])->update($data);
         if($updatePort){
