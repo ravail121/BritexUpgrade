@@ -33,17 +33,18 @@ class CreditCardRequest extends FormRequest
     public function rules()
     {
         return [
-            'billing_fname'    => 'required',
-            'billing_lname'    => 'required',
-            'amount'           => 'required',
-            'billing_address1' => 'required|max:5000',
-            'billing_address2' => 'nullable|max:5000',
-            'billing_city'     => 'required|max:50',
-            'billing_state_id' => 'required|string|max:2',
-            'billing_zip'      => 'required|digits:5',
-            'payment_card_no'  => ['required', new CardNumber],
-            'expires_mmyy'     => ['required', new CardExpirationDate('m/y')],
-            'payment_cvc'      => ['required', new CardCvc($this->cardNumber)],
+            'billing_fname'       => 'required',
+            'billing_lname'       => 'required',
+            'amount'              => 'required',
+            'billing_address1'    => 'required|max:5000',
+            'billing_address2'    => 'nullable|max:5000',
+            'billing_city'        => 'required|max:50',
+            'billing_state_id'    => 'required|string|max:2',
+            'billing_zip'         => 'required|digits:5',
+            'payment_card_no'     => ['required', new CardNumber],
+            'payment_card_holder' => 'required',
+            'expires_mmyy'        => ['required', new CardExpirationDate('m/y')],
+            'payment_cvc'         => ['required', new CardCvc($this->cardNumber)],
         ];
     }
 }

@@ -28,33 +28,37 @@ class CustomerController extends BaseController
    
   public function post(Request $request)
   {
-
     if ($request->customer_id) {
-      $done = $this->updateOrder($request);
-      if (!$done) {
+        
+      $customer = $this->updateCustomer($request);
+     
+      $order = $this->updateOrder($request);
+      if (!$order) {
         
         return $this->respondError('Customer was not created.');
       }
       
-      return $this->respond(['success' => true]);
+      return $this->respond(['success' => true, 'customer' => $customer]);
 
     }
+   
     $hasError = $this->validateData($request);
-    if($hasError){
+    if ($hasError) {
+      
       return $hasError;
     }
 
 
     $data  = $request->all();
+    
     $order = Order::hash($data['order_hash'])->first();
-
-
+    
     $customerData = $this->setData($order, $data);
-
+    
     $customer = Customer::create($customerData);
-
     if (!$customer) {
-      return $this->respondError("problem in creating/updating a customer");
+        
+        return $this->respondError("problem in creating/updating a customer");
     }
     $order->update(['customer_id' => $customer->id]);
 
@@ -62,7 +66,8 @@ class CustomerController extends BaseController
   }
 
 
-  public function subscription_list(Request $request){
+  public function subscription_list(Request $request)
+  {
 
       $output       = ['success' => false , 'message' => ''];
       
@@ -79,12 +84,15 @@ class CustomerController extends BaseController
     $customer = Customer::where('id', $customer_id)->get();
     $customer = $customer[0];
 
-    if($customer->company_id != $company->id){
+    if ($customer->company_id != $company->id) {
+     
       return Response()->json(array('error' => [' customer id does not exist']));
     }
 
     $data = Subscription::with(['SubscriptionAddon'])->where('customer_id', $customer_id)->get();
+   
     $output['success'] = true;
+    
     return response()->json($data);
   }
 
@@ -99,6 +107,7 @@ class CustomerController extends BaseController
    */
   protected function setData($order, $data)
   {
+
     unset($data['order_hash']);
 
     if ($order->bizVerification) {
@@ -121,26 +130,53 @@ class CustomerController extends BaseController
   }
 
 
+  protected function updateCustomer($request)
+  {
+    if ($request->customer_id) {
+        
+        $request['password'] = Hash::make($request['password']);
+        $customer = Customer::find($request->customer_id);
+       
+        $customer->update(['fname'    => $request->fname,
+                'lname'               => $request->lname,
+                'email'               => $request->email,
+                'company_name'        => $request->company_name,
+                'phone'               => $request->phone,
+                'alternate_phone'     => $request->alternate_phone,
+                'password'            => $request->password, 
+                'pin'                 => $request->pin,  
+                'shipping_address1'   => $request->shipping_address1,
+                'shipping_address2'   => $request->shipping_address2,
+                'shipping_city'       => $request->shipping_city,
+                'shipping_state_id'   => $request->shipping_state_id,
+                'shipping_zip'        => $request->shipping_zip,
+                'shipping_fname'      => $request->shipping_fname,
+                'shipping_lname'      => $request->shipping_lname
+        ]);
+        return $customer;
+    }
+  }
+
+
+
 
   protected function updateOrder($request)
   {
-
     if ($request->customer_id) {
+
         $order = Order::hash($request->order_hash)->first();
-        $customer = Customer::find($request->customer_id);
+       
         $order->update(['customer_id' => $request->customer_id,
-                'shipping_address1'   => $customer->shipping_address1,
-                'shipping_address2'   => $customer->shipping_address2,
-                'shipping_city'       => $customer->shipping_city,
-                'shipping_state_id'   => $customer->shipping_state_id,
-                'shipping_zip'        => $customer->shipping_zip
+                'shipping_address1'   => $request->shipping_address1,
+                'shipping_address2'   => $request->shipping_address2,
+                'shipping_city'       => $request->shipping_city,
+                'shipping_state_id'   => $request->shipping_state_id,
+                'shipping_zip'        => $request->shipping_zip
             ]);
         return $order;
        
     }
   }
-
-
 
   /**
    * Validates the Create-customer data
@@ -149,7 +185,6 @@ class CustomerController extends BaseController
    * @return Response
    */
   protected function validateData($request) { 
-    
     return $this->validate_input($request->all(), [ 
       'fname'              => 'required|string',
       'lname'              => 'required|string',
@@ -204,26 +239,37 @@ class CustomerController extends BaseController
   public function update(Request $request)
   {
     $data    = $request->all();
+    $order = $this->orderUpdate($request);
     $validation = $this->validateUpdate($data);
     if ($validation) {
       return $validation;
     }
-    if(isset($data['password'])){
+    if (isset($data['password'])) {
         $currentPassword = Customer::whereHash($data['hash'])->first();
 
-        if(Hash::check($data['old_password'], $currentPassword['password'])){
+        if (Hash::check($data['old_password'], $currentPassword['password'])) {
             $password['password'] = bcrypt($data['password']);
             Customer::whereHash($data['hash'])->update($password);
             return $this->respond('sucessfully Updated');    
         }
-        else{
+        else {
             return $this->respondError('Incorrect Current Password');
         }
     } 
     Customer::whereHash($data['hash'])->update($data);
+   
     return $this->respond(['message' => 'sucessfully Updated']);
   }
+ 
+  public function orderUpdate($request)
+  {
+    $order = $request->only('shipping_fname','shipping_lname','shipping_address1','shipping_address2','shipping_city','shipping_state_id','shipping_zip');
+    $order['customer_id'] = $request->id;
+    
+    Order::where('customer_id','=', $order['customer_id'])->update($order);
 
+    return $this->respond(['message' => 'sucessfully Updated']);
+  }
 
 
 
@@ -256,11 +302,14 @@ class CustomerController extends BaseController
     {
         $data =  $request->validate([
             'newEmail'   => 'required',
-            'hash'       => 'required',
+            //'hash'       => 'required',
 
         ]);
 
-        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+        $emailCount = Customer::where('email', '=' , $request->newEmail)->count();
+
+        //$emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+
         return $this->respond(['emailCount' => $emailCount]);
     }
 

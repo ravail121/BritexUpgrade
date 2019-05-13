@@ -266,7 +266,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             $dataForInvoiceItem = array_merge($data, $planData);
             $invoiceItem = InvoiceItem::create($dataForInvoiceItem);
             array_push($res, $invoiceItem->id);
-            \Log::info($res);
 
         }
         return $res;
