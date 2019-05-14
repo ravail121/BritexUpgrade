@@ -1,6 +1,6 @@
 <?php
 
-use App\Model\FaqCategory;
+use App\Model\Category;
 use Illuminate\Database\Seeder;
 
 class FaqCategoryTableSeeder extends Seeder
@@ -14,7 +14,7 @@ class FaqCategoryTableSeeder extends Seeder
     {
         $names = $this->getArray();
         foreach ($names as $name) {
-            FaqCategory::create([
+            Category::create([
                 'name' => $name, 
             ]);
         }
