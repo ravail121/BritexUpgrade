@@ -37,6 +37,17 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 });
 
 
+ Route::group(['namespace' => '\Api\V1'],function()
+{
+	Route::post('/sample-image',[
+	'as'=>'api.image.post',
+	'uses'=>'TestingImageController@post',
+	]);
+});
+
+
+
+
 
 Route::get('/', function (Request $request) {
   return  response()->json([

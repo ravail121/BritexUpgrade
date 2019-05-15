@@ -151,9 +151,9 @@ class CreateOrderTable extends Migration
            $table->unsignedInteger('carrier_id')->nullable();
            $table->foreign('carrier_id')->references('id')->on('carrier');
            $table->integer('type');
-           $table->integer('display_name');
-           $table->integer('bot_code');
-           $table->integer('soc_code');
+           $table->text('display_name');
+           $table->text('bot_code');
+           $table->text('soc_code');
            $table->timestamps();
 
        });
