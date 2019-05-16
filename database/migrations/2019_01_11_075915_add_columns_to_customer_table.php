@@ -20,8 +20,8 @@ class AddColumnsToCustomerTable extends Migration
             $table->string('email')->after('lname');
             $table->string('company_name')->after('email');
             $table->string('password')->after('lname');
-            $table->string('phone')->after('password');
-            $table->string('alternate_phone')->nullable()->after('phone');
+            $table->bigInteger('phone')->after('password');
+            $table->bigInteger('alternate_phone')->nullable()->after('phone');
             $table->string('pin')->after('alternate_phone');
             $table->integer('shipping_zip')->after('shipping_state_id');
         });

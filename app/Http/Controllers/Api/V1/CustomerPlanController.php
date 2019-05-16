@@ -35,7 +35,6 @@ class CustomerPlanController extends BaseController
     {
 
         $data =  $request->validate([
-            'id'                            => 'required',
             'authorized_name'               => 'required|max:20',
             'address_line1'                 => 'required',
             'address_line2'                 => 'sometimes|required',
@@ -50,11 +49,19 @@ class CustomerPlanController extends BaseController
             'account_pin_porting_from'      => 'required',
 
         ]);
+        $data['id'] = $request->id;
         $data['date_submitted'] = Carbon::now();
-
-        $updatePort = Port::find($data['id'])->update($data);
-        if($updatePort){
+        if($data['id']){
+            $updatePort = Port::find($data['id'])->update($data);
+            if($updatePort){
+                return $this->respond('sucessfully Updated');
+            }
+        }else{
+            $data['notes'] = '';
+            $data['subscription_id'] = $request->subscription_id;
+            Port::create($data);
             return $this->respond('sucessfully Updated');
         }
+        
     }
 }
