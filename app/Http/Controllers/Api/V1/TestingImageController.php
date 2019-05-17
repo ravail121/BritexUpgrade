@@ -22,8 +22,8 @@ class TestingImageController extends BaseController
     public function post(Request $request)
     {
         $data = $request->all();
-        if($data['image']) {
-            $uploadedAndInserted = $this->insertFile($data['image']);
+        if($data['file']) {
+            $uploadedAndInserted = $this->insertFile($data['file']);
             \Log::info('.............functio 1 testMethod.......');
             \Log::info($uploadedAndInserted);
 
