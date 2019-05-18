@@ -30,7 +30,7 @@ class CustomerController extends BaseController
   {
     if ($request->customer_id) {
         
-      $customer = $this->updateCustomer($request);
+      // $customer = $this->updateCustomer($request);
      
       $order = $this->updateOrder($request);
       if (!$order) {
@@ -38,7 +38,7 @@ class CustomerController extends BaseController
         return $this->respondError('Customer was not created.');
       }
       
-      return $this->respond(['success' => true, 'customer' => $customer]);
+      return $this->respond(['success' => true]);
 
     }
    
