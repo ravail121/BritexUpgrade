@@ -16,11 +16,12 @@ class CustomerPlanController extends BaseController
     public function get(Request $request){
 
         $InvoiceController = new InvoiceController();
-        $innvoice = $InvoiceController->invoiceDetails($request);
+
+        $innvoice = $InvoiceController->invoiceDetail($request);
 
     	$customerId = Customer::whereHash($request->hash)->first(['id']);
 
-    	return $this->respond(['customer-invoice' =>$innvoice,'customer-plans' => $this->getSubscriptions($customerId['id'])]);
+    	return $this->respond(['customer-invoice' => $innvoice,'customer-plans' => $this->getSubscriptions($customerId['id'])]);
     }
 
     public function getSubscriptions($customerId){

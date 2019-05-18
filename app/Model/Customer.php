@@ -174,4 +174,20 @@ class Customer extends Authenticatable
     {
         return Carbon::parse($this->billing_end);
     }
+
+    public function getBillingStartDateFormattedAttribute()
+    {
+        if($this->billing_start){
+            return Carbon::parse($this->billing_start)->format('M d, Y');   
+        }
+        return 'NA';
+    }
+
+    public function getBillingEndDateFormattedAttribute()
+    {
+        if($this->billing_end){
+            return Carbon::parse($this->billing_end)->format('M d, Y');   
+        }
+        return 'NA';
+    }
 }

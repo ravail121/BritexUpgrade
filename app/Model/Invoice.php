@@ -231,4 +231,12 @@ class Invoice extends Model implements ConstantInterface
         return Carbon::parse($value)->format('M-d-Y h:i A');
     }
 
+    public function getDueDateFormattedAttribute()
+    {
+        if($this->due_date){
+            return Carbon::parse($this->due_date)->format('M d, Y');   
+        }
+        return 'NA';
+    }
+
 }
