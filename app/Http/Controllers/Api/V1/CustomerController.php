@@ -167,15 +167,16 @@ class CustomerController extends BaseController
   protected function updateOrder($request)
   {
     if ($request->customer_id) {
-
         $order = Order::hash($request->order_hash)->first();
-       
+        $customer = Customer::find($request->customer_id);
         $order->update(['customer_id' => $request->customer_id,
-                'shipping_address1'   => $request->shipping_address1,
-                'shipping_address2'   => $request->shipping_address2,
-                'shipping_city'       => $request->shipping_city,
-                'shipping_state_id'   => $request->shipping_state_id,
-                'shipping_zip'        => $request->shipping_zip
+                'shipping_fname'      => $customer->shipping_fname,
+                'shipping_lname'      => $customer->shipping_lname,
+                'shipping_address1'   => $customer->shipping_address1,
+                'shipping_address2'   => $customer->shipping_address2,
+                'shipping_city'       => $customer->shipping_city,
+                'shipping_state_id'   => $customer->shipping_state_id,
+                'shipping_zip'        => $customer->shipping_zip
             ]);
         return $order;
        
@@ -243,7 +244,6 @@ class CustomerController extends BaseController
   public function update(Request $request)
   {
     $data    = $request->all();
-    $order = $this->orderUpdate($request);
     $validation = $this->validateUpdate($data);
     if ($validation) {
       return $validation;
