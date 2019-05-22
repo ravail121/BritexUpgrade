@@ -9,6 +9,7 @@
 </head>
 
 <body>
+    <h1>Monthly</h1>
     <div class="wrapper">
         <div class="container" style="width: 100%; float: none; margin: 0px auto;">
             <div class="boxmain">
@@ -24,7 +25,7 @@
                                     <tr>
                                         <td>Invoice No.</td>
                                         <td width="20px"></td>
-                                        <td class="detail">####</td>
+                                        <td class="detail">{{ $invoice['invoice_num'] }}</td>
                                     </tr>
                                     <tr>
                                         <td>Period Beginning</td>
@@ -88,11 +89,13 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Previous Balance</td>
-                                                    <td class="detail">$106.46</td>
+                                                    <td class="detail">$ </td>
                                                 </tr>
                                                 <tr>
                                                     <td>Payments Received </td>
-                                                    <td class="detail">-{{ $invoice['subtotal'] }}</td>
+                                                    <td class="detail">
+                                                       $
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td class="thankyou" colspan="2">
@@ -103,7 +106,7 @@
                                                 </tr>
                                                 <tr>
                                                     <td>Balance Forward</td>
-                                                    <td class="detail">$0.00</td>
+                                                    <td class="detail">$</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -113,19 +116,19 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Services, Usage &amp; Charges</td>
-                                                    <td class="detail">$90.00</td>
+                                                    <td class="detail">$ {{ $invoice['service_charges'] }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>Fees/Taxes</td>
-                                                    <td class="detail">$16.46</td>
+                                                    <td class="detail">$ {{ $invoice['taxes'] }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td>Credits</td>
-                                                    <td class="detail">$0.00</td>
+                                                    <td>Coupons</td>
+                                                    <td class="detail">-$ {{ $invoice['credits'] }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>Total Charges This Bill</td>
-                                                    <td class="detail">{{ $invoice['subtotal'] }}</td>
+                                                    <td class="detail">$ {{ $invoice['subtotal'] }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -134,12 +137,12 @@
                                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                             <tbody>
                                                 <tr>
-                                                    <td>Payments (Mar 1)</td>
-                                                    <td class="detail">$90.00</td>
+                                                    <td>Payments/Credits</td>
+                                                    <td class="detail">$ {{ $invoice['plan_charges'] - $invoice['credits'] }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td>Due Mar 1</td>
-                                                    <td class="detail">$0.00</td>
+                                                    <td>Due {{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }}</td>
+                                                    <td class="detail">$ {{ $invoice['total_due'] }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>
@@ -171,47 +174,44 @@
                                     <th>One Time Charges</th>
                                     <th>Usage Charges</th>
                                     <th>Taxes/Fees</th>
-                                    <th>Credits</th>
+                                    <th>Coupons</th>
                                     <th>Total Current Charges</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td>Account Charges</td>
-                                    <td>$50.00</td>
-                                    <td>$0.00</td>
-                                    <td>$0.00</td>
-                                    <td>$0.00</td>
-                                    <td>$0.00</td>
-                                    <td>$50.00</td>
+                                    <td>$</td>
+                                    <td>$</td>
+                                    <td>$</td>
+                                    <td>$</td>
+                                    <td>$</td>
+                                    <td>$</td>
                                 </tr>
-                                <tr>
-                                    <td>863-666-9879</td>
-                                    <td>$30.00</td>
-                                    <td>$0.00</td>
-                                    <td>$0.00</td>
-                                    <td>$5.49</td>
-                                    <td>$0.00</td>
-                                    <td>$35.49</td>
-                                </tr>
-                                <tr>
-                                    <td>863-666-9878</td>
-                                    <td>$40.00</td>
-                                    <td>$0.00</td>
-                                    <td>$0.00</td>
-                                    <td>$6.15</td>
-                                    <td>$0.00</td>
-                                    <td>$46.15</td>
-                                </tr>
-                                <tr>
-                                    <td>863-666-9877</td>
-                                    <td>$20.00</td>
-                                    <td>$0.00</td>
-                                    <td>$0.00</td>
-                                    <td>$4.83</td>
-                                    <td>$0.00</td>
-                                    <td>$24.83</td>
-                                </tr>
+                                @if (count($invoice['subscriptions']))
+                                    @foreach ($invoice['subscriptions'] as $subscription)
+                                        <tr>
+                                            <td>{{ $subscription['phone'] }}</td>
+                                            <td>$ {{ $subscription['plan_charges'] }}</td>
+                                            <td>$ {{ $subscription['onetime_charges'] }}</td>
+                                            <td>$ {{ $subscription['usage_charges'] }}</td>
+                                            <td>$ {{ $subscription['tax'] + $subscription['regulatory_fee']}}</td>
+                                            <td>-$ {{ $subscription['coupon'] + $subscription['manual'] }}</td>
+                                            <td>$ 
+                                                {{ 
+                                                    $subscription['plan_charges'] +
+                                                    $subscription['onetime_charges'] + $subscription['usage_charges'] +
+                                                    $subscription['tax'] +
+                                                    $subscription['regulatory_fee'] +
+                                                   -$subscription['coupon'] - 
+                                                   -$subscription['manual'] 
+                                                }}
+                                                <!-- above is incorrect, used for testing only -->
+                                            </td>
+
+                                        </tr>
+                                    @endforeach
+                                @endif
                             </tbody>
                             <tr>
                                 <td colspan="7" class="lh0">
@@ -223,12 +223,14 @@
                             
                             <tr class="tfootQ">
                                 <td>Total</td>
-                                <td>$90</td>
-                                <td>$0.00</td>
-                                <td>$0.00</td>
-                                <td>$16.46</td>
-                                <td>$0.00</td>
-                                <td>$106.46</td>
+                                <td>$ {{ $invoice['service_charges'] }}</td>
+                                <td>$ {{ $invoice['total_one_time_charges'] }}</td>
+                                <td>$ {{ $invoice['total_usage_charges'] }}</td>
+                                <td>$ {{ $invoice['taxes'] }}</td>
+                                <td>-$ {{ $invoice['credits'] }}</td>
+                                <td>$ {{ 
+                                    $invoice['service_charges'] + $invoice['taxes'] - $invoice['credits']
+                                    }}</td>
                             </tr>
                             <tr>
                                 <td colspan="7" class="lh0">

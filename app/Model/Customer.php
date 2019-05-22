@@ -53,17 +53,41 @@ class Customer extends Authenticatable
     public function company()
     {
     	return $this->hasOne('App\Model\Company', 'id');
-
     }
 
     public function subscription()
     {
-     return $this->hasMany('App\Model\Subscription');
+        return $this->hasMany('App\Model\Subscription', 'customer_id', 'id');
+    }
+
+    public function openMonthlyInvoice()
+    {
+        return $this->hasOne(Invoice::class)->monthly()->pendingPayment();
+    }
+
+    public function billableSubscriptions()
+    {
+        return $this->subscription()->billabe();
     }
 
     public function pending_charge()
     {
-     return $this->hasMany('App\Model\PendingCharge');
+        return $this->hasMany('App\Model\PendingCharge', 'customer_id', 'id');
+    }
+
+    public function pendingChargesWithoutInvoice()
+    {
+        return $this->pending_charge()->withoutInvoice();
+    }
+
+    public function generatedInvoiceOfNextMonth()
+    {
+        return $this->invoice()->monthly()->afterDate(Carbon::parse($this->billing_end));
+    }
+
+    public function advancePaidInvoiceOfNextMonth()
+    {
+        return $this->generatedInvoiceOfNextMonth()->closedAndPaid();
     }
 
     public function invoice()
@@ -98,6 +122,16 @@ class Customer extends Authenticatable
         return $this->hasOne('App\Model\coupon', 'id');
     }
 
+    public function customerCoupon()
+    {
+        return $this->hasMany('App\Model\CustomerCoupon');
+    }
+
+    public function customerCouponRedeemable()
+    {
+        return $this->customerCoupon()->redeemable();
+    }
+
     public function BizVerification()
     {
         return $this->belongsTo('App\Model\BusinessVerification');
@@ -118,6 +152,16 @@ class Customer extends Authenticatable
         return $this->hasMany('App\Model\Credit');
     }
 
+    public function creditsNotAppliedCompletely()
+    {
+        return $this->credit()->notAppliedCompletely();
+    }
+
+    public function stateTax()
+    {
+        return $this->belongsTo('App\Model\Tax', 'billing_state_id', 'state')->where('tax.company_id', $this->company_id);
+    }
+
 
     public function getFullNameAttribute()
     {
@@ -129,15 +173,100 @@ class Customer extends Authenticatable
         return $this->shipping_city.', '.$this->shipping_state_id.' '.$this->shipping_zip;
     }
 
+    public static function shouldBeGeneratedNewInvoices()
+    {
+        $today     = self::currentDate();
+        
+        $customers = self::whereNotNull('billing_end')
+                        // doesntHave needs to be before
+                        // any other where condition
+                        ->doesntHave('generatedInvoiceOfNextMonth')
+                        ->whereHas('billableSubscriptions')
+                        ->orWhereHas('pendingChargesWithoutInvoice')
+                        ->with([
+                            'billableSubscriptions',
+                            'pendingChargesWithoutInvoice',
+                            'openMonthlyInvoice'
+                        ])
+                        ->get();
 
-    public function getFiveDaysBeforeAttribute()
+        $customers = $customers->filter(function($customer, $i) use ($today){
+            $billingEndParsed = Carbon::parse($customer->billing_end);
+            $billingEndFiveDaysBefore   = $billingEndParsed->copy()->subDays(5);
+
+            // Is today between customer.billing_date and -5 days
+            return 
+                $today >= $billingEndFiveDaysBefore &&
+                $today <= $billingEndParsed;
+        });
+
+        return $customers;
+    }
+
+    /**
+     * For test accounts only
+     * Customers should always have this value
+     * @param  [type] $value
+     * @return [type]       
+     */
+    public function getBillingAddress1Attribute($value)
+    {
+        return $value ?: 'N/A';
+    }
+
+    /**
+     * For test accounts only
+     * Customers should always have this value
+     * @param  [type] $value
+     * @return [type]       
+     */
+    public function getShippingAddress2Attribute($value)
+    {
+        return $value ?: 'N/A';
+    }
+
+    /**
+     * For test accounts only
+     * Customers should always have this value
+     * @param  [type] $value
+     * @return [type]       
+     */
+    public function getBillingCityAttribute($value)
+    {
+        return $value ?: 'N/A';
+    }
+
+    /**
+     * For test accounts only
+     * Customers should always have this value
+     * @param  [type] $value
+     * @return [type]       
+     */
+    // Should be Commented the function as using it in where queries was
+    // also creating problem
+    public function getBillingStateIdAttribute($value)
+    {
+        return $value ?: 'N/A';
+    }
+
+    /**
+     * For test accounts only
+     * Customers should always have this value
+     * @param  [type] $value
+     * @return [type]       
+     */
+    public function getBillingZipAttribute($value)
+    {
+        return $value ?: 'N/A';
+    }
+
+    public function getIsTodayFiveDaysBeforeBillingAttribute()
     {
         $today          = self::currentDate();
         $endDate        = $this->parseEndDate();
         $fiveDaysBefore = $endDate->subDays(5);
 
         return ($today->gte($fiveDaysBefore) && $today->lte($endDate));
-
     }
 
 
@@ -170,9 +299,9 @@ class Customer extends Authenticatable
     }
 
 
-    public function parseEndDate()
+    public function parseEndDate($billingEnd = null)
     {
-        return Carbon::parse($this->billing_end);
+        return Carbon::parse($billingEnd ?: $this->billing_end);
     }
 
     public function getBillingStartDateFormattedAttribute()

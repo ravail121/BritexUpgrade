@@ -17,7 +17,7 @@ interface ConstantInterface {
     const TAX_TRUE         = 1;
     const TAX_FALSE        = 0;
 
-    const TYPES = [
+    const INVOICE_ITEM_TYPES = [
         'plan_charges'     => 1,
         'feature_charges'  => 2,
         'one_time_charges' => 3,
@@ -29,7 +29,7 @@ interface ConstantInterface {
         'payment'          => 9,
     ];
 
-    const PRODUCT_TYPES = [
+    const INVOICE_ITEM_PRODUCT_TYPES = [
         'plan'   => 'plan',
         'addon'  => 'addon',
         'device' => 'device',

@@ -7,6 +7,7 @@ use Mail;
 use Config;
 use Carbon\Carbon;
 use App\Model\Order;
+use App\Model\Invoice;
 use App\Model\Company;
 use App\Events\InvoiceGenerated;
 use App\Model\BusinessVerification;
@@ -50,6 +51,8 @@ class SendEmailWithInvoice
         $order = $event->order;
 
         $invoice = $this->setData($order);
+
+        \Log::info($invoice);
 
          $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
 
@@ -96,29 +99,36 @@ class SendEmailWithInvoice
     {
         $data = [];
         if ($order) {
-            if ($order->invoice->type == 2) {
+            if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $serviceCharges = $order->invoice->cal_service_charges;
                 $taxes          = $order->invoice->cal_taxes;
                 $credits        = $order->invoice->cal_credits;
                 $totalCharges   = $order->invoice->cal_total_charges;
+                $oneTimeCharges = $order->invoice->cal_onetime;
+                $usageCharges   = $order->invoice->cal_usage_charges;
+                $planCharges    = $order->invoice->cal_plan_charges;
+                $subtotal       = $order->invoice->subtotal;
 
 
                 $data = [
-                    'invoice_num'           => $order->invoice->id,
-                    'subscriptions'         => [],
-                    'start_date'            => $order->invoice->start_date,
-                    'end_date'              => $order->invoice->end_date,
-                    'due_date'              => $order->invoice->due_date,
-                    'total_due'             => $order->invoice->total_due,
-                    'subtotal'              => $order->invoice->subtotal,
-                    'today_date'            => $this->carbon->toFormattedDateString(),
-                    'customer_name'         => $order->customer->full_name,
-                    'customer_address'      => $order->customer->shipping_address1,
-                    'customer_zip_address'  => $order->customer->zip_address,
-                    'service_charges'       => number_format($serviceCharges, 2),
-                    'taxes'                 => number_format($taxes, 2),
-                    'credits'               => number_format($credits, 2),
-                    'total_charges'         => number_format($totalCharges, 2),
+                    'invoice_num'            => $order->invoice->id,
+                    'subscriptions'          => [],
+                    'start_date'             => $order->invoice->start_date,
+                    'end_date'               => $order->invoice->end_date,
+                    'due_date'               => $order->invoice->due_date,
+                    'total_due'              => $order->invoice->total_due,
+                    'subtotal'               => $order->invoice->subtotal,
+                    'today_date'             => $this->carbon->toFormattedDateString(),
+                    'customer_name'          => $order->customer->full_name,
+                    'customer_address'       => $order->customer->shipping_address1,
+                    'customer_zip_address'   => $order->customer->zip_address,
+                    'service_charges'        => number_format($serviceCharges, 2),
+                    'taxes'                  => number_format($taxes, 2),
+                    'credits'                => number_format($credits, 2),
+                    'total_charges'          => number_format($totalCharges, 2),
+                    'total_one_time_charges' => self::formatNumber($oneTimeCharges),
+                    'total_usage_charges'    => self::formatNumber($usageCharges),
+                    'plan_charges'           => self::formatNumber($planCharges),
                 ];
             }
         }
@@ -127,17 +137,33 @@ class SendEmailWithInvoice
             foreach ($order->subscriptions as $subscription) {
                 $planCharges    = $subscription->cal_plan_charges;
                 $onetimeCharges = $subscription->cal_onetime_charges;
+                $usageCharges   = $subscription->cal_usage_charges;
+                $tax            = $subscription->cal_taxes;
 
                 $subscriptionData = [
                     'subscription_id' => $subscription->id,
                     'plan_charges'    => number_format($planCharges, 2),
                     'onetime_charges' => number_format($onetimeCharges, 2),
+                    'phone'           => $subscription->phone_number,
+                    'usage_charges'   => $usageCharges,
+                    'tax'             => $tax
                 ];
 
                 array_push($data['subscriptions'], $subscriptionData);
             }
         }
         return $data;
+    }
+
+    /**
+     * Formats the amount to USA standard style
+     * 
+     * @param  float    $amount
+     * @return float         
+     */
+    public static function formatNumber($amount)
+    {
+        return number_format($amount, 2);
     }
 
 }

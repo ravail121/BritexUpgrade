@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Company extends Model
 {
+	const Id = [
+		'britex'  => 1
+	];
     protected $table = 'company';
 
     public function device(){

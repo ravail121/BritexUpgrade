@@ -10,6 +10,7 @@ use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Events\AccountSuspended;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 

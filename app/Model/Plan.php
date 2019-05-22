@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Plan extends Model
 {
+    const REGULATORY_FEE_TYPES = [
+        'fixed_amount'            => 1,
+        'percentage_of_plan_cost' => 2
+    ];
+
     protected $table = 'plan';
+
     public function order_group(){
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }
@@ -28,8 +34,6 @@ class Plan extends Model
     {
         return $this->belongsToMany('App\Model\Device', 'device_to_plan', 'plan_id', 'device_id');
     }
-
-
 
     public function planToAddon()
     {

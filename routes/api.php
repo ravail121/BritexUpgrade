@@ -17,25 +17,37 @@ use Illuminate\Http\Request;
 //     return $request->user();
 // });
 
-    $config = [
-        'driver'   => 'smtp',
-        'host'     => 'smtp.mailgun.org',
-        'port'     =>  587,
-        'username' => 'postmaster@mg.teltik.com',
-        'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
-    ];
+$config = [
+		'driver'   => 'smtp',
+		'host'     => 'smtp.mailgun.org',
+		'port'     =>  587,
+		'username' => 'postmaster@mg.teltik.com',
+		'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
+];
 
-    Config::set('mail',$config);
+Config::set('mail',$config);
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
-
-    dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
-        $message->from('postmaster@mg.teltik.com');
-        $message->to($request->to ?: 'vanak.roopak@gmail.com');
-        $message->subject('Email Arrived');
-    }));
+	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
+			$message->from('postmaster@mg.teltik.com');
+			$message->to($request->to ?: 'vanak.roopak@gmail.com');
+			$message->subject('Email Arrived');
+	}));
 });
 
+Route::get('/cron-jobs-monthly-invoice', [
+    'as'=>'api.cron.monthly.invoice',
+    'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
+]);
+
+Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
+	Route::group(['namespace' => 'CronJobs'], function(){
+	    Route::get('/process-subscriptions', [
+	        'as'=>'api.cron.subscriptions',
+	        'uses'=> 'ProcessController@processSubscriptions',
+	    ]);
+	});
+});
 
  Route::group(['namespace' => '\Api\V1'],function()
 {

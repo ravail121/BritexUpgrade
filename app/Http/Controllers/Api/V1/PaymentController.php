@@ -43,6 +43,7 @@ class PaymentController extends BaseController implements ConstantInterface
     */
     public function chargeNewCard(Request $request)
     { 
+        \Log::info('----In charge new card----');
         $this->setConstantData($request);
         $validation = $this->validateCredentials($request);
 
@@ -64,10 +65,13 @@ class PaymentController extends BaseController implements ConstantInterface
         $this->tran = $this->setUsaEpayData($this->tran, $request);
 
         if($this->tran->Process()) {
-            $msg     = $this->transactionSuccessful($request, $this->tran);
-            $data    = $this->setInvoiceData($order);
+            $msg = $this->transactionSuccessful($request, $this->tran);
+
+            $data    = $this->setInvoiceData($order, $msg['credit']);
 
             $invoice = Invoice::create($data);
+            
+            $this->addCreditToInvoiceRow($invoice, $msg['credit'], $this->tran);
 
             if ($invoice) {
 
@@ -91,7 +95,7 @@ class PaymentController extends BaseController implements ConstantInterface
             $msg = $this->transactionFail($order->id, $this->tran);
         }
 
-        return $msg; 
+        return $this->respond($msg); 
     }
 
 
@@ -102,7 +106,7 @@ class PaymentController extends BaseController implements ConstantInterface
      * 
      * @param Order $order
      */
-    protected function setInvoiceData($order)
+    protected function setInvoiceData($order, $credit)
     {
         $arr = [];
         $customer = Customer::find($order->customer_id);
@@ -110,7 +114,7 @@ class PaymentController extends BaseController implements ConstantInterface
             return $arr;
         }
 
-        $credit = Credit::where('customer_id', $customer->id)->latest()->first();
+        // $credit = Credit::where('customer_id', $customer->id)->latest()->first();
         $card = CustomerCreditCard::where('customer_id', $customer->id)->latest()->first();
         
 

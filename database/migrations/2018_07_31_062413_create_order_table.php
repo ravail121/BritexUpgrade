@@ -519,8 +519,8 @@ class CreateOrderTable extends Migration
             $table->tinyInteger('port_in_progress')->default(0);
             $table->text('sim_name');
             $table->text('sim_card_num');
-            $table->integer('old_plan_id'); 
-            $table->integer('new_plan_id');
+            $table->integer('old_plan_id')->nullable(); 
+            $table->integer('new_plan_id')->nullable();
             $table->date('downgrade_date')->nullable();
             $table->integer('tracking_num');
             $table->unsignedInteger('device_id')->nullable();
@@ -573,7 +573,7 @@ class CreateOrderTable extends Migration
            $table->foreign('invoice_id')->references('id')->on('invoice');
            $table->foreign('subscription_id')->references('id')->on('subscription');
            $table->text('product_type');
-           $table->integer('product_id');
+           $table->integer('product_id')->nullable();
            $table->integer('type');
            $table->date('start_date');
            $table->text('description');
@@ -756,7 +756,7 @@ class CreateOrderTable extends Migration
             $table->foreign('subscription_id')->references('id')->on('subscription');
             $table->foreign('addon_id')->references('id')->on('addon');
             $table->char('status');
-            $table->date('removal_date');
+            $table->date('removal_date')->nullable();
             $table->timestamps();
 
            });

@@ -95,13 +95,20 @@ class CardController extends BaseController implements ConstantInterface
      */
     public function chargeCard(Request $request)
     {
+        \Log::info('------Charge Card------');
         $validation = $this->validateData($request);
+        \Log::info('------Charge Validation Card------');
+        \Log::info($validation);
         if ($validation) {
             return $this->respondError($validation);
         }
         $this->setConstantData($request);
 
         $creditCard = CustomerCreditCard::find($request->credit_card_id);
+
+        \Log::info('-----------$creditCard found------------');
+        \Log::info($creditCard);
+
         $this->creditCardData($creditCard, $request);
         
         return $this->processTransaction($request);
@@ -156,7 +163,7 @@ class CardController extends BaseController implements ConstantInterface
             $this->response = $this->transactionFail(null, $this->tran);
         }
 
-        return $this->response;
+        return $this->respond($this->response);
     }
 
 

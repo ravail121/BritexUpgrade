@@ -70,7 +70,7 @@ class SubscriptionController extends BaseController
             'subscription_id' => $request->subscription_id,
             'addon_id'        => $request->addon_id,
             'status'          => SubscriptionAddon::STATUSES['active'],
-            'removal_date'    => date('Y-m-d')
+            // 'removal_date'    => date('Y-m-d')
         ]);
 
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);

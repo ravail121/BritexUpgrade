@@ -38,5 +38,8 @@ class Addon extends Model
 
 // ----- Not touching the previously created code as they might be in use ----------
 
-
+    public function subscriptionAddon()
+    {
+        return $this->hasMany(App\Model\SubscriptionAddon::class, 'addon_id', 'id');
+    }
 }

@@ -23,7 +23,8 @@ use App\Model\SubscriptionAddon;
 use App\Model\SubscriptionCoupon;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
-
+use App\Http\Controllers\Api\V1\CronJobs\InvoiceTrait;
+use App\libs\Constants\ConstantInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Events\InvoiceGenerated;
@@ -33,8 +34,10 @@ use App\Http\Controllers\BaseController;
 use App\Classes\GenerateMonthlyInvoiceClass;
 
 
-class InvoiceController extends BaseController
+class InvoiceController extends BaseController implements ConstantInterface
 {
+    use InvoiceTrait;
+
     const DEFAULT_INT = 1;
     const DEFAULT_ID  = 0;
     const SIM_TYPE    = 'sim';
@@ -42,6 +45,7 @@ class InvoiceController extends BaseController
     const ADDON_TYPE  = 'addon';
     const DEVICE_TYPE = 'device';
     const DESCRIPTION = 'Activation Fee';
+    const SHIPPING    = 'Shipping Fee';
 
     /**
      * Date-Time variable
@@ -98,25 +102,34 @@ class InvoiceController extends BaseController
         $msg = '';
         if ($request->data_to_invoice) {
             $invoice = $request->data_to_invoice;
+
             if (isset($invoice['subscription_id'])) {
 
 
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
                 $order        = $this->updateCustomerDates($subscription);
 
-                $invoiceItem = $this->subscriptionInvoiceItem($invoice['subscription_id']);
+                $invoiceItem  = $this->subscriptionInvoiceItem($invoice['subscription_id']);
 
                 $msg = (!$invoiceItem) ? 'Subscription Invoice item was not generated' : 'Invoice item generated successfully.'; 
                 
             }
             if (isset($invoice['customer_standalone_device_id'])) {
 
+                $orderId = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'])->first()->order_id;
 
                 $standaloneDevice = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'][0]);
 
                 $order = $this->updateCustomerDates($standaloneDevice);
                         
                 $invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
+
+                foreach ($invoice['customer_standalone_device_id'] as $id) {
+                    $standaloneDevice   = CustomerStandaloneDevice::find($id);
+                    $shippingCharge     = $this->addShippingChargesStandalone(Device::find($standaloneDevice)->first(), $orderId);
+                }
+
+                $taxes = $this->addTaxes([], Order::find($orderId)->invoice, 0);
 
                 $msg = (!$invoiceItem) ? 'Standalone Device Invoice item was not generated' : 'Invoice item generated successfully.' ;
 
@@ -131,6 +144,11 @@ class InvoiceController extends BaseController
                         
                 $invoiceItem = $this->standaloneSimInvoiceItem($invoice['customer_standalone_sim_id']);
 
+                foreach ($invoice['customer_standalone_sim_id'] as $id) {
+                    $standaloneDevice   = CustomerStandaloneSim::find($id);
+                    $shippingCharge     = $this->addShippingChargesStandalone(Sim::find($standaloneDevice)->first(), $orderId);
+                }
+
                 $msg = (!$invoiceItem) ? 'Standalone Sim Invoice item was not generated' : 'Invoice item generated successfully.';
 
             }
@@ -143,12 +161,6 @@ class InvoiceController extends BaseController
         return $this->respond($msg);
     }
 
-
-
-
-
-
-
     /**
      * Generates the Invoice template and downloads the invoice.pdf file
      * 
@@ -158,29 +170,42 @@ class InvoiceController extends BaseController
     public function get(Request $request)
     {
         $order = Order::hash($request->order_hash)->first();
+
         if ($order) {
+
+            $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
+
+            $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order, $proratedAmount) : $this->setMonthlyInvoiceData($order);
             
-            if ($order->invoice->type == 2) {
+            $taxes                  = $order->invoice->cal_taxes;
+            $credits                = $order->invoice->cal_credits;
+            $totalCharges           = $order->invoice->cal_total_charges;
+            $oneTimeCharges         = $order->invoice->cal_onetime;
+            $usageCharges           = $order->invoice->cal_usage_charges;
+            $planCharges            = $proratedAmount == null ? $order->invoice->cal_plan_charges : $proratedAmount;
+            $subtotal               = $order->invoice->subtotal;
+            $serviceChargesProrated = $planCharges + $oneTimeCharges + $usageCharges;
+            $serviceCharges         = $proratedAmount == null ? $order->invoice->cal_service_charges : $serviceChargesProrated;
+            
+            $invoice = [
+                'service_charges'                   => self::formatNumber($serviceCharges),
+                'taxes'                             => self::formatNumber($taxes),
+                'credits'                           => self::formatNumber($credits),
+                'total_charges'                     => self::formatNumber($totalCharges),
+                'total_one_time_charges'            => self::formatNumber($oneTimeCharges),
+                'total_usage_charges'               => self::formatNumber($usageCharges),
+                'plan_charges'                      => self::formatNumber($planCharges),
+                'serviceChargesProrated'            => self::formatNumber($serviceChargesProrated)
+            ];
 
-                $serviceCharges = $order->invoice->cal_service_charges;
-                $taxes          = $order->invoice->cal_taxes;
-                $credits        = $order->invoice->cal_credits;
-                $totalCharges   = $order->invoice->cal_total_charges;
+            $invoice = array_merge($data, $invoice);
 
-                $data = $this->setInvoiceData($order);
-
-                $invoice = [
-                    'service_charges' => self::formatNumber($serviceCharges),
-                    'taxes'           => self::formatNumber($taxes),
-                    'credits'         => self::formatNumber($credits),
-                    'total_charges'   => self::formatNumber($totalCharges),
-                ];
-
-                $invoice = array_merge($data, $invoice);
-
-
+            if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+                return $pdf->download('invoice.pdf');   
 
+            } else {
+                $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
             }
 
@@ -189,12 +214,8 @@ class InvoiceController extends BaseController
         
     }
 
-
-
-
-    protected function setInvoiceData($order)
+    protected function invoiceData($order)
     {
-
         $arr = [
             'invoice_num'           => $order->invoice->id,
             'subscriptions'         => [],
@@ -203,33 +224,74 @@ class InvoiceController extends BaseController
             'due_date'              => $order->invoice->due_date,
             'total_due'             => $order->invoice->total_due,
             'subtotal'              => $order->invoice->subtotal,
+            'invoice_item'          => $order->invoice->invoiceItem,
             'today_date'            => $this->carbon->toFormattedDateString(),
             'customer_name'         => $order->customer->full_name,
             'customer_address'      => $order->customer->shipping_address1,
             'customer_zip_address'  => $order->customer->zip_address,
+            //'prorated_amount'       => $order->orderGroup->plan_prorated_amt
         ];
-
-        if ($order->subscriptions) {
-            foreach ($order->subscriptions as $subscription) {
-                $planCharges    = $subscription->cal_plan_charges;
-                $onetimeCharges = $subscription->cal_onetime_charges;
-
-                $subscriptionData = [
-                    'subscription_id' => $subscription->id,
-                    'plan_charges'    => self::formatNumber($planCharges),
-                    'onetime_charges' => self::formatNumber($onetimeCharges),
-                ];
+        return $arr;
+    }
 
 
-                array_push($arr['subscriptions'], $subscriptionData);
-            }
+    protected function setOrderInvoiceData($order, $proratedAmount)
+    {
+        $arr = $this->invoiceData($order);
+
+        foreach ($order->subscriptions as $subscription) {
+            $planCharges    = $subscription->cal_plan_charges;
+            $onetimeCharges = $subscription->cal_onetime_charges;
+            $usageCharges   = $subscription->cal_usage_charges;
+            $tax            = $subscription->cal_taxes;
+            
+            $subscriptionData = [
+                'subscription_id' => $subscription->id,
+                'plan_charges'    => $proratedAmount === null ? self::formatNumber($planCharges) : $proratedAmount,
+                'onetime_charges' => self::formatNumber($onetimeCharges),
+                'phone'           => $subscription->phone_number,
+                'usage_charges'   => $usageCharges,
+                'tax'             => $tax
+            ];
+            array_push($arr['subscriptions'], $subscriptionData);
+        }
+        return $arr;
+    }
+
+    protected function setMonthlyInvoiceData($order)
+    {
+        $arr = $this->invoiceData($order);
+        
+        foreach ($order->invoice->invoiceItem as $item) { $subscriptions[] = $item->subscription_id; }
+
+        foreach (array_count_values($subscriptions) as $id => $count) {
+
+            $phone = Subscription::where('id', $id)->pluck('phone_number')->first();
+
+            $subscriptionData = [
+                'subscription_id'  => $id,
+                'plan_charges'     => $this->getSubscriptionsData($order, $id, 'plan_charges'),
+                'addonCharges'     => $this->getSubscriptionsData($order, $id, 'feature_charges'),
+                'regulatory_fee'   => $this->getSubscriptionsData($order, $id, 'regulatory_fee'),
+                'tax'              => $this->getSubscriptionsData($order, $id, 'taxes'),
+                'onetime_charges'  => $this->getSubscriptionsData($order, $id, 'one_time_charges'),
+                'usage_charges'    => $this->getSubscriptionsData($order, $id, 'usage_charges'),
+                'coupon'           => $this->getSubscriptionsData($order, $id, 'coupon'),
+                'manual'           => $this->getSubscriptionsData($order, $id, 'manual'),
+                'phone'            => $phone
+            ];
+
+            array_push($arr['subscriptions'], $subscriptionData);
+
         }
 
         return $arr;
-
-
     }
 
+    protected function getSubscriptionsData($order, $id, $type)
+    {
+        return $order->invoice->invoiceItem->where('subscription_id', $id)->where('type' , InvoiceItem::TYPES[$type])->sum('amount');
+    }
 
 
 
@@ -271,7 +333,7 @@ class InvoiceController extends BaseController
             'invoice_id'  => $order->invoice_id, 
             'type'        => self::DEFAULT_INT, 
             'start_date'  => $order->invoice->start_date, 
-            'description' => self::DESCRIPTION, 
+            'description' => self::DESCRIPTION,
             'taxable'     => self::DEFAULT_INT,
 
         ];
@@ -309,12 +371,13 @@ class InvoiceController extends BaseController
                 ];
 
                 if ($subscription->device_id === 0) {
-                    $array = array_merge($array, [
+                    $array = array_merge($array, [                        
                         'amount' => '0',
                     ]);
                 } else {
                     $device = Device::find($subscription->device_id);
                     $array = array_merge($array, [
+                        'type'   => 3,
                         'amount' => $device->amount_w_plan,
                     ]);
                     
@@ -325,17 +388,30 @@ class InvoiceController extends BaseController
                 
             }
 
+
             if ($subscription->plan_id != null) {
                 $plan = Plan::find($subscription->plan_id);
+
+                $proratedAmount = Order::where('invoice_id', $this->input['invoice_id'])->first()->orderGroup->plan_prorated_amt;
+
+                $amount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
+
                 $array = [
                     'product_type' => self::PLAN_TYPE,
                     'product_id'   => $subscription->plan_id,
-                    'amount'       => $plan->amount_recurring, 
+                    'amount'       => $amount, 
                 ];
 
                 $array = array_merge($subarray, $array);
 
                 $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+
+                $regulatoryFee = $this->addRegulatorFeesToSubscription(
+                    $subscription,
+                    $invoiceItem->invoice,
+                    self::TAX_FALSE
+                );
+
             }
 
             if ($subscription->sim_id != null) {
@@ -343,6 +419,7 @@ class InvoiceController extends BaseController
                 $array = [
                     'product_type' => self::SIM_TYPE,
                     'product_id'   => $subscription->sim_id,
+                    'type'         => 3,
                     'amount'       => $sim->amount_w_plan, 
                 ];
 
@@ -361,20 +438,99 @@ class InvoiceController extends BaseController
                         'amount'       => $addon->amount_recurring, 
                     ];
                     $array = array_merge($subarray, $array);
-
-
                     $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
                 }
             }
+            //add activation charges in invoice-item table
+            $this->addActivationCharges(
+                $subscription, 
+                $invoiceItem->invoice,
+                self::DESCRIPTION,
+                self::TAX_FALSE
+            );
+
+            //add shipping charges
+            $this->addShippingCharges(
+                $subscription, 
+                $invoiceItem->invoice, 
+                self::TAX_FALSE,
+                self::SHIPPING
+            );
+
+            //add taxes to all taxable items
+            $taxes = $this->addTaxes(
+                $subscription, 
+                $invoiceItem->invoice, 
+                self::TAX_FALSE
+            );
+
+
         }
-
-
+       
         return $invoiceItem;
         
     }
 
+    public function addShippingCharges($subscription, $invoice, $isTaxable, $description)
+    {
+        //Device shipping charges
+        $deviceShippingCharges = [];
+        $simShippingCharges = [];   
+        $devicesIds = $invoice->invoiceItem->where('type', InvoiceItem::TYPES['one_time_charges'])->whereIn('product_type', ['device'])->pluck('product_id');
 
+        if (!empty($devicesIds)) {
+            foreach ($devicesIds as $id) {
+                $deviceShippingCharges[] = Device::find($id)->shipping_fee;
+            };
+        }
 
+        //Sim shipping charges
+        $simIds     = $invoice->invoiceItem->where('type', InvoiceItem::TYPES['one_time_charges'])->whereIn('product_type', ['sim'])->pluck('product_id');
+
+        if (!empty($simIds)) {
+            foreach ($simIds as $id) {
+                $simShippingCharges[]    = Sim::find($id)->shipping_fee;
+            }
+        }
+
+        //Total shipping charges
+        $totalShippingCharges = array_sum(array_merge($deviceShippingCharges, $simShippingCharges));
+
+        if ($totalShippingCharges > 0) {
+            $subscription->invoiceItemDetail()->create([
+                'invoice_id'   => $invoice->id,
+                'product_type' => '',
+                'product_id'   => null,
+                'type'         => InvoiceItem::TYPES['one_time_charges'],
+                'start_date'   => $invoice->start_date,
+                'description'  => $description,
+                'amount'       => $totalShippingCharges,
+                'taxable'      => $isTaxable, 
+            ]);
+        }
+    }
+
+    protected function addShippingChargesStandalone($product, $orderId)
+    {
+        $invoice = Order::find($orderId)->invoice;
+
+        $charges = $product->shipping_fee;
+
+        if ($charges > 0) {
+            $invoice->invoiceItem()->create([
+                'invoice_id'        => $invoice->id,
+                'subscription_id'   => 0,
+                'product_type'      => '',
+                'product_id'        => null,
+                'type'              => InvoiceItem::TYPES['one_time_charges'],
+                'start_date'        => $invoice->start_date,
+                'description'       => self::SHIPPING,
+                'amount'            => $charges,
+                'taxable'           => 0,                
+            ]);
+        }
+        
+    }
 
 
     /**
@@ -398,6 +554,7 @@ class InvoiceController extends BaseController
 
             $array = array_merge($subArray, [
                 'product_id' => $device->id,
+                'type'       => 3,
                 'amount'     => $device->amount,
             ]);
             $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
@@ -432,6 +589,7 @@ class InvoiceController extends BaseController
 
             $array = array_merge($subArray, [
                 'product_id' => $sim->id,
+                'type'       => 3,
                 'amount'     => $sim->amount_alone,
             ]);
 
@@ -445,7 +603,8 @@ class InvoiceController extends BaseController
 
 
 
-    protected function add_regulatory_fee($params, $plan){
+    protected function add_regulatory_fee($params, $plan)
+    {
 
         $params['product_type'] = '';
         $params['product_id'] = null;
@@ -465,7 +624,10 @@ class InvoiceController extends BaseController
 
     }
 
-    protected function addTax($tax_rate, $params){
+
+
+    protected function addTax($tax_rate, $params)
+    {
         $taxes = 0;
         //echo 'Rate :: ' . $tax_rate;
         //print_r($params);
@@ -506,45 +668,30 @@ class InvoiceController extends BaseController
 
             $plan = [];
 
-            $params = [
-                'invoice_id' => $invoice->id,
-                'subscription_id' => $subscription->id,
-                'product_type' => 'plan',
-                'type' => 1,
-                'start_date' => $invoice->start_date
-
-            ];
-
             if ( ($subscription->status == 'shipping' || $subscription->status == 'for-activation') ||  ($subscription->status == 'active' || $subscription->upgrade_downgrade_status == 'downgrade-scheduled')  ) {
 
                 $plan = $subscription->plan;
 
-                $params['product_id'] = $plan['id'];
-                $params['description'] = $plan['description'];
-                $params['amount'] = $plan['amount_recurring'];
-                $params['taxable'] = $plan['taxable'];
-
-
             } else if ($subscription->status == 'active' || $subscription->upgrade_downgrade_status = 'downgrade-scheduled') {
                 $plan = $subscription->new_plan;
-
-                $params['product_id'] = $plan['id'];
-                $params['description'] = $plan['description'];
-                $params['amount'] = $plan['amount_recurring'];
-                $params['taxable'] = $plan['taxable'];
 
             } else {
                 continue;
             }
+
+            $params['product_id'] = $plan['id'];
+            $params['description'] = $plan['description'];
+            $params['amount'] = $plan['amount_recurring'];
+
+            $params['taxable'] = $plan['taxable'];
 
             $taxes += $this->addTax($tax_rate, $params);
             $debt_amount += $params['amount'];
 
             $invoice_item = InvoiceItem::create($params);
             array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
+
             $debt_amount += $this->add_regulatory_fee($params, $plan);
-           
-        
 
             $subscription_addons = $subscription->subscription_addon;
             $addon = [];
@@ -568,6 +715,7 @@ class InvoiceController extends BaseController
 
                 $taxes += $this->addTax($tax_rate, $params);
                 $debt_amount += $params['amount'];
+
                 $invoice_item = InvoiceItem::create($params);
                 array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
 
@@ -577,7 +725,7 @@ class InvoiceController extends BaseController
 
 
         foreach($customer->pending_charge as $pending_charg){
-            if($pending_charg->invoice_id ==0){
+            if($pending_charg->invoice_id == 0){
                 $params = [
                     'type'=>$pending_charg['type'],
                     'amount'=>$pending_charg['amount'],
@@ -614,9 +762,8 @@ class InvoiceController extends BaseController
             'amount' => $taxes,
             'description' => 'all taxes'
         ];
-        $invoice_item = InvoiceItem::create($params);
-   
 
+        $invoice_item = InvoiceItem::create($params);
    
         $subtotal = $debt_amount - $coupon_discounts + $taxes;
 
@@ -645,6 +792,10 @@ class InvoiceController extends BaseController
             'total_due' => $dues,
             'items' => $invoice_items
         ];
+
+        //add activation charges
+
+       
 
         $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
         $pdf->save('invoice/invoice.pdf');
@@ -675,15 +826,15 @@ class InvoiceController extends BaseController
             $end_date = date ("Y-m-d", strtotime ( $start_date ."+1 months"));
             $due_date = $customer->billing_end;
             $invoice = Invoice::create([
-                'customer_id' => $customer->id,
-                'end_date'=>$start_date,
-                'start_date'=>$end_date,
-                'due_date'=>$due_date,
-                'type'=>1,
-                'status'=>1,
-                'subtotal'=>0,
-                'total_due'=>0,
-                'prev_balance'=>0
+                'customer_id'  => $customer->id,
+                'end_date'     => $start_date,
+                'start_date'   => $end_date,
+                'due_date'     => $due_date,
+                'type'         => 1,
+                'status'       => 1,
+                'subtotal'     => 0,
+                'total_due'    => 0,
+                'prev_balance' => 0
             ]);
             $this->generate_customer_invoice($invoice, $customer);
         }

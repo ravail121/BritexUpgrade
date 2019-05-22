@@ -15,6 +15,13 @@ class Order extends Model
         'active_group_id', 'active_subscription_id', 'order_num', 'status', 'invoice_id', 'hash', 'company_id', 'customer_id', 'date_processed' ,'shipping_fname','shipping_lname', 'shipping_address1', 'shipping_address2', 'shipping_city', 'shipping_state_id', 'shipping_zip'
     ];
 
+    public function isOrder($order)
+    {
+        if ($order->invoice->type === 2) {
+            return true;
+        }
+    }
+
     public function order_group(){
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }

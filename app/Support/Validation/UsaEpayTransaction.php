@@ -66,7 +66,20 @@ trait UsaEpayTransaction
         return $tran;
     }
 
+    private function getOrder($request)
+    {
+        $order = null;
 
+        if ($request->customer_id) {
+            $order = Order::where('customer_id', $request->customer_id)->first();
+
+        } elseif ($request->order_hash) {
+            $order = Order::where('hash', $request->order_hash)->first();
+            
+        }
+
+        return $order;
+    }
 
 
     /**
@@ -76,20 +89,22 @@ trait UsaEpayTransaction
      * @param  Request   $request
      * @return Response
      */
-    protected function transactionSuccessful($request, $tran)
+    protected function transactionSuccessful($request, $tran, $invoice = null)
     {
-        $res = $this->createCustomerCard($request, $tran);
-        $order = $res['order'];
-        if ($order) {
-            $this->createPaymentLogs($order, $tran, 1);
-            $card = $this->createCredits($order, $tran);
-            $response = response()->json(['success' => true, 'card' => $res['card']]);
-            
-        } else {
-            $response = response()->json(['message' => 'unsuccessful']);
+        $data = ['success' => false];
+
+        $order = $this->getOrder($request);
+
+        if(!$order){
+            return ['success' => false];
         }
 
-        return $response;
+        $data['card']        = $this->createCustomerCard($request, $order, $tran);
+        $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1);
+        $data['credit']      = $this->createCredits($order, $tran, $invoice);
+        $data['success']     = true;
+        
+        return $data;
     }
 
     /**
@@ -124,7 +139,7 @@ trait UsaEpayTransaction
     protected function transactionFail($order, $tranFail)
     {
         $this->createPaymentLogs($order, $tranFail, 0);
-        return response()->json(['message' => 'Card Declined: (' . $tranFail->result . '). Reason: '. $tranFail->error]);
+        return ['message' => 'Card Declined: (' . $tranFail->result . '). Reason: '. $tranFail->error];
     }
 
 
@@ -158,26 +173,46 @@ trait UsaEpayTransaction
     /**
      * This function inserts data to credits table
      * 
-     * @param  Order       $order
-     * @param  Request     $request
+     * @param  Order       $data
+     * it recives order instance but in cade admin does manual payment it recives Request unstance
      * @return Response
      */
-    protected function createCredits($request, $tran)
+    protected function createCredits($data, $tran, $invoice)
     {
-        $credit = [
-            'customer_id' => $request->customer_id,
+        $creditData = [
+            'customer_id' => $data->customer_id,
             'amount'      => $tran->amount,
             'date'        => date("Y/m/d"),
             'description' => $tran->cardType . ' '.substr($tran->last4, -4),
         ];
 
-        if($request->without_order){
-            $credit ['staff_id'] = $request->staff_id;
+        if(isset($data->without_order)){
+            $credit ['staff_id'] = $data->staff_id;
             $credit ['applied_to_invoice'] = '0';
-            $credit ['description'] = $credit ['description']. ' '.$request->description;
+            $credit ['description'] = $creditData ['description']. ' '.$data->description;
         }else{
-            $credit ['order_id'] = $request->id;
+            $creditData ['order_id'] = $data->id;
         }
+
+        $credit = Credit::create($creditData);
+
+        // Some attributes are set via default() method
+        // and are not returned in create()
+        return Credit::find($credit->id);
+    }
+
+    public function addCreditToInvoiceRow($invoice, $credit, $tran)
+    {
+        $credit->update( [
+            'applied_to_invoice' => true,
+            'description' => "$credit->description (One Time New Invoice)",
+        ] );
+        
+        return $credit->usedOnInvoices()->create([
+            'invoice_id'  => $invoice->id,
+            'amount'      => $tran->amount,
+            'description' => "{$invoice->subtotal} applied on one-time-new-invoice id {$invoice->id}",
+        ]);
 
         return Credit::create($credit);
     }
@@ -190,27 +225,17 @@ trait UsaEpayTransaction
      * @param  Request $request
      * @return Order object
      */
-    protected function createCustomerCard($request, $tran)
+    protected function createCustomerCard($request, $order, $tran)
     {
-        $inserted = null;
-        if ($request->customer_id) {
-            $order = Order::where('customer_id', $request->customer_id)->first();
+        $customerCreditCard = CustomerCreditCard::where('cardholder', $request->payment_card_holder)
+                    ->where('number', $request->payment_card_no)
+                    ->where('expiration', $request->expires_mmyy)
+                    ->where('cvc', $request->payment_cvc)
+                    ->where('customer_id', $order->customer_id)
+                    ->first();
 
-        } elseif ($request->order_hash) {
-            $order = Order::where('hash', $request->order_hash)->first();
-            
-        } else {
-            return false;
-        }
-        
-        $found = CustomerCreditCard::where('cardholder', $request->payment_card_holder)
-                                    ->where('number', $request->payment_card_no)
-                                    ->where('expiration', $request->expires_mmyy)
-                                    ->where('cvc', $request->payment_cvc)->where('customer_id', $order->customer_id)
-                                    ->first();
-
-        if (!$found) {
-            $inserted = CustomerCreditCard::create([
+        if (!$customerCreditCard) {
+            $customerCreditCard = CustomerCreditCard::create([
                 'token'            => $tran->cardref,
                 'api_key'          => $order->company->api_key, 
                 'customer_id'      => $order->customer_id, 
@@ -240,13 +265,9 @@ trait UsaEpayTransaction
                 ]);
             }
 
-            if (!$inserted) {
-                $order = false;
-            }
-
         }
 
-        return ['order' => $order, 'card' => $inserted];
+        return ['card' => $customerCreditCard];
     }
 
 

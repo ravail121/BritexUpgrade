@@ -10,9 +10,14 @@ class SubscriptionCoupon extends Model
 
     protected $fillable = [ 'subscription_id', 'coupon_id', 'cycles_remaining'];
 
-
-    public function subscription() 
+  	public function scopeRedeemable($query)
     {
-    	return $this->hasOne('App\Model\Subscription', 'id');
-  	}
+        return $query->where('cycles_remaining', '>', 0);
+    }
+
+    public function coupon()
+    {
+        return $this->belongsTo('App\Model\Coupon');
+    }    
+
 }

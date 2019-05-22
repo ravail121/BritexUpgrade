@@ -78,9 +78,24 @@ class Subscription extends Model
         return $this->hasMany('App\Model\SubscriptionAddon', 'subscription_id', 'id');
     }
 
+    public function billableSubscriptionAddons()
+    {
+        return $this->subscriptionAddon()->billable();
+    }
+
     public function invoiceItemDetail()
     {
         return $this->hasMany('App\Model\InvoiceItem', 'subscription_id', 'id');
+    }
+
+    public function invoiceItemOfTaxableServices()
+    {
+        return $this->invoiceItemDetail()->services()->taxable();
+    }
+
+    public function pendingCharges()
+    {
+      return $this->hasMany(PendingCharge::class, 'subscription_id', 'id');
     }
 
 
@@ -96,7 +111,17 @@ class Subscription extends Model
 
     public function new_plan()
     {
-        return $this->hasone('App\Model\Plan', 'id' );
+        return $this->hasOne('App\Model\Plan', 'id' );
+    }
+
+    /**
+     * Creating new function, and not touching original new_plan()
+     * as it may be used in the application
+     * @return App\Model\Plan
+     */
+    public function newPlanDetail()
+    {
+        return $this->belongsTo('App\Model\Plan', 'new_plan_id', 'id');
     }
 
     public function order()
@@ -113,11 +138,45 @@ class Subscription extends Model
     {
         return $this->belongsTo('App\Model\Addon' , 'id');
     }
-    public function subscription_coupon()
+
+    public function coupon()
     {
-        return $this->belongsTo('App\Model\SubscriptionCoupon', 'subscription_id');
+        return $this->hasOne('App\Model\coupon', 'id');
     }
 
+    public function subscriptionCoupon()
+    {
+        return $this->hasMany('App\Model\SubscriptionCoupon');
+    }
+
+    public function subscriptionCouponRedeemable()
+    {
+        return $this->subscriptionCoupon()->redeemable();
+    }
+
+    public function scopeBillabe($query)
+    {
+        return $query
+                ->whereIn('status', [
+                  'active', 'shipping', 'for-activation'])
+                ->notSuspendedOrClosed()
+                ->notScheduledForSuspensionOrClosure();
+    }
+
+    public function scopeNotScheduledForSuspensionOrClosure($query)
+    {
+      return $query->whereNotIn('sub_status', ['suspend-scheduled', 'close-scheduled']);
+    }
+
+    public function scopeNotScheduledForDowngrade($query)
+    {
+      return $query->where('upgrade_downgrade_status', '!=', 'downgrade-scheduled');
+    }
+
+    public function scopeNotSuspendedOrClosed($query)
+    {
+      return $query->whereNotIn('status', ['suspend-scheduled', 'close-scheduled']);
+    }
 
     public function scopeTodayEqualsDowngradeDate($query)
     {
@@ -133,14 +192,21 @@ class Subscription extends Model
         return $value > $grace;
     }
 
-    public function getStatusShippingOrForActivationAttribute()
+    public function getIsStatusShippingOrForActivationAttribute()
     {
-        return ($this->status == 'shipping' || $this->status == 'for-activation');
+      return in_array($this->status, ['shipping', 'for-activation']);
     }
 
-    public function getStatusActiveNotUpgradeDowngradeStatusAttribute()
+    public function getIsStatusActiveNotUpgradeDowngradeStatusAttribute()
     {
-        return ($this->status == 'active' && $this->upgrade_downgrade_status != 'downgrade-scheduled');
+        return (
+                $this->status == 'active' 
+                && $this->upgrade_downgrade_status != 'downgrade-scheduled'
+                && !(in_array($this->sub_status, [
+                    self::SUB_STATUSES['suspend-scheduled'],
+                    self::SUB_STATUSES['close-scheduled']
+                ]))
+        );
     }
 
     public function getStatusActiveAndUpgradeDowngradeStatusAttribute()
@@ -164,11 +230,24 @@ class Subscription extends Model
     }
 
 
+    public function getCalUsageChargesAttribute()
+    {
+        $invoiceItems = $this->invoiceItemDetail()->usageCharges()->get();
+        return $this->calCharges($invoiceItems);
+    }
+
+
     public function getCalOnetimeChargesAttribute()
     {
         $products = $this->invoiceItemDetail()->onetimeCharges()->get();
         return $this->calCharges($products);
     }
+
+    public function getCalTaxesAttribute()
+    {
+        $invoiceItems = $this->invoiceItemDetail()->taxes()->get();
+        return $this->calCharges($invoiceItems);
+    }    
 
 
     protected function calCharges($products)

@@ -27,14 +27,29 @@ class Credit extends Model
         'type_description'
     ];
 
-    public function customer()
+    public function scopeAppliedCompletely($query)
     {
-        return $this->belongsTo('App\Model\Customer', 'customer_id', 'id');
+        return $query->where('applied_to_invoice', 1);
+    }
+
+    public function scopeNotAppliedCompletely($query)
+    {
+        return $query->where('applied_to_invoice', 0);
     }
 
     public function getCreatedAtAttribute($value)
     {
         return Carbon::parse($value)->format('M-d-Y h:i A');
+    }
+
+    public function getUsedCreditsAttribute()
+    {
+        return $this->usedOnInvoices->sum('amount');
+    }
+
+    public function getPendingCreditsAttribute()
+    {
+        return $this->amount - $this->used_credits;
     }
 
     public function getTypeDescriptionAttribute($value)
@@ -47,5 +62,15 @@ class Credit extends Model
             return 'Manual Credit';
         }
         return 'Closed Invoice';
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo('App\Model\Customer', 'customer_id', 'id');
+    }
+
+    public function usedOnInvoices()
+    {
+        return $this->hasMany('App\Model\CreditToInvoice', 'credit_id', 'id');
     }
 }

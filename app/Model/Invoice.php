@@ -8,6 +8,12 @@ use App\libs\Constants\ConstantInterface;
 
 class Invoice extends Model implements ConstantInterface
 {
+
+    const TYPES = [
+        'one-time'  => 2,
+        'monthly'   => 1
+    ];
+
     protected $table = 'invoice';
 
     protected $fillable = [ 'customer_id', 'type', 'status', 'start_date', 'end_date', 'due_date', 'subtotal', 'total_due', 'prev_balance', 'payment_method', 'notes', 'business_name', 'billing_fname', 'billing_lname', 'billing_address_line_1', 'billing_address_line_2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_fname', 'shipping_lname', 'shipping_address_line_1', 'shipping_address_line_2', 'shipping_city', 'shipping_state', 'shipping_zip'
@@ -33,7 +39,12 @@ class Invoice extends Model implements ConstantInterface
 
 	public function invoiceItem()
    	{
-        return $this->hasMany('App\Model\InvoiceItem');
+        return $this->hasMany('App\Model\InvoiceItem', 'invoice_id', 'id');
+    }
+
+    public function invoiceItemOfServices()
+    {
+        return $this->invoiceItem()->services();
     }
 
     public function getCalServiceChargesAttribute()
@@ -49,24 +60,41 @@ class Invoice extends Model implements ConstantInterface
     }
 
 
-     public function getCalCreditsAttribute()
+    public function getCalCreditsAttribute()
     {
         $invoiceItems = $this->invoiceItem()->credits()->get();
         return $this->calAmount($invoiceItems);
         
     }
 
+    public function getCalPlanChargesAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->planCharges()->get();
+        return $this->calAmount($invoiceItems);
+    }
+
+    public function getCalOnetimeAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->onetimeCharges()->get();
+        return $this->calAmount($invoiceItems);        
+    }
+
+    public function getCalUsageChargesAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->usageCharges()->get();
+        return $this->calAmount($invoiceItems);
+    }
+
     public function getCalTotalChargesAttribute()
     {
         $total = [];
         array_push($total, $this->cal_taxes);
-        array_push($total, $this->cal_credits);
+        //array_push($total, $this->cal_credits);
         array_push($total, $this->cal_service_charges);
+
         $totalCharges = array_sum($total);
         return self::toTwoDecimals($totalCharges);
-
     }
-
 
     protected function calAmount($invoiceItems)
     {
@@ -91,7 +119,6 @@ class Invoice extends Model implements ConstantInterface
         return $query->where('type', self::INVOICE_TYPES['one_time']);
     }
 
-
     public function scopeClosedAndUnpaid($query)
     {
         return $query->where('status', self::STATUS['closed_and_unpaid']);
@@ -108,6 +135,11 @@ class Invoice extends Model implements ConstantInterface
         return $query->where('status', self::STATUS['closed_and_paid']);
     }
 
+    public function scopeAfterDate($query, $date)
+    {
+        return $query->where('start_date', '>', $date);
+    }
+
 
     public function scopePendingAndUnpaid($query)
     {
@@ -116,9 +148,6 @@ class Invoice extends Model implements ConstantInterface
             self::STATUS['closed_and_unpaid'],
         ]);
     }
-
-
-
 
     /**
      * Fetches Invoice Details from invoice table if status < 2

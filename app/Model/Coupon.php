@@ -6,6 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Coupon extends Model
 {
+    const CLASSES = [
+        'APPLIES_TO_ALL'              => 1,
+        'APPLIES_TO_SPECIFIC_TYPES'   => 2,
+        'APPLIES_TO_SPECIFIC_PRODUCT' => 3,
+    ];
+
+    const FIXED_PERC_TYPES = [
+        'fixed'      => 1,
+        'percentage' => 2
+    ];
+
     protected $table = 'coupon';
 
     protected $fillable = [
@@ -26,4 +37,24 @@ class Coupon extends Model
         'multiline_max',
         'multiline_restrict_plans',
     ];
+
+    public function customerCoupon()
+    {
+        return $this->hasMany('App\Model\CustomerCoupon');
+    }
+
+    public function couponProducts()
+    {
+        return $this->hasMany('App\Model\CouponProduct');
+    }
+
+    public function couponProductTypes()
+    {
+        return $this->hasMany('App\Model\CouponProductType');
+    }
+
+    public function multilinePlanTypes()
+    {
+        return $this->hasMany('App\Model\CouponMultilinePlanType');
+    }
 }

@@ -15,39 +15,11 @@ class ProcessController extends BaseController
 {
     public function processSubscriptions()
     {
+    	$this->processSuspensions();
     	$this->processDowngrades();
         $this->processAddonRemovals();
-    	$this->processSuspensions();
 
     	return $this->respond(['message' => 'Processed Successfully']);
-    }
-
-
-    protected function processDowngrades()
-    {
-    	$subscriptions = Subscription::todayEqualsDowngradeDate()->get();
-
-    	foreach ($subscriptions as $subscription) {
-    		$subscription->update([
-	    		'upgrade_downgrade_status' => 'for-downgrade',
-	    		'old_plan_id'    		   => $subscription->plan_id,
-	    		'plan_id'        		   => $subscription->new_plan_id,
-	    		'new_plan_id'    		   => null,
-	    		'downgrade_date' 		   => '',
-    		]);
-
-    		// Need to add row in 'subscription_log' with category="downgrade-" => NOT CLEARED
-    	}
-    	return true;
-    }
-
-    protected function processAddonRemovals()
-    {
-    	SubscriptionAddon::todayEqualsRemovalDate()->update([
-    		'status' => 'for-removal',
-    	]);
-
-    	return true;
     }
 
     public function processSuspensions()
@@ -70,5 +42,36 @@ class ProcessController extends BaseController
 
             event(new AccountSuspended($customer));
         }
+    }
+
+
+    protected function processDowngrades()
+    {
+    	$subscriptions = Subscription::todayEqualsDowngradeDate()->get();
+
+    	foreach ($subscriptions as $subscription) {
+    		$subscription->update([
+	    		'upgrade_downgrade_status' => 'for-downgrade',
+	    		'old_plan_id'    		   => $subscription->plan_id,
+	    		'plan_id'        		   => $subscription->new_plan_id,
+	    		'new_plan_id'    		   => null,
+	    		'downgrade_date' 		   => null,
+    		]);
+
+    		// Need to add row in 'subscription_log' with category="downgrade-" => NOT CLEARED
+    	}
+    	return true;
+    }
+
+    protected function processAddonRemovals()
+    {
+        SubscriptionAddon::todayEqualsRemovalDate()->update([
+            'status' => 'for-removal',
+    		'removal_date' => null,
+            // ToDo: may be we should set `subscription_addon.removal_date = null`?
+            // Asked client about this.
+    	]);
+
+    	return true;
     }
 }
