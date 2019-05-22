@@ -29,17 +29,17 @@ class CustomerController extends BaseController
   public function post(Request $request)
   {
     if ($request->customer_id) {
-     
-        $order = $this->updateOrder($request);
-        if (!$order) {
-
-            return $this->respondError('Customer was not created.');
-        }
 
         if($request->fname){
             $customer = $this->updateCustomer($request);
 
             return $this->respond(['success' => true, 'customer' => $customer]);          
+        }
+
+        $order = $this->updateOrder($request);
+        if (!$order) {
+
+            return $this->respondError('Customer was not created.');
         }
 
         return $this->respond(['success' => true]);
