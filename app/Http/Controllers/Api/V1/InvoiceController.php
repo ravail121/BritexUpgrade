@@ -311,6 +311,7 @@ class InvoiceController extends BaseController
 
 			$charges = Invoice::where([['customer_id', $customer->id],['start_date', $customer->billing_start]])->sum('subtotal');
 
+
 			$payment = $this->getPaymentAndCreditAmount($customer);
 
 			$pastDue = Invoice::where([['customer_id', $customer->id],['start_date', '<', $customer->billing_start]])->sum('total_due');
@@ -359,10 +360,10 @@ class InvoiceController extends BaseController
 
 		public function getPaymentAndCreditAmount($customer)
 		{
-			$creditAmount = Credit::whereCustomerId($customer->id)->sum('amount');
+            $creditAmount = $customer->creditsNotAppliedCompletely->sum('pending_credits');
 			$id = Invoice::whereCustomerId($customer->id)->pluck('id');
-			$creditToInvoiceAmount = CreditToInvoice::whereIn('invoice_id', $id)->sum('amount');
-			return $creditAmount - $creditToInvoiceAmount;
+			$creditToInvoiceAmount = CreditToInvoice::whereIn('invoice_id', $id)->whereBetween('created_at', [date($customer->billing_start), date($customer->billing_end)])->sum('amount');
+			return $creditToInvoiceAmount + $creditAmount;
 		}
 
 
