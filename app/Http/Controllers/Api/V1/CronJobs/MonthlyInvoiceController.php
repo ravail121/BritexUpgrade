@@ -83,15 +83,15 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 }
 
                 $invoice = Invoice::create($this->getInvoiceData($customer));
-
+                \Log::info('InvoiceData - '.$invoice);
                 $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
-
-                $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
-
-                $this->regulatoryFees($billableSubscriptionInvoiceItems);
-
-                $this->pendingCharges($invoice);
-    
+                \Log::info('Billable Subscription - '.$billableSubscriptionInvoiceItems);
+                $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
+                \Log::info('Subscription Addons - '.$billableSubscriptionAddons);
+                $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
+                \Log::info('Regulatory Fees - '.$regulatoryFees);
+                $pendingCharges = $this->pendingCharges($invoice);
+                \Log::info('Pending Charges - '.$pendingCharges);
                 $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
                 
                 // Subtotal = sum of ( Debits - coupons [applied to each subscription] + Taxes [applied to each subscription] )
@@ -116,15 +116,15 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                 //Plan charge + addon charge + taxes - discount = monthly charges
                 $subtotal = $monthlyCharges - $couponDiscountTotal;
-
-                $invoice->update(compact('subtotal'));
-
+                \Log::info('Subtotal - '.$subtotal);
+                $invoiceUpdate = $invoice->update(compact('subtotal'));
+                \Log::info('Invoice Update - '.$invoiceUpdate);
                 $totalDue = $this->applyCredits($customer, $invoice);
-
+                \Log::info('Total Due - '.$totalDue);
                 $invoice->update(['total_due' => $totalDue]);
-
+    
                 $order = $this->insertOrder($invoice);
-                
+                \Log::info('Order - '. $order);
                 /*foreach ($customer->billableSubscriptions as $billableSubscription) {
                     $this->response = $this->triggerEvent($customer);
                     break;
@@ -262,7 +262,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                 $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
 
-                // ToDo: Add logs, not provided in requirements
+                // ToDo: Add logs,Order not provided in requirements
             }
 
         }
@@ -575,7 +575,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $invoice->invoiceItem()->create($dataForInvoiceItem)
             );
         }
-
+        
         return $invoiceItems;
     }
 
