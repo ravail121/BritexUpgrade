@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddOrderIdAndStaffIdInCreditTable extends Migration
+class AddSlugToCarrierTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,11 @@ class AddOrderIdAndStaffIdInCreditTable extends Migration
      */
     public function up()
     {
-        Schema::table('credit', function (Blueprint $table) {
-            $table->unsignedInteger('order_id')->after('description')->nullable();
-            $table->unsignedInteger('staff_id')->after('order_id')->nullable();
+        Schema::table('carrier', function (Blueprint $table) {
+            $table->text('slug')->nullable->after('name')->nullable();
         });
     }
+
     /**
      * Reverse the migrations.
      *
@@ -25,10 +25,10 @@ class AddOrderIdAndStaffIdInCreditTable extends Migration
      */
     public function down()
     {
-        Schema::table('credit', function (Blueprint $table) {
+        Schema::table('carrier', function (Blueprint $table) {
             $table->dropColumn([
-                'order_id', 'staff_id'
+                'slug'
             ]);
-        }); 
+        });
     }
 }

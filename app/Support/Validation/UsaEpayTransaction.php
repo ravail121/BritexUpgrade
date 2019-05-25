@@ -5,6 +5,7 @@ namespace App\Support\Validation;
 use Validator;
 use App\Model\Order;
 use App\Model\Credit;
+use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\PaymentLog;
 use App\Model\CustomerCreditCard;
@@ -119,7 +120,12 @@ trait UsaEpayTransaction
 
     protected function transactionSuccessfulWithoutOrder($request, $tran)
     {
-        $card = $this->createCredits($request, $tran, $request->description);
+        $credit = $this->createCredits($request, $tran, $request->description);
+        $invoice = Invoice::where([['customer_id', $request->customer_id],[ 'status', '<>', '2']])->first();
+        
+        if($invoice){
+            $this->addCreditToInvoiceRow($invoice, $credit ,$tran);
+        }
         $response = response()->json(['success' => true,]);
 
         return $response;
