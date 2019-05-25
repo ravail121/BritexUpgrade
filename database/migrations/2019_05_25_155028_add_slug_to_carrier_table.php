@@ -14,7 +14,7 @@ class AddSlugToCarrierTable extends Migration
     public function up()
     {
         Schema::table('carrier', function (Blueprint $table) {
-            $table->text('slug')->nullable->after('name')->nullable();
+            $table->text('slug')->after('name')->nullable();
         });
     }
 
