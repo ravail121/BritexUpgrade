@@ -232,6 +232,11 @@ class CustomerController extends BaseController
     return $msg;
   }
 
+  public function stateRate(Request $request)
+  {
+      return 55;
+  }
+
 
 
 
