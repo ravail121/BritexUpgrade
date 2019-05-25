@@ -9,7 +9,6 @@
 </head>
 
 <body>
-    <h1>order</h1>
     <div class="wrapper">
         <div class="container" style="width: 100%; float: none; margin: 0px auto;">
             <div class="boxmain">

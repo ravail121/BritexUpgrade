@@ -12,6 +12,7 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\AccountSuspended;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use App\Http\Controllers\BaseController;
 
 class UpdateController extends BaseController
@@ -25,9 +26,12 @@ class UpdateController extends BaseController
     public function checkUpdates()
     {
         $this->updateCustomerDates();
-        $this->updateInvoiceStatus();
+        //$this->updateInvoiceStatus();
         $this->moveSubscriptionSuspendToClose();
         $this->updateProratedAmounts();
+        $this->scheduledSupensions();
+        $this->scheduledClosings();
+        
         return $this->respond(['message' => 'Updated Successfully']);
     }
 
@@ -72,7 +76,7 @@ class UpdateController extends BaseController
                 if ($customer) {
                     $this->updateSubscriptions($customer->id);
 
-                    event(new AccountSuspend($customer));
+                    //event(new AccountSuspend($customer));
                 }
 
             }
@@ -88,15 +92,14 @@ class UpdateController extends BaseController
      */
     protected function moveSubscriptionSuspendToClose()
     {
-        $subscriptions = Subscription::where('status', 'suspend')->get();
+        $subscriptions = Subscription::where('status', Subscription::STATUS['suspended'])->get();
 
         foreach ($subscriptions as $subscription) {
             $order   = Order::find($subscription->order_id);
             if ($subscription->checkGracePeriod($order->company->suspend_grace_period)) {
                 $subscription->update([
-                    'status' => 'closed', 
+                    'status' => Subscription::STATUS['closed'], 
                 ]);
-
             }
         }
         return true;
@@ -174,4 +177,31 @@ class UpdateController extends BaseController
 
 		return $subscriptions;
     }
+
+    protected function scheduledSupensions()
+    {
+        $scheduledSuspensions = Subscription::where('scheduled_suspend_date', '<=' ,Carbon::today())->get();
+        foreach ($scheduledSuspensions as $sub) {
+            $sub->update([
+                'status'                => Subscription::STATUS['suspended'],
+                'sub_status'            => Subscription::SUB_STATUSES['confirm-suspension'],
+                'scheduled_suspend_date'=> null,
+                'suspended_date'        => Carbon::today()
+            ]);
+        }
+    }
+
+    protected function scheduledClosings()
+    {
+        $scheduledClosings = Subscription::where('scheduled_close_date', '<=', Carbon::today())->get();
+        foreach ($scheduledClosings as $sub) {
+            $sub->update([
+                'status'                => Subscription::STATUS['closed'],
+                'sub_status'            => Subscription::SUB_STATUSES['confirm-closing'],
+                'scheduled_close_date'  => null,
+                'closed_date'           => Carbon::today()
+            ]);
+        }
+    }
+
 }

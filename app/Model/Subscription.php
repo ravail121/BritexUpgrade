@@ -55,7 +55,13 @@ class Subscription extends Model
         'account-past-due'  => 'account-past-due',
         'for-restoration'   => 'for-restoration',
         'closed'            => 'closed',
-        'confirm-closing'   => 'confirm-closing'
+        'confirm-closing'   => 'confirm-closing',
+        'confirm-suspension'=> 'confirm-suspension'
+    ];
+
+    const STATUS = [
+        'suspended'            => 'suspended',
+        'closed'               => 'closed'     
     ];
 
     public function Customer()

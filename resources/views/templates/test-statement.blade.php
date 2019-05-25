@@ -16,7 +16,7 @@
                 </div>
                 <div class="statement">
                     <p>Statement For:</p>
-                    <h2>Timothy Smith</h2>
+                    <h2>{{ $invoice['customer_name'] }}</h2>
                 </div>
                 <div class="clear"></div>
             </div>
@@ -38,12 +38,12 @@
                         <table class="test table-padding">
                             <tbody>
                                 <tr>
-                                    <td>Payment on 2/11/2019 with VISA 1234</td>
-                                    <td colspan="2" class="last"><a>$100.00</a></td>
+                                    <td>Payment on {{ str_replace('-', '/', $invoice['start_date']) }} with {{ $invoice['payment_method'] }}</td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['payment'] }}</a></td>
                                 </tr>
                                 <tr>
-                                    <td>Credit on 2/13/2019</td>
-                                    <td colspan="2" class="last"><a>$50.00</a></td>
+                                    <td>Credit on {{ $invoice['payment_date'] }}</td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['payment'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -52,7 +52,7 @@
                                 </tr>
                                 <tr>
                                     <td></td>
-                                    <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: $150.00</strong></a></td>
+                                    <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: ??</strong></a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -83,7 +83,7 @@
                             <tbody>
                                 <tr>
                                     <td>Coverage Device Deposit</td>
-                                    <td colspan="2" class="last"><a>$200.00</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['total_one_time_charges'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -92,7 +92,7 @@
                                 </tr>
                                 <tr>
                                     <td></td>
-                                    <td colspan="2" class="last total_value"><a><strong>Total One-Time Charges: $200.00</strong></a></td>
+                                    <td colspan="2" class="last total_value"><a><strong>Total One-Time Charges: ${{ $invoice['total_one_time_charges'] }}</strong></a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -108,11 +108,11 @@
                             <tbody>
                                 <tr>
                                     <td>Regulatory</td>
-                                    <td colspan="2" class="last"><a>$0.00</a></td>
+                                    <td colspan="2" class="last"><a>$ {{ $invoice['regulatory_fee'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td>State</td>
-                                    <td colspan="2" class="last"><a>$0.00</a></td>
+                                    <td colspan="2" class="last"><a>$ {{ $invoice['state_tax'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -120,7 +120,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="3" class="right total_value"><a><strong>Total Taxes/Fees: $0.00</strong></a></td>
+                                    <td colspan="3" class="right total_value"><a><strong>Total Taxes/Fees: ${{ $invoice['taxes'] }}</strong></a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -129,14 +129,14 @@
                 <div class="credits">
                     <div class="container">
                         <div class="table-padding">
-                            <h2>Credits</h2>
+                            <h2>Coupons</h2>
                             <div class="sepratorline dark"></div>
                         </div>
                         <table class="test table-padding">
                             <tbody>
                                 <tr>
                                     <td></td>
-                                    <td colspan="2" class="last total_value"><a><strong>Total Credits: $0.00</strong></a></td>
+                                    <td colspan="2" class="last total_value"><a><strong>Total Coupons: ${{ $invoice['credits'] }}</strong></a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3"></td>
@@ -151,7 +151,11 @@
                             <tbody>
                                 <tr>
                                     <td>Total Account Charges</td>
-                                    <td colspan="3" class="right total_value">$50.00</td>
+                                    <td colspan="3" class="right total_value">
+                                        ${{ 
+                                            !isset($invoice['serviceChargesProrated']) ? $invoice['total_charges'] : $invoice['serviceChargesProrated'] + $invoice['taxes'] - $invoice['credits']
+                                        }}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
