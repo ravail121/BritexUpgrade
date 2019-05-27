@@ -77,6 +77,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 // is null
                 // And will there be a guarranty that every state
                 // has tax?
+                
                 if(!$customer->stateTax){
                     \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Monthly Invoice Generation skipped");
                     continue;
@@ -99,7 +100,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 // Add Coupons
                 $couponAccount = $this->customerAccountCoupons($customer, $invoice);
                 $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
-
+                
                 $couponDiscountTotal = $invoice->invoiceItem->whereIn('type', 
                     [
                         InvoiceItem::TYPES['coupon'],
@@ -338,8 +339,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     protected function customerSubscriptionCoupons($invoice, $subscriptions)
     {
         foreach($subscriptions as $subscription){
-            $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
             
+            $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
+
             // Subscription doesnot has any coupons
             if(!$subscriptionCouponRedeemable) continue;
 

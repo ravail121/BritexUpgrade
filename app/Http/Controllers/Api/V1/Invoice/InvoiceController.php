@@ -200,7 +200,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'serviceChargesProrated'    => self::formatNumber($serviceChargesProrated),
                 'regulatory_fee'            => self::formatNumber($regulatoryFee),
                 'state_tax'                 => self::formatNumber($stateTax),
-                'plan_names'                => $this->planNames($order),
+                'plans'                     => $this->plans($order),
                 'addons'                    => $this->addons($order)
             ];
 
@@ -209,12 +209,11 @@ class InvoiceController extends BaseController implements ConstantInterface
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
                 return $pdf->download('invoice.pdf');
-                //return view('templates/onetime-invoice', compact('invoice'));
 
             } else {
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
-                // return view('templates/monthly-invoice', compact('invoice'));
+                
             }
 
         }
@@ -222,17 +221,19 @@ class InvoiceController extends BaseController implements ConstantInterface
         
     }
 
-    protected function planNames($order)
+    protected function plans($order)
     {
         $allPlanIds = $order->invoice->invoiceItem
             ->where('type', InvoiceItem::TYPES['plan_charges'])
             ->pluck('product_id');
-
+        
         foreach ($allPlanIds as $id) {
-            $planNames[] = Plan::find($id)->name;
+            $plan       = Plan::find($id);
+            $plans[]    = ['name' => $plan->name, 'amount' => $plan->amount];
         }
+        
 
-        return $planNames != null ? $planNames : $planNames = ['No plans'];
+        return !empty($plans) ? $plans : $plans = [['name' => 'No plans', 'amount' => 0]];
     }
 
     protected function addons($order)
@@ -243,11 +244,11 @@ class InvoiceController extends BaseController implements ConstantInterface
 
         $addons = [];   
         foreach ($allAddonIds as $id) {
-            $addon = Addon::find($id);
-            $addons[] = ['name' => $addon->name, 'amount' => $addon->amount];
+            $addon      = Addon::find($id);
+            $addons[]   = ['name' => $addon->name, 'amount' => $addon->amount];
         }      
 
-        return $addons;
+        return !empty($addons) ? $addons : $addons = [['name' => 'No addons', 'amount' => 0]];
     }
 
     protected function invoiceData($order)
@@ -267,7 +268,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             'customer_zip_address'  => $order->customer->zip_address,
             'payment'               => $order->invoice->creditToInvoice->first()->amount,
             'payment_method'        => $order->invoice->creditToInvoice->first()->credit->description,
-            'payment_date'          => $order->invoice->creditToInvoice->first()->date,
+            'payment_date'          => $order->invoice->creditToInvoice->first()->credit->date,
             'regulatory_fee'        => $order->invoice->invoiceItem,
             'start_date'            => $order->invoice->start_date,
             'end_date'              => $order->invoice->end_date,
@@ -288,7 +289,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             
             $subscriptionData = [
                 'subscription_id' => $subscription->id,
-                'plan_charges'    => $proratedAmount === null ? self::formatNumber($planCharges) : $proratedAmount,
+                'plan_charges'    => !$proratedAmount ? self::formatNumber($planCharges) : $proratedAmount,
                 'onetime_charges' => self::formatNumber($onetimeCharges),
                 'phone'           => $subscription->phone_number,
                 'usage_charges'   => $usageCharges,

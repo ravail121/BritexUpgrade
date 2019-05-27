@@ -260,8 +260,7 @@
             </div>
         </div>
     </div>
-    @include('templates.test-statement')
-    @include('templates.test-statement-2')
+    
 </body>
 
 </html>

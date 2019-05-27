@@ -182,12 +182,14 @@
                             <tbody>
                                 <tr>
                                     <td>Account Charges</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    <td>--</td>
+                                    <td>$ {{ $invoice['plan_charges'] }}</td>
+                                    <td>$ {{ $invoice['total_one_time_charges'] }}</td>
+                                    <td>$ {{ $invoice['total_usage_charges'] }}</td>
+                                    <td>$ {{ $invoice['taxes'] }}</td>
+                                    <td>-$ {{ $invoice['credits'] }}</td>
+                                    <td>$ {{ 
+                                            $invoice['service_charges'] + $invoice['taxes'] - $invoice['credits']
+                                        }}</td>
                                 </tr>
                                 @if (count($invoice['subscriptions']))
                                     @foreach ($invoice['subscriptions'] as $subscription)

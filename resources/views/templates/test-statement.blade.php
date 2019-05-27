@@ -34,16 +34,15 @@
             <div class="container">
                 <div class="one_time">
                     <div class="container" style="margin-top: 25px;">
-                        
                         <table class="test table-padding">
                             <tbody>
                                 <tr>
                                     <td>Payment on {{ str_replace('-', '/', $invoice['start_date']) }} with {{ $invoice['payment_method'] }}</td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['payment'] }}</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['service_charges'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td>Credit on {{ $invoice['payment_date'] }}</td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['payment'] }}</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['credits'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -52,7 +51,7 @@
                                 </tr>
                                 <tr>
                                     <td></td>
-                                    <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: ??</strong></a></td>
+                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: {{ number_format($invoice['service_charges'] + $invoice['credits'], 2) }}</strong></a></td>
                                 </tr>
                             </tbody>
                         </table>

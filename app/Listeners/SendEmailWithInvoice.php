@@ -52,10 +52,8 @@ class SendEmailWithInvoice
 
         $invoice = $this->setData($order);
 
-        \Log::info($invoice);
-
-         $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
-
+        $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+        
         $configurationSet = $this->setMailConfiguration($order);
 
         if ($configurationSet) {

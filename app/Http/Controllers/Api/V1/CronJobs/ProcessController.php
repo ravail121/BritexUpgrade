@@ -65,12 +65,19 @@ class ProcessController extends BaseController
 
     protected function processAddonRemovals()
     {
+        /*
         SubscriptionAddon::todayEqualsRemovalDate()->update([
             'status' => 'for-removal',
     		'removal_date' => null,
             // ToDo: may be we should set `subscription_addon.removal_date = null`?
             // Asked client about this.
-    	]);
+        ]);
+        */
+        //Above logic is not working
+        SubscriptionAddon::where('removal_date', Carbon::today())->update([
+            'status' => 'for-removal',
+            'removal_date' => null
+        ]);
 
     	return true;
     }

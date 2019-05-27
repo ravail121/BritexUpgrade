@@ -29,7 +29,11 @@
                             <tr>
                                 <td width="75%">Subscriber Detail</td>
                                 <td width="25%" colspan="3" class="right">
-                                    {{ $invoice['subscriptions'][0]['phone'] }}
+                                    @if (isset($invoice['subscriptions'][0]['phone']))
+                                        {{ $invoice['subscriptions'][0]['phone'] }}
+                                    @else
+                                        <p></p>
+                                    @endif   
                                 </td>
                             </tr>
                         </table>
@@ -61,35 +65,40 @@
                                 <td>Plan:</td>
                                 <td>
                                     <a>
-                                        
-                                        @foreach ($invoice['plan_names'] as $name)
-                                            {{ $name }} -
-                                        @endforeach
-                                    </a>
-                                </td>
-                                <td class="right">${{ $invoice['plan_charges'] }}</td>
-                            </tr>
-                            <tr>
-                                <td>Features:</td>
-                                <td>
-                                    <a>
-                                        @if (count($invoice['addons']) > 0)
-                                            @foreach ($invoice['addons'] as $addon)
-                                                {{ $addon['name'] }} -
+                                        @if (count($invoice['plans']) > 0)                                       
+                                            @foreach ($invoice['plans'] as $key => $val)
+                                                <div style='margin-left: 10px;'>{{ $invoice['plans'][$key]['name'] }}</div>
                                             @endforeach
-                                        @else
-                                            No addon
                                         @endif
                                     </a>
                                 </td>
                                 <td class="right">
                                     <a>
-                                        @if (count($invoice['addons']) > 0)
-                                            @foreach ($invoice['addons'] as $addon)
-                                                ${{ $addon['amount'] }}
+                                        @if (count($invoice['plans']) > 0)                                       
+                                            @foreach ($invoice['plans'] as $key => $val)
+                                                <div style='margin-left: 10px;'>${{ number_format($invoice['plans'][$key]['amount'], 2) }}</div>
                                             @endforeach
-                                        @else
-                                            0.00
+                                        @endif
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Features:</td>
+                                <td>
+                                    <a>                             
+                                        @if (count($invoice['addons']) > 0)                                       
+                                            @foreach ($invoice['addons'] as $key => $val)
+                                                <div style='margin-left: 10px;'>{{ $invoice['addons'][$key]['name'] }}</div>
+                                            @endforeach
+                                        @endif
+                                    </a>
+                                </td>
+                                <td class="right">
+                                    <a>
+                                        @if (count($invoice['addons']) > 0)                                    
+                                            @foreach ($invoice['addons'] as $key => $val)
+                                                <div style='margin-left: 10px;'>${{ number_format($invoice['addons'][$key]['amount'], 2) }}</div>
+                                            @endforeach
                                         @endif
                                     </a>
                                 </td>
@@ -218,7 +227,13 @@
                     <div class="container">
                         <table>
                             <tr>
-                                <td>Total Line Charges {{ $invoice['subscriptions'][0]['phone'] }}</td>
+                                <td>Total Line Charges 
+                                    @if (isset($invoice['subscriptions'][0]['phone']))
+                                        {{ $invoice['subscriptions'][0]['phone'] }}
+                                    @else
+                                        <p></p>
+                                    @endif 
+                                </td>
                                 <td colspan="3" class="right">                                         ${{ 
                                     !isset($invoice['serviceChargesProrated']) ? $invoice['total_charges'] : $invoice['serviceChargesProrated'] + $invoice['taxes'] - $invoice['credits']
                                 }}
