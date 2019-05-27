@@ -194,7 +194,12 @@
                                             <td>$ {{ $subscription['plan_charges'] }}</td>
                                             <td>$ {{ $subscription['onetime_charges'] }}</td>
                                             <td>$ {{ $subscription['usage_charges'] }}</td>
-                                            <td>$ {{ $subscription['tax'] + $subscription['regulatory_fee']}}</td>
+                                            <td>$ 
+                                                {{ 
+                                                    $subscription['tax'] + 
+                                                    $subscription['regulatory_fee']
+                                                }}
+                                            </td>
                                             <td>-$ {{ $subscription['coupon'] + $subscription['manual'] }}</td>
                                             <td>$ 
                                                 {{ 
@@ -255,6 +260,8 @@
             </div>
         </div>
     </div>
+    @include('templates.test-statement')
+    @include('templates.test-statement-2')
 </body>
 
 </html>

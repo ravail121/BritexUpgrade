@@ -45,7 +45,7 @@
                             </table>
                         </div>
                         <!-- Customer Info -->
-                        <div class="linksfooter">
+                        <div style='margin-left: 380px' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
                                 <p><span>{{ $invoice['customer_name'] }}</span></p>
@@ -120,7 +120,7 @@
                                                     <td class="detail">$ {{ $invoice['taxes'] }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td>Credits</td>
+                                                    <td>Coupons</td>
                                                     <td class="detail">-$ {{ $invoice['credits'] }}</td>
                                                 </tr>
                                                 <tr>
@@ -175,7 +175,7 @@
                                     <th>One Time Charges</th>
                                     <th>Usage Charges</th>
                                     <th>Taxes/Fees</th>
-                                    <th>Credits</th>
+                                    <th>Coupons</th>
                                     <th>Total Current Charges</th>
                                 </tr>
                             </thead>
@@ -254,6 +254,8 @@
             </div>
         </div>
     </div>
+    @include('templates.test-statement')
+    @include('templates.test-statement-2')
 </body>
-
+        
 </html>

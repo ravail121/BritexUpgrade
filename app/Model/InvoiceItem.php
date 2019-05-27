@@ -105,6 +105,16 @@ class InvoiceItem extends Model implements ConstantInterface
         return $query->where('taxable', self::TAX_TRUE);
     }
 
+    public function scopeRegulatory($query)
+    {
+        return $query->where('type', self::INVOICE_ITEM_TYPES['regulatory_fee']);
+    }
+
+    public function scopeStateTax($query)
+    {
+        return $query->where('type', self::INVOICE_ITEM_TYPES['taxes']);
+    }
+
     public function totalAmount()
     {
         return $this->amount;

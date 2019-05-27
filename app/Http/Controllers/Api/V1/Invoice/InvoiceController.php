@@ -177,6 +177,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order, $proratedAmount) : $this->setMonthlyInvoiceData($order);
             
+            $regulatoryFee          = $order->invoice->cal_regulatory;
+            $stateTax               = $order->invoice->cal_stateTax;
             $taxes                  = $order->invoice->cal_taxes;
             $credits                = $order->invoice->cal_credits;
             $totalCharges           = $order->invoice->cal_total_charges;
@@ -188,30 +190,64 @@ class InvoiceController extends BaseController implements ConstantInterface
             $serviceCharges         = $proratedAmount == null ? $order->invoice->cal_service_charges : $serviceChargesProrated;
             
             $invoice = [
-                'service_charges'                   => self::formatNumber($serviceCharges),
-                'taxes'                             => self::formatNumber($taxes),
-                'credits'                           => self::formatNumber($credits),
-                'total_charges'                     => self::formatNumber($totalCharges),
-                'total_one_time_charges'            => self::formatNumber($oneTimeCharges),
-                'total_usage_charges'               => self::formatNumber($usageCharges),
-                'plan_charges'                      => self::formatNumber($planCharges),
-                'serviceChargesProrated'            => self::formatNumber($serviceChargesProrated)
+                'service_charges'           => self::formatNumber($serviceCharges),
+                'taxes'                     => self::formatNumber($taxes),
+                'credits'                   => self::formatNumber($credits),
+                'total_charges'             => self::formatNumber($totalCharges),
+                'total_one_time_charges'    => self::formatNumber($oneTimeCharges),
+                'total_usage_charges'       => self::formatNumber($usageCharges),
+                'plan_charges'              => self::formatNumber($planCharges),
+                'serviceChargesProrated'    => self::formatNumber($serviceChargesProrated),
+                'regulatory_fee'            => self::formatNumber($regulatoryFee),
+                'state_tax'                 => self::formatNumber($stateTax),
+                'plan_names'                => $this->planNames($order),
+                'addons'                    => $this->addons($order)
             ];
 
             $invoice = array_merge($data, $invoice);
 
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
-                return $pdf->download('invoice.pdf');   
+                return $pdf->download('invoice.pdf');
+                //return view('templates/onetime-invoice', compact('invoice'));
 
             } else {
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
+                // return view('templates/monthly-invoice', compact('invoice'));
             }
 
         }
         return 'Sorry, something went wrong please try again later......';
         
+    }
+
+    protected function planNames($order)
+    {
+        $allPlanIds = $order->invoice->invoiceItem
+            ->where('type', InvoiceItem::TYPES['plan_charges'])
+            ->pluck('product_id');
+
+        foreach ($allPlanIds as $id) {
+            $planNames[] = Plan::find($id)->name;
+        }
+
+        return $planNames != null ? $planNames : $planNames = ['No plans'];
+    }
+
+    protected function addons($order)
+    {
+        $allAddonIds = $order->invoice->invoiceItem
+            ->where('type', InvoiceItem::TYPES['feature_charges'])
+            ->pluck('product_id');
+
+        $addons = [];   
+        foreach ($allAddonIds as $id) {
+            $addon = Addon::find($id);
+            $addons[] = ['name' => $addon->name, 'amount' => $addon->amount];
+        }      
+
+        return $addons;
     }
 
     protected function invoiceData($order)
@@ -229,7 +265,12 @@ class InvoiceController extends BaseController implements ConstantInterface
             'customer_name'         => $order->customer->full_name,
             'customer_address'      => $order->customer->shipping_address1,
             'customer_zip_address'  => $order->customer->zip_address,
-            //'prorated_amount'       => $order->orderGroup->plan_prorated_amt
+            'payment'               => $order->invoice->creditToInvoice->first()->amount,
+            'payment_method'        => $order->invoice->creditToInvoice->first()->credit->description,
+            'payment_date'          => $order->invoice->creditToInvoice->first()->date,
+            'regulatory_fee'        => $order->invoice->invoiceItem,
+            'start_date'            => $order->invoice->start_date,
+            'end_date'              => $order->invoice->end_date,
         ];
         return $arr;
     }
@@ -473,9 +514,11 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     public function addShippingCharges($subscription, $invoice, $isTaxable, $description)
     {
-        //Device shipping charges
+        
         $deviceShippingCharges = [];
-        $simShippingCharges = [];   
+        $simShippingCharges = [];
+        
+        //Device shipping charges  
         $devicesIds = $invoice->invoiceItem->where('type', InvoiceItem::TYPES['one_time_charges'])->whereIn('product_type', ['device'])->pluck('product_id');
 
         if (!empty($devicesIds)) {

@@ -59,6 +59,18 @@ class Invoice extends Model implements ConstantInterface
         return $this->calAmount($invoiceItems);
     }
 
+    public function getCalRegulatoryAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->regulatory()->get();
+        return $this->calAmount($invoiceItems);
+    }
+
+     public function getCalStateTaxAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->stateTax()->get();
+        return $this->calAmount($invoiceItems);
+    }
+
 
     public function getCalCreditsAttribute()
     {
@@ -232,6 +244,11 @@ class Invoice extends Model implements ConstantInterface
     public static function currentDate()
     {
         return Carbon::today();
+    }
+
+    public function creditToInvoice()
+    {
+        return $this->hasMany('App\Model\CreditToInvoice', 'invoice_id', 'id');
     }
 
 
