@@ -53,6 +53,7 @@ class CardController extends BaseController implements ConstantInterface
         foreach ($customerCreditCard as $card) {
             $card->expiration = $card->addPrefixSlash();
             $card->last4      = $card->last_four;
+            $card->info       = $card->card_info;
         }
 
 

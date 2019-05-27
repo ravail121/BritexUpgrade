@@ -46,4 +46,10 @@ class CustomerCreditCard extends Model
         return substr($this->last4, -4);
 
     }
+
+    public function getCardInfoAttribute()
+    {
+        return $this->card_type ." ". $this->getLastFourAttribute();
+
+    }
 }

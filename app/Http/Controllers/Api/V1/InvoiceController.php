@@ -321,11 +321,11 @@ class InvoiceController extends BaseController
 					'billing_end'   => $customer->billing_end_date_formatted,
 			];
 			$total = ($charges - $payment) + $pastDue;
-			if($total > 0){
+
+			if($total < 0){
 				$total = 0;
-			}else{
-				$total *= -1;
 			}
+			
 			$charges = $this->getAmountFormated($charges);
 			$payment = $this->getAmountFormated($payment);
 			$pastDue = $this->getAmountFormated($pastDue);
@@ -363,6 +363,7 @@ class InvoiceController extends BaseController
             $creditAmount = $customer->creditsNotAppliedCompletely->sum('pending_credits');
 			$id = Invoice::whereCustomerId($customer->id)->pluck('id');
 			$creditToInvoiceAmount = CreditToInvoice::whereIn('invoice_id', $id)->whereBetween('created_at', [date($customer->billing_start), date($customer->billing_end)])->sum('amount');
+
 			return $creditToInvoiceAmount + $creditAmount;
 		}
 
