@@ -259,8 +259,7 @@ trait UsaEpayTransaction
             ]);
 
             $customer = Customer::find($order->customer_id);
-
-            if ($customer->billing_address1 == null) {
+            if ($customer->billing_address1 == 'N/A') {
                 $customer->update([
                     'billing_address1' => $request->billing_address1, 
                     'billing_address2' => $request->billing_address2, 
@@ -270,7 +269,6 @@ trait UsaEpayTransaction
 
                 ]);
             }
-
         }
 
         return ['card' => $customerCreditCard];
