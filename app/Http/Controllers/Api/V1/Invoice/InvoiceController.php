@@ -15,6 +15,7 @@ use App\Model\Coupon;
 use App\Model\Company;
 use App\Model\Invoice;
 use App\Model\Customer;
+use App\Model\Credit;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use App\Model\PendingCharge;
@@ -32,7 +33,7 @@ use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 use App\Classes\GenerateMonthlyInvoiceClass;
-
+use App\Model\CreditToInvoice;
 
 class InvoiceController extends BaseController implements ConstantInterface
 {
@@ -153,7 +154,9 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             }
         }
-
+        if ($request->customer_id) {
+            $this->availableCreditsAmount($request->customer_id);
+        }
         if($order) {
             event(new InvoiceGenerated($order));
         }
@@ -189,6 +192,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $serviceChargesProrated = $planCharges + $oneTimeCharges + $usageCharges;
             $serviceCharges         = $proratedAmount == null ? $order->invoice->cal_service_charges : $serviceChargesProrated;
             
+
             $invoice = [
                 'service_charges'           => self::formatNumber($serviceCharges),
                 'taxes'                     => self::formatNumber($taxes),
@@ -209,6 +213,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
                 return $pdf->download('invoice.pdf');
+                
 
             } else {
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
@@ -223,15 +228,12 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     protected function plans($order)
     {
-        $allPlanIds = $order->invoice->invoiceItem
-            ->where('type', InvoiceItem::TYPES['plan_charges'])
-            ->pluck('product_id');
+        $allPlans = $order->invoice->invoiceItem
+            ->where('type', InvoiceItem::TYPES['plan_charges']);
         
-        foreach ($allPlanIds as $id) {
-            $plan       = Plan::find($id);
-            $plans[]    = ['name' => $plan->name, 'amount' => $plan->amount];
+        foreach ($allPlans as $plan) {
+            $plans[]    = ['name' => Plan::find($plan->product_id)->name, 'amount' => $plan->amount];
         }
-        
 
         return !empty($plans) ? $plans : $plans = [['name' => 'No plans', 'amount' => 0]];
     }
@@ -239,13 +241,10 @@ class InvoiceController extends BaseController implements ConstantInterface
     protected function addons($order)
     {
         $allAddonIds = $order->invoice->invoiceItem
-            ->where('type', InvoiceItem::TYPES['feature_charges'])
-            ->pluck('product_id');
-
-        $addons = [];   
-        foreach ($allAddonIds as $id) {
-            $addon      = Addon::find($id);
-            $addons[]   = ['name' => $addon->name, 'amount' => $addon->amount];
+            ->where('type', InvoiceItem::TYPES['feature_charges']);
+  
+        foreach ($allAddonIds as $addon) {
+            $addons[]   = ['name' => Addon::find($addon->id)->name, 'amount' => $addon->amount];
         }      
 
         return !empty($addons) ? $addons : $addons = [['name' => 'No addons', 'amount' => 0]];
@@ -266,7 +265,8 @@ class InvoiceController extends BaseController implements ConstantInterface
             'customer_name'         => $order->customer->full_name,
             'customer_address'      => $order->customer->shipping_address1,
             'customer_zip_address'  => $order->customer->zip_address,
-            'payment'               => $order->invoice->creditToInvoice->first()->amount,
+            'payment'               => self::formatNumber($order->invoice->creditToInvoice->first()->amount),
+            'credit_to_invoice'     => $order->invoice->creditToInvoice->first()->amount,
             'payment_method'        => $order->invoice->creditToInvoice->first()->credit->description,
             'payment_date'          => $order->invoice->creditToInvoice->first()->credit->date,
             'regulatory_fee'        => $order->invoice->invoiceItem,
@@ -499,6 +499,11 @@ class InvoiceController extends BaseController implements ConstantInterface
                 self::SHIPPING
             );
 
+
+            //$customer = app('App\Http\Controllers\Api\V1\InvoiceController')->customer();
+           // \Log::info($customer);
+            
+
             //add taxes to all taxable items
             $taxes = $this->addTaxes(
                 $subscription, 
@@ -512,6 +517,86 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $invoiceItem;
         
     }
+
+    public function availableCreditsAmount($id)
+    {
+        $customer = Customer::find($id);
+
+        $credits  = $customer->creditsNotAppliedCompletely;
+        
+        foreach ($credits as $credit) {
+
+            $availableCredits[] = ['id' => $credit->id, 'amount' => $credit->amount];
+            
+        }
+        
+        if (isset($availableCredits)) {
+
+            foreach ($availableCredits as $key => $credit) {
+
+                $notFullUsedCredit = CreditToInvoice::where('credit_id', $credit['id'])->sum('amount');
+
+                if ($notFullUsedCredit && $notFullUsedCredit < $credit['amount']) {
+
+                    $totalUsableCredits = $credit['amount'] - $notFullUsedCredit;
+                    
+                    $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
+                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
+                    
+
+                } else if (!$notFullUsedCredit) {
+
+                    $totalUsableCredits = $credit['amount'];
+                    $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
+                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
+
+                } 
+                
+
+                
+            }
+        }
+        
+    }
+
+    public function applyCreditsToInvoice($creditId, $amount, $openInvoices)
+    {
+        
+        foreach ($openInvoices as $invoice) {
+            
+            $totalDue       = $invoice->total_due;
+            $updatedAmount  = $totalDue >= $amount ? $totalDue - $amount : 0;
+            $amount         = $totalDue >= $amount ? $amount : $totalDue;
+            if ($totalDue > $amount) {
+
+                Credit::where('id', $creditId)
+                ->update(
+                    [
+                        'applied_to_invoice'  => 1
+                    ]
+                );
+            }
+            if ($totalDue != 0) {
+                $invoice->update(
+                    [
+                        'total_due' => $updatedAmount
+                    ]
+                );
+
+                $invoice->creditToInvoice()->create(
+                    [
+                        'credit_id'     => $creditId,
+                        'invoice_id'    => $invoice->id,
+                        'amount'        => $amount,
+                        'description'   => "{$amount} applied to invoice id {$invoice->id}"
+                    ]
+                );
+
+            }
+        }
+    }
+
+  
 
     public function addShippingCharges($subscription, $invoice, $isTaxable, $description)
     {
@@ -695,6 +780,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     protected function generate_customer_invoice($invoice, $customer)
     {
+        $this->availableCreditsAmount($customer->id);
         $debt_amount = 0;
         $taxes = 0;
         $discounts = 0;
@@ -839,8 +925,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 
         //add activation charges
 
-       
-
         $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
         $pdf->save('invoice/invoice.pdf');
 
@@ -881,6 +965,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'prev_balance' => 0
             ]);
             $this->generate_customer_invoice($invoice, $customer);
+            
         }
     }
 

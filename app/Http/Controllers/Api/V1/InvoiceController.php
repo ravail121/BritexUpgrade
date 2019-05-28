@@ -295,6 +295,7 @@ class InvoiceController extends BaseController
 
 				
 				}
+				
 		}
 
 
@@ -310,8 +311,7 @@ class InvoiceController extends BaseController
 			$customer = Customer::hash($request->hash);
 
 			$charges = Invoice::where([['customer_id', $customer->id],['start_date', $customer->billing_start]])->sum('subtotal');
-
-
+			
 			$payment = $this->getPaymentAndCreditAmount($customer);
 
 			$pastDue = Invoice::where([['customer_id', $customer->id],['start_date', '<', $customer->billing_start]])->sum('total_due');
@@ -341,6 +341,7 @@ class InvoiceController extends BaseController
 						'due_date' => $dueDate
 				], $array);
 		}
+
 
 		public function getTotalDueDate($customer)
 		{

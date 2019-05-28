@@ -38,11 +38,11 @@
                             <tbody>
                                 <tr>
                                     <td>Payment on {{ str_replace('-', '/', $invoice['start_date']) }} with {{ $invoice['payment_method'] }}</td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['service_charges'] }}</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['payment'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td>Credit on {{ $invoice['payment_date'] }}</td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['credits'] }}</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['credit_to_invoice'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -51,7 +51,7 @@
                                 </tr>
                                 <tr>
                                     <td></td>
-                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: {{ number_format($invoice['service_charges'] + $invoice['credits'], 2) }}</strong></a></td>
+                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: </strong></a></td>
                                 </tr>
                             </tbody>
                         </table>
