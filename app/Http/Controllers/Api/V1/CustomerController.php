@@ -264,7 +264,8 @@ class CustomerController extends BaseController
         else {
             return $this->respondError('Incorrect Current Password');
         }
-    } 
+    }
+    \Log::info($data); 
     Customer::whereHash($data['hash'])->update($data);
    
     return $this->respond(['message' => 'sucessfully Updated']);
