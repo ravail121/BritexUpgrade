@@ -113,7 +113,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         InvoiceItem::TYPES['feature_charges'],
                         InvoiceItem::TYPES['regulatory_fee'],
                         InvoiceItem::TYPES['taxes'],
-                    ])->sum('amount') - $couponDiscountTotal;
+                    ])->sum('amount');
 
                 //Plan charge + addon charge + taxes - discount = monthly charges
                 $subtotal = $monthlyCharges - $couponDiscountTotal;
@@ -378,13 +378,13 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
     protected function insertOrder($invoice)
     {
-        $hash = sha1(time());
+        //$hash = sha1(time());
     
         if ($invoice->type === Invoice::TYPES['monthly']) {
             Order::create([
                 'status'        => 1,
                 'invoice_id'    => $invoice->id,
-                'hash'          => $hash,
+                'hash'          => sha1(time()),
                 'company_id'    => Company::Id['britex'],
                 'customer_id'   => $invoice->customer_id,
             ]);

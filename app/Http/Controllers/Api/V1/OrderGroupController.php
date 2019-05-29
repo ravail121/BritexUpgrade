@@ -13,6 +13,8 @@ use App\Model\DeviceToSim;
 use App\Model\Sim;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
+use App\Model\Tax;
+use App\Model\Invoice;
 
 
 class OrderGroupController extends Controller
@@ -112,6 +114,12 @@ class OrderGroupController extends Controller
             return response()->json($this->output);
         }
         return null;
+    }
+
+    public function taxrate(Request $request)
+    {
+        $rate = Tax::where('state', $request->id)->pluck('rate')->first();
+        return $rate;
     }
 
     protected function filterPlans($orderGroup)

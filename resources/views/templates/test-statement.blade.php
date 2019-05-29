@@ -42,7 +42,7 @@
                                 </tr>
                                 <tr>
                                     <td>Credit on {{ $invoice['payment_date'] }}</td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['credit_to_invoice'] }}</a></td>
+                                    <td colspan="2" class="last"><a>$ 0</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -51,7 +51,7 @@
                                 </tr>
                                 <tr>
                                     <td></td>
-                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: </strong></a></td>
+                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: {{ $invoice['payment'] }}</strong></a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -152,7 +152,7 @@
                                     <td>Total Account Charges</td>
                                     <td colspan="3" class="right total_value">
                                         ${{ 
-                                            !isset($invoice['serviceChargesProrated']) ? $invoice['total_charges'] : $invoice['serviceChargesProrated'] + $invoice['taxes'] - $invoice['credits']
+                                            $invoice['taxes'] + $invoice['total_one_time_charges']
                                         }}
                                     </td>
                                 </tr>
