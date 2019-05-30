@@ -203,7 +203,7 @@
                     <div class="container">
                         <div class="table-padding">
 
-                            <h2>Coupons</h2>
+                            <h2>Credits</h2>
                             <table>
 	                            <tr>
 	                                <td colspan="3">

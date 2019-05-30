@@ -149,10 +149,6 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.order_group.edit',
           'uses' => 'OrderGroupController@edit',
         ]);
-        Route::get('/state-tax', [
-          'as' => 'api.order_group.taxrate'  ,
-          'uses' => 'OrderGroupController@taxrate'  
-        ]);
       });
 
       Route::group(['prefix' => 'devices', 'namespace' => 'Api\V1'], function()

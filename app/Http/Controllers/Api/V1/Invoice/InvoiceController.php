@@ -157,13 +157,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         if ($request->customer_id) {
             $this->availableCreditsAmount($request->customer_id);
         }
-
-        if ($request->hash) {
-            $currentInvoice =  Order::where('hash', $request->hash)->first()->invoice;
-            $this->addTaxesToSubtotal($currentInvoice);
-
-        }
-        
         if($order) {
             event(new InvoiceGenerated($order));
         }
@@ -179,9 +172,8 @@ class InvoiceController extends BaseController implements ConstantInterface
      */
     public function get(Request $request)
     {
-        
         $order = Order::hash($request->order_hash)->first();
-        
+
         if ($order) {
 
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
@@ -200,6 +192,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $serviceChargesProrated = $planCharges + $oneTimeCharges + $usageCharges;
             $serviceCharges         = $proratedAmount == null ? $order->invoice->cal_service_charges : $serviceChargesProrated;
             
+
             $invoice = [
                 'service_charges'           => self::formatNumber($serviceCharges),
                 'taxes'                     => self::formatNumber($taxes),
@@ -221,6 +214,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
                 return $pdf->download('invoice.pdf');
                 
+
             } else {
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
@@ -336,11 +330,11 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $arr;
     }
 
-
     protected function getSubscriptionsData($order, $id, $type)
     {
         return $order->invoice->invoiceItem->where('subscription_id', $id)->where('type' , InvoiceItem::TYPES[$type])->sum('amount');
     }
+
 
 
     /**
@@ -353,6 +347,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     {
         return number_format($amount, 2);
     }
+
 
 
 
@@ -783,23 +778,9 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $dues;
     }
 
-    public function addTaxesToSubtotal($invoice)
-    {
-        $taxAmount = $invoice->invoiceItem()->where('type', InvoiceItem::TYPES['taxes'])->sum('amount');
-        $subTotal  = $invoice->subtotal;
-        $invoice->update(
-            [
-                'subtotal' => $taxAmount + $subTotal
-            ]
-        );
-    }
-
-
     protected function generate_customer_invoice($invoice, $customer)
     {
-        //$this->availableCreditsAmount($customer->id);
-        
-        
+        $this->availableCreditsAmount($customer->id);
         $debt_amount = 0;
         $taxes = 0;
         $discounts = 0;
