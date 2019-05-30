@@ -139,7 +139,9 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Payments/Credits</td>
-                                                    <td class="detail">$ {{ $invoice['total_credits'] }}</td>
+                                                    <td class="detail">$ 
+                                                        {{ isset($invoice['total_credits']) ? $invoice['total_credits'] : 0 }}
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td>Due {{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }}</td>

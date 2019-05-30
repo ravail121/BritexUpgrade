@@ -209,11 +209,10 @@ class InvoiceController extends BaseController implements ConstantInterface
             ];
 
             $invoice = array_merge($data, $invoice);
-
+ 
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
                 return $pdf->download('invoice.pdf');
-                
 
             } else {
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
@@ -262,10 +261,10 @@ class InvoiceController extends BaseController implements ConstantInterface
             $creditToInvoice = 0;
             $paymentMethod = '';
             $paymentDate = '';
-            $oldUsedCredits = 0;
+            //$oldUsedCredits = 0;
         }
-            $oldCreditToInvoice = $order->credits->where('type', 2)->first();
-            $oldUsedCredits = isset($oldCreditToInvoice) ? $oldCreditToInvoice->usedOnInvoices->sum('amount') : 0;
+       // $oldCreditToInvoice = $order->credits->where('type', 2)->first();
+       // $oldUsedCredits = isset($oldCreditToInvoice) ? $oldCreditToInvoice->usedOnInvoices->sum('amount') : 0;
         $arr = [
             'invoice_num'           => $order->invoice->id,
             'subscriptions'         => [],
@@ -279,10 +278,10 @@ class InvoiceController extends BaseController implements ConstantInterface
             'customer_name'         => $order->customer->full_name,
             'customer_address'      => $order->customer->shipping_address1,
             'customer_zip_address'  => $order->customer->zip_address,
-            'payment'               => self::formatNumber($payment),
-            'credit_to_invoice'     => self::formatNumber($creditToInvoice),
-            'old_credits'           => self::formatNumber($oldUsedCredits),
-            'total_credits'         => self::formatNumber($creditToInvoice + $oldUsedCredits),
+            'payment'               => $payment,
+            'credit_to_invoice'     => $creditToInvoice,
+            'old_credits'           => self::formatNumber(0),
+            'total_credits'         => self::formatNumber($creditToInvoice),
             'payment_method'        => $paymentMethod,
             'payment_date'          => $paymentDate,
             'regulatory_fee'        => $order->invoice->invoiceItem,
