@@ -110,6 +110,11 @@ class Order extends Model
         return ($numberOfDaysLeft + 1)/($totalNumberOfDays + 1)*$amount;
     }
 
+    public function credits()
+    {
+        return $this->hasMany('App\Model\Credit', 'order_id', 'id');
+    }
+
     public function getCreatedAtAttribute($value)
     {
         return Carbon::parse($value)->format('M-d-Y h:i A');

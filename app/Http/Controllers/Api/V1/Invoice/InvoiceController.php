@@ -252,6 +252,20 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     protected function invoiceData($order)
     {
+        if ($order->invoice->status == Invoice::INVOICESTATUS['closed']) {
+            $payment = self::formatNumber($order->invoice->creditToInvoice->first()->amount);
+            $creditToInvoice = self::formatNumber($order->invoice->creditToInvoice->first()->amount);
+            $paymentMethod = $order->invoice->creditToInvoice->first()->credit->description;
+            $paymentDate   = $order->invoice->creditToInvoice->first()->credit->date;
+        } else {
+            $payment = 0;
+            $creditToInvoice = 0;
+            $paymentMethod = '';
+            $paymentDate = '';
+            $oldUsedCredits = 0;
+        }
+            $oldCreditToInvoice = $order->credits->where('type', 2)->first();
+            $oldUsedCredits = isset($oldCreditToInvoice) ? $oldCreditToInvoice->usedOnInvoices->sum('amount') : 0;
         $arr = [
             'invoice_num'           => $order->invoice->id,
             'subscriptions'         => [],
@@ -265,10 +279,12 @@ class InvoiceController extends BaseController implements ConstantInterface
             'customer_name'         => $order->customer->full_name,
             'customer_address'      => $order->customer->shipping_address1,
             'customer_zip_address'  => $order->customer->zip_address,
-            'payment'               => self::formatNumber($order->invoice->creditToInvoice->first()->amount),
-            'credit_to_invoice'     => $order->invoice->creditToInvoice->first()->amount,
-            'payment_method'        => $order->invoice->creditToInvoice->first()->credit->description,
-            'payment_date'          => $order->invoice->creditToInvoice->first()->credit->date,
+            'payment'               => self::formatNumber($payment),
+            'credit_to_invoice'     => self::formatNumber($creditToInvoice),
+            'old_credits'           => self::formatNumber($oldUsedCredits),
+            'total_credits'         => self::formatNumber($creditToInvoice + $oldUsedCredits),
+            'payment_method'        => $paymentMethod,
+            'payment_date'          => $paymentDate,
             'regulatory_fee'        => $order->invoice->invoiceItem,
             'start_date'            => $order->invoice->start_date,
             'end_date'              => $order->invoice->end_date,
@@ -312,14 +328,14 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             $subscriptionData = [
                 'subscription_id'  => $id,
-                'plan_charges'     => $this->getSubscriptionsData($order, $id, 'plan_charges'),
-                'addonCharges'     => $this->getSubscriptionsData($order, $id, 'feature_charges'),
-                'regulatory_fee'   => $this->getSubscriptionsData($order, $id, 'regulatory_fee'),
-                'tax'              => $this->getSubscriptionsData($order, $id, 'taxes'),
-                'onetime_charges'  => $this->getSubscriptionsData($order, $id, 'one_time_charges'),
-                'usage_charges'    => $this->getSubscriptionsData($order, $id, 'usage_charges'),
-                'coupon'           => $this->getSubscriptionsData($order, $id, 'coupon'),
-                'manual'           => $this->getSubscriptionsData($order, $id, 'manual'),
+                'plan_charges'     => self::formatNumber($this->getSubscriptionsData($order, $id, 'plan_charges')),
+                'addonCharges'     => self::formatNumber($this->getSubscriptionsData($order, $id, 'feature_charges')),
+                'regulatory_fee'   => self::formatNumber($this->getSubscriptionsData($order, $id, 'regulatory_fee')),
+                'tax'              => self::formatNumber($this->getSubscriptionsData($order, $id, 'taxes')),
+                'onetime_charges'  => self::formatNumber($this->getSubscriptionsData($order, $id, 'one_time_charges')),
+                'usage_charges'    => self::formatNumber($this->getSubscriptionsData($order, $id, 'usage_charges')),
+                'coupon'           => self::formatNumber($this->getSubscriptionsData($order, $id, 'coupon')),
+                'manual'           => self::formatNumber($this->getSubscriptionsData($order, $id, 'manual')),
                 'phone'            => $phone
             ];
 

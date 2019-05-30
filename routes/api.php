@@ -436,11 +436,6 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'CustomerController@customerDetails',
         ]);
 
-        Route::get('state-rate', [
-          'as'   => 'api.customer.stateRate',
-          'uses' => 'CustomerController@stateRate'
-        ]);
-
         Route::post('update-customer',[
           'as'   => 'api.customer.update',
           'uses' => 'CustomerController@update',

@@ -113,7 +113,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         InvoiceItem::TYPES['feature_charges'],
                         InvoiceItem::TYPES['regulatory_fee'],
                         InvoiceItem::TYPES['taxes'],
-                    ])->sum('amount') - $couponDiscountTotal;
+                    ])->sum('amount');
 
                 //Plan charge + addon charge + taxes - discount = monthly charges
                 $subtotal = $monthlyCharges - $couponDiscountTotal;

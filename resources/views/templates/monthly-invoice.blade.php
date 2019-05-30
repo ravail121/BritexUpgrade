@@ -137,7 +137,7 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Payments/Credits</td>
-                                                    <td class="detail">$ {{ $invoice['plan_charges'] - $invoice['credits'] }}</td>
+                                                    <td class="detail">$ {{ $invoice['total_credits'] }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>Due {{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }}</td>
@@ -178,7 +178,9 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <!--
                                 <tr>
+                                    
                                     <td>Account Charges</td>
                                     <td>$</td>
                                     <td>$</td>
@@ -186,7 +188,9 @@
                                     <td>$</td>
                                     <td>$</td>
                                     <td>$</td>
+                                    
                                 </tr>
+                                -->
                                 @if (count($invoice['subscriptions']))
                                     @foreach ($invoice['subscriptions'] as $subscription)
                                         <tr>

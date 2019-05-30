@@ -139,7 +139,7 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Payments/Credits</td>
-                                                    <td class="detail">$ {{ $invoice['payment'] }}</td>
+                                                    <td class="detail">$ {{ $invoice['total_credits'] }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>Due {{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }}</td>
@@ -183,14 +183,12 @@
                                 <!--
                                 <tr>
                                     <td>Account Charges</td>
-                                    <td>$ {{ $invoice['plan_charges'] }}</td>
-                                    <td>$ {{ $invoice['total_one_time_charges'] }}</td>
-                                    <td>$ {{ $invoice['total_usage_charges'] }}</td>
-                                    <td>$ {{ $invoice['taxes'] }}</td>
-                                    <td>-$ {{ $invoice['credits'] }}</td>
-                                    <td>$ {{ 
-                                            $invoice['service_charges'] + $invoice['taxes'] - $invoice['credits']
-                                        }}</td>
+                                    <td>$</td>
+                                    <td>$ </td>
+                                    <td>$ </td>
+                                    <td>$ </td>
+                                    <td>-$ </td>
+                                    <td>$ </td>
                                 </tr>
                             -->
                                 @if (count($invoice['subscriptions']))
