@@ -6,12 +6,14 @@ use App\Model\Sim;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Model\Device;
+use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use App\Model\Subscription;
 use App\Model\DeviceToPlan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
@@ -130,7 +132,7 @@ class PlanController extends BaseController
 
         $subscription = Subscription::with('plan', 'order.allOrderGroup.orderGroupAddon')->find($data['subscription_id']);
 
-        $activeAddon = $this->activeAddons($subscription->order->allOrderGroup);
+        $activeAddon = $this->activeAddons($subscription->id);
 
         if (!$subscription) {
             return $this->respondError('Invalid Subcription ID');
@@ -167,14 +169,46 @@ class PlanController extends BaseController
         return $addons;
     }
 
-    public function activeAddons($orderGroups)
+    public function activeAddons($subscriptionId)
     {
-        $allActiveAddon = [];
-        foreach ($orderGroups as $key => $orderGroup) {
-            $addonArray = $orderGroup->order_group_addon->toArray();
-            $addon = array_column($addonArray, 'addon_id');
-            $allActiveAddon = array_merge($allActiveAddon, $addon);
+        $allActiveAddon = SubscriptionAddon::whereSubscriptionId($subscriptionId)->pluck('addon_id')->toArray();
+        if($allActiveAddon){
+            return implode(",", $allActiveAddon);
         }
-        return implode(",", $allActiveAddon);
+        return ;
+    }
+
+    public function checkPlan(Request $request)
+    {
+        $data = $request->validate(
+            [
+                'plan'          => 'required',
+                'active_plans'  => 'required',
+                'id'            => 'required',
+                'subscription_id' => 'required',
+            ]
+        );
+        $subcription = Subscription::find($data['subscription_id']);
+        $orderGroup = [
+            'plan_id'                      => $data['plan'],
+            'old_subscription_plan_id'     => $data['active_plans'],
+            'subscription_id'              => $data['subscription_id'],
+        ];
+
+        $newPlan = Plan::find($data['plan']);
+        $activePlan = Plan::find($data['active_plans']);
+        $orderGroup['plan_prorated_amt'] = $subcription->order->planProRate($orderGroup['plan_id']);
+
+        if($newPlan->amount_recurring > $activePlan->amount_recurring){
+            $orderGroup['change_subscription'] = '1';
+
+            $updatedOrderGroup = OrderGroup::where([['order_id', $subcription->order_id],['plan_id', $data['active_plans']]])->update($orderGroup);
+            \Log::info($subcription->order->hash);
+            return $this->respond($subcription->order);
+        }else{
+            $orderGroup = $orderGroup['change_subscription'] = '-1';
+            $updatedOrderGroup = OrderGroup::where([['order_id', $subcription->order_id],['plan_id', $data['active_plans']]])->update($orderGroup);
+                return $this->respond($subcription->order);
+        }
     }
 }

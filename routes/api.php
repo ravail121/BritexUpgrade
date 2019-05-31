@@ -106,6 +106,7 @@ Route::middleware('APIToken')->group(function () {
           //'middleware' => 'auth:api',
           'uses' => 'OrderController@get',
         ]);
+        
         Route::post('/', [
           'as' => 'api.orders.post',
           'uses' => 'OrderController@post',
@@ -485,7 +486,12 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.compatibles.addons',
           'uses' => 'PlanController@compatibleAddons',
         ]);
+
         //NEW API 
+        Route::post('/check-plan',[
+          'as'   => 'api.check.Plan',
+          'uses' => 'PlanController@checkPlan',
+        ]);
         Route::group([],function(){
           Route::post('/update-port',[
             'as'   => 'api.update.port',

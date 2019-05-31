@@ -107,7 +107,7 @@ class Order extends Model
         $numberOfDaysLeft  = $endDate->diffInDays($today);
         $totalNumberOfDays = $endDate->diffInDays($startDate);
 
-        return ($numberOfDaysLeft + 1)/($totalNumberOfDays + 1)*$amount;
+        return (($numberOfDaysLeft + 1)/($totalNumberOfDays + 1))*$amount;
     }
 
     public function credits()

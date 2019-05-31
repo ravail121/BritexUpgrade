@@ -243,7 +243,7 @@ class CustomerController extends BaseController
    */
   public function update(Request $request)
   {
-    $data    = $request->all();
+    $data    = $request->except('_url');
     $validation = $this->validateUpdate($data);
     if ($validation) {
       return $validation;
@@ -260,7 +260,7 @@ class CustomerController extends BaseController
             return $this->respondError('Incorrect Current Password');
         }
     }
-    \Log::info($data); 
+    
     Customer::whereHash($data['hash'])->update($data);
    
     return $this->respond(['message' => 'sucessfully Updated']);

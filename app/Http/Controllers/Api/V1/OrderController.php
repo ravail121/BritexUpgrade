@@ -63,14 +63,14 @@ class OrderController extends BaseController
                 
                 $tmp = array(
                         'id'                => $og->id,
-                        'sim'               => $og->sim,
+                        'sim'               => $request->input('change_plan') ? null : $og->sim,
                         'sim_num'           => $og->sim_num,
                         'sim_type'          => $og->sim_type,
                         'plan'              => $og->plan,
                         'addons'            => [],
                         'porting_number'    => $og->porting_number,
                         'area_code'         => $og->area_code,
-                        'device'            => $og->device_detail,
+                        'device'            => $request->input('change_plan') ? null : $og->device_detail,
                         'operating_system'  => $og->operating_system,
                         'imei_number'       => $og->imei_number,
                         'plan_prorated_amt' => $og->plan_prorated_amt,
