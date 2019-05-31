@@ -92,6 +92,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
                 \Log::info('Regulatory Fees - '.$regulatoryFees);
                 $pendingCharges = $this->pendingCharges($invoice);
+                $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
                 \Log::info('Pending Charges - '.$pendingCharges);
                 $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
                 
@@ -115,8 +116,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         InvoiceItem::TYPES['taxes'],
                     ])->sum('amount');
 
-                //Plan charge + addon charge + taxes - discount = monthly charges
-                $subtotal = $monthlyCharges - $couponDiscountTotal;
+                //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
+                
+                $subtotal = $monthlyCharges + $totalPendingCharges - $couponDiscountTotal;
                 \Log::info('Subtotal - '.$subtotal);
                 $invoiceUpdate = $invoice->update(compact('subtotal'));
                 \Log::info('Invoice Update - '.$invoiceUpdate);
@@ -668,6 +670,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             $pendingChargeWithoutInvoice->update([
                 'invoice_id' => $invoice->id
             ]);
+
         }
 
 

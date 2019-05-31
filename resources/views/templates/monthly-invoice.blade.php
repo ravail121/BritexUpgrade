@@ -48,9 +48,9 @@
                         <div class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
-                                <p><span>First Lastname</span></p>
-                                <p><span>PO Box 555</span></p>
-                                <p><span>Roadville, NY 87879</span></p>
+                                <p><span>{{ $invoice['customer_name'] }}</span></p>
+                                <p><span>{{ $invoice['customer_address'] }}</span></p>
+                                <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
                             </div>
                         </div>
                         

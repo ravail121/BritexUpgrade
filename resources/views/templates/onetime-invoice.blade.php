@@ -45,7 +45,7 @@
                             </table>
                         </div>
                         <!-- Customer Info -->
-                        <div style='margin-left: 380px' class="linksfooter">
+                        <div class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
                                 <p><span>{{ $invoice['customer_name'] }}</span></p>
@@ -119,6 +119,7 @@
                                                     <td>Fees/Taxes</td>
                                                     <td class="detail">$ {{ $invoice['taxes'] }}</td>
                                                 </tr>
+                                                
                                                 <tr>
                                                     <td>Coupons</td>
                                                     <td class="detail">-$ {{ $invoice['credits'] }}</td>
@@ -127,7 +128,7 @@
                                                     <td>Total Charges This Bill</td>
                                                     <td class="detail">$ 
                                                         {{ 
-                                                            !isset($invoice['serviceChargesProrated']) ? $invoice['total_charges'] : $invoice['serviceChargesProrated'] + $invoice['taxes'] - $invoice['credits']
+                                                           $invoice['subtotal']
                                                         }}
                                                     </td>
                                                 </tr>
@@ -140,7 +141,7 @@
                                                 <tr>
                                                     <td>Payments/Credits</td>
                                                     <td class="detail">$ 
-                                                        {{ isset($invoice['total_credits']) ? $invoice['total_credits'] : 0 }}
+                                                        {{ $invoice['total_credits'] }}
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -203,10 +204,7 @@
                                             <td>$ {{ $subscription['tax'] }}</td>
                                             <td>-$ {{ $invoice['credits'] }}</td>
                                             <td>$ {{ 
-                                                    $subscription['plan_charges'] +
-                                                    $subscription['onetime_charges'] +
-                                                    $invoice['taxes'] -
-                                                    $invoice['credits']
+                                                    $subscription['total']
                                                 }}
                                             </td>
 
@@ -230,7 +228,7 @@
                                 <td>$ {{ $invoice['taxes'] }}</td>
                                 <td>-$ {{ $invoice['credits'] }}</td>
                                 <td>$ {{ 
-                                    $invoice['service_charges'] + $invoice['taxes'] - $invoice['credits']
+                                        $invoice['total_charges']
                                     }}
                                 </td>
                             </tr>

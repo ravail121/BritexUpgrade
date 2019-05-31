@@ -19,6 +19,11 @@ class InvoiceItem extends Model implements ConstantInterface
         'payment'          => 9,
     ];
 
+    const PRODUCT_TYPE = [
+        'device'  => 'device',
+        'sim'     => 'sim'
+    ];
+
     protected $table = 'invoice_item';
 
     protected $fillable = [ 'invoice_id', 'subscription_id', 'product_type', 'product_id', 'type', 'start_date', 'description', 'amount', 'taxable'];
@@ -98,7 +103,7 @@ class InvoiceItem extends Model implements ConstantInterface
 
     public function scopeOnetimeCharges($query)
     {
-        return $query->where('type', self::INVOICE_ITEM_TYPES['one_time_charges']);
+        return $query->where('type', self::INVOICE_ITEM_TYPES['one_time_charges'])->where('description', '!=', 'Shipping Fee');
                      
     }
 

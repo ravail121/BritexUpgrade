@@ -234,10 +234,9 @@
                                         <p></p>
                                     @endif 
                                 </td>
-                                <td colspan="3" class="right">                                         ${{ 
-                                    !isset($invoice['serviceChargesProrated']) ? $invoice['total_charges'] : $invoice['serviceChargesProrated'] + $invoice['taxes'] - $invoice['credits']
-                                }}
-                            </td>
+                                <td colspan="3" class="right">
+                                    ${{ $invoice['subtotal'] }}
+                                </td>
                             </tr>
                         </table>
                     </div>

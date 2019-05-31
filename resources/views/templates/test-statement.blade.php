@@ -168,9 +168,7 @@
                                     <td>Total Account Charges</td>
                                     <td colspan="3" class="right total_value">
                                         ${{ 
-                                            $invoice['total_one_time_charges'] +
-                                            $invoice['taxes'] -
-                                            $invoice['credits']
+                                            $invoice['total_account_charges']
                                         }}
                                     </td>
                                 </tr>
