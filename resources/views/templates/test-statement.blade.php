@@ -130,6 +130,10 @@
                                     <td colspan="2" class="last"><a>$ {{ $invoice['state_tax'] }}</a></td>
                                 </tr>
                                 <tr>
+                                    <td>Shipping</td>
+                                    <td colspan="2" class="last"><a>$ {{ $invoice['shipping_fee'] }}</a></td>
+                                </tr>
+                                <tr>
                                     <td colspan="3">
                                         <div class="sepratorline dark"></div>
                                     </td>
@@ -168,7 +172,7 @@
                                     <td>Total Account Charges</td>
                                     <td colspan="3" class="right total_value">
                                         ${{ 
-                                            $invoice['total_account_charges']
+                                            $invoice['total_charges']
                                         }}
                                     </td>
                                 </tr>

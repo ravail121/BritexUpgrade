@@ -85,6 +85,12 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
    'uses'=> 'SampleInvoiceGenerationController@getStatement',
 
   ]);
+
+  Route::get('/invoice/tax-items', [
+    'as'=>'api.invoice.getTax',
+    'uses'=> 'InvoiceController@getTax',
+ 
+   ]);
 });
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
@@ -149,6 +155,10 @@ Route::middleware('APIToken')->group(function () {
         Route::post('/edit', [
           'as' => 'api.order_group.edit',
           'uses' => 'OrderGroupController@edit',
+        ]);
+        Route::get('/state-tax', [
+          'as' => 'api.order_group.taxrate'  ,
+          'uses' => 'OrderGroupController@taxrate'  
         ]);
       });
 

@@ -43,25 +43,30 @@ trait InvoiceTrait
 
     public function addTaxes($subscription, $invoice, $isTaxable)
     {
-        $amount = 0;
+        
         $taxPercentage = $invoice->customer->stateTax->rate / 100;
-        //$plan   = $subscription->plan;
-        //$planAmount = Plan::find($subscription->plan->id);
 
-        foreach ($invoice->InvoiceItem as $item) {
-            if ($item->taxable == 1) {
-                $taxes[] = $item->amount;
-            }            
+        if (!empty($subscription)) {
+            $subscriptionId = $subscription->id;
+            $taxes = $subscription->invoiceItemDetail->where('taxable', true)->sum('amount');
+        } else {
+            $subscriptionId = 0;
+            foreach ($invoice->InvoiceItem->where('subscription_id', null) as $item) {
+                if ($item->taxable == 1) {
+                    $taxes[] = $item->amount;
+                }            
+            }
+            $taxes = array_sum($taxes);
         }
-
+        
         $taxes = [
             'invoice_id'   => $invoice->id,
-            'product_type' => '',
+            'product_type' => $subscriptionId,
             'product_id'   => null,
             'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
             'start_date'   => $invoice->start_date,
             'description'  => "(Taxes)",
-            'amount'       => $taxPercentage * array_sum($taxes),
+            'amount'       => $taxPercentage * $taxes,
             'taxable'      => $isTaxable,            
         ];
 

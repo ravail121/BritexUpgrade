@@ -16,7 +16,7 @@ class ProcessController extends BaseController
     public function processSubscriptions()
     {
     	$this->processSuspensions();
-    	$this->processDowngrades();
+        $this->processDowngrades();
         $this->processAddonRemovals();
 
     	return $this->respond(['message' => 'Processed Successfully']);
@@ -48,7 +48,7 @@ class ProcessController extends BaseController
     protected function processDowngrades()
     {
     	$subscriptions = Subscription::todayEqualsDowngradeDate()->get();
-
+        
     	foreach ($subscriptions as $subscription) {
     		$subscription->update([
 	    		'upgrade_downgrade_status' => 'for-downgrade',

@@ -119,13 +119,22 @@
                                                     <td>Fees/Taxes</td>
                                                     <td class="detail">$ {{ $invoice['taxes'] }}</td>
                                                 </tr>
+
+                                                <tr>
+                                                    <td>Shipping fee</td>
+                                                    <td class="detail">$ {{ $invoice['shipping_fee'] }}</td>
+                                                </tr>
                                                 
                                                 <tr>
-                                                    <td>Coupons</td>
+                                                    <td>Coupons 
+                                                        <div class="seprator"></div>
+                                                    </td>
                                                     <td class="detail">-$ {{ $invoice['credits'] }}</td>
                                                 </tr>
+                                                
                                                 <tr>
                                                     <td>Total Charges This Bill</td>
+                                                    
                                                     <td class="detail">$ 
                                                         {{ 
                                                            $invoice['subtotal']
@@ -202,12 +211,11 @@
                                             <td>$ {{ $subscription['onetime_charges'] }}</td>
                                             <td>$ {{ $subscription['usage_charges'] }}</td>
                                             <td>$ {{ $subscription['tax'] }}</td>
-                                            <td>-$ {{ $invoice['credits'] }}</td>
+                                            <td>-$ --</td>
                                             <td>$ {{ 
                                                     $subscription['total']
                                                 }}
                                             </td>
-
                                         </tr>
                                     @endforeach
                                 @endif
@@ -219,7 +227,21 @@
                                     </div>
                                 </td>
                             </tr>
-                            
+    
+                            <tr class="tfootQ">
+                                    
+                                <td>Standalone</td>
+                                <td>$ 0.00</td>
+                                <td>$ {{ $invoice['standalone_data']['standalone_onetime_charges'] }}</td>
+                                <td>$ 0.00</td>
+                                <td>$ {{ $invoice['standalone_data']['taxes'] }}</td>
+                                <td>-$ 0.00</td>
+                                <td>$ 
+                                    {{ $invoice['standalone_data']['total'] }}
+
+                                </td>
+                            </tr>
+
                             <tr class="tfootQ">
                                 <td>Total</td>
                                 <td>$ {{ $invoice['plan_charges'] }}</td>
@@ -228,7 +250,7 @@
                                 <td>$ {{ $invoice['taxes'] }}</td>
                                 <td>-$ {{ $invoice['credits'] }}</td>
                                 <td>$ {{ 
-                                        $invoice['total_charges']
+                                        $invoice['subtotal']
                                     }}
                                 </td>
                             </tr>

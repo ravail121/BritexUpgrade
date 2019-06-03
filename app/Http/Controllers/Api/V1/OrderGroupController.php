@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Model\Order;
 use App\Model\Plan;
 use App\Model\Device;
+use App\Model\Tax;
 use App\Model\DeviceToSim;
 use App\Model\Sim;
 use App\Model\OrderGroup;
@@ -86,6 +87,12 @@ class OrderGroupController extends Controller
     
     return response()->json($this->output);
 
+    }
+
+    public function taxrate(Request $request)
+    {
+        $rate = Tax::where('state', $request->id)->pluck('rate')->first();
+        return $rate;
     }
 
 
