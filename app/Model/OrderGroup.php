@@ -10,7 +10,7 @@ class OrderGroup extends Model
    protected $table = 'order_group';
 
    protected $fillable = [
-        'order_id', 'device_id', 'sim_id', 'plan_id', 'plan_prorated_amt', 'sim_num', 'sim_type', 'porting_number', 'area_code', 'operating_system', 'imei_number'
+        'order_id', 'device_id', 'sim_id', 'plan_id', 'plan_prorated_amt', 'sim_num', 'sim_type', 'porting_number', 'area_code', 'operating_system', 'imei_number','subscription_id',
     ];
 
     public function getDeviceDetailAttribute()
@@ -48,6 +48,11 @@ class OrderGroup extends Model
      return $this->hasMany('App\Model\OrderGroupAddon', 'order_group_id', 'id');
     }
 
+    public function subscription()
+    {
+        return $this->belongsTo('App\Model\Subscription', 'subscription_id');
+    }
+
 
 
 // ----- Not touching the previously created code as they might be in use ----------
@@ -58,7 +63,6 @@ class OrderGroup extends Model
     }
 
 // ----- Not touching the previously created code as they might be in use ----------
-
 
   public function getCustomerAttribute()
   {

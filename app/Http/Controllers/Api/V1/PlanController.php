@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
+use App\Model\Addon;
 use App\Model\Order;
 use App\Model\Device;
 use App\Model\Customer;
@@ -13,6 +14,7 @@ use App\Model\Subscription;
 use App\Model\DeviceToPlan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
@@ -194,21 +196,54 @@ class PlanController extends BaseController
             'old_subscription_plan_id'     => $data['active_plans'],
             'subscription_id'              => $data['subscription_id'],
         ];
-
+        if($request->addon){
+            $addons = $request->addon;
+        }else{
+            $addons = [];
+        }
+        
         $newPlan = Plan::find($data['plan']);
         $activePlan = Plan::find($data['active_plans']);
         $orderGroup['plan_prorated_amt'] = $subcription->order->planProRate($orderGroup['plan_id']);
 
+        $updatedOrderGroup = OrderGroup::where('order_id', $subcription->order_id)->where(function ($query) use ($data) {
+                $query->where('plan_id', $data['active_plans'])
+                      ->orWhere('subscription_id', '<>', null);})->first();
+
         if($newPlan->amount_recurring > $activePlan->amount_recurring){
             $orderGroup['change_subscription'] = '1';
 
-            $updatedOrderGroup = OrderGroup::where([['order_id', $subcription->order_id],['plan_id', $data['active_plans']]])->update($orderGroup);
-            \Log::info($subcription->order->hash);
+            $this->updateAddon($addons, $updatedOrderGroup);
+
+            $updatedOrderGroup->update($orderGroup);
+
+            $subcription->order['status'] = 'upgrade';
+
             return $this->respond($subcription->order);
         }else{
-            $orderGroup = $orderGroup['change_subscription'] = '-1';
-            $updatedOrderGroup = OrderGroup::where([['order_id', $subcription->order_id],['plan_id', $data['active_plans']]])->update($orderGroup);
-                return $this->respond($subcription->order);
+            $orderGroup ['change_subscription'] = '-1';
+            
+            $this->updateAddon($addons, $updatedOrderGroup);
+
+            $updatedOrderGroup->update($orderGroup);
+
+            $subcription->order['status'] = 'downgrade';
+            $subcription->order['newPlan'] = $newPlan;
+            $subcription->order['subscription_id'] = $data['subscription_id'];
+            return $this->respond($subcription->order);
         }
+    }
+
+    protected function updateAddon($addons, $updatedOrderGroup)
+    {
+        OrderGroupAddon::whereOrderGroupId($updatedOrderGroup->id)->delete();
+            // foreach ($addons as $key => $addon) {
+            //     $data = [
+            //         'addon_id'       => $addon,
+            //         'order_group_id' => $updatedOrderGroup->id
+            //     ];
+            //     $amount = $subcription->order->addonProRate($addon);
+            //     OrderGroupAddon::create(array_merge($data, ['prorated_amt' => $amount]));
+            // }
     }
 }

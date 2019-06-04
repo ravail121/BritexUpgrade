@@ -502,6 +502,12 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.check.Plan',
           'uses' => 'PlanController@checkPlan',
         ]);
+
+        Route::post('/update-subscription',[
+          'as'   => 'api.update.Subscription',
+          'uses' => 'SubscriptionController@updateSubscription',
+        ]);
+
         Route::group([],function(){
           Route::post('/update-port',[
             'as'   => 'api.update.port',

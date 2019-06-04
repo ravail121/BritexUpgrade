@@ -69,6 +69,11 @@ class Subscription extends Model
         return $this->hasOne('App\Model\Customer', 'id');
     }
 
+    public function customerRelation()
+    {
+        return $this->belongsTo('App\Model\Customer', 'customer_id');
+    }
+
     public function port()
     {
         return $this->hasOne('App\Model\Port');

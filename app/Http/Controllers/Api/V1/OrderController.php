@@ -25,7 +25,6 @@ class OrderController extends BaseController
     }
     public function get(Request $request){
 
-
         $hash = $request->input('order_hash');
         //$order = array(); //'order'=>array(), 'order_groups'=>array());
 
@@ -74,9 +73,8 @@ class OrderController extends BaseController
                         'operating_system'  => $og->operating_system,
                         'imei_number'       => $og->imei_number,
                         'plan_prorated_amt' => $og->plan_prorated_amt,
+                        'subscription'       => $request->input('change_plan') ? $og->subscription : null,
                     );
-
-                
 
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
@@ -93,6 +91,10 @@ class OrderController extends BaseController
                 $order['business_verification'] = $businessVerification;
             }
 
+        }
+
+        if($request->input('change_plan')){
+            $order['change_plan'] = '1';
         }
 
         $order['order_groups'] = $ordergroups;

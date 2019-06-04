@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Validator;
+use Carbon\Carbon;
 use App\Model\Sim;
 use App\Model\Port;
 use App\Model\Plan;
@@ -48,9 +49,26 @@ class SubscriptionController extends BaseController
         return $this->respond(['subscription_id' => $subscription->id]);
     }
 
+    public function updateSubscription(Request $request)
+    {
+        $data=$request->validate([
+            'id'  => 'required',
+            'plan_id'  => 'sometimes|required',
+            'upgrade_downgrade_status'  => 'required',
+            'new_plan_id'  => 'sometimes|required',
+        ]);
+        $subscription = Subscription::find($data['id']);
 
+        $data['old_plan_id'] = $subscription->plan_id;
+        $data['upgrade_downgrade_date_submitted'] = Carbon::now();
+        if($data['upgrade_downgrade_status'] == 'downgrade-scheduled'){
+            $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
+        }
+        $updateSubcription = $subscription->update($data);
 
-
+        SubscriptionAddon::whereSubscriptionId($data['id'])->delete();
+        return $this->respond(['subscription_id' => $subscription->id]);
+    }
 
     /**
      * Firstly validates the data and then Inserts data to subscription_addon table
@@ -179,10 +197,6 @@ class SubscriptionController extends BaseController
             ]
         );
     }
-
-
-
-
 
     /**
      * Validates Data of create-subscription-addon api
