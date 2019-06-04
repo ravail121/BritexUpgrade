@@ -224,7 +224,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $taxAndShipping         = $taxes + $shippingFee;
             
             $invoice = [
-                'service_charges'           => self::formatNumber($serviceCharges),
+                'service_charges'           => self::formatNumber($serviceCharges - $shippingFee),
                 'taxes'                     => self::formatNumber($taxAndShipping),
                 'credits'                   => self::formatNumber($credits),
                 'total_charges'             => self::formatNumber($totalAccountCharges),

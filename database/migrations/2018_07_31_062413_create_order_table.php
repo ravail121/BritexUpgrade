@@ -19,13 +19,13 @@ class CreateOrderTable extends Migration
             $table->char('name');
             $table->string('url');
             $table->tinyInteger('selling_devices')->default('0');
-            $table->tinyInteger('selling_plans');
-            $table->tinyInteger('selling_addons');
-            $table->text('selling_sim_standalone');
+            $table->tinyInteger('selling_plans')->default('0');
+            $table->tinyInteger('selling_addons')->default('0');
+            $table->tinyInteger('selling_sim_standalone')->default('0');
             $table->tinyInteger('business_verification')->default('0');
             $table->char('regulatory_label')->default('Regulatory');
-            $table->double('default_reg_fee');
-            $table->char('sprint_api_key');
+            $table->double('default_reg_fee')->nullable();
+            $table->char('sprint_api_key')->nullable();
 
             $table->timestamps();
         });

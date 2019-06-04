@@ -53,7 +53,7 @@ class CustomerController extends BaseController
     }
 
 
-    $data  = $request->all();
+    $data  = $request->except('_url');;
     
     $order = Order::hash($data['order_hash'])->first();
     
