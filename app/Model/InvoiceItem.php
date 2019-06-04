@@ -90,7 +90,7 @@ class InvoiceItem extends Model implements ConstantInterface
         return $query->whereIn('type', [
             self::INVOICE_ITEM_TYPES['plan_charges'], 
             self::INVOICE_ITEM_TYPES['feature_charges']
-        ])->whereIn('product_type', ['plan', 'addon']);
+        ]);
     }
 
     public function scopePaymentsCharges($query)

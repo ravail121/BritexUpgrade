@@ -40,6 +40,7 @@ trait InvoiceTrait
             'taxable'      => $isTaxable,
         ]);
     }
+    
 
     public function addTaxes($subscription, $invoice, $isTaxable)
     {
@@ -61,7 +62,7 @@ trait InvoiceTrait
         
         $taxes = [
             'invoice_id'   => $invoice->id,
-            'product_type' => $subscriptionId,
+            'product_type' => '',
             'product_id'   => null,
             'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
             'start_date'   => $invoice->start_date,

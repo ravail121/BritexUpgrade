@@ -380,7 +380,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
     protected function insertOrder($invoice)
     {
-        $hash = sha1(time());
+        $hash = md5(time());
     
         if ($invoice->type === Invoice::TYPES['monthly']) {
             Order::create([

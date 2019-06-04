@@ -137,7 +137,11 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Payments/Credits</td>
-                                                    <td class="detail">$ {{ $invoice['total_credits'] }}</td>
+                                                    <td class="detail">$ 
+                                                       
+                                                        {{ !empty($invoice['total_credits_to_invoice']) ? $invoice['total_credits_to_invoice'] : '0.00' }}
+                                                     
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td>Due {{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }}</td>
@@ -165,6 +169,7 @@
                 <div class="account_info">
                     <div class="containerin">
                         <center>Account Summary</center>
+                        
                         <table>
                             <thead>
                                 <tr>
@@ -195,27 +200,14 @@
                                     @foreach ($invoice['subscriptions'] as $subscription)
                                         <tr>
                                             <td>{{ $subscription['phone'] }}</td>
-                                            <td>$ {{ $subscription['plan_charges'] }}</td>
+                                            <td>$ {{ $subscription['plan_and_addons'] }}</td>
                                             <td>$ {{ $subscription['onetime_charges'] }}</td>
                                             <td>$ {{ $subscription['usage_charges'] }}</td>
                                             <td>$ 
-                                                {{ 
-                                                    $subscription['tax'] + 
-                                                    $subscription['regulatory_fee']
-                                                }}
+                                                {{ $subscription['tax_and_regulatory'] }}
                                             </td>
-                                            <td>-$ {{ $subscription['coupon'] + $subscription['manual'] }}</td>
-                                            <td>$ 
-                                                {{ 
-                                                    $subscription['plan_charges'] +
-                                                    $subscription['onetime_charges'] + $subscription['usage_charges'] +
-                                                    $subscription['tax'] +
-                                                    $subscription['regulatory_fee'] +
-                                                   -$subscription['coupon'] - 
-                                                   -$subscription['manual'] 
-                                                }}
-                                                <!-- above is incorrect, used for testing only -->
-                                            </td>
+                                            <td>-$ {{ $subscription['total_discounts'] }}</td>
+                                            <td>$ {{ $subscription['total'] }} </td>
 
                                         </tr>
                                     @endforeach
@@ -236,10 +228,9 @@
                                 <td>$ {{ $invoice['total_usage_charges'] }}</td>
                                 <td>$ {{ $invoice['taxes'] }}</td>
                                 <td>-$ {{ $invoice['credits'] }}</td>
-                                <td>$ {{ 
-                                    $invoice['service_charges'] + $invoice['taxes'] - $invoice['credits']
-                                    }}</td>
+                                <td>$ {{ $invoice['subtotal'] }}</td>
                             </tr>
+                            
                             <tr>
                                 <td colspan="7" class="lh0">
                                     <div class="total_img2">

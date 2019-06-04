@@ -150,7 +150,7 @@
                                                 <tr>
                                                     <td>Payments/Credits</td>
                                                     <td class="detail">$ 
-                                                        {{ $invoice['total_credits'] }}
+                                                            {{ !empty($invoice['total_credits_to_invoice']) ? $invoice['total_credits_to_invoice'] : '0.00' }}
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -211,7 +211,7 @@
                                             <td>$ {{ $subscription['onetime_charges'] }}</td>
                                             <td>$ {{ $subscription['usage_charges'] }}</td>
                                             <td>$ {{ $subscription['tax'] }}</td>
-                                            <td>-$ --</td>
+                                            <td>-$ 0.00</td>
                                             <td>$ {{ 
                                                     $subscription['total']
                                                 }}

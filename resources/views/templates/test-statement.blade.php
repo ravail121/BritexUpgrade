@@ -38,27 +38,27 @@
                             <tbody>
                                 <tr>
                                     <td>
-                                        @if (!empty($invoice['payment_date']))
+                                        @if (!empty($invoice['date_payment']))
                                             Payment on 
-                                                {{ str_replace('-', '/', $invoice['payment_date']) }} 
+                                                {{ str_replace('-', '/', $invoice['date_payment']) }} 
                                             with 
                                                 {{ $invoice['payment_method'] }}
                                         @else
                                             Payment
                                         @endif
                                     </td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['payment'] }}</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['total_payment'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td>
-                                        @if (!empty($invoice['old_credits']))
+                                        @if (!empty($invoice['date_credit']))
                                             Credit on 
-                                                {{ $invoice['payment_date'] }}
+                                                {{ $invoice['date_credit'] }}
                                         @else
                                             Credit
                                         @endif
                                     </td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['old_credits'] }}</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['total_credits_to_invoice'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -67,7 +67,7 @@
                                 </tr>
                                 <tr>
                                     <td></td>
-                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: ${{ $invoice['total_credits'] }}</strong></a></td>
+                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: ${{ $invoice['total_used_credits'] }}</strong></a></td>
                                 </tr>
                             </tbody>
                         </table>

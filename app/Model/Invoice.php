@@ -113,6 +113,11 @@ class Invoice extends Model implements ConstantInterface
         return self::toTwoDecimals($totalCharges);
     }
 
+    public function creditsToInvoice()
+    {
+        return $this->hasMany('App\Model\CreditToInvoice');
+    }
+
     protected function calAmount($invoiceItems)
     {
         $amount = [];
