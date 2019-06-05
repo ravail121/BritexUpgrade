@@ -102,7 +102,6 @@ class InvoiceController extends BaseController implements ConstantInterface
      */
     public function oneTimeInvoice(Request $request)
     {
-        \Log::info($request->all());
         $msg = '';
         if ($request->data_to_invoice) {
             $invoice = $request->data_to_invoice;

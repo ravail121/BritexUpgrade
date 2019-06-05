@@ -312,7 +312,7 @@ class OrderController extends BaseController
 
     public function updateShipping(Request $request)
     {
-        $data = $request->all();
+        $data = $request->except('_url');
         $validation = Validator::make(
             $data,
             [   
