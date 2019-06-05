@@ -193,9 +193,9 @@ trait UsaEpayTransaction
         ];
 
         if(isset($data->without_order)){
-            $credit ['staff_id'] = $data->staff_id;
-            $credit ['applied_to_invoice'] = '0';
-            $credit ['description'] = $creditData ['description']. ' '.$data->description;
+            $creditData ['staff_id'] = $data->staff_id;
+            $creditData ['applied_to_invoice'] = '0';
+            $creditData ['description'] = $creditData ['description']. ' '.$data->description;
         }else{
             $creditData ['order_id'] = $data->id;
         }
