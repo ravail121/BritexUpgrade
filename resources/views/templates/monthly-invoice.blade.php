@@ -45,18 +45,20 @@
                             </table>
                         </div>
                         <!-- Customer Info -->
-                        <div class="linksfooter">
-                            <h3>Customer Info</h3>
-                            <div class="customer_info">
-                                <p><span>{{ $invoice['customer_name'] }}</span></p>
-                                <p><span>{{ $invoice['customer_address'] }}</span></p>
-                                <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
+                        <div style="position: absolute;right: 0; display:inline-flex; margin-right: 20px; margin-top:10px;">
+                            <div style='width: 250px; margin-right: 200px;' class="linksfooter">
+                                <h3>Customer Info</h3>
+                                <div class="customer_info">
+                                    <p><span>{{ $invoice['customer_name'] }}</span></p>
+                                    <p><span>{{ $invoice['customer_address'] }}</span></p>
+                                    <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="bill_info">
-                            <h2>Your Monthly Bill As Of</h2>
-                            <h3>{{ $invoice['today_date'] }}</h3>
+                            
+                            <div style='width: 250px' class="bill_info">
+                                <h2>Your Monthly Bill As Of</h2>
+                                <h3>{{ $invoice['today_date'] }}</h3>
+                            </div>
                         </div>
                         <div class="info">
                             <h2>Important Information</h2>

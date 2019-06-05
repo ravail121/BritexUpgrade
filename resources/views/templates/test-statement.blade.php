@@ -58,7 +58,7 @@
                                             Credit
                                         @endif
                                     </td>
-                                    <td colspan="2" class="last"><a>${{ $invoice['total_credits_to_invoice'] }}</a></td>
+                                    <td colspan="2" class="last"><a>${{ $invoice['total_old_credits'] }}</a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3">
@@ -129,10 +129,7 @@
                                     <td>State</td>
                                     <td colspan="2" class="last"><a>$ {{ $invoice['state_tax'] }}</a></td>
                                 </tr>
-                                <tr>
-                                    <td>Shipping</td>
-                                    <td colspan="2" class="last"><a>$ {{ $invoice['shipping_fee'] }}</a></td>
-                                </tr>
+
                                 <tr>
                                     <td colspan="3">
                                         <div class="sepratorline dark"></div>
@@ -155,7 +152,7 @@
                             <tbody>
                                 <tr>
                                     <td></td>
-                                    <td colspan="2" class="last total_value"><a><strong>Total Coupons: ${{ $invoice['credits'] }}</strong></a></td>
+                                    <td colspan="2" class="last total_value"><a><strong>Total Coupons: - ${{ $invoice['total_coupons'] }}</strong></a></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3"></td>
@@ -172,7 +169,7 @@
                                     <td>Total Account Charges</td>
                                     <td colspan="3" class="right total_value">
                                         ${{ 
-                                            $invoice['total_charges']
+                                            $invoice['account_charges_discount']
                                         }}
                                     </td>
                                 </tr>

@@ -62,7 +62,7 @@
                                 <td width="17%"></td>
                             </tr>
                             <tr>
-                                <td>Plan:</td>
+                                <td>Plans:</td>
                                 <td>
                                     <a>
                                         @if (count($invoice['plans']) > 0)                                       
@@ -165,10 +165,7 @@
                                 <td>State</td>
                                 <td colspan="2" class="last"><a>${{ $invoice['state_tax'] }}</a></td>
                             </tr>
-                            <tr>
-                                <td>Shipping</td>
-                                <td colspan="2" class="last"><a>${{ $invoice['shipping_fee'] }}</a></td>
-                            </tr>
+
                             <tr>
                                 <td colspan="3">
                                     <div class="sepratorline dark"></div>
@@ -207,7 +204,7 @@
                     <div class="container">
                         <div class="table-padding">
 
-                            <h2>Credits</h2>
+                            <h2>Coupons</h2>
                             <table>
 	                            <tr>
 	                                <td colspan="3">
@@ -219,7 +216,7 @@
                         <table class="test table-padding">
                             <tr>
                                 <td><strong></strong></td>
-                                <td colspan="2" class="last total_value"><a><strong>Total Credits: ${{ $invoice['credits'] }}</strong></a></td>
+                                <td colspan="2" class="last total_value"><a><strong>Total Coupons: - ${{ $invoice['total_coupons'] }}</strong></a></td>
                             </tr>
                             <tr>
                                 <td colspan="3"></td>
@@ -239,7 +236,7 @@
                                     @endif 
                                 </td>
                                 <td colspan="3" class="right">
-                                    ${{ $invoice['subtotal'] }}
+                                    ${{ $invoice['total_line_charges'] }}
                                 </td>
                             </tr>
                         </table>
