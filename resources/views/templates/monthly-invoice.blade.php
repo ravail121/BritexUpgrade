@@ -45,21 +45,21 @@
                             </table>
                         </div>
                         <!-- Customer Info -->
-                        <div style="position: absolute;right: 0; display:inline-flex; margin-right: 20px; margin-top:10px;">
-                            <div style='width: 250px; margin-right: 200px;' class="linksfooter">
-                                <h3>Customer Info</h3>
-                                <div class="customer_info">
-                                    <p><span>{{ $invoice['customer_name'] }}</span></p>
-                                    <p><span>{{ $invoice['customer_address'] }}</span></p>
-                                    <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
-                                </div>
-                            </div>
-                            
-                            <div style='width: 250px' class="bill_info">
-                                <h2>Your Monthly Bill As Of</h2>
-                                <h3>{{ $invoice['today_date'] }}</h3>
+
+                        <div style='position:absolute; left:0; right:0; margin: auto; top: 65px;' class="linksfooter">
+                            <h3>Customer Info</h3>
+                            <div class="customer_info">
+                                <p><span>{{ $invoice['customer_name'] }}</span></p>
+                                <p><span>{{ $invoice['customer_address'] }}</span></p>
+                                <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
                             </div>
                         </div>
+                        
+                        <div class="bill_info">
+                            <h2>Your Monthly Bill As Of</h2>
+                            <h3>{{ $invoice['today_date'] }}</h3>
+                        </div>
+                        
                         <div class="info">
                             <h2>Important Information</h2>
                             <p>1. You are <strong>not</strong> enrolled in Autopay. Amount will <strong>not</strong> be forwarded for automatic processing.</p>
