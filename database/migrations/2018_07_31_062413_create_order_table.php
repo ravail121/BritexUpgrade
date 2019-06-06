@@ -38,7 +38,7 @@ class CreateOrderTable extends Migration
             $table->foreign('company_id')->references('id')->on('company');
             $table->char('name');
             $table->longText('description');
-            $table->longText('notes');
+            $table->longText('notes')->nullable();;
             $table->longText('image');
             $table->double('amount_recurring');
             $table->tinyinteger('taxable');
@@ -297,7 +297,7 @@ class CreateOrderTable extends Migration
             $table->text('description');
             $table->unsignedInteger('tag_id')->nullable();
             $table->foreign('tag_id')->references('id')->on('tag');
-            $table->text('notes');
+            $table->text('notes')->nullable();;
             $table->text('primary_image');
             $table->double('amount');
             $table->double('amount_w_plan');
@@ -386,7 +386,7 @@ class CreateOrderTable extends Migration
             $table->text('name');
             $table->text('image');
             $table->text('description');
-            $table->text('notes');
+            $table->text('notes')->nullable();;
             $table->text('primary_image');
             $table->double('amount_recurring');
             $table->double('amount_onetime');
@@ -430,7 +430,7 @@ class CreateOrderTable extends Migration
             $table->foreign('carrier_id')->references('id')->on('carrier');
             $table->text('name');
             $table->text('description');
-            $table->text('notes');
+            $table->text('notes')->nullable();;
             $table->text('image');
             $table->double('amount_alone');
             $table->double('amount_w_plan');
@@ -731,7 +731,7 @@ class CreateOrderTable extends Migration
             $table->text('city');
             $table->text('state');
             $table->text('zip');
-            $table->text('ssn_taxid');
+            $table->text('ssn_taxid')->nullable();
             $table->timestamps();
             
            });
