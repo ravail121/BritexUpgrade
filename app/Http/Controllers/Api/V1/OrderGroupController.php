@@ -14,10 +14,12 @@ use App\Model\DeviceToSim;
 use App\Model\Sim;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
+use App\Model\Coupon;
 
 
 class OrderGroupController extends Controller
 {
+
     public function __construct(){
         $this->content = array();
         $this->output = ['success' => false, 'message' => ''];
@@ -93,6 +95,20 @@ class OrderGroupController extends Controller
     {
         $rate = Tax::where('state', $request->id)->pluck('rate')->first();
         return $rate;
+    }
+
+    public function addCoupon(Request $request)
+    {
+        $coupon = Coupon::where('code', $request->code)->first();
+        
+        if (!empty($coupon)) {
+            return  [
+                        'coupon'            => $coupon,
+                        'specificTypes'     => $coupon->couponProductTypes,
+                        'specificProducts'  => $coupon->couponProducts
+                    ];
+        }
+        
     }
 
 

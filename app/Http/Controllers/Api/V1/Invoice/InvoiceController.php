@@ -503,10 +503,12 @@ class InvoiceController extends BaseController implements ConstantInterface
      * @param  int        $subscriptionIds
      * @return Response
      */
+
+ 
     protected function subscriptionInvoiceItem($subscriptionIds)
     {
         $invoiceItem = null;
-        
+        $order = Order::where('invoice_id', $this->input['invoice_id'])->first();
         foreach ($subscriptionIds as $index => $subscriptionId) {
             $subscription = Subscription::find($subscriptionId);
 
@@ -531,6 +533,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                     $array = array_merge($array, [
                         'type'   => 3,
                         'amount' => $device->amount_w_plan,
+                        'taxable' => $device->taxable
                     ]);
                     
                 }
@@ -551,7 +554,8 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $array = [
                     'product_type' => self::PLAN_TYPE,
                     'product_id'   => $subscription->plan_id,
-                    'amount'       => $amount, 
+                    'amount'       => $amount,
+                    'taxable'      => $plan->taxable
                 ];
 
                 $array = array_merge($subarray, $array);
@@ -573,33 +577,40 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'product_id'   => $subscription->sim_id,
                     'type'         => 3,
                     'amount'       => $sim->amount_w_plan, 
+                    'taxable'      => $sim->taxable
                 ];
 
                 $array = array_merge($subarray, $array);
 
                 $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
             }
-
+            
+            $order = Order::where('invoice_id', $this->input['invoice_id'])->first();
 
             if ($subscription->subscriptionAddon) {
                 foreach ($subscription->subscriptionAddon as $subAddon) {
                     $addon = Addon::find($subAddon->addon_id);
+                
+                    $orderGroup = OrderGroup::where('order_id', $order->id)->get();
 
-                    $order = Order::where('invoice_id', $this->input['invoice_id'])->first();
-                    $orderGroupAddon = $order->orderGroup->orderGroupAddon->where('addon_id', $subAddon->addon_id)->first();
-                    $proratedAmount = $orderGroupAddon != null ? $orderGroupAddon->prorated_amt : null;
-                    $amount = $proratedAmount == null ? $addon->amount_recurring : $proratedAmount;
-
+                    foreach ($orderGroup as $og) {
+                        $proratedAmount = $og->orderGroupAddon->where('addon_id', $addon->id)->pluck('prorated_amt')->first();
+                        $addonAmount = $proratedAmount != null ? $proratedAmount : $addon->amount_recurring;         
+                        
+                    }
                     $array = [
                         'product_type' => self::ADDON_TYPE,
                         'product_id'   => $addon->id,
                         'type'         => 2,
-                        'amount'       => $amount, 
+                        'amount'       => $addonAmount,
+                        'taxable'      => $addon->taxable
                     ];
                     $array = array_merge($subarray, $array);
                     $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                    
                 }
             }
+
             //add activation charges in invoice-item table
             $this->addActivationCharges(
                 $subscription, 
@@ -729,23 +740,25 @@ class InvoiceController extends BaseController implements ConstantInterface
                 
                 if (isset($sim)) {
                     $simFee = Sim::find($sim->product_id)->shipping_fee ?  Sim::find($sim->product_id)->shipping_fee : 0;    
-                } else {
-                    $simFee = 0;
-                }
+                } 
 
-                $order->invoice->invoiceItem()->create(
-                    [
-                        'invoice_id'        => $order->invoice->id,
-                        'subscription_id'   => $item->id,
-                        'product_type'      => '',
-                        'product_id'        => null,
-                        'type'              => InvoiceItem::TYPES['one_time_charges'],
-                        'start_date'        => $order->invoice->start_date,
-                        'description'       => self::SHIPPING,
-                        'amount'            => $deviceFee + $simFee,
-                        'taxable'           => 0, 
-                    ]
-                );
+                $totalFee = $simFee + $deviceFee;
+
+                if ($totalFee > 0) {
+                    $order->invoice->invoiceItem()->create(
+                        [
+                            'invoice_id'        => $order->invoice->id,
+                            'subscription_id'   => $item->id,
+                            'product_type'      => '',
+                            'product_id'        => null,
+                            'type'              => InvoiceItem::TYPES['one_time_charges'],
+                            'start_date'        => $order->invoice->start_date,
+                            'description'       => self::SHIPPING,
+                            'amount'            => $deviceFee + $simFee,
+                            'taxable'           => 0, 
+                        ]
+                    );
+                }
             }
         }          
     }

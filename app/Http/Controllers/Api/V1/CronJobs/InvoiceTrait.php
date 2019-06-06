@@ -46,20 +46,20 @@ trait InvoiceTrait
     {
         
         $taxPercentage = $invoice->customer->stateTax->rate / 100;
-
-        if (!empty($subscription)) {
-            $subscriptionId = $subscription->id;
-            $taxes = $subscription->invoiceItemDetail->where('taxable', true)->sum('amount');
-        } else {
-            $subscriptionId = 0;
-            foreach ($invoice->InvoiceItem->where('subscription_id', null) as $item) {
-                if ($item->taxable == 1) {
-                    $taxes[] = $item->amount;
-                }            
-            }
-            $taxes = array_sum($taxes);
-        }
         
+        $taxesWithSubscriptions     = isset($subscription->id) ? $invoice->invoiceItem
+                                        ->where('subscription_id', $subscription->id)
+                                        ->where('taxable', true)
+                                        ->sum('amount') : null;
+
+        $taxesWithoutSubscriptions  = $invoice->invoiceItem
+                                        ->where('subscription_id', 0)
+                                        ->where('taxable', true)
+                                        ->sum('amount');
+
+        $taxes = $taxesWithSubscriptions ? $taxesWithSubscriptions : $taxesWithoutSubscriptions;
+        \Log::info($taxesWithSubscriptions);
+        \Log::info($taxesWithoutSubscriptions);
         $taxes = [
             'invoice_id'   => $invoice->id,
             'product_type' => '',
@@ -71,7 +71,7 @@ trait InvoiceTrait
             'taxable'      => $isTaxable,            
         ];
 
-        if (empty($subscription)) {
+        if ($taxesWithoutSubscriptions) {
             $invoice->invoiceItem()->create($taxes);
         } else {
             $subscription->invoiceItemDetail()->create($taxes);

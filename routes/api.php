@@ -160,6 +160,10 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.order_group.taxrate'  ,
           'uses' => 'OrderGroupController@taxrate'  
         ]);
+        Route::get('/add-coupon', [
+          'as' => 'api.order_group.addCoupon'  ,
+          'uses' => 'OrderGroupController@addCoupon'  
+        ]);
       });
 
       Route::group(['prefix' => 'devices', 'namespace' => 'Api\V1'], function()

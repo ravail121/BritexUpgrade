@@ -205,6 +205,7 @@ class InvoiceController extends BaseController
 												$taxable = $subscriptionaddon->addon->taxable;
 
 										 }    
+										
 										$_invoiceitem = InvoiceItem::create([
 										 'subscription_id'=>$_subscription->id,
 										 'product_type'=>'addon',
