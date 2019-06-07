@@ -43,7 +43,7 @@ class PaymentController extends BaseController implements ConstantInterface
     */
     public function chargeNewCard(Request $request)
     { 
-        \Log::info('----In charge new card----');
+        \Log::info($request->all());
         $this->setConstantData($request);
         $validation = $this->validateCredentials($request);
 
@@ -67,7 +67,7 @@ class PaymentController extends BaseController implements ConstantInterface
         if($this->tran->Process()) {
             $msg = $this->transactionSuccessful($request, $this->tran);
 
-            $data    = $this->setInvoiceData($order, $msg['credit']);
+            $data    = $this->setInvoiceData($order, $msg['credit'], $request);
 
             $invoice = Invoice::create($data);
             
@@ -106,7 +106,7 @@ class PaymentController extends BaseController implements ConstantInterface
      * 
      * @param Order $order
      */
-    protected function setInvoiceData($order, $credit)
+    protected function setInvoiceData($order, $credit, $request)
     {
         $arr = [];
         $customer = Customer::find($order->customer_id);
@@ -132,15 +132,15 @@ class PaymentController extends BaseController implements ConstantInterface
                 'payment_method'          => $credit->payment_method, 
                 'notes'                   => 'notes', 
                 'business_name'           => $customer->company_name, 
-                'billing_fname'           => $customer->fname, 
-                'billing_lname'           => $customer->lname, 
+                'billing_fname'           => $request->billing_fname, 
+                'billing_lname'           => $request->billing_lname, 
                 'billing_address_line_1'  => $card->billing_address1, 
                 'billing_address_line_2'  => $card->billing_address2, 
                 'billing_city'            => $card->billing_city, 
                 'billing_state'           => $card->billing_state_id, 
                 'billing_zip'             => $card->billing_zip, 
-                'shipping_fname'          => $customer->fname, 
-                'shipping_lname'          => $customer->lname, 
+                'shipping_fname'          => $customer->shipping_fname, 
+                'shipping_lname'          => $customer->shipping_lname, 
                 'shipping_address_line_1' => $customer->shipping_address1, 
                 'shipping_address_line_2' => $customer->shipping_address2, 
                 'shipping_city'           => $customer->shipping_city, 

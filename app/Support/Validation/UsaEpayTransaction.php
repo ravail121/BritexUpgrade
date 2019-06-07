@@ -261,6 +261,8 @@ trait UsaEpayTransaction
             $customer = Customer::find($order->customer_id);
             if ($customer->billing_address1 == 'N/A') {
                 $customer->update([
+                    'billing_fname'    => $request->billing_fname, 
+                    'billing_lname'    => $request->billing_lname, 
                     'billing_address1' => $request->billing_address1, 
                     'billing_address2' => $request->billing_address2, 
                     'billing_city'     => $request->billing_city, 
