@@ -15,6 +15,8 @@ use App\Model\Sim;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use App\Model\Coupon;
+use App\Model\OrderCoupon;
+use App\Model\Customer;
 
 
 class OrderGroupController extends Controller
@@ -100,13 +102,33 @@ class OrderGroupController extends Controller
     public function addCoupon(Request $request)
     {
         $coupon = Coupon::where('code', $request->code)->first();
-        
+        $multiline = $coupon->multiline_restrict_plans ? $coupon->multilinePlanTypes->pluck('plan_type') : null;
+        $billableSubscriptions = Customer::where('hash', $request->hash)->first()->billableSubscriptions;
+
+        foreach ($billableSubscriptions as $subscription) {
+            $plans[] = Plan::find($subscription->plan_id);
+        }
+
         if (!empty($coupon)) {
+            $alreadyExists = OrderCoupon::where('order_id', $request->order_id)->get();
+            $orderGroup    = OrderGroup::where('order_id', $request->order_id)->sum('plan_prorated_amt');
+            if (count($alreadyExists) > 0) {
+
+                OrderCoupon::create([
+                    'order_id' => $request->order_id,
+                    'coupon_id' => $coupon->id
+                ]);
+
+            }
             return  [
-                        'coupon'            => $coupon,
-                        'specificTypes'     => $coupon->couponProductTypes,
-                        'specificProducts'  => $coupon->couponProducts
-                    ];
+                'coupon'                => $coupon,
+                'specificTypes'         => $coupon->couponProductTypes,
+                'specificProducts'      => $coupon->couponProducts,
+                'billableSubscription'  => $billableSubscriptions,
+                'billablePlans'         => $plans,
+                'multiline_type'        => $multiline,
+                'orderGroup'            => $orderGroup
+            ];
         }
         
     }

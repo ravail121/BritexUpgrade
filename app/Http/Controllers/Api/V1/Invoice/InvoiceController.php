@@ -541,7 +541,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $array = array_merge($subarray, $array);
                 $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
                 
-            }
+            } 
 
 
             if ($subscription->plan_id != null) {
@@ -594,10 +594,10 @@ class InvoiceController extends BaseController implements ConstantInterface
                     $orderGroup = OrderGroup::where('order_id', $order->id)->get();
 
                     foreach ($orderGroup as $og) {
-                        $proratedAmount = $og->orderGroupAddon->where('addon_id', $addon->id)->pluck('prorated_amt')->first();
-                        $addonAmount = $proratedAmount != null ? $proratedAmount : $addon->amount_recurring;         
-                        
+                        $proratedAmount = $og->orderGroupAddon->where('addon_id', $addon->id)->sum('prorated_amt');
+                        $addonAmount    = $proratedAmount != null ? $proratedAmount : $addon->amount_recurring;
                     }
+                    
                     $array = [
                         'product_type' => self::ADDON_TYPE,
                         'product_id'   => $addon->id,
@@ -808,6 +808,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'product_id' => $device->id,
                 'type'       => 3,
                 'amount'     => $device->amount,
+                'taxable'    => $device->taxable
             ]);
             $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
                 
@@ -843,6 +844,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'product_id' => $sim->id,
                 'type'       => 3,
                 'amount'     => $sim->amount_alone,
+                'taxable'    => $sim->taxable
             ]);
 
             $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));

@@ -55,26 +55,35 @@ trait InvoiceTrait
         $taxesWithoutSubscriptions  = $invoice->invoiceItem
                                         ->where('subscription_id', 0)
                                         ->where('taxable', true)
-                                        ->sum('amount');
+                                        ->sum('amount');     
 
-        $taxes = $taxesWithSubscriptions ? $taxesWithSubscriptions : $taxesWithoutSubscriptions;
-        \Log::info($taxesWithSubscriptions);
-        \Log::info($taxesWithoutSubscriptions);
-        $taxes = [
-            'invoice_id'   => $invoice->id,
-            'product_type' => '',
-            'product_id'   => null,
-            'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-            'start_date'   => $invoice->start_date,
-            'description'  => "(Taxes)",
-            'amount'       => $taxPercentage * $taxes,
-            'taxable'      => $isTaxable,            
-        ];
-
-        if ($taxesWithoutSubscriptions) {
-            $invoice->invoiceItem()->create($taxes);
-        } else {
-            $subscription->invoiceItemDetail()->create($taxes);
+        if ($taxesWithoutSubscriptions > 0) {
+            $invoice->invoiceItem()->create(
+                [
+                    'invoice_id'   => $invoice->id,
+                    'product_type' => '',
+                    'product_id'   => null,
+                    'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                    'start_date'   => $invoice->start_date,
+                    'description'  => "(Taxes)",
+                    'amount'       => $taxPercentage * $taxesWithoutSubscriptions,
+                    'taxable'      => $isTaxable,            
+                ]
+            );
+        } 
+        if ($taxesWithSubscriptions > 0) {
+            $subscription->invoiceItemDetail()->create(
+                [
+                    'invoice_id'   => $invoice->id,
+                    'product_type' => '',
+                    'product_id'   => null,
+                    'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                    'start_date'   => $invoice->start_date,
+                    'description'  => "(Taxes)",
+                    'amount'       => $taxPercentage * $taxesWithSubscriptions,
+                    'taxable'      => $isTaxable,            
+                ]
+            );
         }
     }
 
