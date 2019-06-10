@@ -524,7 +524,7 @@ class CreateOrderTable extends Migration
             $table->date('downgrade_date')->nullable();
             $table->integer('tracking_num');
             $table->unsignedInteger('device_id')->nullable();
-            $table->text('device_os');
+            $table->text('device_os')->nullable();
             $table->string('device_imei', 16);
             $table->text('subsequent_porting');
             $table->integer('requested_area_code');

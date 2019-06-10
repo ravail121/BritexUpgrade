@@ -104,7 +104,7 @@ class OrderGroupController extends Controller
         $coupon = Coupon::where('code', $request->code)->first();
         $multiline = $coupon->multiline_restrict_plans ? $coupon->multilinePlanTypes->pluck('plan_type') : null;
         $billableSubscriptions = Customer::where('hash', $request->hash)->first()->billableSubscriptions;
-
+        
         foreach ($billableSubscriptions as $subscription) {
             $plans[] = Plan::find($subscription->plan_id);
         }
@@ -112,7 +112,7 @@ class OrderGroupController extends Controller
         if (!empty($coupon)) {
             $alreadyExists = OrderCoupon::where('order_id', $request->order_id)->get();
             $orderGroup    = OrderGroup::where('order_id', $request->order_id)->sum('plan_prorated_amt');
-            if (count($alreadyExists) > 0) {
+            if (count($alreadyExists) < 1) {
 
                 OrderCoupon::create([
                     'order_id' => $request->order_id,
@@ -120,7 +120,7 @@ class OrderGroupController extends Controller
                 ]);
 
             }
-            return  [
+            return response()->json([
                 'coupon'                => $coupon,
                 'specificTypes'         => $coupon->couponProductTypes,
                 'specificProducts'      => $coupon->couponProducts,
@@ -128,7 +128,7 @@ class OrderGroupController extends Controller
                 'billablePlans'         => $plans,
                 'multiline_type'        => $multiline,
                 'orderGroup'            => $orderGroup
-            ];
+            ]);
         }
         
     }

@@ -42,35 +42,19 @@ trait InvoiceTrait
     }
     
 
-    public function addTaxes($subscription, $invoice, $isTaxable)
+    public function addTaxesToSubscription($subscription, $invoice, $isTaxable)
     {
         
         $taxPercentage = $invoice->customer->stateTax->rate / 100;
-        
+        /*
         $taxesWithSubscriptions     = isset($subscription->id) ? $invoice->invoiceItem
                                         ->where('subscription_id', $subscription->id)
-                                        ->where('taxable', true)
+                                        ->where('taxable', 1)
                                         ->sum('amount') : null;
+        */
 
-        $taxesWithoutSubscriptions  = $invoice->invoiceItem
-                                        ->where('subscription_id', 0)
-                                        ->where('taxable', true)
-                                        ->sum('amount');     
+        $taxesWithSubscriptions = $subscription->invoiceItemDetail->where('taxable', 1)->sum('amount');
 
-        if ($taxesWithoutSubscriptions > 0) {
-            $invoice->invoiceItem()->create(
-                [
-                    'invoice_id'   => $invoice->id,
-                    'product_type' => '',
-                    'product_id'   => null,
-                    'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-                    'start_date'   => $invoice->start_date,
-                    'description'  => "(Taxes)",
-                    'amount'       => $taxPercentage * $taxesWithoutSubscriptions,
-                    'taxable'      => $isTaxable,            
-                ]
-            );
-        } 
         if ($taxesWithSubscriptions > 0) {
             $subscription->invoiceItemDetail()->create(
                 [
@@ -80,11 +64,38 @@ trait InvoiceTrait
                     'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                     'start_date'   => $invoice->start_date,
                     'description'  => "(Taxes)",
-                    'amount'       => $taxPercentage * $taxesWithSubscriptions,
+                    'amount'       => $taxPercentage * sprintf("%.2f", $taxesWithSubscriptions),
                     'taxable'      => $isTaxable,            
                 ]
             );
         }
+    }
+
+    public function addTaxesToStandalone($invoice, $isTaxable, $item)
+    {
+        $taxPercentage = $invoice->customer->stateTax->rate / 100;
+
+        $taxesWithoutSubscriptions  = $invoice->invoiceItem
+                                        ->where('subscription_id', null)
+                                        ->where('product_type', $item)
+                                        ->where('taxable', 1)
+                                        ->sum('amount');
+                                        
+        if ($taxesWithoutSubscriptions > 0) {
+            $invoice->invoiceItem()->create(
+                [
+                    'invoice_id'   => $invoice->id,
+                    'subscription_id' => null,
+                    'product_type' => '',
+                    'product_id'   => null,
+                    'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                    'start_date'   => $invoice->start_date,
+                    'description'  => "(Taxes)",
+                    'amount'       => $taxPercentage * sprintf("%.2f", $taxesWithoutSubscriptions),
+                    'taxable'      => $isTaxable,            
+                ]
+            );
+        }  
     }
 
     public function addActivationCharges($subscription, $invoice, $description, $isTaxable)
