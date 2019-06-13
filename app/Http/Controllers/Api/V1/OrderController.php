@@ -13,6 +13,7 @@ use App\Model\PlanToAddon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Model\OrderGroupAddon;
+use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
@@ -24,16 +25,27 @@ class OrderController extends BaseController
         $this->content = array();
     }
     public function get(Request $request){
-
         $hash = $request->input('order_hash');
         //$order = array(); //'order'=>array(), 'order_groups'=>array());
 
         $order = [];
         $ordergroups = [];
-        
         if($hash){
-            $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
+            if($request->input('change_plan')){
+                $plan = $request->input('change_plan');
+                
+                $order_groups = OrderGroup::where(function($q) use ($plan) {
+                    $q->where('plan_id', $plan)
+                    ->orWhere('old_subscription_plan_id', $plan);
+                })
+                ->with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                         $query->where('hash', $hash);})->get();
+
+                $paidAddons = SubscriptionAddon::whereSubscriptionId($request->subscription_id)->pluck('addon_id');
+            }else{
+                $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
+                        $query->where('hash', $hash);})->get();
+            }
 
             //print_r($order_groups);
             
@@ -75,8 +87,11 @@ class OrderController extends BaseController
                         'plan_prorated_amt' => $og->plan_prorated_amt,
                         'subscription'       => $request->input('change_plan') ? $og->subscription : null,
                     );
-
-                $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
+                if($request->input('change_plan')){
+                    $_addons = OrderGroupAddon::with(['addon'])->where([['order_group_id', $og->id], ['subscription_addon_id' , null]] )->whereNotIn('addon_id', $paidAddons)->get();
+                }else{
+                    $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
+                }
                 foreach ($_addons as $a) {
                     $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt']]);
                     

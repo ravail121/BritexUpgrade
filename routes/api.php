@@ -420,6 +420,13 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'SubscriptionController@subscriptionAddons',
         ]);
 
+        //**NEW
+        Route::post('/update-subscription-addon',[
+          'as'   => 'api.create.subscriptionaddon',
+          'uses' => 'SubscriptionController@updateSubscriptionAddon',
+        ]);
+        //New**
+
         Route::post('/create-device-record',[
           'as'   => 'api.create.devicerecord',
           'uses' => 'StandaloneRecordController@createDeviceRecord',

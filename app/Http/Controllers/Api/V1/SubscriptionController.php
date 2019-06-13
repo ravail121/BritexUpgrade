@@ -10,6 +10,7 @@ use App\Model\Plan;
 use App\Model\Order;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
@@ -65,8 +66,7 @@ class SubscriptionController extends BaseController
             $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
         }
         $updateSubcription = $subscription->update($data);
-
-        SubscriptionAddon::whereSubscriptionId($data['id'])->delete();
+        
         return $this->respond(['subscription_id' => $subscription->id]);
     }
 
@@ -94,8 +94,25 @@ class SubscriptionController extends BaseController
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
     }
 
+    public function updateSubscriptionAddon(Request $request)
+    {
+        $addons = $request->addons;
+        $subscription_addon_id = OrderGroupAddon::where('subscription_id',$request->subscription_id)->pluck('subscription_addon_id');
 
+        SubscriptionAddon::whereIn('id', $subscription_addon_id)->delete();
+        $newAddon = [];
 
+        foreach ($addons as $key => $addon) {
+            $subscriptionAddon = SubscriptionAddon::create([
+                'subscription_id' => $request->subscription_id,
+                'addon_id'        => $addon['id'],
+                'status'          => SubscriptionAddon::STATUSES['for-adding'],
+            ]);
+            array_push($newAddon,$subscriptionAddon->addon_id);
+        }
+        return $newAddon;
+
+    }
 
     /**
      * Returns data as array which is to be inserted in subscription table

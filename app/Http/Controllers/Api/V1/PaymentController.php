@@ -43,7 +43,6 @@ class PaymentController extends BaseController implements ConstantInterface
     */
     public function chargeNewCard(Request $request)
     { 
-        \Log::info($request->all());
         $this->setConstantData($request);
         $validation = $this->validateCredentials($request);
 

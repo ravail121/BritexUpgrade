@@ -115,7 +115,12 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
                 $order        = $this->updateCustomerDates($subscription);
 
-                $invoiceItem  = $this->subscriptionInvoiceItem($invoice['subscription_id']);
+                if(isset($request->change_plan)){
+                    $invoiceItem  = $this->UpgradePlanInvoiceItem($invoice['subscription_id'][0], $request->new_addon);
+                }else{
+                    $invoiceItem  = $this->subscriptionInvoiceItem($invoice['subscription_id']);
+
+                }
 
                 $msg = (!$invoiceItem) ? 'Subscription Invoice item was not generated' : 'Invoice item generated successfully.'; 
 
@@ -294,6 +299,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
  
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
+                return view('templates/onetime-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
                 return $pdf->download('invoice.pdf');
             
@@ -516,6 +522,67 @@ class InvoiceController extends BaseController implements ConstantInterface
 
         ];
         return $order;
+    }
+
+     /**
+     * Creates inovice_item for Upgraded Plan
+     * 
+     * @param  Order      $order
+     * @param  int        $subscriptionIds
+     * @return Response
+     */
+
+    protected function UpgradePlanInvoiceItem($subscriptionId, $newAddons)
+    {
+        $subscription = Subscription::find($subscriptionId);
+
+        $plan = Plan::find($subscription->plan_id);
+        $orderId = Order::where('invoice_id', $this->input['invoice_id'])->pluck('id');
+        $proratedAmount = OrderGroup::where('order_id', $orderId)->where('plan_id', $subscription->plan_id)->first()->plan_prorated_amt;
+
+        $amount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
+
+        $array = [
+            'subscription_id' => $subscription->id,
+            'product_type'    => self::PLAN_TYPE,
+            'product_id'      => $subscription->plan_id,
+            'amount'          => $amount,
+            'taxable'         => $plan->taxable,
+            'description'     => 'Upgrade from '.$subscription->old_plan_id.' to '.$subscription->plan_id,
+        ];
+
+        $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+
+        $regulatoryFee = $this->addRegulatorFeesToSubscription(
+            $subscription,
+            $invoiceItem->invoice,
+            self::TAX_FALSE
+        );
+
+        if ($subscription->subscriptionAddon) {
+            foreach ($newAddons as $subAddon) {
+                $addon = Addon::find($subAddon);
+                if(!$addon){
+                    continue;
+                }
+                $proratedAmount = OrderGroup::where([['order_id', $orderId[0]],['old_subscription_plan_id', '<>', null]])->first()->orderGroupAddon->where('addon_id', $addon->id)->pluck('prorated_amt')->first();
+                $addonAmount    = $proratedAmount > 0 ? $proratedAmount : $addon->amount_recurring;                    
+
+                $array = [
+                    'subscription_id' => $subscription->id,
+                    'product_type' => self::ADDON_TYPE,
+                    'product_id'   => $addon->id,
+                    'type'         => 2,
+                    'amount'       => $addonAmount,
+                    'taxable'      => $addon->taxable
+                ];
+
+                $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                
+            }
+        }
+
+        return $invoiceItem;
     }
     
 
