@@ -66,7 +66,7 @@ class SendMonthlyInvoiceMail
         }
 
 
-        $customer->notify(new GenerateMonthlyInvoice($order, $pdf));        
+        $customer->notify(new GenerateMonthlyInvoice($order, $pdf, $customer));        
     }
 
 

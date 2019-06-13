@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Model\Order;
 use App\Model\Company;
+use App\Model\EmailLog;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
@@ -63,6 +64,16 @@ class BizVerificationApproved extends Notification
 
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
+        $data = ['company_id' => $company->id,
+            'customer_id'              => $this->bizVerification->id,
+            'to'                       => $this->bizVerification->email,
+            'business_verficiation_id' => $this->bizVerification->business_verification_id,
+            'subject'                  => $emailTemplate->subject,
+            'from'                     => $emailTemplate->from,
+            'body'                     => $body,
+        ];
+
+        $response = $this->emailLog($data);
 
         return (new MailMessage)
                     ->subject($emailTemplate->subject)
@@ -76,11 +87,11 @@ class BizVerificationApproved extends Notification
      * @param  mixed  $notifiable
      * @return array
      */
-    public function toArray($notifiable)
+    public function emailLog($data)
     {
-        return [
-            //
-        ];
+        $emailLog = EmailLog::create($data);  
+
+        return $emailLog;
     }
 
 }

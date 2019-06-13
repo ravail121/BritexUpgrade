@@ -3,6 +3,8 @@
 namespace App\Notifications\AccountSuspended;
 
 use App\Model\Order;
+use App\Model\Customer;
+use App\Model\EmailLog;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
@@ -46,6 +48,8 @@ class InformAdminAccountSuspended extends Notification
     public function toMail($notifiable)
     {
         $adminTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'account-suspension-admin')->first();
+
+        $customer = Customer::find($this->order->customer_id);
         
         $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
@@ -54,7 +58,17 @@ class InformAdminAccountSuspended extends Notification
 
         $adminBody   = str_replace($strings, $replaceWith, $adminTemplate->body);
 
+        $data = ['company_id' => $this->order->company_id,
+            'customer_id'              => $customer->id,
+            'to'                       => $customer->email,
+            'business_verficiation_id' => $customer->business_verification_id,
+            'subject'                  => $adminTemplate->subject,
+            'from'                     => $adminTemplate->from,
+            'body'                     => $adminBody,
+        ];
 
+        $response = $this->emailLog($data);
+        
         return (new MailMessage)
                     ->subject($adminTemplate->subject)
                     ->from($adminTemplate->from)
@@ -67,11 +81,11 @@ class InformAdminAccountSuspended extends Notification
      * @param  mixed  $notifiable
      * @return array
      */
-    public function toArray($notifiable)
+    public function emailLog($data)
     {
-        return [
-            //
-        ];
+        $emailLog = EmailLog::create($data);  
+
+        return $emailLog;
     }
 
 }

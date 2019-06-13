@@ -76,7 +76,7 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
   Route::get('/sample-invoice', [
    'as'=>'api.sample.invoice',
-   'uses'=> 'SampleInvoiceGenerationController@getInvoice',
+   'uses'=> 'SampleInvoiceGenerationController@getInvyoice',
 
   ]);
 
@@ -409,6 +409,11 @@ Route::middleware('APIToken')->group(function () {
 
 
       Route::group(['namespace' => '\Api\V1'],function(){
+
+        Route::post('/create-email-log',[
+          'as'   => 'api.create.emaillog',
+          'uses' => 'EmailLogController@store'
+        ]);
 
         Route::post('/create-subscription',[
           'as'   => 'api.create.subscription',

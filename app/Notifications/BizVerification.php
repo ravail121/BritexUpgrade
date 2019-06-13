@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Model\Order;
 use App\Model\Company;
+use App\Model\EmailLog;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
@@ -80,19 +81,26 @@ class BizVerification extends Notification
 
         /*$mailMessage->markdown('vendor.notifications.email', ['company' => $company]);*/
 
+        $data = ['company_id' => $company->id,
+            'customer_id'              => $this->bizVerification->id,
+            'to'                       => $this->bizVerification->email,
+            'business_verficiation_id' => $this->bizVerification->business_verification_id,
+            'subject'                  => $emailTemplate->subject,
+            'from'                     => $emailTemplate->from,
+            'cc'                       => $emailTemplate->cc,
+            'bcc'                      => $emailTemplate->bcc,
+            'body'                     => $body,
+        ];
+
+        $response = $this->emailLog($data);
+
         return $mailMessage;
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function toArray($notifiable)
+    public function emailLog($data)
     {
-        return [
-            //
-        ];
+        $emailLog = EmailLog::create($data);  
+
+        return $emailLog;
     }
 }

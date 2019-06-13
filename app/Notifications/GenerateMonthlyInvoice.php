@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Model\Order;
+use App\Model\EmailLog;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
@@ -16,16 +17,18 @@ class GenerateMonthlyInvoice extends Notification
 
     public $order;
     public $pdf;
+    public $customer;
 
     /**
      * Create a new notification instance.
      *
      * @return Order $order
      */
-    public function __construct(Order $order, $pdf)
+    public function __construct(Order $order, $pdf, $customer)
     {
         $this->order = $order;
         $this->pdf   = $pdf;
+        $this->customer = $customer;
     }
 
     /**
@@ -59,6 +62,16 @@ class GenerateMonthlyInvoice extends Notification
 
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
+        $data = ['company_id' => $company->id,
+            'customer_id'              => $this->customer->id,
+            'to'                       => $this->customer->email,
+            'business_verficiation_id' => $this->customer->business_verification_id,
+            'subject'                  => $emailTemplate->subject,
+            'from'                     => $emailTemplate->from,
+            'body'                     => $body,
+        ];
+
+        $response = $this->emailLog($data);
 
         return (new MailMessage)
                     ->subject($emailTemplate->subject)
@@ -75,11 +88,11 @@ class GenerateMonthlyInvoice extends Notification
      * @param  mixed  $notifiable
      * @return array
      */
-    public function toArray($notifiable)
+    public function emailLog($data)
     {
-        return [
-            //
-        ];
+        $emailLog = EmailLog::create($data);  
+
+        return $emailLog;
     }
 
 }
