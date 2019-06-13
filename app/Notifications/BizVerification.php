@@ -82,9 +82,8 @@ class BizVerification extends Notification
         /*$mailMessage->markdown('vendor.notifications.email', ['company' => $company]);*/
 
         $data = ['company_id' => $company->id,
-            'customer_id'              => $this->bizVerification->id,
             'to'                       => $this->bizVerification->email,
-            'business_verficiation_id' => $this->bizVerification->business_verification_id,
+            'business_verficiation_id' => $this->bizVerification->id,
             'subject'                  => $emailTemplate->subject,
             'from'                     => $emailTemplate->from,
             'cc'                       => $emailTemplate->cc,

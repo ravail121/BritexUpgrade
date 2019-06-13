@@ -17,18 +17,16 @@ class GenerateMonthlyInvoice extends Notification
 
     public $order;
     public $pdf;
-    public $customer;
 
     /**
      * Create a new notification instance.
      *
      * @return Order $order
      */
-    public function __construct(Order $order, $pdf, $customer)
+    public function __construct(Order $order, $pdf)
     {
         $this->order = $order;
         $this->pdf   = $pdf;
-        $this->customer = $customer;
     }
 
     /**
@@ -63,9 +61,8 @@ class GenerateMonthlyInvoice extends Notification
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
         $data = ['company_id' => $company->id,
-            'customer_id'              => $this->customer->id,
-            'to'                       => $this->customer->email,
-            'business_verficiation_id' => $this->customer->business_verification_id,
+            'to'                       => $bizVerification->email,
+            'business_verficiation_id' => $bizVerification->id,
             'subject'                  => $emailTemplate->subject,
             'from'                     => $emailTemplate->from,
             'body'                     => $body,

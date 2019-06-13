@@ -65,9 +65,8 @@ class BizVerificationApproved extends Notification
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
         $data = ['company_id' => $company->id,
-            'customer_id'              => $this->bizVerification->id,
             'to'                       => $this->bizVerification->email,
-            'business_verficiation_id' => $this->bizVerification->business_verification_id,
+            'business_verficiation_id' => $this->bizVerification->id,
             'subject'                  => $emailTemplate->subject,
             'from'                     => $emailTemplate->from,
             'body'                     => $body,

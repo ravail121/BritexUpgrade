@@ -46,8 +46,6 @@ class EmailWithHash extends Notification
      */
     public function toMail($notifiable)
     {
-        $company = Company::find($this->user['company_id']);
-
         $url = url($company->url.self::URL.$this->user['token']);
 
         $emailTemplate = EmailTemplate::where('company_id', $this->user['company_id'])->where('code', 'reset-password')->first();
@@ -61,9 +59,9 @@ class EmailWithHash extends Notification
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
         $data = ['company_id' => $company->id,
-            'customer_id'              => $customer->id,
-            'to'                       => $customer->email,
-            'business_verficiation_id' => $customer->business_verification_id,
+            'customer_id'              => $customer['id'],
+            'to'                       => $customer['email'],
+            'business_verficiation_id' => $customer['business_verification_id'],
             'subject'                  => $emailTemplate->subject,
             'from'                     => $emailTemplate->from,
             'body'                     => $body,

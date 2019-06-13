@@ -27,7 +27,7 @@ class EmailLogController extends Controller
     {
         $data=$request->validate([
             'company_id'               => '',
-            'customer_id'              => 'required',
+            'customer_id'              => '',
             'staff_id'                 => '',
             'business_verficiation_id' => '',
             'type'                     => '',
