@@ -560,25 +560,27 @@ class InvoiceController extends BaseController implements ConstantInterface
         );
 
         if ($subscription->subscriptionAddon) {
-            foreach ($newAddons as $subAddon) {
-                $addon = Addon::find($subAddon);
-                if(!$addon){
-                    continue;
+            if($newAddons){ 
+                foreach ($newAddons as $subAddon) {
+                    $addon = Addon::find($subAddon);
+                    if(!$addon){
+                        continue;
+                    }
+                    $proratedAmount = OrderGroup::where([['order_id', $orderId[0]],['old_subscription_plan_id', '<>', null]])->first()->orderGroupAddon->where('addon_id', $addon->id)->pluck('prorated_amt')->first();
+                    $addonAmount    = $proratedAmount > 0 ? $proratedAmount : $addon->amount_recurring;                    
+
+                    $array = [
+                        'subscription_id' => $subscription->id,
+                        'product_type' => self::ADDON_TYPE,
+                        'product_id'   => $addon->id,
+                        'type'         => 2,
+                        'amount'       => $addonAmount,
+                        'taxable'      => $addon->taxable
+                    ];
+
+                    $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                    
                 }
-                $proratedAmount = OrderGroup::where([['order_id', $orderId[0]],['old_subscription_plan_id', '<>', null]])->first()->orderGroupAddon->where('addon_id', $addon->id)->pluck('prorated_amt')->first();
-                $addonAmount    = $proratedAmount > 0 ? $proratedAmount : $addon->amount_recurring;                    
-
-                $array = [
-                    'subscription_id' => $subscription->id,
-                    'product_type' => self::ADDON_TYPE,
-                    'product_id'   => $addon->id,
-                    'type'         => 2,
-                    'amount'       => $addonAmount,
-                    'taxable'      => $addon->taxable
-                ];
-
-                $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
-                
             }
         }
 

@@ -101,14 +101,15 @@ class SubscriptionController extends BaseController
 
         SubscriptionAddon::whereIn('id', $subscription_addon_id)->delete();
         $newAddon = [];
-
-        foreach ($addons as $key => $addon) {
-            $subscriptionAddon = SubscriptionAddon::create([
-                'subscription_id' => $request->subscription_id,
-                'addon_id'        => $addon['id'],
-                'status'          => SubscriptionAddon::STATUSES['for-adding'],
-            ]);
-            array_push($newAddon,$subscriptionAddon->addon_id);
+        if(isset($addons)){
+            foreach ($addons as $key => $addon) {
+                $subscriptionAddon = SubscriptionAddon::create([
+                    'subscription_id' => $request->subscription_id,
+                    'addon_id'        => $addon['id'],
+                    'status'          => SubscriptionAddon::STATUSES['for-adding'],
+                ]);
+                array_push($newAddon,$subscriptionAddon->addon_id);
+            }
         }
         return $newAddon;
 

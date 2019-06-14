@@ -32,6 +32,7 @@ class ForgotPasswordController extends BaseController
                 return $this->respond("Sorry Email ID is not Valid");
             }
         }
+
         return $this->insertToken($email);
     }
 

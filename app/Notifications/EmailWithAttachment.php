@@ -59,6 +59,15 @@ class EmailWithAttachment extends Notification
 
         $body = str_replace($strings, $replaceWith, $emailTemplate->body);
 
+        $data = ['company_id' => $this->order->company_id,
+            'to'                       => $bizVerification->email,
+            'business_verficiation_id' => $bizVerification->id,
+            'subject'                  => $emailTemplate->subject,
+            'from'                     => $emailTemplate->from,
+            'body'                     => $body,
+        ];
+
+        $response = $this->emailLog($data);
 
         return (new MailMessage)
                     ->subject($emailTemplate->subject)
@@ -72,17 +81,11 @@ class EmailWithAttachment extends Notification
                     // ]);
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function toArray($notifiable)
+    public function emailLog($data)
     {
-        return [
-            //
-        ];
+        $emailLog = EmailLog::create($data);  
+
+        return $emailLog;
     }
 
 }

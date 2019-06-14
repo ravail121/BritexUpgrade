@@ -73,19 +73,13 @@ class BizVerificationApproved extends Notification
         ];
 
         $response = $this->emailLog($data);
-
+    
         return (new MailMessage)
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from)
                     ->line($body);
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
     public function emailLog($data)
     {
         $emailLog = EmailLog::create($data);  
