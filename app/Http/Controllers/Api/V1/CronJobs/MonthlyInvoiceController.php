@@ -430,6 +430,19 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $this->response;
     }
 
+    protected function regenerateInvoice($id)
+    {
+        $today                  = Carbon::today();
+        $customer               = Customer::find($id);
+        $billingStartDate       = $customer->billing_start;
+        $billingEndDate         = $customer->billing_end;
+        $ifNewSubscriptions     = $customer->subscription;
+        $unpaidSubscriptions    = [];
+        foreach ($ifNewSubscriptions as $subscription) {
+            $unpaidSubscriptions[] = $subscription->whereDate('created_at', '>', $billingStartDate)->get();
+        }
+    }
+
     /**
      * Creates/Regenerates the Invoice
      * 
@@ -439,8 +452,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     protected function createInvoice($customerId)
     {
         $invoice = false;
-        $invoicePending = Invoice::monthlyInvoicePending()->first();
-        $invoicePaid    = Invoice::monthlyInvoicePaid()->first();
+        $invoicePending     = Invoice::monthlyInvoicePending()->first();
+        $invoicePaid        = Invoice::monthlyInvoicePaid()->first();
+        $regenratedInvoice  = $this->regenerateInvoice($customerId);
 
         if (!$invoicePaid && !$invoicePending) {
 

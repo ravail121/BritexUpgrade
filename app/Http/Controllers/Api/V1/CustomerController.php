@@ -346,4 +346,16 @@ class CustomerController extends BaseController
         
         return $this->respond($billingDetails);
     }  
+
+    public function proratedDays(Request $request)
+    {
+      $customer   = Customer::find($request->id);
+      $totalDays  = $customer->billing_start;
+      return $customer; 
+    }
+
+    public function accountStatus(Request $request)
+    {
+      return Customer::find($request->id)->account_suspended;
+    }
 }

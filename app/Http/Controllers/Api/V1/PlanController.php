@@ -19,12 +19,19 @@ use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
+use App\Model\Customer;
 
 /**
  * 
  */
 class PlanController extends BaseController
 {
+
+    const ACCOUNT = [
+        'active'    => 0,
+        'suspended' => 1
+    ];
+
     function __construct()
     {
         $this->content = array();
@@ -129,28 +136,41 @@ class PlanController extends BaseController
         $data = $request->validate(
             [
                 'subscription_id' => 'required',
+                'customer_id'     => 'required'
             ]
         );
 
-        $subscription = Subscription::with('plan', 'order.allOrderGroup.orderGroupAddon')->find($data['subscription_id']);
+        $planId = Subscription::find($request->subscription_id)->plan_id;
+
+        $subscription       = Subscription::with('plan', 'order.allOrderGroup.orderGroupAddon')->find($data['subscription_id']);
+        $plan               = Plan::find($planId);
+        $accountStatus      = Customer::find($request->customer_id)->account_suspended;
+ 
 
         $activeAddon = $this->activeAddons($subscription->id);
 
         if (!$subscription) {
             return $this->respondError('Invalid Subcription ID');
-        }
+        } 
 
-        $plans = Plan::where(
-            [
-                ['carrier_id', '=', $subscription->plan->carrier_id],
-                ['company_id', '=', $subscription->plan->company_id],
-                ['type', '=', $subscription->plan->type],
-            ]
-        )->orderBy('amount_recurring')->get();
+        $condition = [
+            ['carrier_id', '=', $subscription->plan->carrier_id],
+            ['company_id', '=', $subscription->plan->company_id],
+            ['type', '=', $subscription->plan->type]
+        ];
+
+        $ifSuspended = ['amount_recurring' , '<', $plan->amount_recurring];
+        
+        if ($accountStatus == self::ACCOUNT['suspended']) {
+            array_push($condition, $ifSuspended);
+            $plans = Plan::where($condition)->orderBy('amount_recurring')->get();
+        } else {
+            $plans = Plan::where($condition)->orderBy('amount_recurring')->get();
+        } 
 
         $plans['active_plan'] = $subscription->plan_id;
         $plans['active_addons'] = $activeAddon;
-
+        
         return $this->respond($plans);
     }
 
@@ -167,8 +187,9 @@ class PlanController extends BaseController
                 ['plan_id', '=', $data['plan_id']],
             ]
         )->get();
-
+        \Log::info($addons);
         return $addons;
+       
     }
 
     public function activeAddons($subscriptionId)

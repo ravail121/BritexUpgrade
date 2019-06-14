@@ -174,42 +174,28 @@ class InvoiceController extends BaseController implements ConstantInterface
             }
 
             $order = Order::where('hash', $request->hash)->first();
-                    $currentInvoice =  $order->invoice;
-                    if ($request->coupon) {
-                        $currentInvoice->invoiceItem()->create(
-                            [
-                                'subscription_id' => null,
-                                'product_type'    => '',
-                                'product_id'      => null,
-                                'type'            => InvoiceItem::TYPES['coupon'],
-                                'description'     => "(Coupon) ".$request->coupon['couponCode'],
-                                'amount'          => $request->coupon['couponTotal'],
-                                'start_date'      => $currentInvoice->start_date,
-                                'taxable'         => self::TAX_FALSE,
-                            ]
-                        );
-                    }
+            $currentInvoice =  $order->invoice;
 
+            $this->storeCoupon($request->couponAmount, $request->couponCode, $currentInvoice);
 
         }
 
 
-        
+        $order = Order::where('hash', $request->hash);
     
         if ($request->customer_id) {
             $this->availableCreditsAmount($request->customer_id);
         }
 
         if ($request->hash) {
-            $currentInvoice =  Order::where('hash', $request->hash)->first()->invoice;
+            $currentInvoice =  $order->first()->invoice;
             $this->addTaxesToSubtotal($currentInvoice);
         }
 
-        $this->addShippingCharges(Order::where('hash', $request->hash)->first());
-       
+        $this->addShippingCharges($order->first());
 
         if($order) {
-            event(new InvoiceGenerated($order));
+            event(new InvoiceGenerated($order->first()));
         }
 
         return $this->respond($msg);
@@ -217,9 +203,52 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     public function getTax(Request $request)
     {
-        $taxes      = Order::where('hash', $request->hash)->first()->invoice->invoiceItem->where('type', self::TAXES)->sum('amount');
-        $shipping   = Order::where('hash', $request->hash)->first()->invoice->invoiceItem->where('description', self::SHIPPING)->sum('amount');
+        $order = Order::where('hash', $request->hash)->first();
+        $taxes      = $order->invoice->invoiceItem->where('type', self::TAXES)->sum('amount');
+        $shipping   = $order->invoice->invoiceItem->where('description', self::SHIPPING)->sum('amount');
         return ['taxes' => $taxes, 'shipping' => $shipping];
+    }
+
+    public function getCoupons(Request $request)
+    {
+        $coupons = Order::where('hash', $request->hash)->first()->invoice->invoiceItem->where('type', self::COUPONS)->sum('amount');
+        return ['coupons' => $coupons];
+    }
+   
+    public function storeCoupon($couponAmount, $couponCode, $invoice)
+    {
+        //store coupon in invoice_items.
+        if ($couponAmount) {
+            $invoice->invoiceItem()->create(
+                [
+                    'subscription_id' => null,
+                    'product_type'    => '',
+                    'product_id'      => null,
+                    'type'            => InvoiceItem::TYPES['coupon'],
+                    'description'     => "(Coupon) ".$couponCode,
+                    'amount'          => $couponAmount,
+                    'start_date'      => $invoice->start_date,
+                    'taxable'         => self::TAX_FALSE,
+                ]
+            );
+
+            //store coupon in customer_coupon table if eligible
+            $coupon         = Coupon::where('code', $couponCode)->first();
+            $couponCycles   = $coupon->num_cycles;
+            $couponId       = $coupon->id;
+
+            if ($couponCycles > 1) {
+                CustomerCoupon::create(
+                    [
+                        'customer_id'       => $invoice->customer_id,
+                        'coupon_id'         => $couponId,
+                        'cycles_remaining'  => $couponCycles - 1
+                    ]
+                );
+            }
+        }
+
+
     }
 
     /**
@@ -237,7 +266,6 @@ class InvoiceController extends BaseController implements ConstantInterface
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
 
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
-            
             
             $regulatoryFee          = $order->invoice->cal_regulatory;
             $stateTax               = $order->invoice->cal_stateTax;
@@ -257,7 +285,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $serviceChargesProrated = $planCharges + $oneTimeCharges + $usageCharges;
             $serviceCharges         = $proratedAmount == null ? $order->invoice->cal_service_charges : $serviceChargesProrated;
             $shippingFee            = $order->invoice->invoiceItem->where('description', 'Shipping Fee')->sum('amount');
-            $taxAndShipping         = $taxes + $shippingFee;
+            $taxAndShipping         = $taxes;
             $totalCredits           = $order->credits->sum('amount');
             $oldUsedCredits         = $order->credits->first() ? $order->invoice->creditsToInvoice->where('credit_id', '!=', $order->credits->first()->id)->sum('amount') : $order->invoice->creditsToInvoice->sum('amount');
             $totalCreditsToInvoice  = $order->invoice->creditsToInvoice->sum('amount');
@@ -292,7 +320,8 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'credits_and_coupons'       => self::formatNumber($totalCreditsToInvoice + $totalCoupons),
                 'total_coupons'             => self::formatNumber($totalCoupons),
                 'account_charges_discount'  => self::formatNumber($accountChargesDiscount),
-                'total_line_charges'        => self::formatNumber($totalLineCharges)
+                'total_line_charges'        => self::formatNumber($totalLineCharges),
+                'total_account_summary_charge' => self::formatNumber($planCharges + $oneTimeCharges + $usageCharges + $taxAndShipping - $credits)
                 
             ];
 
@@ -392,12 +421,14 @@ class InvoiceController extends BaseController implements ConstantInterface
         )->where('subscription_id', 0)->sum('amount');
         $tax          = $standaloneItems->where('type', self::TAXES)->where('subscription_id', 0)->sum('amount');
         $shipping     = $standaloneItems->where('description', 'Shipping Fee')->where('subscription_id', 0)->sum('amount');
+        $coupons      = $standaloneItems->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
         
         $standalone = [
             'standalone_onetime_charges'  => self::formatNumber($deviceAndSim),
             'standalone_shipping_fee'     => self::formatNumber($shipping),
-            'taxes'                       => self::formatNumber($tax + $shipping),
-            'total'                       => self::formatNumber($tax + $shipping + $deviceAndSim)
+            'taxes'                       => self::formatNumber($tax),
+            'coupons'                     => self::formatNumber($coupons),  
+            'total'                       => self::formatNumber($tax + $deviceAndSim - $coupons),
         ];
         
         return $standalone;
@@ -639,8 +670,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             if ($subscription->plan_id != null) {
                 $plan = Plan::find($subscription->plan_id);
-                $orderId = Order::where('invoice_id', $this->input['invoice_id'])->pluck('id');
-                $proratedAmount = OrderGroup::where('order_id', $orderId)->where('plan_id', $subscription->plan_id)->first()->plan_prorated_amt;
+                $proratedAmount = $order->planProRate($plan->id);
 
                 $amount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
 
@@ -683,9 +713,15 @@ class InvoiceController extends BaseController implements ConstantInterface
             if ($subscription->subscriptionAddon) {
                 
                 foreach ($subscription->subscriptionAddon as $subAddon) {
+
                     $addon = Addon::find($subAddon->addon_id);
-                    
-                    $proratedAmount = OrderGroup::where('order_id', $order->id)->first()->orderGroupAddon->where('addon_id', $addon->id)->pluck('prorated_amt')->first();
+        
+                    $isProrated = $order->orderGroup->where('plan_prorated_amt', '!=', null);
+
+                    if ($isProrated) {
+                        $proratedAmount = $order->calProRatedAmount($addon->amount_recurring);
+                    }
+
                     $addonAmount    = $proratedAmount > 0 ? $proratedAmount : $addon->amount_recurring;                    
 
                     $array = [

@@ -91,6 +91,12 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
     'uses'=> 'InvoiceController@getTax',
  
    ]);
+
+   Route::get('/invoice/coupons', [
+    'as'=>'api.invoice.getCoupons',
+    'uses'=> 'InvoiceController@getCoupons',
+ 
+   ]);
 });
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
@@ -160,12 +166,24 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.order_group.taxrate'  ,
           'uses' => 'OrderGroupController@taxrate'  
         ]);
-        Route::get('/add-coupon', [
-          'as' => 'api.order_group.addCoupon'  ,
-          'uses' => 'OrderGroupController@addCoupon'  
+        Route::get('/get-sim', [
+          'as' => 'api.order_group.getSim'  ,
+          'uses' => 'OrderGroupController@getSim'  
         ]);
+        Route::get('/edit-sim', [
+          'as' => 'api.order_group.editSim'  ,
+          'uses' => 'OrderGroupController@editSim'  
+        ]);
+
       });
 
+      Route::group(['prefix' => 'coupon', 'namespace' => '\Api\V1'], function()
+      {
+        Route::post('/add-coupon', [
+          'as' => 'api.coupon.addCoupon'  ,
+          'uses' => 'CouponController@addCoupon'  
+        ]);
+      });
       Route::group(['prefix' => 'devices', 'namespace' => 'Api\V1'], function()
       {
         Route::get('/',[
@@ -291,6 +309,8 @@ Route::middleware('APIToken')->group(function () {
         'as'=>'api.customer.post',
         'uses'=>'CustomerController@post',
         ]);
+
+
 
         /*Route::get('/subscriptions',[
           'as'=>'api.customer.subscription_list',
@@ -462,6 +482,17 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.customer.details',
           'uses' => 'CustomerController@customerDetails',
         ]);
+
+        Route::post('customer/account-status',[
+          'as'   => 'api.customer.status',
+          'uses' => 'CustomerController@accountStatus',
+        ]);
+
+        Route::post('/prorated-remaining-days',[
+          'as'=>'api.customer.prorated',
+          'uses'=>'CustomerController@proratedDays',
+        ]);
+
 
         Route::post('update-customer',[
           'as'   => 'api.customer.update',

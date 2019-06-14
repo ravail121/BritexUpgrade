@@ -28,7 +28,6 @@ class OrderGroupController extends Controller
     }
     
 
-
  public function put(Request $request)
     {
     /*
@@ -99,40 +98,28 @@ class OrderGroupController extends Controller
         return $rate;
     }
 
-    public function addCoupon(Request $request)
+    public function getSim(Request $request)
     {
-        $coupon = Coupon::where('code', $request->code)->first();
-        $multiline = $coupon->multiline_restrict_plans ? $coupon->multilinePlanTypes->pluck('plan_type') : null;
-        $billableSubscriptions = Customer::where('hash', $request->hash)->first()->billableSubscriptions;
-        
-        foreach ($billableSubscriptions as $subscription) {
-            $plans[] = Plan::find($subscription->plan_id);
-        }
-
-        if (!empty($coupon)) {
-            $alreadyExists = OrderCoupon::where('order_id', $request->order_id)->get();
-            $orderGroup    = OrderGroup::where('order_id', $request->order_id)->sum('plan_prorated_amt');
-            if (count($alreadyExists) < 1) {
-
-                OrderCoupon::create([
-                    'order_id' => $request->order_id,
-                    'coupon_id' => $coupon->id
-                ]);
-
-            }
-            return response()->json([
-                'coupon'                => $coupon,
-                'specificTypes'         => $coupon->couponProductTypes,
-                'specificProducts'      => $coupon->couponProducts,
-                'billableSubscription'  => $billableSubscriptions,
-                'billablePlans'         => $plans,
-                'multiline_type'        => $multiline,
-                'orderGroup'            => $orderGroup
-            ]);
-        }
+        return OrderGroup::find($request->id);
         
     }
 
+    public function editSim(Request $request)
+    {
+        $newSimNumber   = $request->newSimNumber;
+        $portNewNumber  = $request->portNewNumber;
+        $areaNewCode    = $request->areaNewCode;
+
+        $orderGroupId   = $request->orderGroupId;
+        $orderGroup     = OrderGroup::find($orderGroupId);
+        
+        $newSimNumber   ? $orderGroup->update(['sim_num'        => $newSimNumber])  : null;
+        $portNewNumber  ? $orderGroup->update(['porting_number' => $portNewNumber]) : null;
+        $areaNewCode    ? $orderGroup->update(['area_code'      => $areaNewCode])   : null;
+
+    }
+
+    
 
     public function edit(Request $request)
     {
