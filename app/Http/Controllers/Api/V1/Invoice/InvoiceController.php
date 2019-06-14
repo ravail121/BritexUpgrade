@@ -526,9 +526,9 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 
     /**
-     * Updates the customer subscription_date, billing_start and billing_end if null
+     * Updates the customer subscription_date, baddRegulatorFeesToSubscriptiontart and billing_end if null
      * 
-     * @param  Object  $obj   Subscription, CustomerStandaloneDevice, CustomerStandaloneSim
+     * @param  Object  $obj   Subscription, CustaddRegulatorFeesToSubscriptiondaloneDevice, CustomerStandaloneSim
      * @return Object  $order
      */
     protected function updateCustomerDates($obj)

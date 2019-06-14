@@ -48,6 +48,7 @@ class SendEmailWithInvoice
      */
     public function handle(InvoiceGenerated $event)
     {
+        
         $order = $event->order;
 
         $invoice = $this->setData($order);
@@ -55,8 +56,9 @@ class SendEmailWithInvoice
         $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
         
         $configurationSet = $this->setMailConfiguration($order);
-
+        
         if ($configurationSet) {
+            
             return false;
         }
 
@@ -82,7 +84,7 @@ class SendEmailWithInvoice
             'username' => $company->smtp_username,
             'password' => $company->smtp_password,
         ];
-
+        
         Config::set('mail',$config);
         return false;
     }

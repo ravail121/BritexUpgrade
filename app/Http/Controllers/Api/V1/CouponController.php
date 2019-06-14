@@ -127,10 +127,11 @@ class CouponController extends Controller
 
         $totalApplicableSubscriptions = [];
         
-        if ($multilineType[0] == 1) {
+        if ($multilineType[0] > 0) {
             
             foreach ($totalSubscriptions as $sub) {
                 if ($sub['type'] == $multilineType[0]) {
+                    
                     $totalApplicableSubscriptions[] = $sub;
                 }
             }
