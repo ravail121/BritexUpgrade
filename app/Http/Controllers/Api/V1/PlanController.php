@@ -19,7 +19,6 @@ use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
-use App\Model\Customer;
 
 /**
  * 

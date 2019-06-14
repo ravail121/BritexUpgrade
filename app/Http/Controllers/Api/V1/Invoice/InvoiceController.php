@@ -106,7 +106,9 @@ class InvoiceController extends BaseController implements ConstantInterface
     public function oneTimeInvoice(Request $request)
     {
         $msg = '';
+       
         if ($request->data_to_invoice) {
+            
             $invoice = $request->data_to_invoice;
 
             if (isset($invoice['subscription_id'])) {
@@ -130,22 +132,22 @@ class InvoiceController extends BaseController implements ConstantInterface
                 
             }
             if (isset($invoice['customer_standalone_device_id'])) {
-
+               
                 $orderId = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'])->first()->order_id;
-
+               
                 $standaloneDevice = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'][0]);
-
+               
                 $order = $this->updateCustomerDates($standaloneDevice);
-                        
+               
                 $invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
-
+               
                 foreach ($invoice['customer_standalone_device_id'] as $id) {
                     $shippingAmount   = CustomerStandaloneDevice::find($id)->device->shipping_fee;
                    //$this->addShippingChargesStandalone($shippingAmount, $orderId);
                 }
-
+               
                 $taxes = $this->addTaxesToStandalone(Order::find($orderId)->invoice, self::TAX_FALSE, self::DEVICE_TYPE);
-
+               
                 $msg = (!$invoiceItem) ? 'Standalone Device Invoice item was not generated' : 'Invoice item generated successfully.' ;
 
 
@@ -328,7 +330,6 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
  
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                return view('templates/onetime-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
                 return $pdf->download('invoice.pdf');
             
@@ -757,7 +758,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 
             //$customer = app('App\Http\Controllers\Api\V1\InvoiceController')->customer();
-           // \Log::info($customer);
+           //
             
 
         }
