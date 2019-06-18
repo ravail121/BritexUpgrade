@@ -187,18 +187,18 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
 
 
-        $order = Order::where('hash', $request->hash);
+        $order = Order::where('hash', $request->hash)->first();
     
         if ($request->customer_id) {
             $this->availableCreditsAmount($request->customer_id);
         }
 
         if ($request->hash) {
-            $currentInvoice =  $order->first()->invoice;
+            $currentInvoice =  $order->invoice;
             $this->addTaxesToSubtotal($currentInvoice);
         }
 
-        $this->addShippingCharges($order->first());
+        $this->addShippingCharges($order);
 
         if(isset($order)) {
             event(new InvoiceGenerated($order));
