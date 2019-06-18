@@ -141,7 +141,11 @@ class PlanController extends BaseController
             ]
         );
 
-        $planId = Subscription::find($request->subscription_id)->plan_id;
+        $planId = Subscription::where([['id' , $data['subscription_id']], ['customer_id', $data['customer_id']]])->first()->plan_id;
+
+        if(!$planId){
+            return $this->respond('Invalid Subcription ID');
+        }
 
         $subscription       = Subscription::with('plan', 'order.allOrderGroup.orderGroupAddon')->find($data['subscription_id']);
         $plan               = Plan::find($planId);
