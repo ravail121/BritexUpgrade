@@ -10,6 +10,7 @@ use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class BizVerification extends Notification
@@ -55,11 +56,12 @@ class BizVerification extends Notification
         $company = Company::find($this->order->company_id);
 
         $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'biz-verification-submitted')->first();
-        $strings     = ['[FIRST_NAME]', '[LAST_NAME]', '[BUSINESS_NAME]'];
-        
-        $replaceWith = [$this->bizVerification->fname, $this->bizVerification->lname, $this->bizVerification->business_name];
 
-        $body = str_replace($strings, $replaceWith, $emailTemplate->body);
+        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'biz-verification-submitted')->get()->toArray();
+
+        $column = array_column($templateVales, 'format_name');
+
+        $body = $emailTemplate->body($column, $this->bizVerification);
             
         $mailMessage = (new MailMessage)
                     ->subject($emailTemplate->subject)

@@ -9,7 +9,7 @@ class OrderGroupAddon extends Model
    protected $table = 'order_group_addon';
 
    protected $fillable = [
-        'order_group_id', 'addon_id', 'prorated_amt', 'subscription_id', 'subscription_addon_id'
+        'order_group_id', 'addon_id', 'prorated_amt', 'subscription_id', 'subscription_addon_id','paid',
     ];
 
    public function ordergroup()

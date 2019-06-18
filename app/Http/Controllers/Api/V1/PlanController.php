@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 use Validator;
 use App\Model\Sim;
+use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Addon;
 use App\Model\Order;
 use App\Model\Device;
+use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
@@ -211,87 +213,144 @@ class PlanController extends BaseController
             ]
         );
         $subscription = Subscription::find($data['subscription_id']);
-        $orderGroup = [
+        $orderGroupData = [
             'plan_id'                      => $data['plan'],
             'old_subscription_plan_id'     => $data['active_plans'],
             'subscription_id'              => $data['subscription_id'],
+            'order_id'                     => $subscription->order_id,
         ];
+        $date = Carbon::today()->addDays(6)->endOfDay();
+        $invoice = Invoice::where([['customer_id', $subscription->customerRelation->id],['type', '1'],['status','2']])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+
+        $paidInvoice = '0';
+        if(isset($invoice)){
+            $paidInvoice = '1';
+        }
         
         $newPlan = Plan::find($data['plan']);
         $activePlan = Plan::find($data['active_plans']);
         $plan_prorated_amt= $newPlan->amount_recurring - $activePlan->amount_recurring;
 
         if($plan_prorated_amt < 0){
-            $plan_prorated_amt = 0;
+            $amount  = 0;
+        }else{
+            $amount = $plan_prorated_amt;
         }
 
-        $orderGroup['plan_prorated_amt'] = $plan_prorated_amt;
+        $orderGroupData['plan_prorated_amt'] = $amount;
 
-        $updatedOrderGroup = OrderGroup::where('order_id', $subscription->order_id)->where(function ($query) use ($data) {
-                $query->where('plan_id', $data['active_plans'])
-                      ->orWhere('subscription_id', '<>', null);})->first();
-
-        $this->updateAddons($request, $updatedOrderGroup, $subscription);
-
-        if($plan_prorated_amt != 0){
+        if($plan_prorated_amt >= 0){
             //UPGARDE
-            $orderGroup['change_subscription'] = '1';
+            if($data['plan'] == $data['active_plans']){
+                //Added new Addon in Same Plan
+                OrderGroup::where([['order_id' , $subscription->order_id],['old_subscription_plan_id', '<>', null], ['paid', null]])->delete();
+                $oldOrderGroup = OrderGroup::where([['order_id' , $subscription->order_id],['plan_id', $data['active_plans']]])->orderBy('id', 'DESC')->first();
 
-            $updatedOrderGroup->update($orderGroup);
+                $status = $this->samePlanAddons($request, $oldOrderGroup, $subscription, $data['active_plans']);
+                $subscription->order['status'] = $status;
 
+                return $this->respond($subscription->order);
+
+            }
+            $orderGroupData['change_subscription'] = '1';
             $subscription->order['status'] = 'upgrade';
+
         }else{
             //DOWNGRADE
-            $orderGroup ['change_subscription'] = '-1';
+            $orderGroupData ['change_subscription'] = '-1';
 
-            $updatedOrderGroup->update($orderGroup);
+            OrderGroup::create($orderGroupData);
 
             $subscription->order['status'] = 'downgrade';
             $subscription->order['newPlan'] = $newPlan;
             $subscription->order['subscription_id'] = $data['subscription_id'];
         }
+
+        OrderGroup::where([['order_id', $subscription->order_id],['old_subscription_plan_id','<>', null], ['paid', null]])->delete();
+
+        $orderGroup = OrderGroup::create($orderGroupData);   
+
+        $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
+
+        if($paidInvoice == "1"){
+            $orderGroup = OrderGroup::create($orderGroupData);   
+
+            $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
+        }
+
         return $this->respond($subscription->order);
     }
 
-    public function updateAddons($request, $updatedOrderGroup, $subscription)
+    public function samePlanAddons($request, $orderGroup, $subscription, $plan)
     {
-        if($request->addon){
-            $addons = $request->addon;
-            $activeAddons = [];
-            if($request->active_addons){
-                $activeAddons = explode(",",$request->active_addons);
-                $removedAddon=array_diff($activeAddons, $addons);
-
-                $this->updateRemovedAddon($removedAddon, $subscription->id, $updatedOrderGroup->id);
-            }
-
-            $newAddon=array_diff($addons, $activeAddons);
-            $this->insertNewAddon($newAddon, $updatedOrderGroup->id, $subscription);
-
-        }else{
+        $addons = $request->addon;
+        if(!$addons){
             $addons = [];
+        }
+        $activeAddons = [];
+        if($request->active_addons){
+            $activeAddons = explode(",",$request->active_addons);
+            $removedAddon=array_diff($activeAddons, $addons);
+            if(!empty($removedAddon)){
+                $oldOrderGroup = OrderGroup::where([['order_id' , $subscription->order_id],['plan_id', $plan]])->first();
+                $this->updateRemovedAddon($removedAddon, $subscription->id, $oldOrderGroup->id);
+            }
+        }
+        $newAddon=array_diff($addons, $activeAddons);
+        if(!empty($newAddon)){
+            $orderGroup['change_subscription'] = '1';
+            $this->insertNewAddon($newAddon, $orderGroup, $subscription);
+            return 'upgrade';
+        }else{
+            return 'downgrade';
         }
     }
 
-    public function updateRemovedAddon($addons, $subscription_id, $updatedOrderGroupId)
+    public function updateAddons($request, $orderGroup, $subscription, $plan)
+    {
+        $addons = $request->addon;
+        if(!$addons){
+            $addons = [];
+        }
+        $activeAddons = [];
+        if($request->active_addons){
+            $activeAddons = explode(",",$request->active_addons);
+            $removedAddon=array_diff($activeAddons, $addons);
+            if(!empty($removedAddon)){
+                $oldOrderGroup = OrderGroup::where([['order_id' , $subscription->order_id],['plan_id', $plan]])->first();
+                $this->updateRemovedAddon($removedAddon, $subscription->id, $oldOrderGroup->id);
+            }
+
+        }
+
+        $newAddon=array_diff($addons, $activeAddons);
+        $this->insertNewAddon($newAddon, $orderGroup, $subscription);
+
+    }
+
+    public function updateRemovedAddon($addons, $subscription_id, $orderGroupId)
     {
         $data = ['subscription_id' => $subscription_id];
         foreach ($addons as $key => $addon) {
             $subscriptionAddon = SubscriptionAddon::where([['subscription_id', $subscription_id],['addon_id',$addon]])->first();
-            OrderGroupAddon::where([['order_group_id', $updatedOrderGroupId],['addon_id',$addon]])->update(array_merge($data,['subscription_addon_id' => $subscriptionAddon->id, ]));
+            OrderGroupAddon::where([['order_group_id', $orderGroupId],['addon_id',$addon]])->update(array_merge($data,['subscription_addon_id' => $subscriptionAddon->id, ]));
 
         }
     }
 
-    public function insertNewAddon($addons, $updatedOrderGroupId, $subscription)
+    public function insertNewAddon($addons, $orderGroup, $subscription)
     {
         foreach ($addons as $key => $addon) {
             $data = [
                 'addon_id'       => $addon,
-                'order_group_id' => $updatedOrderGroupId,
+                'order_group_id' => $orderGroup->id,
             ];
-            $orderGroupAddon = OrderGroupAddon::where($data)->where('subscription_id' ,'<>', null)->delete();
-            $data ['prorated_amt'] = $subscription->order->addonProRate($addon);
+            $orderGroupAddon = OrderGroupAddon::where($data)->where([['subscription_id' ,'<>', null], ['paid', null]])->delete();
+            if($orderGroup->change_subscription == "1"){
+                $data ['prorated_amt'] = $subscription->order->addonProRate($addon);
+            }else{
+                $data ['prorated_amt'] = "0";
+            }
             $data ['subscription_id'] = $subscription->id;
         
             OrderGroupAddon::create($data);

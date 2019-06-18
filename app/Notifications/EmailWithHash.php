@@ -9,6 +9,7 @@ use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class EmailWithHash extends Notification
@@ -54,14 +55,14 @@ class EmailWithHash extends Notification
         $url = url($company->url.self::URL.$this->user['token']);
         
         $emailTemplate = EmailTemplate::where('company_id', $this->user['company_id'])->where('code', 'reset-password')->first();
+
+        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'reset-password')->get()->toArray();
+
+        $column = array_column($templateVales, 'format_name');
     
         $customer = Customer::whereEmail($this->user['email'])->first();
-    
-        $strings     = ['[FIRST_NAME]', '[LAST_NAME]','[EMAIL]'];
-        
-        $replaceWith = [$customer['fname'], $customer['lname'], $customer['email']];
 
-        $body = str_replace($strings, $replaceWith, $emailTemplate->body);
+        $body = $emailTemplate->customerBody($column, $customer);
 
         $data = ['company_id'          => $customer['company_id'],
             'customer_id'              => $customer['id'],

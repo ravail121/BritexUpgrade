@@ -58,6 +58,10 @@ class SystemEmailTemplateTableSeeder extends Seeder
                 'code' => 'biz-verification-rejected', 
                 'description' => 'Event triggerwhen admin mark the business verification as rejected'
             ],
+            [   'name' => 'Port Complete', 
+                'code' => 'port-complete', 
+                'description' => 'Event triggerwhen admin mark the porting as complete'
+            ],
         ];
     }
 }

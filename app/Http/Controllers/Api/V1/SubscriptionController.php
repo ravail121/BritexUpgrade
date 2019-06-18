@@ -8,6 +8,7 @@ use App\Model\Sim;
 use App\Model\Port;
 use App\Model\Plan;
 use App\Model\Order;
+use App\Model\OrderGroup;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
@@ -58,6 +59,7 @@ class SubscriptionController extends BaseController
             'upgrade_downgrade_status'  => 'required',
             'new_plan_id'  => 'sometimes|required',
         ]);
+        OrderGroup::whereId($request->order_group_id)->update(['paid' => '1']);
         $subscription = Subscription::find($data['id']);
 
         $data['old_plan_id'] = $subscription->plan_id;
@@ -110,6 +112,7 @@ class SubscriptionController extends BaseController
                 ]);
                 array_push($newAddon,$subscriptionAddon->addon_id);
             }
+            OrderGroupAddon::whereOrderGroupId($request->order_group_id)->update(['paid' => '1']);
         }
         return $newAddon;
 

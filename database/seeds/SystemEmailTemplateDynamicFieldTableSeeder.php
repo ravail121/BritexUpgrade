@@ -98,8 +98,16 @@ class SystemEmailTemplateDynamicFieldTableSeeder extends Seeder
                 'code' => 'reset-password', 
                 'description' => 'Customer first name'
             ],
-            [   'name' => 'customer_fname', 
+            [   'name' => 'customer_lname', 
                 'code' => 'reset-password', 
+                'description' => 'Customer last name'
+            ],
+            [   'name' => 'customer_fname', 
+                'code' => 'port-complete', 
+                'description' => 'Customer first name'
+            ],
+            [   'name' => 'customer_lname', 
+                'code' => 'port-complete', 
                 'description' => 'Customer last name'
             ],
         ];

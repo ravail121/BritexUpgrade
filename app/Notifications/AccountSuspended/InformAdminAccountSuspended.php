@@ -9,6 +9,7 @@ use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class InformAdminAccountSuspended extends Notification
@@ -50,10 +51,11 @@ class InformAdminAccountSuspended extends Notification
         
         $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
-        $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
-        $replaceWith = [$bizVerification->fname, $bizVerification->lname];
+        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'account-suspension-admin')->get()->toArray();
 
-        $adminBody   = str_replace($strings, $replaceWith, $adminTemplate->body);
+        $column = array_column($templateVales, 'format_name');
+
+        $adminBody = $emailTemplate->body($column, $bizVerification);
 
         $data = ['company_id' => $this->order->company_id,
             'to'                       => $bizVerification->email,

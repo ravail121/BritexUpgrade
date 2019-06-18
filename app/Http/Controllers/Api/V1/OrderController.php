@@ -26,22 +26,22 @@ class OrderController extends BaseController
     }
     public function get(Request $request){
         $hash = $request->input('order_hash');
-        //$order = array(); //'order'=>array(), 'order_groups'=>array());
 
         $order = [];
         $ordergroups = [];
+        $samePlan = 0;
         if($hash){
             if($request->input('change_plan')){
                 $plan = $request->input('change_plan');
-                
-                $order_groups = OrderGroup::where(function($q) use ($plan) {
-                    $q->where('plan_id', $plan)
-                    ->orWhere('old_subscription_plan_id', $plan);
-                })
-                ->with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
-                        $query->where('hash', $hash);})->get();
-
-                $paidAddons = SubscriptionAddon::whereSubscriptionId($request->subscription_id)->pluck('addon_id');
+                if($request->confirmation){
+                   $response = $this->getConfirmationUpdateDowngradeData($plan, $hash);
+                   $paidAddons = SubscriptionAddon::whereSubscriptionId($request->subscription_id)->where('status', '<>', 'for-adding')->pluck('addon_id');
+                }else{
+                    $response = $this->getUpdateDowngradeData($plan, $hash);
+                    $paidAddons = SubscriptionAddon::whereSubscriptionId($request->subscription_id)->pluck('addon_id');
+                }
+                $order_groups = $response['order_groups'];
+                $samePlan = $response['samePlan'];
             }else{
                 $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                         $query->where('hash', $hash);})->get();
@@ -77,15 +77,16 @@ class OrderController extends BaseController
                         'sim'               => $request->input('change_plan') ? null : $og->sim,
                         'sim_num'           => $og->sim_num,
                         'sim_type'          => $og->sim_type,
-                        'plan'              => $og->plan,
+                        'plan'              => $samePlan == '1' ? null : $og->plan,
                         'addons'            => [],
                         'porting_number'    => $og->porting_number,
                         'area_code'         => $og->area_code,
                         'device'            => $request->input('change_plan') ? null : $og->device_detail,
                         'operating_system'  => $og->operating_system,
                         'imei_number'       => $og->imei_number,
-                        'plan_prorated_amt' => $og->plan_prorated_amt,
+                        'plan_prorated_amt' => $samePlan == '1' ? null :$og->plan_prorated_amt,
                         'subscription'       => $request->input('change_plan') ? $og->subscription : null,
+                        'subscription_id'       => $samePlan == '1' ? $request->subscription_id : null,
                     );
                 if($request->input('change_plan')){
                     $_addons = OrderGroupAddon::with(['addon'])->where([['order_group_id', $og->id], ['subscription_addon_id' , null]] )->whereNotIn('addon_id', $paidAddons)->get();
@@ -117,6 +118,44 @@ class OrderController extends BaseController
         return response()->json($this->content);
 
 
+    }
+
+    private function getConfirmationUpdateDowngradeData($plan, $hash)
+    {
+        $samePlan = 0;
+        $order_groups = OrderGroup::where([['paid', '1'], ['old_subscription_plan_id', $plan]])
+        ->with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
+                $query->where('hash', $hash);})->orderBy('id', 'DESC')->get();
+
+        \Log::info($order_groups);
+
+
+        if(!isset($order_groups[0])){
+            $order_groups[0] = OrderGroup::where([['plan_id', $plan]])
+            ->with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
+                $query->where('hash', $hash);})->orderBy('id', 'DESC')->first();
+
+            $samePlan = 1;
+        }
+
+        return ['order_groups' => $order_groups, 'samePlan' => $samePlan];
+    }
+
+    private function getUpdateDowngradeData($plan, $hash)
+    {
+        $samePlan = 0;
+        $order_groups = OrderGroup::where([['paid', null], ['old_subscription_plan_id', $plan]])
+        ->with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
+                $query->where('hash', $hash);})->get();
+
+        if(!isset($order_groups[0])){
+            $order_groups[0] = OrderGroup::where([['plan_id', $plan]])
+            ->with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
+                $query->where('hash', $hash);})->orderBy('id', 'DESC')->first();
+            $samePlan = 1;
+        }
+
+        return ['order_groups' => $order_groups, 'samePlan' => $samePlan];
     }
 
 
