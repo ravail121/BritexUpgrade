@@ -358,4 +358,5 @@ class CustomerController extends BaseController
     {
       return Customer::find($request->id)->account_suspended;
     }
+
 }

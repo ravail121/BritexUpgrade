@@ -687,7 +687,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'amount'       => $amount,
                     'taxable'      => $plan->taxable
                 ];
-
+                
                 $array = array_merge($subarray, $array);
 
                 $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
