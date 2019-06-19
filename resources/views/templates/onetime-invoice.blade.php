@@ -280,7 +280,7 @@
                                 </td>
                                 <td>-$ 
 
-                                    @isset($invoice['standalone_data']) ?
+                                    @isset($invoice['standalone_data']) 
                                         {{$invoice['standalone_data']['coupons']}} 
                                     @endisset
                                 </td>

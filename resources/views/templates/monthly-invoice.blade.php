@@ -117,19 +117,39 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Services, Usage &amp; Charges</td>
-                                                    <td class="detail">$ {{ $invoice['service_charges'] }}</td>
+                                                    <td class="detail">$ 
+                                                        @isset ($invoice['service_charges'])
+                                                            {{ $invoice['service_charges'] }}
+                                                        @endisset
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td>Fees/Taxes</td>
-                                                    <td class="detail">$ {{ $invoice['taxes'] }}</td>
-                                                </tr>
+                                                    <td class="detail">$ 
+                                                        @isset ($invoice['taxes'])
+                                                            {{ $invoice['taxes'] }}
+                                                        @endisset
+                                                    </td>
+                                                </tr>        
                                                 <tr>
-                                                    <td>Coupons</td>
-                                                    <td class="detail">-$ {{ $invoice['credits'] }}</td>
+                                                    <td>Coupons 
+                                                        <div class="seprator"></div>
+                                                    </td>
+                                                    <td class="detail">-$ 
+                                                        @isset ($invoice['credits'])
+                                                            {{ $invoice['credits'] }}
+                                                        @endisset
+                                                    </td>
                                                 </tr>
+                                                
                                                 <tr>
                                                     <td>Total Charges This Bill</td>
-                                                    <td class="detail">$ {{ $invoice['subtotal'] }}</td>
+                                                    
+                                                    <td class="detail">$ 
+                                                        @isset ($invoice['subtotal'])
+                                                            {{ $invoice['subtotal'] }}
+                                                        @endisset
+                                                    </td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -201,15 +221,41 @@
                                 @if (count($invoice['subscriptions']))
                                     @foreach ($invoice['subscriptions'] as $subscription)
                                         <tr>
-                                            <td>{{ $subscription['phone'] }}</td>
-                                            <td>$ {{ $subscription['plan_and_addons'] }}</td>
-                                            <td>$ {{ $subscription['onetime_charges'] }}</td>
-                                            <td>$ {{ $subscription['usage_charges'] }}</td>
-                                            <td>$ 
-                                                {{ $subscription['tax_and_regulatory'] }}
+                                            <td>
+                                                @isset ($subscription['phone'])
+                                                    {{ $subscription['phone'] }}
+                                                @endisset
                                             </td>
-                                            <td>-$ {{ $subscription['total_discounts'] }}</td>
-                                            <td>$ {{ $subscription['total'] }} </td>
+                                            <td>$ 
+                                                @isset($subscription['plan_and_addons'])
+                                                    {{ $subscription['plan_and_addons'] }}
+                                                @endisset
+                                            </td>
+                                            <td>$
+                                                @isset($subscription['onetime_charges']) 
+                                                    {{ $subscription['onetime_charges'] }}
+                                                @endisset
+                                            </td>
+                                            <td>$ 
+                                                @isset($subscription['usage_charges'])
+                                                    {{ $subscription['usage_charges'] }}
+                                                @endisset
+                                            </td>
+                                            <td>$ 
+                                                @isset($subscription['tax_and_regulatory'])
+                                                    {{ $subscription['tax_and_regulatory'] }}
+                                                @endisset
+                                            </td>
+                                            <td>-$ 
+                                                @isset($subscription['total_discounts'])
+                                                    {{ $subscription['total_discounts'] }}
+                                                @endisset
+                                            </td>
+                                            <td>$ 
+                                                @isset($subscription['total'])
+                                                    {{ $subscription['total'] }} 
+                                                @endisset
+                                            </td>
 
                                         </tr>
                                     @endforeach
@@ -225,12 +271,36 @@
                             
                             <tr class="tfootQ">
                                 <td>Total</td>
-                                <td>$ {{ $invoice['service_charges'] }}</td>
-                                <td>$ {{ $invoice['total_one_time_charges'] }}</td>
-                                <td>$ {{ $invoice['total_usage_charges'] }}</td>
-                                <td>$ {{ $invoice['taxes'] }}</td>
-                                <td>-$ {{ $invoice['credits'] }}</td>
-                                <td>$ {{ $invoice['subtotal'] }}</td>
+                                <td>$ 
+                                    @isset($invoice['service_charges'])
+                                        {{ $invoice['service_charges'] }}
+                                    @endisset
+                                </td>
+                                <td>$
+                                    @isset($invoice['total_one_time_charges']) 
+                                        {{ $invoice['total_one_time_charges'] }}
+                                    @endisset
+                                </td>
+                                <td>$ 
+                                    @isset($invoice['total_usage_charges'])
+                                        {{ $invoice['total_usage_charges'] }}
+                                    @endisset
+                                </td>
+                                <td>$
+                                    @isset($invoice['taxes']) 
+                                        {{ $invoice['taxes'] }}
+                                    @endisset
+                                </td>
+                                <td>-$ 
+                                    @isset($invoice['credits'])
+                                        {{ $invoice['credits'] }}
+                                    @endisset
+                                </td>
+                                <td>$ 
+                                    @isset($invoice['subtotal'])
+                                        {{ $invoice['subtotal'] }}
+                                    @endisset
+                                </td>
                             </tr>
                             
                             <tr>

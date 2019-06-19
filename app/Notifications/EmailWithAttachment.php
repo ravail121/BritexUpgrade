@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
+use App\Model\EmailLog;
 
 class EmailWithAttachment extends Notification
 {
@@ -54,6 +55,10 @@ class EmailWithAttachment extends Notification
         $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
+        
+        $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
+        
+        $replaceWith = [$bizVerification->fname, $bizVerification->lname];
 
         $column = array_column($templateVales, 'format_name');
 

@@ -80,7 +80,7 @@ trait InvoiceTrait
                                         ->where('product_type', $item)
                                         ->where('taxable', 1)
                                         ->sum('amount');
-\Log::info($taxPercentage);                                        
+                                        
         if ($taxesWithoutSubscriptions > 0) {
             $invoice->invoiceItem()->create(
                 [

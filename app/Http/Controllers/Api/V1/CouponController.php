@@ -105,7 +105,11 @@ class CouponController extends Controller
                 } else {    
                     
                     return [
-                        'not_eligible' => 'You are not eligible for this coupon'
+                        'not_eligible' => [
+                            'multiline_min' => $coupon['multiline_min'],
+                            'multiline_max' => $coupon['multiline_max'],
+                            'active_subs'   => count($cartPlans + $billablePlans)
+                        ]
                     ]; 
                 
                 }

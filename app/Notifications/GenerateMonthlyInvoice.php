@@ -60,7 +60,7 @@ class GenerateMonthlyInvoice extends Notification
 
         $body = $emailTemplate->body($column, $bizVerification);
 
-        $data = ['company_id' => $company->id,
+        $data = ['company_id' => $this->order->company_id,
             'to'                       => $bizVerification->email,
             'business_verficiation_id' => $bizVerification->id,
             'subject'                  => $emailTemplate->subject,

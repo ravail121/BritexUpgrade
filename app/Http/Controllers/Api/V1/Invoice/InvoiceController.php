@@ -243,14 +243,30 @@ class InvoiceController extends BaseController implements ConstantInterface
             $couponCycles   = $coupon->num_cycles;
             $couponId       = $coupon->id;
 
+            $customerCoupon = [
+                'customer_id'       => $invoice->customer_id,
+                'coupon_id'         => $couponId,
+                
+            ];
+
+            $customerCouponInfinite = [
+                'cycles_remaining'  => null
+            ];
+
+            $customerCouponFinite = [
+                'cycles_remaining'  => $couponCycles - 1
+            ];
+
             if ($couponCycles > 1) {
-                CustomerCoupon::create(
-                    [
-                        'customer_id'       => $invoice->customer_id,
-                        'coupon_id'         => $couponId,
-                        'cycles_remaining'  => $couponCycles - 1
-                    ]
-                );
+
+                array_push($customerCoupon, $customerCouponFinite);
+                CustomerCoupon::create($customerCoupon);
+
+            } elseif ($couponCycles == 0) {
+
+                array_push($customerCoupon, $customerCouponInfinite);
+                CustomerCoupon::create($customerCoupon);
+
             }
         }
 
