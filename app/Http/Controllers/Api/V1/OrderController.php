@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\BaseController;
 
 use Validator;
+use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Company;
+use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
@@ -39,6 +41,12 @@ class OrderController extends BaseController
                 }else{
                     $response = $this->getUpdateDowngradeData($plan, $hash);
                     $paidAddons = SubscriptionAddon::whereSubscriptionId($request->subscription_id)->pluck('addon_id');
+
+                    $date = Carbon::today()->addDays(6)->endOfDay();
+
+                    $invoice = Invoice::
+                    where([['customer_id', $response['order_groups'][0]['order']['customer_id']],['type', '1'],['status','2']])
+                    ->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
                 }
                 $order_groups = $response['order_groups'];
                 $samePlan = $response['samePlan'];
@@ -49,7 +57,7 @@ class OrderController extends BaseController
 
             //print_r($order_groups);
             
-            foreach($order_groups as $og){
+            foreach($order_groups as $key => $og){
 
                 if($order == []){
                     
@@ -90,6 +98,15 @@ class OrderController extends BaseController
                     );
                 if($request->input('change_plan')){
                     $_addons = OrderGroupAddon::with(['addon'])->where([['order_group_id', $og->id], ['subscription_addon_id' , null]] )->whereNotIn('addon_id', $paidAddons)->get();
+
+                    if(isset($invoice) && $samePlan != "1"){
+                        if($key > 0){
+                            $tmp['plan']['amount_onetime'] = 0;
+                            $tmp['plan']['date'] = $invoice->end_date;
+                        }else{
+                            $tmp['plan']['date'] = $invoice->start_date; 
+                        }
+                    }
                 }else{
                     $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 }
@@ -123,11 +140,9 @@ class OrderController extends BaseController
     private function getConfirmationUpdateDowngradeData($plan, $hash)
     {
         $samePlan = 0;
-        $order_groups = OrderGroup::where([['paid', '1'], ['old_subscription_plan_id', $plan]])
+        $order_groups[0] = OrderGroup::where([['paid', '1'], ['old_subscription_plan_id', $plan]])
         ->with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
-                $query->where('hash', $hash);})->orderBy('id', 'DESC')->get();
-
-        \Log::info($order_groups);
+                $query->where('hash', $hash);})->orderBy('id', 'DESC')->first();
 
 
         if(!isset($order_groups[0])){
