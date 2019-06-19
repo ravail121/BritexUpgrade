@@ -168,11 +168,15 @@ class PlanController extends BaseController
         
         if ($accountStatus == self::ACCOUNT['suspended']) {
             array_push($condition, $ifSuspended);
-            $plans = Plan::where($condition)->orderBy('amount_recurring')->get();
+            $plans = Plan::where(function ($query) use ($condition, $subscription) {
+                $query->where($condition)
+                      ->orWhere('id', '=', $subscription->plan_id);
+            })->orderBy('amount_recurring')->get();
+
         } else {
             $plans = Plan::where($condition)->orderBy('amount_recurring')->get();
         } 
-
+        $plans['account_status'] = $accountStatus;
         $plans['active_plan'] = $subscription->plan_id;
         $plans['active_addons'] = $activeAddon;
         
