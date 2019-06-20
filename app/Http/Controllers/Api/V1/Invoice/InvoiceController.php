@@ -238,6 +238,12 @@ class InvoiceController extends BaseController implements ConstantInterface
                 ]
             );
 
+            $couponNumUses   = Coupon::where('code', $couponCode)->pluck('num_uses')->first();
+
+            Coupon::where('code', $couponCode)->update([
+                'num_uses' => $couponNumUses + 1 
+            ]);
+
             //store coupon in customer_coupon table if eligible
             $coupon         = Coupon::where('code', $couponCode)->first();
             $couponCycles   = $coupon->num_cycles;

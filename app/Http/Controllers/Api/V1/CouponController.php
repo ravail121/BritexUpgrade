@@ -13,6 +13,7 @@ use App\Model\Order;
 use App\Model\Device;
 use App\Model\Sim;
 use App\Model\Addon;
+use Carbon\Carbon;
 
 class CouponController extends Controller
 {
@@ -61,8 +62,11 @@ class CouponController extends Controller
             $billableSubscriptions = Customer::where('hash', $request->hash)->first()->billableSubscriptions;
             
             $billablePlans = [];
+
             foreach ($billableSubscriptions as $subscription) {
+
                 $billablePlans[] = Plan::find($subscription->plan_id);
+
             }
 
             if (!empty($coupon)) {
@@ -98,9 +102,33 @@ class CouponController extends Controller
                 
                 if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
 
-                    $total = $appliedToAll + $appliedToTypes + $appliedToProducts;
-                    
-                    return $total;
+                    if ($this->ifCouponCanBeUsed($coupon)) {
+
+                        if ($this->ifCouponNotReachedMaxLimit($coupon)) {
+
+                            $total = $appliedToAll + $appliedToTypes + $appliedToProducts;
+                            
+                            return $total;
+
+                        } else {
+
+                            return [
+                                'coupon_max_used' => $coupon['num_uses']
+                            ];
+
+                        }
+
+
+                    } else {
+
+                        return [
+                            'coupon_not_usable' => [
+                                'start_date' => $coupon['start_date'],
+                                'end_date'   => $coupon['end_date']
+                            ]
+                        ];
+
+                    }
 
                 } else {    
                     
@@ -120,19 +148,63 @@ class CouponController extends Controller
         
     }
 
+    protected function ifCouponNotReachedMaxLimit($coupon)
+    {
+
+        $maxLimitNotReached = true;
+
+        if ($coupon['num_uses'] >= $coupon['max_uses']) {
+
+            $maxLimitNotReached = false;
+
+        }
+
+        return $maxLimitNotReached;
+
+    }
+
+    protected function ifCouponCanBeUsed($coupon)
+    {
+        $isApplicable       = true;
+
+        $today              = strtotime(Carbon::today());
+
+        $couponStartDate    = strtotime(($coupon['start_date']));
+        
+        $couponExpiryDate   = strtotime(($coupon['end_date']));
+
+        if ($couponStartDate && $couponExpiryDate) {
+
+            if ($today < $couponStartDate || $today > $couponExpiryDate) {
+                
+                $isApplicable = false;
+            }
+
+        } elseif ($couponStartDate && !$couponExpiryDate) {
+
+            if ($today < $couponStartDate) {
+
+                $isApplicable = false;
+
+            }
+
+        } 
+
+        return $isApplicable;
+
+    }
+
     protected function isApplicable($cartPlans, $billablePlans, $coupon)
     {
-        $isApplicable = true;
-        
-        $totalSubscriptions = array_merge($cartPlans, $billablePlans);
+        $isApplicable       = true;
 
-        $totalApplicableSubscriptions = [];
+        $totalSubscriptions = array_merge($cartPlans, $billablePlans);
 
         if (count($totalSubscriptions) < $coupon['multiline_min'] || count($totalSubscriptions) > $coupon['multiline_max']) {
             
             $isApplicable = false;
             
-        } 
+        }
 
         return $isApplicable;
 
