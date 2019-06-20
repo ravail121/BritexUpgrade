@@ -24,6 +24,7 @@ use App\Model\SubscriptionCoupon;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
+use Carbon\Carbon;
 
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {
@@ -62,7 +63,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
         // $customers = Customer::shouldBeGeneratedNewInvoices();
         $customers = Customer::shouldBeGeneratedNewInvoices();
-        \Log::info($customers);
+        
         //\Log::info($customers);
         foreach ($customers as $customer) {
             /*if( $customer->openMonthlyInvoice ){
@@ -84,16 +85,16 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 }
 
                 $invoice = Invoice::create($this->getInvoiceData($customer));
-                \Log::info('InvoiceData - '.$invoice);
+
                 $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
-                \Log::info('Billable Subscription - '.$billableSubscriptionInvoiceItems);
+
                 $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
-                \Log::info('Subscription Addons - '.$billableSubscriptionAddons);
+
                 $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
-                \Log::info('Regulatory Fees - '.$regulatoryFees);
+
                 $pendingCharges = $this->pendingCharges($invoice);
                 $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
-                \Log::info('Pending Charges - '.$pendingCharges);
+
                 $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
                 
                 // Subtotal = sum of ( Debits - coupons [applied to each subscription] + Taxes [applied to each subscription] )
@@ -119,15 +120,15 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
                 
                 $subtotal = $monthlyCharges + $totalPendingCharges - $couponDiscountTotal;
-                \Log::info('Subtotal - '.$subtotal);
+
                 $invoiceUpdate = $invoice->update(compact('subtotal'));
-                \Log::info('Invoice Update - '.$invoiceUpdate);
+
                 $totalDue = $this->applyCredits($customer, $invoice);
-                \Log::info('Total Due - '.$totalDue);
+
                 $invoice->update(['total_due' => $totalDue]);
     
                 $order = $this->insertOrder($invoice);
-                \Log::info('Order - '. $order);
+
                 /*foreach ($customer->billableSubscriptions as $billableSubscription) {
                     $this->response = $this->triggerEvent($customer);
                     break;
@@ -430,18 +431,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $this->response;
     }
 
-    protected function regenerateInvoice($id)
-    {
-        $today                  = Carbon::today();
-        $customer               = Customer::find($id);
-        $billingStartDate       = $customer->billing_start;
-        $billingEndDate         = $customer->billing_end;
-        $ifNewSubscriptions     = $customer->subscription;
-        $unpaidSubscriptions    = [];
-        foreach ($ifNewSubscriptions as $subscription) {
-            $unpaidSubscriptions[] = $subscription->whereDate('created_at', '>', $billingStartDate)->get();
-        }
-    }
 
     /**
      * Creates/Regenerates the Invoice
@@ -709,6 +698,128 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         
     }
 
+    public function regenerateInvoice()
+    {
+        
+        $today              = Carbon::today();
+        $invoiceGroups      = Customer::newInvoiceAfterGeneratedInvoice();
+        
+        foreach ($invoiceGroups as $invoices) {
+            
+            foreach ($invoices as $invoice) {
 
+                $customer               = Customer::find($invoice->customer_id);
+                
+                $billingStartDate       = $customer->billing_start;
+                $billingEndDate         = $customer->billing_end;
+                
+                $monthlyInvoice         = $customer->openMonthlyInvoice();
+                
+                if (isset($monthlyInvoice)) {
+
+                    $monthlyInvoiceDate     = Carbon::parse($monthlyInvoice->first()->created_at);
+                    $daysLeft               = $today->diffInDays(Carbon::parse($billingEndDate));
+                    $newOrderInvoice        = $customer->invoice()->get();
+                    
+                    
+                    $subscriptions          = $this->newInvoices($newOrderInvoice, $monthlyInvoiceDate);
+                    $newInvoiceItems        = $this->prepareInvoiceItems($subscriptions, $monthlyInvoice, $daysLeft);
+                    
+                    if (count($newInvoiceItems) > 0) {
+                        $subTotal = [];
+                        foreach ($newInvoiceItems as $items) {
+            
+                            InvoiceItem::create($items);
+                            $subTotal[] = $items['amount'];
+            
+                        }
+                        $invoice = Invoice::find($monthlyInvoice->first()->id);
+                        $invoice->update(
+                            [
+                                'subtotal'  => $invoice->subtotal + array_sum($subTotal),
+                                'total_due' => $invoice->total_due + array_sum($subTotal)
+                            ]
+                        );
+            
+                    };
+                }
+                    
+            }
+            
+        }
+    }
+
+    protected function newInvoices($newOrderInvoice, $monthlyInvoiceDate)
+    {
+        
+        $subscriptions = [];
+        foreach ($newOrderInvoice as $newInvoice) {
+            
+            if ($newInvoice->status == 2 && $newInvoice->type == 2) {
+                $invoiceDate = Carbon::parse($newInvoice->created_at);
+                if ($invoiceDate > $monthlyInvoiceDate) {
+                    $subscriptions[] = $newInvoice->order->subscriptions;
+                }
+            }
+            
+        }
+        
+        return isset($subscriptions[0]) && count($subscriptions[0]) ? $subscriptions[0] : [];
+    }
+
+    protected function prepareInvoiceItems($subscriptions, $monthlyInvoice, $daysLeft)
+    {
+        
+
+            $newInvoiceItems = [];
+                
+            foreach ($subscriptions as $sub) {
+
+                $invoiceItems = $sub->invoiceItemDetail;
+
+                $plan   = [
+                    'type'          => InvoiceItem::TYPES['plan_charges'], 
+                    'product_type'  => 'plan', 
+                    'item'          => Plan::find($invoiceItems->where('type', InvoiceItem::TYPES['plan_charges'])->pluck('product_id'))
+                ];
+
+                $addons = [
+                    'type'          => InvoiceItem::TYPES['feature_charges'], 
+                    'product_type'  => 'addon', 
+                    'item'          => Addon::find($invoiceItems->where('type', InvoiceItem::TYPES['feature_charges'])->pluck('product_id'))
+                ];
+
+                $regeneratedPlans   = $this->regenerateInvoiceItems($monthlyInvoice, $sub, $plan, $daysLeft);
+
+                $regeneratedAddons  = $this->regenerateInvoiceItems($monthlyInvoice, $sub, $addons, $daysLeft);
+                
+                $newInvoiceItems[]  = $regeneratedPlans;
+
+                $newInvoiceItems[]  = $regeneratedAddons;
+                
+            }
+
+            
+            return $newInvoiceItems;
+
+        
+            
+    }
+
+    protected function regenerateInvoiceItems($monthlyInvoice, $sub, $type, $daysLeft)
+    {
+        $item = [
+            'invoice_id'        => $monthlyInvoice->first()->id,
+            'subscription_id'   => $sub->id,
+            'product_type'      => $type['product_type'],
+            'product_id'        => $type['item']->id,
+            'type'              => $type['type'],
+            'description'       => '(Billable Subscription) '.$type['item']->description,
+            'amount'            => $type['item']->amount_recurring / 30 * $daysLeft,
+            'start_date'        => $monthlyInvoice->first()->start_date,
+            'taxable'           => $type['item']->taxable
+        ];
+        return $item;
+    }
 
 }

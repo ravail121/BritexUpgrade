@@ -284,11 +284,11 @@ class InvoiceController extends BaseController implements ConstantInterface
         $order = Order::hash($request->order_hash)->first();
 
         if ($order) {
-
+            
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
 
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
-            
+
             $regulatoryFee          = $order->invoice->cal_regulatory;
             $stateTax               = $order->invoice->cal_stateTax;
             $taxes                  = $order->invoice->cal_taxes;
@@ -355,6 +355,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 return $pdf->download('invoice.pdf');
             
             } else {
+                return view('templates/monthly-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 

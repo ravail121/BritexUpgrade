@@ -57,7 +57,7 @@ class EmailWithAttachment extends Notification
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
         
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
-        
+       
         $replaceWith = [$bizVerification->fname, $bizVerification->lname];
 
         $column = array_column($templateVales, 'format_name');

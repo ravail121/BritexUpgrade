@@ -223,7 +223,7 @@
                                     <td>$ </td>
                                 </tr>
                             -->
-                                @if (count($invoice['subscriptions']))
+                                @if (isset($invoice['subscriptions']) && count($invoice['subscriptions']))
                                     @foreach ($invoice['subscriptions'] as $subscription)
                                         <tr>
                                             <td>@isset ($subscription['phone']) 

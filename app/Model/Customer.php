@@ -175,6 +175,20 @@ class Customer extends Authenticatable
         return $this->shipping_city.', '.$this->shipping_state_id.' '.$this->shipping_zip;
     }
 
+    public static function newInvoiceAfterGeneratedInvoice()
+    {
+        $customers          = self::whereNotNull('billing_end')->get();
+        $eligibleInvoices   = [];
+        foreach ($customers as $customer) {
+            $invoice = $customer->invoice;
+            if (count($invoice)) {
+                $eligibleInvoices[] = $invoice;
+            }
+        }
+
+        return $eligibleInvoices;
+    }
+
     public static function shouldBeGeneratedNewInvoices()
     {
         $today     = self::currentDate();
