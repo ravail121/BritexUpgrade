@@ -69,6 +69,11 @@ class Subscription extends Model
         return $this->hasOne('App\Model\Customer', 'id');
     }
 
+    public function sim()
+    {
+        return $this->belongsTo('App\Model\Sim', 'sim_id', 'id');
+    }
+
     public function customerRelation()
     {
         return $this->belongsTo('App\Model\Customer', 'customer_id');
@@ -172,6 +177,11 @@ class Subscription extends Model
                   'active', 'shipping', 'for-activation'])
                 ->notSuspendedOrClosed()
                 ->notScheduledForSuspensionOrClosure();
+    }
+
+    public function scopeShipping($query)
+    {
+        return $query->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
     }
 
     public function scopeNotScheduledForSuspensionOrClosure($query)

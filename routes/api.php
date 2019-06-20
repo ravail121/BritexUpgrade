@@ -40,6 +40,12 @@ Route::get('/cron-jobs-monthly-invoice', [
     'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
 ]);
 
+Route::get('/cron-jobs-orders', [
+    'as'=>'api.cron.orders',
+    'uses'=> 'Api\V1\CronJobs\OrderController@order',
+]);
+
+
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
 	Route::group(['namespace' => 'CronJobs'], function(){
 	    Route::get('/process-subscriptions', [

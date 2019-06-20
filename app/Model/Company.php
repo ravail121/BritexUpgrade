@@ -39,4 +39,9 @@ class Company extends Model
     {
         return $this->belongsTo('App\Model\Order');
     }
+
+    public function tax()
+    {
+        return $this->belongsTo('App\Model\Tax', 'company_id', 'id');
+    }
 }

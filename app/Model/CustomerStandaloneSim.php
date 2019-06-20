@@ -31,4 +31,19 @@ class CustomerStandaloneSim extends Model
         }
         return "NA";
     }
+
+    public function scopeShipping($query)
+    {
+        return $query->where([['status', 'shipping'],['processed', 0 ]]);
+    }
+
+    public function order()
+    {
+        return $this->belongsTo('App\Model\Order');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo('App\Model\Customer', 'customer_id');
+    }   
 }

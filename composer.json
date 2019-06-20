@@ -9,6 +9,7 @@
         "barryvdh/laravel-dompdf": "^0.8.3",
         "barryvdh/laravel-snappy": "^0.4.3",
         "doctrine/dbal": "^2.9",
+        "guzzlehttp/guzzle": "^6.3",
         "h4cc/wkhtmltoimage-amd64": "0.12.x",
         "h4cc/wkhtmltopdf-amd64": "0.12.x",
         "laravel-validation-rules/credit-card": "^1.1",

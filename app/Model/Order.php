@@ -119,5 +119,4 @@ class Order extends Model
     {
         return Carbon::parse($value)->format('M-d-Y h:i A');
     }
-
 }
