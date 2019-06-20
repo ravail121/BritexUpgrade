@@ -23,7 +23,7 @@ class OrderController extends BaseController
                 $simData['phone'] = $subscription->customerRelation['phone'];
                 $simData['description']  = $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'];
                 $simData['part_number'] = 'SUB-'.$subscription->id;
-                $simData['unit_amount'] = $subscription->sim->amount_w_plan;
+                $simData['unit_amount'] = $subscription->sim['amount_w_plan'];
                 if($subscription->order) {                    
                     $apiData = $this->data($order, $simData);
                     $response = $this->SentToReadyCloud($apiData);
@@ -41,9 +41,9 @@ class OrderController extends BaseController
             } elseif($subscription->device_id != 0 && $subscription->sim_id == 0) {
                 $order = $subscription->order;
                 $deviceData['phone'] = $subscription->customerRelation['phone'];
-                $deviceData['description'] = $subscription->device->name.' '.'associated with'.' '.$subscription->plan->name;
+                $deviceData['description'] = $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'];
                 $deviceData['part_number'] = 'SUB-'.$subscription->id;
-                $deviceData['unit_amount'] = $subscription->device->amount_w_plan;
+                $deviceData['unit_amount'] = $subscription->device['amount_w_plan'];
                 if($subscription->order) {
                     $apiData = $this->data($order, $deviceData);
                     $response = $this->SentToReadyCloud($apiData);
@@ -64,12 +64,12 @@ class OrderController extends BaseController
                 $simDeviceData[0]['phone'] = $subscription->customerRelation['phone'];
                 $simDeviceData[0]['description']  = $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'];
                 $simDeviceData[0]['part_number'] = 'SUB-'.$subscription->id;
-                $simDeviceData[0]['unit_amount'] = $subscription->sim->amount_w_plan;
+                $simDeviceData[0]['unit_amount'] = $subscription->sim['amount_w_plan'];
         
                 $simDeviceData[1]['phone'] = $subscription->customerRelation['phone'];
                 $simDeviceData[1]['description'] = $subscription->device->name.' '.'associated with'.' '.$subscription->plan['name'];
                 $simDeviceData[1]['part_number'] = 'SUB-'.$subscription->id;
-                $simDeviceData[1]['unit_amount'] = $subscription->device->amount_w_plan;
+                $simDeviceData[1]['unit_amount'] = $subscription->device['amount_w_plan'];
                 if($subscription->order) {
                     foreach ($simDeviceData as $simDevice) {
                         $apiData = $this->data($order, $simDevice);
@@ -92,9 +92,9 @@ class OrderController extends BaseController
     	$standAloneDevices = CustomerStandaloneDevice::with(['device', 'order'])->shipping()->get();
     	foreach ($standAloneDevices as $standAloneDevice) {
             $order = $standAloneDevice->order; 
-            $standAloneDeviceData['description'] = $standAloneDevice->device->name;
-            $standAloneDeviceData['part_number'] = 'DEV-'.$standAloneDevice->device->id;
-            $standAloneDeviceData['unit_amount'] = $standAloneDevice->device->amount;
+            $standAloneDeviceData['description'] = $standAloneDevice->device['name'];
+            $standAloneDeviceData['part_number'] = 'DEV-'.$standAloneDevice->device['id'];
+            $standAloneDeviceData['unit_amount'] = $standAloneDevice->device['amount'];
             $standAloneDeviceData['phone'] = $standAloneDevice->customer['phone'];
             if($subscription->order) {
                 $apiData = $this->data($order, $standAloneDeviceData);
@@ -114,9 +114,9 @@ class OrderController extends BaseController
         $standAloneSims = CustomerStandaloneSim::with(['sim', 'order'])->shipping()->get();
         foreach ($standAloneSims as  $standAloneSim) {
             $order = $standAloneSim->order; 
-            $standAloneSimData['description'] = $standAloneSim->sim->name;
-            $standAloneSimData['part_number'] = 'SIM‌-'.$standAloneSim->sim->id;
-            $standAloneSimData['unit_amount'] = $standAloneSim->sim->amount_alone;
+            $standAloneSimData['description'] = $standAloneSim->sim['name'];
+            $standAloneSimData['part_number'] = 'SIM‌-'.$standAloneSim->sim['id'];
+            $standAloneSimData['unit_amount'] = $standAloneSim->sim['amount_alone'];
             $standAloneSimData['phone'] = $standAloneSim->customer['phone'];
             if($subscription->order) {
                 $apiData = $this->data($order, $standAloneSimData);
