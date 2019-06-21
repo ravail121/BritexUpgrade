@@ -19,21 +19,31 @@ class OrderController extends BaseController
     	$subscriptions = Subscription::with(['sim', 'device', 'plan', 'order', 'customerRelation'])->shipping()->get();
         try {
             foreach ($subscriptions as  $subscription) {
-        
-                if(!boolval($subscription->sim_id) && boolval($subscription->device_id)) {       
-                    $this->subscriptionWithSim($subscription);                   
+
+                if(!boolval($subscription->sim_id) && boolval($subscription->device_id))
+                {       
+                    if($subscription) {
+
+                        $this->subscriptionWithSim($subscription);                   
+                    }    
                 }
 
-                if(!boolval($subscription->device_id) && boolval($subscription->sim_id)) {
-                    $this->subscriptionWithDevice($subscription);    
+                if(!boolval($subscription->device_id) && boolval($subscription->sim_id))
+                {
+                    if($subscription) {
+
+                        $this->subscriptionWithDevice($subscription);    
+                    }
                 }
 
-                if(!boolval($subscription->sim_id) && !boolval($subscription->device_id)) {
-                        
-                    $this->subscriptionWithDeviceSim($subscription);
+                if(!boolval($subscription->sim_id) && !boolval($subscription->device_id))
+                {
+                    if($subscription) {
+
+                        $this->subscriptionWithDeviceSim($subscription);
+                    }        
                 }
             }
-
             $this->standAloneDevice(); 
             $this->standAloneSim();
 
@@ -122,53 +132,59 @@ class OrderController extends BaseController
     {
         $standAloneDevices = CustomerStandaloneDevice::with(['device', 'order'])->shipping()->get();
         foreach ($standAloneDevices as $standAloneDevice) {
-            
-            $order = $standAloneDevice->order; 
-            $standAloneDeviceData['description'] = $standAloneDevice->device['name'];
-            $standAloneDeviceData['part_number'] = 'DEV-'.$standAloneDevice->device['id'];
-            $standAloneDeviceData['unit_amount'] = $standAloneDevice->device['amount'];
-            $standAloneDeviceData['phone'] = $standAloneDevice->customer['phone'];
-            if($standAloneDevice->order) {
-                $apiData = $this->data($order, $standAloneDeviceData);
-                $response = $this->SentToReadyCloud($apiData);
-                if($response->getStatusCode() == 201) {
 
-                    CustomerStandaloneDevice::where('id', $standAloneDevice->id)->update(['processed' => 1]);
+            if($standAloneDevice) {
+
+                $order = $standAloneDevice->order; 
+                $standAloneDeviceData['description'] = $standAloneDevice->device['name'];
+                $standAloneDeviceData['part_number'] = 'DEV-'.$standAloneDevice->device['id'];
+                $standAloneDeviceData['unit_amount'] = $standAloneDevice->device['amount'];
+                $standAloneDeviceData['phone'] = $standAloneDevice->customer['phone'];
+                if($standAloneDevice->order) {
+                    $apiData = $this->data($order, $standAloneDeviceData);
+                    $response = $this->SentToReadyCloud($apiData);
+                    if($response->getStatusCode() == 201) {
+
+                        CustomerStandaloneDevice::where('id', $standAloneDevice->id)->update(['processed' => 1]);
+                    } else {
+
+                            return $this->respond(['message' => 'Something went wrong!']);
+                    }
                 } else {
-
-                        return $this->respond(['message' => 'Something went wrong!']);
+                    \Log::info("----Order not present for This standAloneDevice Id {$standAloneDevice->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
                 }
-            } else {
-                \Log::info("----Order not present for This standAloneDevice Id {$standAloneDevice->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
             }
         }
+            
     }
 
     public function standAloneSim()
     {
         $standAloneSims = CustomerStandaloneSim::with(['sim', 'order'])->shipping()->get();
         foreach ($standAloneSims as  $standAloneSim) {
-            
-            $order = $standAloneSim->order; 
-            $standAloneSimData['description'] = $standAloneSim->sim['name'];
-            $standAloneSimData['part_number'] = 'SIM‌-'.$standAloneSim->sim['id'];
-            $standAloneSimData['unit_amount'] = $standAloneSim->sim['amount_alone'];
-            $standAloneSimData['phone'] = $standAloneSim->customer['phone'];
-            if($standAloneSim->order) {
-                $apiData = $this->data($order, $standAloneSimData);
-                $response = $this->SentToReadyCloud($apiData);
-                
-                if($response->getStatusCode() == 201) {
+            if($standAloneSim) {
 
-                    CustomerStandaloneSim::where('id', $standAloneSim->id)->update(['processed' => 1]);
+                $order = $standAloneSim->order; 
+                $standAloneSimData['description'] = $standAloneSim->sim['name'];
+                $standAloneSimData['part_number'] = 'SIM‌-'.$standAloneSim->sim['id'];
+                $standAloneSimData['unit_amount'] = $standAloneSim->sim['amount_alone'];
+                $standAloneSimData['phone'] = $standAloneSim->customer['phone'];
+                if($standAloneSim->order) {
+                    $apiData = $this->data($order, $standAloneSimData);
+                    $response = $this->SentToReadyCloud($apiData);
+                    
+                    if($response->getStatusCode() == 201) {
+
+                        CustomerStandaloneSim::where('id', $standAloneSim->id)->update(['processed' => 1]);
+                    } else {
+
+                            return $this->respond(['message' => 'Something went wrong!']);
+                    }
                 } else {
-
-                        return $this->respond(['message' => 'Something went wrong!']);
+                    \Log::info("----Order not present for This standAloneDevice Id {$standAloneDevice->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
                 }
-            } else {
-                \Log::info("----Order not present for This standAloneDevice Id {$standAloneDevice->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
             }
-        }
+        }    
     }
 
     public function data($order, $data)
