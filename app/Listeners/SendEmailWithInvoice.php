@@ -76,7 +76,7 @@ class SendEmailWithInvoice
         }
 
         $bizVerification = BusinessVerification::find($order->customer->business_verification_id);
-
+       
         $bizVerification->notify(new EmailWithAttachment($order, $pdf));        
     }
 
