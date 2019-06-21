@@ -4,10 +4,12 @@ namespace App\Support\Validation;
 
 use Validator;
 use App\Model\Order;
+use App\Model\Coupon;
 use App\Model\Credit;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\PaymentLog;
+use App\Model\OrderCoupon;
 use App\Model\CustomerCreditCard;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\CreditCardRequest;
@@ -37,10 +39,15 @@ trait UsaEpayTransaction
     */
     protected function setUsaEpayData($tran, $request)
     {
+        $orderhash = $request->order_hash;
+        $order = Order::whereHash($orderhash)->first();
+        $orderCoupon = OrderCoupon::where('order_id', $order->id)->first();
+        $coupon = Coupon::where('id', $orderCoupon->coupon_id)->first();
+        $couponData = $this->couponData($request, $coupon);
         $this->stringReplacement($request);
-
-        $tran->key         = $request->key;
-        $tran->usesandbox  = $request->usesandbox;    
+        
+        $tran->key         = $couponData['key'];
+        $tran->usesandbox  = $couponData['usesandbox'];    
         $tran->card        = $request->payment_card_no; 
         $tran->exp         = $request->expires_mmyy;
         $tran->cvv2        = $request->payment_cvc;
@@ -65,6 +72,20 @@ trait UsaEpayTransaction
         flush();
 
         return $tran;
+    }
+
+    public function couponData($request, $coupon)
+    {
+        if($coupon->code == env('COUPON_CODE')) {
+            $data['key'] = env('SOURCE_KEY_SANDBOX'); 
+            $data['usesandbox'] = 1;
+
+        } else {
+            $data['key'] = env('SOURCE_KEY');
+            $data['usesandbox'] = 1;
+        }
+
+        return $data;
     }
 
     private function getOrder($request)
