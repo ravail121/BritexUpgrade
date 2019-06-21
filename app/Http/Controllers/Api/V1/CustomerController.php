@@ -250,23 +250,40 @@ class CustomerController extends BaseController
     if ($validation) {
       return $validation;
     }
-    if (isset($data['password'])) {
-        $currentPassword = Customer::whereHash($data['hash'])->first();
 
-        if (Hash::check($data['old_password'], $currentPassword['password'])) {
-            $password['password'] = bcrypt($data['password']);
-            Customer::whereHash($data['hash'])->update($password);
-            return $this->respond('sucessfully Updated');    
-        }
-        else {
-            return $this->respondError('Incorrect Current Password');
-        }
-    }
+    $data = $this->additionalData($data);
     
     Customer::whereHash($data['hash'])->update($data);
    
     return $this->respond(['message' => 'sucessfully Updated']);
   }
+
+
+    private function additionalData($data)
+    {
+        $data = array_replace($data,
+            array_fill_keys(
+                array_keys($data, 'replace_with_null'),
+                null
+            )
+        );
+        \Log::info($data);
+
+        if (isset($data['password'])) {
+            $currentPassword = Customer::whereHash($data['hash'])->first();
+
+            if (Hash::check($data['old_password'], $currentPassword['password'])) {
+                $password['password'] = bcrypt($data['password']);
+                Customer::whereHash($data['hash'])->update($password);
+                return $this->respond('sucessfully Updated');    
+            }
+            else {
+                return $this->respondError('Incorrect Current Password');
+            }
+        }
+
+        return $data;
+    }
  
   public function orderUpdate($request)
   {
@@ -293,6 +310,8 @@ class CustomerController extends BaseController
         'fname'             => 'sometimes|required',
         'lname'             => 'sometimes|required',
         'email'             => 'sometimes|required|unique:customer,email,'.$id,
+        'billing_fname'     => 'sometimes|required',
+        'billing_lname'     => 'sometimes|required',
         'billing_address1'  => 'sometimes|required',
         'billing_city'      => 'sometimes|required',
         'password'          => 'sometimes|required|min:6',
@@ -309,13 +328,13 @@ class CustomerController extends BaseController
     {
         $data =  $request->validate([
             'newEmail'   => 'required',
-            //'hash'       => 'required',
+            'hash'       => 'required',
 
         ]);
 
-        $emailCount = Customer::where('email', '=' , $request->newEmail)->count();
+        // $emailCount = Customer::where('email', '=' , $request->newEmail)->count();
 
-        //$emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
 
         return $this->respond(['emailCount' => $emailCount]);
     }

@@ -30,15 +30,12 @@ class CustomerPlanController extends BaseController
 
     public function updatePort(Request $request)
     {
-
         $data =  $request->validate([
             'authorized_name'               => 'required|max:20',
             'address_line1'                 => 'required',
-            'address_line2'                 => 'sometimes|required',
             'city'                          => 'required|max:20',
             'zip'                           => 'numeric|required',
             'state'                         => 'required',
-            'ssn_taxid'                     => 'sometimes|required',
             'number_to_port'                => 'numeric|required',
             'company_porting_from'          => 'required',
             'account_number_porting_from'   => 'required',
@@ -46,6 +43,8 @@ class CustomerPlanController extends BaseController
             'account_pin_porting_from'      => 'required',
 
         ]);
+        $data['address_line2']=  $request->address_line2;
+        $data['ssn_taxid']=  $request->ssn_taxid;
         $data['id'] = $request->id;
         $data['date_submitted'] = Carbon::now();
         if($data['id']){

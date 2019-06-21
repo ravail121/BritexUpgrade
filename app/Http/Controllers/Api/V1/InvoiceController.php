@@ -311,16 +311,28 @@ class InvoiceController extends BaseController
 		{
 			$customer = Customer::hash($request->hash);
 
+			$array = [
+					'billing_start' => $customer->billing_start_date_formatted,
+					'billing_end'   => $customer->billing_end_date_formatted,
+			];
+
+			if($array['billing_start'] =='NA' || $array['billing_end'] =='NA'){
+				return $this->content = array_merge([
+						'charges'  => ['0','00'],
+						'past_due' => ['0','00'],
+						'payment'  => ['0','00'],
+						'total'	   => ['0','00'],
+						'due_date' => 'NA'
+				], $array);
+			}
+
 			$charges = Invoice::where([['customer_id', $customer->id],['start_date', $customer->billing_start]])->sum('subtotal');
 			
 			$payment = $this->getPaymentAndCreditAmount($customer);
 
 			$pastDue = Invoice::where([['customer_id', $customer->id],['start_date', '<', $customer->billing_start]])->sum('total_due');
 
-			$array = [
-					'billing_start' => $customer->billing_start_date_formatted,
-					'billing_end'   => $customer->billing_end_date_formatted,
-			];
+			
 			$total = ($charges - $payment) + $pastDue;
 
 			if($total < 0){

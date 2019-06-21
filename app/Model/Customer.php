@@ -236,10 +236,10 @@ class Customer extends Authenticatable
      * @param  [type] $value
      * @return [type]       
      */
-    public function getShippingAddress2Attribute($value)
-    {
-        return $value ?: 'N/A';
-    }
+    // public function getShippingAddress2Attribute($value)
+    // {
+    //     return $value ?: 'N/A';
+    // }
 
     /**
      * For test accounts only
