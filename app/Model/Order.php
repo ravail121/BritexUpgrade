@@ -55,6 +55,11 @@ class Order extends Model
         return $this->belongsTo('App\Model\Invoice', 'invoice_id' ,'id');
     }
 
+    public function orderCoupon()
+    {
+        return $this->hasOne('App\Model\OrderCoupon', 'order_id', 'id');
+    }
+
     public function paymentLog()
     {
         return $this->belongsTo(PaymentLog::class);

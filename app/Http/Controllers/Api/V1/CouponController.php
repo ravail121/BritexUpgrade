@@ -51,13 +51,15 @@ class CouponController extends Controller
     public function addCoupon(Request $request)
     {
         $coupon = Coupon::where('code', $request->code)->first();
-        
+        $order  = Order::find($request->order_id);
+
         if (!$coupon) {
 
             return ['error' => 'Coupon is invalid'];
 
         } else {
 
+            $customerHash          = $request->hash ? $request->hash : $order->customer->hash;
             
             $billableSubscriptions = Customer::where('hash', $request->hash)->first()->billableSubscriptions;
             
@@ -93,7 +95,7 @@ class CouponController extends Controller
                 $couponSpecificTypes    = $couponData['specificTypes'];
                 $orderGroupCart         = $request->orderGroupsCart;
                 $billablePlans          = $couponData['billablePlans'];
-                $order                  = Order::find($request->order_id);
+                
                 $cartPlans              = isset($orderGroupCart['plans']['items']) ? ['items' => $orderGroupCart['plans']['items']]    : [];
 
                 $appliedToAll       = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order->id) : 0;

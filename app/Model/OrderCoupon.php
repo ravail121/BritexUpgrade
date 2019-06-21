@@ -11,4 +11,9 @@ class OrderCoupon extends Model
     protected $fillable = [
         'order_id', 'coupon_id'
     ];
+
+    public function order()
+    {
+        return $this->belongsTo('App\Model\Order');
+    }
 }

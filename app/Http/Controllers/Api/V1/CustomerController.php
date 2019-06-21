@@ -31,6 +31,7 @@ class CustomerController extends BaseController
     if ($request->customer_id) {
 
         if($request->fname){
+
             $customer = $this->updateCustomer($request);
 
             return $this->respond(['success' => true, 'customer' => $customer]);          
@@ -60,6 +61,7 @@ class CustomerController extends BaseController
     $customerData = $this->setData($order, $data);
     
     $customer = Customer::create($customerData);
+    
     if (!$customer) {
         
         return $this->respondError("problem in creating/updating a customer");

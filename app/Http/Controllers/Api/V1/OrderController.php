@@ -215,7 +215,8 @@ class OrderController extends BaseController
             //Create new row in order table
             $order = Order::create([
                 'hash' => sha1(time()),
-                'company_id' => \Request::get('company')->id
+                'company_id' => \Request::get('company')->id,
+                
             ]);
         }else{
             $order = Order::where('hash', $data['order_hash'])->get();

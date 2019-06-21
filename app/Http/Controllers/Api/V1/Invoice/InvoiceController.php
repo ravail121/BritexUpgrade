@@ -356,12 +356,10 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
  
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                return View('templates/onetime-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
                 return $pdf->download('invoice.pdf');
             
             } else {
-                return view('templates/monthly-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 
