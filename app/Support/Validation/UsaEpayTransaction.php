@@ -31,62 +31,75 @@ trait UsaEpayTransaction
     }
 
     /**
-    * This function validates the Credit Card Credentials
-    * 
-    * @param  object    $tran    UsaEpay Object
-    * @param  Request   $request
-    * @return boolean
-    */
-    protected function setUsaEpayData($tran, $request)
-    {
-        $orderhash = $request->order_hash;
-        $order = Order::whereHash($orderhash)->first();
-        $orderCoupon = OrderCoupon::where('order_id', $order->id)->first();
-        $coupon = Coupon::where('id', $orderCoupon->coupon_id)->first();
-        $couponData = $this->couponData($request, $coupon);
-        $this->stringReplacement($request);
-        
-        $tran->key         = $couponData['key'];
-        $tran->usesandbox  = $couponData['usesandbox'];    
-        $tran->card        = $request->payment_card_no; 
-        $tran->exp         = $request->expires_mmyy;
-        $tran->cvv2        = $request->payment_cvc;
-        $tran->amount      = $request->amount;           
-        $tran->invoice     = $request->invoice;        
-        $tran->cardholder  = $request->payment_card_holder;
-        $tran->street      = $request->shipping_address1;    
-        $tran->zip         = $request->zip;         
-        $tran->isrecurring = $request->isrecurring; 
-        $tran->savecard    = $request->savecard; 
-        $tran->billfname   = $request->fname;
-        $tran->billlname   = $request->lname;
-        $tran->billcompany = $request->company_name;
-        $tran->billstreet  = $request->billing_address1;
-        $tran->billcity    = $request->billing_city;
-        $tran->billstate   = $request->billing_state_id;
-        $tran->billzip     = $request->billing_zip;
-        $tran->billcountry = $request->billcountry;
-        $tran->billphone   = $request->primary_contact;
-        $tran->email       = $request->email;
+   * This function validates the Credit Card Credentials
+   *
+   * @param  object    $tran    UsaEpay Object
+   * @param  Request   $request
+   * @return boolean
+   */
+   protected function setUsaEpayData($tran, $request)
+   {
+       $orderhash = $request->order_hash;
+       $order = Order::whereHash($orderhash)->first();
+       $couponData = $this->couponData($order, $request);
+       $this->stringReplacement($request);
 
-        flush();
+       $tran->key         = $couponData['key'];
+       $tran->usesandbox  = $couponData['usesandbox'];
+       $tran->card        = $request->payment_card_no;
+       $tran->exp         = $request->expires_mmyy;
+       $tran->cvv2        = $request->payment_cvc;
+       $tran->amount      = $request->amount;
+       $tran->invoice     = $request->invoice;
+       $tran->cardholder  = $request->payment_card_holder;
+       $tran->street      = $request->shipping_address1;
+       $tran->zip         = $request->zip;
+       $tran->isrecurring = $request->isrecurring;
+       $tran->savecard    = $request->savecard;
+       $tran->billfname   = $request->fname;
+       $tran->billlname   = $request->lname;
+       $tran->billcompany = $request->company_name;
+       $tran->billstreet  = $request->billing_address1;
+       $tran->billcity    = $request->billing_city;
+       $tran->billstate   = $request->billing_state_id;
+       $tran->billzip     = $request->billing_zip;
+       $tran->billcountry = $request->billcountry;
+       $tran->billphone   = $request->primary_contact;
+       $tran->email       = $request->email;
 
-        return $tran;
-    }
+       flush();
 
-    public function couponData($request, $coupon)
-    {
-        if($coupon->code == env('COUPON_CODE')) {
-            $data['key'] = env('SOURCE_KEY_SANDBOX'); 
-            $data['usesandbox'] = 1;
+       return $tran;
+   }
 
-        } else {
-            $data['key'] = env('SOURCE_KEY');
-            $data['usesandbox'] = 1;
-        }
+   public function couponData($order, $request)
+   {
+       $orderCoupon = OrderCoupon::where('order_id', $order->id)->first();
 
-        return $data;
-    }
+       if($orderCoupon) {
+
+           $coupon = Coupon::where('id', $orderCoupon->coupon_id)->first();
+
+           if($coupon->code == env('COUPON_CODE')) {
+
+               $data['key'] = env('SOURCE_KEY_SANDBOX');
+               $data['usesandbox'] = 1;
+           } else {
+
+               $data['key'] = env('SOURCE_KEY');
+               $data['usesandbox'] = 1;
+           }
+
+           return $data;
+
+       } else {
+
+           $defaultData['key'] = env('SOURCE_KEY');
+           $defaultData['usesandbox'] = 1;
+       }
+
+       return $defaultData;
+   }
 
     private function getOrder($request)
     {
