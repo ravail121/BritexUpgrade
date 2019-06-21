@@ -16,7 +16,7 @@ class SubscriptionAddon extends Model
     ];
 
 	protected $table ='subscription_addon';
-	protected $fillable = [ 'subscription_id', 'addon_id', 'status', 'removal_date'];
+	protected $fillable = [ 'subscription_id', 'addon_id', 'status', 'removal_date', 'date_submitted'];
 
     public function subscription(){
     		return $this->hasOne('App\Model\Subscription' , 'id');

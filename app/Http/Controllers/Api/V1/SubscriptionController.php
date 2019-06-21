@@ -34,19 +34,47 @@ class SubscriptionController extends BaseController
             return $validation;
         }
 
-        $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
+        if($request->subscription){
+            $subscription = Subscription::find($request->subscription['id']);
+            $data=$request->validate([
+                'order_id'  => 'required',
+                'status'  => 'sometimes|required',
+            ]);
+            $data['old_plan_id'] = $subscription->plan_id;
+            $data['new_plan_id'] = $request->plan_id;
+            $data['upgrade_downgrade_date_submitted'] = Carbon::now();
 
-        $insertData = $this->generateSubscriptionData($request);
+            if($data['status'] =="Upgrade"){
+                $data['plan_id'] = $request->plan_id;
+                $data['upgrade_downgrade_status'] = 'for-upgrade';
 
-        $subscription = Subscription::create($insertData);
+                $updateSubcription = $subscription->update($data);
+                
+                return $this->respond(['subscription_id' => $subscription->id]);
+            }else{
+                $data['upgrade_downgrade_status'] = 'downgrade-scheduled';
+                $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1);
 
-        if(!$subscription) {
-            return $this->respondError(['subscription_id' => null]);
-        }
+                $updateSubcription = $subscription->update($data);
+            }
 
-        if ($request->porting_number) {
-            $arr = $this->generatePortData($request->porting_number, $subscription->id);
-            $port = Port::create($arr);
+            return $this->respond(['subscription_id' => $subscription->id]);
+
+        }else{
+            $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
+
+            $insertData = $this->generateSubscriptionData($request);
+            $subscription = Subscription::create($insertData);
+
+            if(!$subscription) {
+                return $this->respondError(['subscription_id' => null]);
+            }
+
+            if ($request->porting_number) {
+                $arr = $this->generatePortData($request->porting_number, $subscription->id);
+                $port = Port::create($arr);
+            }
+
         }
         return $this->respond(['subscription_id' => $subscription->id]);
     }
@@ -59,14 +87,13 @@ class SubscriptionController extends BaseController
             'upgrade_downgrade_status'  => 'required',
             'new_plan_id'  => 'sometimes|required',
         ]);
-        OrderGroup::whereId($request->order_group_id)->update(['paid' => '1']);
+        $order = Order::whereHash($request->order_hash)->first();
+        $data['order_id'] = $order->id;
         $subscription = Subscription::find($data['id']);
 
         $data['old_plan_id'] = $subscription->plan_id;
         $data['upgrade_downgrade_date_submitted'] = Carbon::now();
-        if($data['upgrade_downgrade_status'] == 'downgrade-scheduled'){
-            $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
-        }
+        $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
         $updateSubcription = $subscription->update($data);
         
         return $this->respond(['subscription_id' => $subscription->id]);
@@ -85,13 +112,24 @@ class SubscriptionController extends BaseController
         if ($validation) {
             return $validation;
         }
+        if($request->subscription_addon_id){
 
-        $subscriptionAddon = SubscriptionAddon::create([
-            'subscription_id' => $request->subscription_id,
-            'addon_id'        => $request->addon_id,
-            'status'          => SubscriptionAddon::STATUSES['active'],
-            // 'removal_date'    => date('Y-m-d')
-        ]);
+            $subscriptionAddon = SubscriptionAddon::find($request->subscription_addon_id);
+            $subscriptionAddonData = [
+                'status' => 'removed',
+                'removal_date' => Carbon::now(),
+                'date_submitted' => Carbon::now(),
+            ];
+            $subscriptionAddon->update($subscriptionAddonData);
+
+        }else{
+            $subscriptionAddon = SubscriptionAddon::create([
+                'subscription_id' => $request->subscription_id,
+                'addon_id'        => $request->addon_id,
+                'status'          => SubscriptionAddon::STATUSES['active'],
+                // 'removal_date'    => date('Y-m-d')
+            ]);
+        }
 
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
     }
@@ -101,8 +139,6 @@ class SubscriptionController extends BaseController
         $addons = $request->addons;
         $subscription_addon_id = OrderGroupAddon::where('subscription_id',$request->subscription_id)->pluck('subscription_addon_id');
 
-        SubscriptionAddon::whereIn('id', $subscription_addon_id)->delete();
-        $newAddon = [];
         if(isset($addons)){
             foreach ($addons as $key => $addon) {
                 $subscriptionAddon = SubscriptionAddon::create([
