@@ -24,7 +24,7 @@ class OrderController extends BaseController
                 {       
                     if($subscription) {
 
-                        $this->subscriptionWithSim($subscription);                   
+                       return  $this->subscriptionWithSim($subscription);                   
                     }    
                 }
 
@@ -32,7 +32,7 @@ class OrderController extends BaseController
                 {
                     if($subscription) {
 
-                        $this->subscriptionWithDevice($subscription);    
+                       return  $this->subscriptionWithDevice($subscription);    
                     }
                 }
 
@@ -40,7 +40,7 @@ class OrderController extends BaseController
                 {
                     if($subscription) {
 
-                        $this->subscriptionWithDeviceSim($subscription);
+                       return  $this->subscriptionWithDeviceSim($subscription);
                     }        
                 }
             }
@@ -61,7 +61,7 @@ class OrderController extends BaseController
         $simData['description']  = $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'];
         $simData['part_number'] = 'SUB-'.$subscription->id;
         $simData['unit_amount'] = $subscription->sim['amount_w_plan'];
-        if($subscription->order) {                   
+        if($subscription->order != '' && $subscription->sim != '') {                 
             $apiData = $this->data($order, $simData);
             $response = $this->SentToReadyCloud($apiData);
             if($response->getStatusCode() == 201) {
@@ -83,7 +83,7 @@ class OrderController extends BaseController
         $deviceData['description'] = $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'];
         $deviceData['part_number'] = 'SUB-'.$subscription->id;
         $deviceData['unit_amount'] = $subscription->device['amount_w_plan'];
-        if($subscription->order) {
+        if($subscription->order != '' && $subscription->device != '') {
             $apiData = $this->data($order, $deviceData);
             $response = $this->SentToReadyCloud($apiData);
             if($response->getStatusCode() == 201) {
@@ -107,10 +107,11 @@ class OrderController extends BaseController
         $simDeviceData[0]['unit_amount'] = $subscription->sim['amount_w_plan'];
 
         $simDeviceData[1]['phone'] = $subscription->customerRelation['phone'];
-        $simDeviceData[1]['description'] = $subscription->device->name.' '.'associated with'.' '.$subscription->plan['name'];
+        $simDeviceData[1]['description'] = $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'];
         $simDeviceData[1]['part_number'] = 'SUB-'.$subscription->id;
         $simDeviceData[1]['unit_amount'] = $subscription->device['amount_w_plan'];
-        if($subscription->order) {
+
+        if($subscription->order != '' && $subscription->device != '') {
             foreach ($simDeviceData as $simDevice) {
                 $apiData = $this->data($order, $simDevice);
                 $response = $this->SentToReadyCloud($apiData);    
@@ -140,7 +141,7 @@ class OrderController extends BaseController
                 $standAloneDeviceData['part_number'] = 'DEV-'.$standAloneDevice->device['id'];
                 $standAloneDeviceData['unit_amount'] = $standAloneDevice->device['amount'];
                 $standAloneDeviceData['phone'] = $standAloneDevice->customer['phone'];
-                if($standAloneDevice->order) {
+                if($standAloneDevice->order != '' && $standAloneDevice->device != '') {
                     $apiData = $this->data($order, $standAloneDeviceData);
                     $response = $this->SentToReadyCloud($apiData);
                     if($response->getStatusCode() == 201) {
@@ -169,7 +170,7 @@ class OrderController extends BaseController
                 $standAloneSimData['part_number'] = 'SIM‌-'.$standAloneSim->sim['id'];
                 $standAloneSimData['unit_amount'] = $standAloneSim->sim['amount_alone'];
                 $standAloneSimData['phone'] = $standAloneSim->customer['phone'];
-                if($standAloneSim->order) {
+                if($standAloneSim->order != '' && $standAloneSim->sim != '') {
                     $apiData = $this->data($order, $standAloneSimData);
                     $response = $this->SentToReadyCloud($apiData);
                     
