@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use GuzzleHttp;
-use Illuminate\Http\Request;
+use Exception;
 use App\Model\Tax;
+use GuzzleHttp\Client;
 use App\Model\Subscription;
+use Illuminate\Http\Request;
 use App\Model\CustomerStandaloneSim;
 use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneDevice;
@@ -16,87 +17,118 @@ class OrderController extends BaseController
     public function order()
     {
     	$subscriptions = Subscription::with(['sim', 'device', 'plan', 'order', 'customerRelation'])->shipping()->get();
-
-        foreach ($subscriptions as  $subscription) {
-            if($subscription->sim_id != 0 && $subscription->device_id == 0) {
-                $order = $subscription->order;
-                $simData['phone'] = $subscription->customerRelation['phone'];
-                $simData['description']  = $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'];
-                $simData['part_number'] = 'SUB-'.$subscription->id;
-                $simData['unit_amount'] = $subscription->sim['amount_w_plan'];
-                if($subscription->order) {                    
-                    $apiData = $this->data($order, $simData);
-                    $response = $this->SentToReadyCloud($apiData);
-                    if($response->getStatusCode() == 201) {
-
-                        Subscription::where('id', $subscription->id)->update(['sent_to_readycloud' => 1]);
-                    } else {
-
-                        return $this->respond(['message' => 'Something went wrong!']);
-                    }
-                } else {
-                    \Log::info("----Order not present for This Subscription id {$subscription->id} associated with this Order id {$subscription->order_id}. Order Generation");
-                }
-            
-            } elseif($subscription->device_id != 0 && $subscription->sim_id == 0) {
-                $order = $subscription->order;
-                $deviceData['phone'] = $subscription->customerRelation['phone'];
-                $deviceData['description'] = $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'];
-                $deviceData['part_number'] = 'SUB-'.$subscription->id;
-                $deviceData['unit_amount'] = $subscription->device['amount_w_plan'];
-                if($subscription->order) {
-                    $apiData = $this->data($order, $deviceData);
-                    $response = $this->SentToReadyCloud($apiData);
-                    if($response->getStatusCode() == 201) {
-
-                        Subscription::where('id', $subscription->id)->update(['sent_to_readycloud' => 1]);
-                    } else {
-
-                        return $this->respond(['message' => 'Something went wrong!']);
-                    }    
-                } else {
-                    \Log::info("----Order not present for This Subscription id {$subscription->id} associated with this Order id {$subscription->order_id}. Order Generation");
-                }
-            
-            } elseif($subscription->sim_id != 0 && $subscription->device_id != 0) {
-                    
-                $order = $subscription->order;
-                $simDeviceData[0]['phone'] = $subscription->customerRelation['phone'];
-                $simDeviceData[0]['description']  = $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'];
-                $simDeviceData[0]['part_number'] = 'SUB-'.$subscription->id;
-                $simDeviceData[0]['unit_amount'] = $subscription->sim['amount_w_plan'];
+        try {
+            foreach ($subscriptions as  $subscription) {
         
-                $simDeviceData[1]['phone'] = $subscription->customerRelation['phone'];
-                $simDeviceData[1]['description'] = $subscription->device->name.' '.'associated with'.' '.$subscription->plan['name'];
-                $simDeviceData[1]['part_number'] = 'SUB-'.$subscription->id;
-                $simDeviceData[1]['unit_amount'] = $subscription->device['amount_w_plan'];
-                if($subscription->order) {
-                    foreach ($simDeviceData as $simDevice) {
-                        $apiData = $this->data($order, $simDevice);
-                        $response = $this->SentToReadyCloud($apiData);    
-                    }
-                    
-                    if($response->getStatusCode() == 201) {
+                if(!boolval($subscription->sim_id) && boolval($subscription->device_id)) {       
+                    $this->subscriptionWithSim($subscription);                   
+                }
 
-                        Subscription::where('id', $subscription->id)->update(['sent_to_readycloud' => 1]);
-                    } else {
+                if(!boolval($subscription->device_id) && boolval($subscription->sim_id)) {
+                    $this->subscriptionWithDevice($subscription);    
+                }
 
-                        return $this->respond(['message' => 'Something went wrong!']);
-                    }
-                } else {
-                    \Log::info("----Order not present for This Subscription id {$subscription->id} associated with this Order id {$subscription->order_id}. Order Generation");
+                if(!boolval($subscription->sim_id) && !boolval($subscription->device_id)) {
+                        
+                    $this->subscriptionWithDeviceSim($subscription);
                 }
             }
+
+            $this->standAloneDevice(); 
+            $this->standAloneSim();
+
+        } catch (Exception $e) {
+            \Log::error($e->getMessage());
         }
 
-    	$standAloneDevices = CustomerStandaloneDevice::with(['device', 'order'])->shipping()->get();
-    	foreach ($standAloneDevices as $standAloneDevice) {
+        return $this->respond(['message' => 'Orders Shipped Successfully.']);  
+    }
+
+    public function subscriptionWithSim($subscription)
+    {
+        $order = $subscription->order;
+        $simData['phone'] = $subscription->customerRelation['phone'];
+        $simData['description']  = $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'];
+        $simData['part_number'] = 'SUB-'.$subscription->id;
+        $simData['unit_amount'] = $subscription->sim['amount_w_plan'];
+        if($subscription->order) {                   
+            $apiData = $this->data($order, $simData);
+            $response = $this->SentToReadyCloud($apiData);
+            if($response->getStatusCode() == 201) {
+
+                Subscription::where('id', $subscription->id)->update(['sent_to_readycloud' => 1]);
+            } else {
+
+                return $this->respond(['message' => 'Something went wrong!']);
+            }
+        } else {
+            \Log::info("----Order not present for This Subscription id {$subscription->id} associated with this Order id {$subscription->order_id}. Order Generation");
+        }
+    }
+
+    public function subscriptionWithDevice($subscription)
+    {
+        $order = $subscription->order;
+        $deviceData['phone'] = $subscription->customerRelation['phone'];
+        $deviceData['description'] = $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'];
+        $deviceData['part_number'] = 'SUB-'.$subscription->id;
+        $deviceData['unit_amount'] = $subscription->device['amount_w_plan'];
+        if($subscription->order) {
+            $apiData = $this->data($order, $deviceData);
+            $response = $this->SentToReadyCloud($apiData);
+            if($response->getStatusCode() == 201) {
+
+                Subscription::where('id', $subscription->id)->update(['sent_to_readycloud' => 1]);
+            } else {
+
+                return $this->respond(['message' => 'Something went wrong!']);
+            }    
+        } else {
+            \Log::info("----Order not present for This Subscription id {$subscription->id} associated with this Order id {$subscription->order_id}. Order Generation");
+        }
+    }
+
+    public function subscriptionWithDeviceSim($subscription)
+    {
+        $order = $subscription->order;
+        $simDeviceData[0]['phone'] = $subscription->customerRelation['phone'];
+        $simDeviceData[0]['description']  = $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'];
+        $simDeviceData[0]['part_number'] = 'SUB-'.$subscription->id;
+        $simDeviceData[0]['unit_amount'] = $subscription->sim['amount_w_plan'];
+
+        $simDeviceData[1]['phone'] = $subscription->customerRelation['phone'];
+        $simDeviceData[1]['description'] = $subscription->device->name.' '.'associated with'.' '.$subscription->plan['name'];
+        $simDeviceData[1]['part_number'] = 'SUB-'.$subscription->id;
+        $simDeviceData[1]['unit_amount'] = $subscription->device['amount_w_plan'];
+        if($subscription->order) {
+            foreach ($simDeviceData as $simDevice) {
+                $apiData = $this->data($order, $simDevice);
+                $response = $this->SentToReadyCloud($apiData);    
+            }
+            
+            if($response->getStatusCode() == 201) {
+
+                Subscription::where('id', $subscription->id)->update(['sent_to_readycloud' => 1]);
+            } else {
+
+                return $this->respond(['message' => 'Something went wrong!']);
+            }
+        } else {
+            \Log::info("----Order not present for This Subscription id {$subscription->id} associated with this Order id {$subscription->order_id}. Order Generation");
+        }
+    }
+
+    public function standAloneDevice()
+    {
+        $standAloneDevices = CustomerStandaloneDevice::with(['device', 'order'])->shipping()->get();
+        foreach ($standAloneDevices as $standAloneDevice) {
+            
             $order = $standAloneDevice->order; 
             $standAloneDeviceData['description'] = $standAloneDevice->device['name'];
             $standAloneDeviceData['part_number'] = 'DEV-'.$standAloneDevice->device['id'];
             $standAloneDeviceData['unit_amount'] = $standAloneDevice->device['amount'];
             $standAloneDeviceData['phone'] = $standAloneDevice->customer['phone'];
-            if($subscription->order) {
+            if($standAloneDevice->order) {
                 $apiData = $this->data($order, $standAloneDeviceData);
                 $response = $this->SentToReadyCloud($apiData);
                 if($response->getStatusCode() == 201) {
@@ -110,15 +142,19 @@ class OrderController extends BaseController
                 \Log::info("----Order not present for This standAloneDevice Id {$standAloneDevice->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
             }
         }
+    }
 
+    public function standAloneSim()
+    {
         $standAloneSims = CustomerStandaloneSim::with(['sim', 'order'])->shipping()->get();
         foreach ($standAloneSims as  $standAloneSim) {
+            
             $order = $standAloneSim->order; 
             $standAloneSimData['description'] = $standAloneSim->sim['name'];
             $standAloneSimData['part_number'] = 'SIM‌-'.$standAloneSim->sim['id'];
             $standAloneSimData['unit_amount'] = $standAloneSim->sim['amount_alone'];
             $standAloneSimData['phone'] = $standAloneSim->customer['phone'];
-            if($subscription->order) {
+            if($standAloneSim->order) {
                 $apiData = $this->data($order, $standAloneSimData);
                 $response = $this->SentToReadyCloud($apiData);
                 
@@ -132,15 +168,15 @@ class OrderController extends BaseController
             } else {
                 \Log::info("----Order not present for This standAloneDevice Id {$standAloneDevice->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
             }
-        } 
-
-        return $this->respond(['message' => 'No Order Present For Shipping.']);  
+        }
     }
 
     public function data($order, $data)
     {
+        
         $company = $order->company;
         $customer = $order->customer;
+
         $json = [
             "primary_id" => "BX-".$order->order_num,
             "ordered_at" => "2019-04-17T15:34:11Z",
@@ -193,8 +229,8 @@ class OrderController extends BaseController
 
     public function SentToReadyCloud($data)
     {
-        $client = new \GuzzleHttp\Client();
-        $response = $client->request('POST', 'https://www.readycloud.com/api/v2/orgs/CLn/orders/?bearer_token=8b0e637cd8059a69df93c9c13247954d', [
+        $client = new Client();
+        $response = $client->request('POST', env('REDY_CLOUD_URL'), [
             'headers' => ['Content-type' => 'application/json'],
             'body' => $data
         ]);
