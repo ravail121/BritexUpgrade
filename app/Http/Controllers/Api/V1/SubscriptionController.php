@@ -95,6 +95,18 @@ class SubscriptionController extends BaseController
         $data['upgrade_downgrade_date_submitted'] = Carbon::now();
         $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
         $updateSubcription = $subscription->update($data);
+
+        $removeSubcriptionAddonId = OrderGroupAddon::where([['order_group_id',$request->order_group],['subscription_addon_id', '<>', null]])->pluck('subscription_addon_id');
+        if(isset($removeSubcriptionAddonId['0'])){
+            $subscriptionAddonData = [
+                'status'            => 'removal-scheduled',
+                'date_submitted'    => Carbon::now(),
+                'removal_date'      => $data['downgrade_date'],
+            ];
+
+            SubscriptionAddon::whereIn('id', $removeSubcriptionAddonId)->update($subscriptionAddonData);
+        }
+
         
         return $this->respond(['subscription_id' => $subscription->id]);
     }
@@ -134,25 +146,6 @@ class SubscriptionController extends BaseController
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
     }
 
-    public function updateSubscriptionAddon(Request $request)
-    {
-        $addons = $request->addons;
-        $subscription_addon_id = OrderGroupAddon::where('subscription_id',$request->subscription_id)->pluck('subscription_addon_id');
-
-        if(isset($addons)){
-            foreach ($addons as $key => $addon) {
-                $subscriptionAddon = SubscriptionAddon::create([
-                    'subscription_id' => $request->subscription_id,
-                    'addon_id'        => $addon['id'],
-                    'status'          => SubscriptionAddon::STATUSES['for-adding'],
-                ]);
-                array_push($newAddon,$subscriptionAddon->addon_id);
-            }
-            OrderGroupAddon::whereOrderGroupId($request->order_group_id)->update(['paid' => '1']);
-        }
-        return $newAddon;
-
-    }
 
     /**
      * Returns data as array which is to be inserted in subscription table

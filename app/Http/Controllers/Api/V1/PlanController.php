@@ -260,14 +260,9 @@ class PlanController extends BaseController
 
         $orderGroupData['plan_prorated_amt'] = $amount;
 
-
-
-        //OLD//
-
         if($plan_prorated_amt >= 0){
             //UPGARDE
-            
-            
+            //
             // if($data['plan'] == $data['active_plans']){
             //     //Added new Addon in Same Plan
             //     OrderGroup::where([['order_id' , $subscription->order_id],['old_subscription_plan_id', '<>', null], ['paid', null]])->delete();
@@ -300,39 +295,14 @@ class PlanController extends BaseController
 
         $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
 
-        // if($paidInvoice == "1" && $subscription->order['status'] == 'upgrade'){
-        //     $orderGroup = OrderGroup::create($orderGroupData);   
+        if($paidInvoice == "1" && $order['status'] == 'upgrade'){
+            $orderGroup = OrderGroup::create($orderGroupData);   
 
-        //     $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
-        // }
+            $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
+        }
 
         return $this->respond($order);
     }
-
-    // public function samePlanAddons($request, $orderGroup, $subscription, $plan, $paidInvioce =0)
-    // {
-    //     $addons = $request->addon;
-    //     if(!$addons){
-    //         $addons = [];
-    //     }
-    //     $activeAddons = [];
-    //     if($request->active_addons){
-    //         $activeAddons = explode(",",$request->active_addons);
-    //         $removedAddon=array_diff($activeAddons, $addons);
-    //         if(!empty($removedAddon)){
-    //             $oldOrderGroup = OrderGroup::where([['order_id' , $subscription->order_id],['plan_id', $plan]])->first();
-    //             $this->updateRemovedAddon($removedAddon, $subscription->id, $oldOrderGroup->id);
-    //         }
-    //     }
-    //     $newAddon=array_diff($addons, $activeAddons);
-    //     if(!empty($newAddon)){
-    //         $orderGroup['change_subscription'] = '1';
-    //         $this->insertNewAddon($newAddon, $orderGroup, $subscription, $paidInvioce);
-    //         return 'upgrade';
-    //     }else{
-    //         return 'downgrade';
-    //     }
-    // }
 
     public function updateAddons($request, $orderGroup, $subscription, $plan)
     {
