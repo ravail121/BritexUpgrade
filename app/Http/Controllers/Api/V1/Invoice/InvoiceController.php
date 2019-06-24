@@ -598,7 +598,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             ];
                 
-            if ($subscription->device_id !== null) {
+            if ($subscription->device_id !== null && $subscription->upgrade_downgrade_status == null) {
 
                 $array = [
                     'product_type'    => self::DEVICE_TYPE,
@@ -626,10 +626,21 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 
             if ($subscription->plan_id != null) {
+                $paidInvoice = 0;
                 $plan = Plan::find($subscription->plan_id);
-                $proratedAmount = $order->planProRate($plan->id);
 
-                $amount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
+                if($subscription->upgrade_downgrade_status == null){
+                    $proratedAmount = $order->planProRate($plan->id);
+                    $amount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
+                }else{
+                    $amount = $plan->amount_recurring - $subscription->oldPlan->amount_recurring;
+
+                    $date = Carbon::today()->addDays(6)->endOfDay();
+                    $invoice = Invoice::where([['customer_id', $subscription->customerRelation->id],['type', '1'],['status','2']])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+                    if(isset($invoice)){
+                        $paidInvoice = 1;
+                    }
+                }
 
                 $array = [
                     'product_type' => self::PLAN_TYPE,
@@ -650,10 +661,20 @@ class InvoiceController extends BaseController implements ConstantInterface
                     $invoiceItem->invoice,
                     self::TAX_FALSE
                 );
+
+                if($paidInvoice == 1){
+                    $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+
+                    $regulatoryFee = $this->addRegulatorFeesToSubscription(
+                        $subscription,
+                        $invoiceItem->invoice,
+                        self::TAX_FALSE
+                    );
+                }
                 
             }
 
-            if ($subscription->sim_id != null) {
+            if ($subscription->sim_id != null && $subscription->upgrade_downgrade_status == null) {
                 $sim = Sim::find($subscription->sim_id);
                 $array = [
                     'product_type' => self::SIM_TYPE,
@@ -670,19 +691,33 @@ class InvoiceController extends BaseController implements ConstantInterface
             
             $order = Order::where('invoice_id', $this->input['invoice_id'])->first();
 
-            if ($subscription->subscriptionAddon) {
+            if($subscription->upgrade_downgrade_status != null){
+                $orderGroupId = OrderGroup::whereOrderId($order->id)->pluck('id');
+                $orderGroupAddonId = OrderGroupAddon::whereIn('order_group_id', $orderGroupId)->where('subscription_id', $subscription->id)->pluck('addon_id');
+
+                $subscriptionAddons = $subscription->subscriptionAddon->whereIn('addon_id', $orderGroupAddonId);  
+            }else{
+                $subscriptionAddons = $subscription->subscriptionAddon;
+            }
+            
+
+            if ($subscriptionAddons) {
                 
-                foreach ($subscription->subscriptionAddon as $subAddon) {
+                foreach ($subscriptionAddons as $subAddon) {
 
                     $addon = Addon::find($subAddon->addon_id);
-        
-                    $isProrated = $order->orderGroup->where('plan_prorated_amt', '!=', null);
 
-                    if ($isProrated) {
-                        $proratedAmount = $order->calProRatedAmount($addon->amount_recurring);
+                    if($subscription->upgrade_downgrade_status == null){
+                        $isProrated = $order->orderGroup->where('plan_prorated_amt', '!=', null);
+
+                        if ($isProrated) {
+                            $proratedAmount = $order->calProRatedAmount($addon->amount_recurring);
+                        }
+                        $addonAmount    = $proratedAmount >= 0 ? $proratedAmount : $addon->amount_recurring; 
+                    }else{
+                        $addonAmount = $addon->amount_recurring; 
                     }
-
-                    $addonAmount    = $proratedAmount >= 0 ? $proratedAmount : $addon->amount_recurring;                    
+                                       
 
                     $array = [
                         'product_type' => self::ADDON_TYPE,
@@ -695,7 +730,10 @@ class InvoiceController extends BaseController implements ConstantInterface
                     $array = array_merge($subarray, $array);
 
                     $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
-                    
+
+                    if($paidInvoice == 1){
+                        $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+                    }
                 }
             }
 

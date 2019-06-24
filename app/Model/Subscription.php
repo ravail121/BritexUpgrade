@@ -130,6 +130,11 @@ class Subscription extends Model
         return $this->hasOne('App\Model\Plan', 'id' );
     }
 
+    public function oldPlan()
+    {
+        return $this->belongsTo('App\Model\Plan', 'old_plan_id', 'id');
+    }
+
     /**
      * Creating new function, and not touching original new_plan()
      * as it may be used in the application

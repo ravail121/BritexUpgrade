@@ -83,6 +83,7 @@ class OrderController extends BaseController
                     if($key > 0){
                         $tmp['plan']['from'] = $og->customer->billing_start; 
                         $tmp['plan']['to'] = $og->customer->billing_end;
+                        $tmp['plan']['amount_onetime'] = 0;
                     }else{
                         $tmp['plan']['from'] = Carbon::now()->toDateString();
                         $tmp['plan']['to'] = $og->customer->billing_start; 

@@ -328,13 +328,12 @@ class CustomerController extends BaseController
     {
         $data =  $request->validate([
             'newEmail'   => 'required',
-            'hash'       => 'required',
-
         ]);
-
-        // $emailCount = Customer::where('email', '=' , $request->newEmail)->count();
-
-        $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+        if($request->hash){
+            $emailCount = Customer::where('email', '=' , $request->newEmail)->where('hash', '!=' , $request->hash)->count();
+        }else{
+            $emailCount = Customer::where('email', '=' , $request->newEmail)->count();
+        }
 
         return $this->respond(['emailCount' => $emailCount]);
     }
