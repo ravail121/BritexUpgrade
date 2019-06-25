@@ -16,6 +16,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use App\Notifications\EmailWithAttachment;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\Subscription;
 use App\Model\InvoiceItem;
 use App\Model\Plan;
 use App\Model\Addon;
@@ -62,11 +63,23 @@ class SendEmailWithInvoice
     public function handle(InvoiceGenerated $event)
     {
         
-        $order = $event->order;
+        $order         = $event->order;
         
-        $invoice = $this->invoice(Order::find($order->id));
+        $customerOrder = Order::find($order->id);
+
+        $orderType     = $customerOrder->invoice->type;
+        \Log::info($customerOrder);
+        $invoice = $this->invoice($customerOrder);
         
-        $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+        if ($orderType  == Invoice::TYPES['one-time']) {
+            \Log::info('one time');
+            $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+
+        } elseif ($orderType  == Invoice::TYPES['monthly']) {
+            \Log::info('monthly');
+            $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+
+        }
         
         $configurationSet = $this->setMailConfiguration($order);
         
@@ -103,72 +116,6 @@ class SendEmailWithInvoice
     }
 
 
-    /**
-     * Sets invoice data for pdf generation
-     * 
-     * @param Order     $order
-     */
-    protected function setData($order)
-    {
-        
-        $data = [];
-        if ($order) {
-            
-            if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                $serviceCharges = $order->invoice->cal_service_charges;
-                $taxes          = $order->invoice->cal_taxes;
-                $credits        = $order->invoice->cal_credits;
-                $totalCharges   = $order->invoice->cal_total_charges;
-                $oneTimeCharges = $order->invoice->cal_onetime;
-                $usageCharges   = $order->invoice->cal_usage_charges;
-                $planCharges    = $order->invoice->cal_plan_charges;
-                $subtotal       = $order->invoice->subtotal;
-
-
-                $data = [
-                    'invoice_num'            => $order->invoice->id,
-                    'subscriptions'          => [],
-                    'start_date'             => $order->invoice->start_date,
-                    'end_date'               => $order->invoice->end_date,
-                    'due_date'               => $order->invoice->due_date,
-                    'total_due'              => $order->invoice->total_due,
-                    'subtotal'               => $order->invoice->subtotal,
-                    'today_date'             => $this->carbon->toFormattedDateString(),
-                    'customer_name'          => $order->customer->full_name,
-                    'customer_address'       => $order->customer->shipping_address1,
-                    'customer_zip_address'   => $order->customer->zip_address,
-                    'service_charges'        => number_format($serviceCharges, 2),
-                    'taxes'                  => number_format($taxes, 2),
-                    'credits'                => number_format($credits, 2),
-                    'total_charges'          => number_format($totalCharges, 2),
-                    'total_one_time_charges' => self::formatNumber($oneTimeCharges),
-                    'total_usage_charges'    => self::formatNumber($usageCharges),
-                    'plan_charges'           => self::formatNumber($planCharges),
-                ];
-            }
-        }
-        if ($order->subscriptions) {
-
-            foreach ($order->subscriptions as $subscription) {
-                $planCharges    = $subscription->cal_plan_charges;
-                $onetimeCharges = $subscription->cal_onetime_charges;
-                $usageCharges   = $subscription->cal_usage_charges;
-                $tax            = $subscription->cal_taxes;
-
-                $subscriptionData = [
-                    'subscription_id' => $subscription->id,
-                    'plan_charges'    => number_format($planCharges, 2),
-                    'onetime_charges' => number_format($onetimeCharges, 2),
-                    'phone'           => $subscription->phone_number,
-                    'usage_charges'   => $usageCharges,
-                    'tax'             => $tax
-                ];
-
-                array_push($data['subscriptions'], $subscriptionData);
-            }
-        }
-        return $data;
-    }
 
     /**
      * Formats the amount to USA standard style
@@ -181,13 +128,19 @@ class SendEmailWithInvoice
         return number_format($amount, 2);
     }
 
+     /**
+     * Sets invoice data for pdf generation
+     * 
+     * @param Order     $order
+     */
     protected function invoice($order)
     {
         $invoice = [];
-        if ($order->invoice->type == Invoice::TYPES['one-time']) {
-
+        
+        if ($order) {
+            \Log::info($order->invoice_id);
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
-
+            
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
             
             $regulatoryFee          = $order->invoice->cal_regulatory;
@@ -378,4 +331,52 @@ class SendEmailWithInvoice
         return $arr;
     }
 
+    protected function setMonthlyInvoiceData($order)
+    {
+        $arr = $this->invoiceData($order);
+        
+        foreach ($order->invoice->invoiceItem as $item) { $subscriptions[] = $item->subscription_id; }
+        foreach (array_count_values($subscriptions) as $id => $count) {
+
+            $phone = Subscription::where('id', $id)->pluck('phone_number')->first();
+
+            $planCharges        = $this->getSubscriptionsData($order, $id, 'plan_charges');
+            $addonCharges       = $this->getSubscriptionsData($order, $id, 'feature_charges');
+            $totalTax           = $this->getSubscriptionsData($order, $id, 'taxes');
+            $totalRegulatory    = $this->getSubscriptionsData($order, $id, 'regulatory_fee');
+            $totalCoupons       = $this->getSubscriptionsData($order, $id, 'coupon');
+            $totalManual        = $this->getSubscriptionsData($order, $id, 'manual');
+            $total              = $order->invoice->invoiceItem->where('subscription_id', $id)->where('type', '!=', 6)->sum('amount');
+
+            $subscriptionData = [
+                'subscription_id'       => $id,
+                'plan_charges'          => self::formatNumber($this->getSubscriptionsData($order, $id, 'plan_charges')),
+                'addonCharges'          => self::formatNumber($this->getSubscriptionsData($order, $id, 'feature_charges')),
+                'regulatory_fee'        => self::formatNumber($this->getSubscriptionsData($order, $id, 'regulatory_fee')),
+                'tax'                   => self::formatNumber($this->getSubscriptionsData($order, $id, 'taxes')),
+                'onetime_charges'       => self::formatNumber($this->getSubscriptionsData($order, $id, 'one_time_charges')),
+                'usage_charges'         => self::formatNumber($this->getSubscriptionsData($order, $id, 'usage_charges')),
+                'coupon'                => self::formatNumber($this->getSubscriptionsData($order, $id, 'coupon')),
+                'manual'                => self::formatNumber($this->getSubscriptionsData($order, $id, 'manual')),
+                'phone'                 => $phone,
+                'plan_and_addons'       => self::formatNumber($planCharges + $addonCharges),
+                'tax_and_regulatory'    => self::formatNumber($totalTax + $totalRegulatory),
+                'total_discounts'       => self::formatNumber($totalCoupons + $totalManual),
+                'total'                 => self::formatNumber($total - $totalCoupons),
+
+            ];
+
+            array_push($arr['subscriptions'], $subscriptionData);
+
+        }
+
+        return $arr;
+    }
+
+    protected function getSubscriptionsData($order, $id, $type)
+    {
+        return $order->invoice->invoiceItem->where('subscription_id', $id)->where('type' , InvoiceItem::TYPES[$type])->sum('amount');
+    }
+
+    
 }

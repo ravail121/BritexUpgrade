@@ -17,6 +17,7 @@ use App\Model\Invoice;
 use App\Model\InvoiceItem;
 use App\Model\CustomerCoupon;
 use App\Model\SubscriptionCoupon;
+use App\Events\InvoiceGenerated;
 
 class RegenerateInvoiceController extends Controller
 {
@@ -155,9 +156,14 @@ class RegenerateInvoiceController extends Controller
         }
         
         $regeneratedAmount  = $this->regenerateAmount($subscriptionIds);
-        $invoice            = $this->storeInvoiceItems($regeneratedAmount);     
+        $invoice            = $this->storeInvoiceItems($regeneratedAmount);
         $updateInvoice      = $this->updateInvoice($invoice);
-        
+        $order              = $invoice ? Order::where('invoice_id', $invoice->id)->first() : null;
+
+        if(isset($order)) {
+            event(new InvoiceGenerated($order));
+        }
+
     }
 
     protected function updateInvoice($invoice)
@@ -165,62 +171,70 @@ class RegenerateInvoiceController extends Controller
         // Using $invoice->invoiceItem to count coupons, only counts 1 coupon for some reason,
         // even if customer has more than one.
 
-        $invoiceItems       = InvoiceItem::where('invoice_id', $invoice->id);
+        if ($invoice) {
 
-        $totalDiscounts     = $invoiceItems->whereIn('type', 
-        [
-            InvoiceItem::TYPES['coupon'],
-            InvoiceItem::TYPES['manual']
-        ])->sum('amount');
+            $invoiceItems       = InvoiceItem::where('invoice_id', $invoice->id);
 
-        $totalCharges       = $invoice->invoiceItem->whereIn('type', 
-        [
-            InvoiceItem::TYPES['plan_charges'],
-            InvoiceItem::TYPES['feature_charges'],
-            InvoiceItem::TYPES['regulatory_fee'],
-            InvoiceItem::TYPES['taxes'],
-        ])->sum('amount');
-
-        $subtotal           = $totalCharges - $totalDiscounts;
-        $totalCredits       = app('App\Http\Controllers\Api\V1\Invoice\InvoiceController')->availableCreditsAmount($invoice->customer_id);
-        $invoice->update(
+            $totalDiscounts     = $invoiceItems->whereIn('type', 
             [
-                'subtotal'  => $subtotal,
-                'created_at'=> Carbon::now()
-            ]
-        );
+                InvoiceItem::TYPES['coupon'],
+                InvoiceItem::TYPES['manual']
+            ])->sum('amount');
+
+            $totalCharges       = $invoice->invoiceItem->whereIn('type', 
+            [
+                InvoiceItem::TYPES['plan_charges'],
+                InvoiceItem::TYPES['feature_charges'],
+                InvoiceItem::TYPES['regulatory_fee'],
+                InvoiceItem::TYPES['taxes'],
+            ])->sum('amount');
+
+            $subtotal           = $totalCharges - $totalDiscounts;
+            $totalCredits       = app('App\Http\Controllers\Api\V1\Invoice\InvoiceController')->availableCreditsAmount($invoice->customer_id);
+            $invoice->update(
+                [
+                    'subtotal'  => $subtotal,
+                    'created_at'=> Carbon::now()
+                ]
+            );
+
+        }
 
     }
 
     protected function storeInvoiceItems($regeneratedAmount)
     {
-        $invoiceId = $regeneratedAmount['total'][0]['invoice_id'];
-        foreach ($regeneratedAmount['items'] as $amount) {
-            
-            InvoiceItem::create($amount);
-            
-        }
-        $invoice                = Invoice::find($invoiceId);
-        $customer               = Customer::find($invoice->customer_id);
-        $usedCouponsIds         = $invoice ? $invoice->invoiceItem->where('type', 6)->pluck('product_id') : null;
-        $filterUniqueCouponIds  = [];
+        if ($regeneratedAmount['items'] && $regeneratedAmount['total']) {
+        
+            $invoiceId = $regeneratedAmount['total'][0]['invoice_id'];
+            foreach ($regeneratedAmount['items'] as $amount) {
+                
+                InvoiceItem::create($amount);
+                
+            }
+            $invoice                = Invoice::find($invoiceId);
+            $customer               = Customer::find($invoice->customer_id);
+            $usedCouponsIds         = $invoice ? $invoice->invoiceItem->where('type', 6)->pluck('product_id') : null;
+            $filterUniqueCouponIds  = [];
 
-        if ($usedCouponsIds) {
-            foreach ($usedCouponsIds as $id) {
-                if (!in_array($id, $filterUniqueCouponIds) && $id) {
-                    $filterUniqueCouponIds[] = $id;                  
+            if ($usedCouponsIds) {
+                foreach ($usedCouponsIds as $id) {
+                    if (!in_array($id, $filterUniqueCouponIds) && $id) {
+                        $filterUniqueCouponIds[] = $id;                  
+                    }
                 }
             }
-        }
 
-        $regenerateCoupons          = $this->regenerateCoupons($filterUniqueCouponIds, $invoice);
+            $regenerateCoupons          = $this->regenerateCoupons($filterUniqueCouponIds, $invoice);
 
-        if ($regenerateCoupons) {
-            $accountCoupons         = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerAccountCoupons($customer, $invoice);
-            $subscriptionCoupons    = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+            if ($regenerateCoupons) {
+                $accountCoupons         = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerAccountCoupons($customer, $invoice);
+                $subscriptionCoupons    = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+            }
+            
+            return $invoice;
+
         }
-        
-        return $invoice;
         
     }
 

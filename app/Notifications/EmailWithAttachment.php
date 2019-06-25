@@ -63,7 +63,7 @@ class EmailWithAttachment extends Notification
         $column = array_column($templateVales, 'format_name');
 
         $body = $emailTemplate->body($column, $bizVerification);
-
+        
         $data = ['company_id' => $this->order->company_id,
             'to'                       => $bizVerification->email,
             'business_verficiation_id' => $bizVerification->id,

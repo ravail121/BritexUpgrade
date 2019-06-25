@@ -25,6 +25,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use Carbon\Carbon;
+use App\Events\InvoiceGenerated;
 
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {
@@ -127,7 +128,13 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                 $invoice->update(['total_due' => $totalDue]);
     
-                $order = $this->insertOrder($invoice);
+                $insertOrder = $this->insertOrder($invoice);
+                
+                $order       = Order::where('invoice_id', $invoice->id)->first();
+                      
+                if(isset($order)) {
+                    event(new InvoiceGenerated($order));
+                }
 
                 /*foreach ($customer->billableSubscriptions as $billableSubscription) {
                     $this->response = $this->triggerEvent($customer);
