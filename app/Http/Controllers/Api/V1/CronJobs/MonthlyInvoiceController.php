@@ -156,8 +156,8 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
         foreach ($customer->creditsNotAppliedCompletely as $creditNotAppliedCompletely) {
             
-            $pendingCredits = $creditNotAppliedCompletely->pending_credits;
-
+            $pendingCredits = $creditNotAppliedCompletely->amount;
+            
             if($totalDue >= $pendingCredits){
                 $creditNotAppliedCompletely->update(['applied_to_invoice' => 1]);
                 
@@ -226,7 +226,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
     }
 
-    protected function customerAccountCoupons($customer, $invoice)
+    public function customerAccountCoupons($customer, $invoice)
     {
         $customerCouponRedeemable = $customer->customerCouponRedeemable;
 
@@ -255,7 +255,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                     $invoice->invoiceItem()->create([
                         'subscription_id' => $subscription->id,
                         'product_type'    => '',
-                        'product_id'      => null,
+                        'product_id'      => $coupon->id,
                         'type'            => InvoiceItem::TYPES['coupon'],
                         'description'     => "(Customer Account Coupon) $coupon->code",
                         'amount'          => $amount,
@@ -339,7 +339,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     }
 
 
-    protected function customerSubscriptionCoupons($invoice, $subscriptions)
+    public function customerSubscriptionCoupons($invoice, $subscriptions)
     {
         foreach($subscriptions as $subscription){
             
@@ -695,219 +695,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             'amount'      => $plan->amount_recurring,  // ToDo: CONFIRM THIS FIRST
             'taxable'     => $plan->taxable,
         ];
-        
-    }
-
-    public function regenerateInvoice()
-    {
-
-        $today                  = Carbon::today();
-        $invoiceGroups          = Customer::customerInvoiceGroups();
-        $allOpenInvocies        = [];
-        $customerInvoices       = [];
-        $openMonthlyInvoiceDate = 0;
-        $pendingOrderInvoices   = [];
-
-        foreach ($invoiceGroups as $invoices) {
-
-            foreach ($invoices as $invoice) {
-
-                $openMonthlyInvoiceDate = 0;
-
-                $customerId = '';
-
-                $invoiceId  = '';
-
-                if ($invoice->type == 1 && $invoice->status == 1) {
-
-                    $openMonthlyInvoiceDate = strtotime($invoice->created_at);
-
-                    $customerId = $invoice->customer_id;
-
-                    $invoiceId  = $invoice->id;
-
-                    $openOrderInvoices = $invoices->where('customer_id', $customerId);
-
-                    foreach ($openOrderInvoices as $orderInvoice) {
-
-                        if (strtotime($orderInvoice->created_at) > $openMonthlyInvoiceDate) {
-
-                            $pendingOrderInvoices[]   = ['invoice' => $orderInvoice, 'monthly_invoice_id' => $invoiceId];
-                    
-                            
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-        
-        $subscriptionData   = $this->processPendingOrderInvoices($pendingOrderInvoices);
-
-    }
-
-    protected function processPendingOrderInvoices($pendingOrderInvoices)
-    {
-
-        $subscriptionIds  = [];
-
-        foreach ($pendingOrderInvoices as $invoice) {
-
-            $invoiceItems = $invoice['invoice']->invoiceItem;
-
-            $invoiceId    = $invoice['monthly_invoice_id'];
-
-            foreach ($invoiceItems as $item) {
-                
-                if ($item->subscription_id) {
-                   
-                    if (!in_array($item->subscription_id, $subscriptionIds)) {
-
-                        $subscriptionIds[] = $item->subscription_id;
-                        
-                    }
-
-                }
-                
-            }
-
-        }
-        
-        $regenratedAmount = $this->regenerateAmount($subscriptionIds);
-
-        foreach ($regenratedAmount['items'] as $amount) {
-            InvoiceItem::create($amount);
-        }
-        foreach ($regenratedAmount['total'] as $total) {
-            $invoice    = Invoice::find($total['invoice_id']);
-            $subtotal   = $invoice->subtotal + $total['amount'];
-            $totalDue   = $invoice->total_due + $total['amount'];
-            
-            $invoice->update(
-                [
-                    'subtotal'  => $subtotal,
-                    'total_due' => $totalDue,
-                    'created_at'=> Carbon::now()
-                ]
-            );
-        }
-    }
-
-    protected function regenerateAmount($subscriptionIds)
-    {
-        $invoiceItems   = [];
-        $plans          = [];
-        $addons         = [];
-        $total          = [];
-
-        foreach ($subscriptionIds as $id) {
-
-            $subscription   = Subscription::find($id);
-            $order          = Order::find($subscription->order_id);
-            $customer       = Customer::find($order->customer_id);
-            $invoice        = $customer->invoice->where('type', 1)->where('status', 1)->first();
-            $startDate      = Carbon::parse($customer->billing_start);
-            $endDate        = Carbon::parse($customer->billing_end);
-            $totalDays      = $startDate->diffInDays($endDate);
-            $remainingDays  = Carbon::today()->diffInDays($endDate);
-
-            $planCharges    = $order->planProRate($subscription->plan_id) / $totalDays;
-            $plan           = Plan::find($subscription->plan_id);
-            $total[]        = ['invoice_id' => $invoice->id, 'amount' => $planCharges];          
-
-            $invoiceItems[] = [
-                'invoice_id'        => $invoice->id,
-                'subscription_id'   => $subscription->id,
-                'product_type'      => 'plan',
-                'product_id'        => $subscription->plan_id,
-                'type'              => InvoiceItem::INVOICE_ITEM_TYPES['plan_charges'],
-                'description'       => '(Billable Subscription)'.$plan->description,
-                'amount'            => $planCharges * $remainingDays,
-                'start_date'        => Carbon::today()->toDateString(),
-                'taxable'           => $plan->taxable
-            ];
-
-            if ($plan->taxable == 1) {
-                $rate = $customer->stateTax->rate * $planCharges / 100;
-                $invoiceItems[] = [
-                    'invoice_id'        => $invoice->id,
-                    'subscription_id'   => $subscription->id,
-                    'product_type'      => '',
-                    'product_id'        => null,
-                    'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-                    'description'       => '(Taxes)',
-                    'amount'            => $rate,
-                    'start_date'        => Carbon::today()->toDateString(),
-                    'taxable'           => 0
-                ];
-                $total[]                = ['invoice_id' => $invoice->id, 'amount' => $rate];
-            }
-
-            $regulatoryFee = $plan->regulatory_fee_type == 2 ? $planCharges * $plan->regulatory_fee_amount / 100 : $plan->regulatory_fee_amount;
-            $total[]                = ['invoice_id' => $invoice->id, 'amount' => $regulatoryFee];  
-            $invoiceItems[] = [
-                'invoice_id'        => $invoice->id,
-                'subscription_id'   => $subscription->id,
-                'product_type'      => '',
-                'product_id'        => null,
-                'type'              => InvoiceItem::INVOICE_ITEM_TYPES['regulatory_fee'],
-                'description'       => '(Regulatory Fee) - Regulatory',
-                'amount'            => $regulatoryFee,
-                'start_date'        => Carbon::today()->toDateString(),
-                'taxable'           => 0
-            ];
-
-            if (isset($order->orderGroup->order_group_addon)) {
-
-                if (count($order->orderGroup->order_group_addon)) {
-
-                    $addonsGroup = $order->orderGroup->order_group_addon;
-
-                    foreach ($addonsGroup as $addon) {
-
-                        $addonCharges = $order->addonProRate($addon->addon_id) / $totalDays;
-                        $total[]      = ['invoice_id' => $invoice->id, 'amount' => $addonCharges];
-                        $addon        = Addon::find($addon->addon_id);
-                        $invoiceItems[] = [
-                            'invoice_id'        => $invoice->id,
-                            'subscription_id'   => $subscription->id,
-                            'product_type'      => 'addon',
-                            'product_id'        => $addon->addon_id,
-                            'type'              => InvoiceItem::INVOICE_ITEM_TYPES['feature_charges'],
-                            'description'       => '(Billable Addon)'.$addon->description,
-                            'amount'            => $addonCharges * $remainingDays,
-                            'start_date'        => Carbon::today()->toDateString(),
-                            'taxable'           => $addon->taxable
-                        ];
-
-                        if ($addon->taxable == 1) {
-                            $rate = $customer->stateTax->rate * $addonCharges / 100;
-                            $invoiceItems[] = [
-                                'invoice_id'        => $invoice->id,
-                                'subscription_id'   => $subscription->id,
-                                'product_type'      => '',
-                                'product_id'        => null,
-                                'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-                                'description'       => '(Taxes)',
-                                'amount'            => $rate,
-                                'start_date'        => Carbon::today()->toDateString(),
-                                'taxable'           => 0
-                            ];
-                            $total[]                = ['invoice_id' => $invoice->id, 'amount' => $rate];
-                        }
-                        
-                    }
-
-                }
-
-            }
-
-        }
-            
-        return ['items' => $invoiceItems, 'total' => $total];
         
     }
 

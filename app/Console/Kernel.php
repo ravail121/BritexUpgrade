@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice')->daily();
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\UpdateController@checkUpdates')->daily();
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ProcessController@processSubscriptions')->daily();
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice')->daily();
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\RegenerateInvoiceController@regenerateInvoice')->daily();
         //$schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyMinute();
     }
 

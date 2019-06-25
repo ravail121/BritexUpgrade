@@ -15,6 +15,7 @@ use App\Model\Sim;
 use App\Model\Addon;
 use App\Model\OrderCouponProduct;
 use Carbon\Carbon;
+use App\Model\CustomerCoupon;
 
 class CouponController extends Controller
 {
@@ -63,8 +64,16 @@ class CouponController extends Controller
         } else {
             
             $customerHash          = $request->hash ? $request->hash : $order->customer->hash;
+
+            $customer              = Customer::where('hash', $customerHash)->first();
+
+            $alreadyUsed           = count(CustomerCoupon::where('customer_id', $customer->id)->where('coupon_id', $coupon->id)->get());
             
-            $billableSubscriptions = Customer::where('hash', $customerHash)->first()->billableSubscriptions;
+            if ($alreadyUsed) {
+                return ['error' => 'You have already used this coupon'];
+            }
+
+            $billableSubscriptions = $customer->billableSubscriptions;
             
             $billablePlans = [];
 
@@ -75,8 +84,10 @@ class CouponController extends Controller
             }
 
             if (!empty($coupon)) {
+                
                 $alreadyExists = OrderCoupon::where('order_id', $request->order_id)->get();
                 $orderGroup    = OrderGroup::where('order_id', $request->order_id)->sum('plan_prorated_amt');
+
                 if (count($alreadyExists) < 1) {
 
                     OrderCoupon::create([
@@ -107,16 +118,16 @@ class CouponController extends Controller
                 
                 if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
 
-                    if ($this->ifCouponCanBeUsed($coupon)) {
+                    if ($this->couponCanBeUsed($coupon)) {
 
-                        if ($this->ifCouponNotReachedMaxLimit($coupon)) {
+                        if ($this->couponNotReachedMaxLimit($coupon)) {
 
                             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
-                           
+                            
                             return ['total' => $total, 'applied_to' => [
-                                'apllied_to_all'   => $appliedToAll['applied_to'],
-                                'apllied_to_types' => $appliedToTypes['applied_to'],
-                                'apllied_to_products' => $appliedToProducts['applied_to']
+                                    'applied_to_all'        => $appliedToAll['applied_to'],
+                                    'applied_to_types'      => $appliedToTypes['applied_to'],
+                                    'applied_to_products'   => $appliedToProducts['applied_to']
                                 ]
                             ];
 
@@ -151,14 +162,14 @@ class CouponController extends Controller
                     ]; 
                 
                 }
-
+                
             }
             
         }
         
     }
 
-    protected function ifCouponNotReachedMaxLimit($coupon)
+    protected function couponNotReachedMaxLimit($coupon)
     {
 
         $maxLimitNotReached = true;
@@ -173,7 +184,7 @@ class CouponController extends Controller
 
     }
 
-    protected function ifCouponCanBeUsed($coupon)
+    protected function couponCanBeUsed($coupon)
     {
         $isApplicable       = true;
 
@@ -683,7 +694,8 @@ class CouponController extends Controller
     protected function orderCoupon(Request $request)
     {
         if ($request['applied_to_all']) {
-            foreach ($request['apllied_to_all'] as $product) {
+            
+            foreach ($request['applied_to_all'] as $product) {
 
                 $order = Order::find($product['order']['id']);
     
@@ -695,8 +707,9 @@ class CouponController extends Controller
             }
         }
 
-        if ($request['apllied_to_types']) {
-            foreach ($request['apllied_to_types'] as $product) {
+        if ($request['applied_to_types']) {
+            
+            foreach ($request['applied_to_types'] as $product) {
 
                 $order = Order::find($product['order']['id']);
     
@@ -708,8 +721,9 @@ class CouponController extends Controller
             }
         }
 
-        if ($request['apllied_to_products']) {
-            foreach ($request['apllied_to_products'] as $product) {
+        if ($request['applied_to_products']) {
+            
+            foreach ($request['applied_to_products'] as $product) {
 
                 $order = Order::find($product['order']['id']);
     

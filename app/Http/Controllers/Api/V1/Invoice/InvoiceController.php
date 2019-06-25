@@ -216,7 +216,7 @@ class InvoiceController extends BaseController implements ConstantInterface
    
     public function storeCoupon($couponAmount, $couponCode, $invoice)
     {
-        \Log::info($couponCode);
+        
         //store coupon in invoice_items.
         if ($couponAmount) {
             $invoice->invoiceItem()->create(

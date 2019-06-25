@@ -65,7 +65,7 @@ class SendEmailWithInvoice
         $order = $event->order;
         
         $invoice = $this->invoice(Order::find($order->id));
-
+        
         $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
         
         $configurationSet = $this->setMailConfiguration($order);
@@ -113,6 +113,7 @@ class SendEmailWithInvoice
         
         $data = [];
         if ($order) {
+            
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $serviceCharges = $order->invoice->cal_service_charges;
                 $taxes          = $order->invoice->cal_taxes;
@@ -182,6 +183,7 @@ class SendEmailWithInvoice
 
     protected function invoice($order)
     {
+        $invoice = [];
         if ($order->invoice->type == Invoice::TYPES['one-time']) {
 
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
@@ -189,6 +191,7 @@ class SendEmailWithInvoice
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
             
             $regulatoryFee          = $order->invoice->cal_regulatory;
+           
             $stateTax               = $order->invoice->cal_stateTax;
             $taxes                  = $order->invoice->cal_taxes;
             $credits                = $order->invoice->cal_credits;
@@ -248,8 +251,11 @@ class SendEmailWithInvoice
             
 
             $invoice = array_merge($data, $invoice);
+            
+            
         }
 
+        return $invoice;
 
     }
 

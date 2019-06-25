@@ -40,6 +40,11 @@ Route::get('/cron-jobs-monthly-invoice', [
     'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
 ]);
 
+Route::get('/cron-jobs-regenerate-invoice', [
+  'as'=>'api.cron.regenerate.invoice',
+  'uses'=> 'Api\V1\CronJobs\RegenerateInvoiceController@regenerateInvoice',
+]);
+
 Route::get('/cron-jobs-orders', [
     'as'=>'api.cron.orders',
     'uses'=> 'Api\V1\CronJobs\OrderController@order',
