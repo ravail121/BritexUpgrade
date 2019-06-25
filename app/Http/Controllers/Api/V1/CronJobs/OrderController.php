@@ -16,19 +16,18 @@ class OrderController extends BaseController
 {
     public function order()
     {
-    	$subscriptions = Subscription::with(['sim', 'device', 'plan', 'order', 'customerRelation'])->shipping()->get();
+        $subscriptions = Subscription::with(['sim', 'device', 'plan', 'order', 'customerRelation'])->shipping()->get();
         try {
             foreach ($subscriptions as  $subscription) {
-
-                if(!boolval($subscription->sim_id) && boolval($subscription->device_id))
+                if(($subscription->sim_id != 0) && ($subscription->device_id == 0))
                 {       
                     if($subscription) {
 
-                       return  $this->subscriptionWithSim($subscription);                   
+                        return  $this->subscriptionWithSim($subscription);
                     }    
                 }
 
-                if(!boolval($subscription->device_id) && boolval($subscription->sim_id))
+                if(($subscription->device_id != 0) && ($subscription->sim_id == 0))
                 {
                     if($subscription) {
 
@@ -36,7 +35,7 @@ class OrderController extends BaseController
                     }
                 }
 
-                if(!boolval($subscription->sim_id) && !boolval($subscription->device_id))
+                if(($subscription->sim_id != 0) && ($subscription->device_id != 0))
                 {
                     if($subscription) {
 
@@ -64,6 +63,7 @@ class OrderController extends BaseController
         if($subscription->order != '' && $subscription->sim != '') {                 
             $apiData = $this->data($order, $simData);
             $response = $this->SentToReadyCloud($apiData);
+
             if($response->getStatusCode() == 201) {
 
                 Subscription::where('id', $subscription->id)->update(['sent_to_readycloud' => 1]);
@@ -196,7 +196,7 @@ class OrderController extends BaseController
 
         $json = [
             "primary_id" => "BX-".$order->order_num,
-            "ordered_at" => "2019-04-17T15:34:11Z",
+            "ordered_at" => $order->created_at_format,
             "shipping" => [
                 "ship_to"=> [
                     "first_name" => $order->shipping_fname,

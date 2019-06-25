@@ -124,4 +124,9 @@ class Order extends Model
     {
         return Carbon::parse($value)->format('M-d-Y h:i A');
     }
+
+    public function getCreatedAtFormatAttribute()
+    {
+        return Carbon::parse($this->created_at)->format('Y-m-d\Th:i\Z');
+    }
 }
