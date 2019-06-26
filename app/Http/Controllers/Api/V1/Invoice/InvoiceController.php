@@ -759,6 +759,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                             $addonAmount = 0; 
                         }else{
                             $addonAmount = $addon->amount_recurring;
+                        }
                     }
                                        
 
@@ -794,12 +795,13 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             //$customer = app('App\Http\Controllers\Api\V1\InvoiceController')->customer();
            //
-            
+    
 
         }
        
         return $invoiceItem;
         
+    
     }
 
     public function availableCreditsAmount($id)
