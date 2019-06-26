@@ -68,15 +68,15 @@ class SendEmailWithInvoice
         $customerOrder = Order::find($order->id);
 
         $orderType     = $customerOrder->invoice->type;
-        \Log::info($customerOrder);
+       
         $invoice = $this->invoice($customerOrder);
         
         if ($orderType  == Invoice::TYPES['one-time']) {
-            \Log::info('one time');
+            
             $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
 
         } elseif ($orderType  == Invoice::TYPES['monthly']) {
-            \Log::info('monthly');
+           
             $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');
 
         }
@@ -138,7 +138,7 @@ class SendEmailWithInvoice
         $invoice = [];
         
         if ($order) {
-            \Log::info($order->invoice_id);
+            
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
             
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
@@ -207,7 +207,7 @@ class SendEmailWithInvoice
             
             
         }
-
+       
         return $invoice;
 
     }

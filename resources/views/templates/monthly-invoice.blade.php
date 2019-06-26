@@ -9,15 +9,15 @@
 </head>
 
 <body>
-    <div class="wrapper">
+    <div tyle='margin-bottom:500px;' class="wrapper">
         <div class="container" style="width: 100%; float: none; margin: 0px auto;">
-            <div class="boxmain">
+            <div style='position:relative;top:100px;' class="boxmain">
                 <div class="head" style="padding: 0px 0px 0px;">
                     <div class="containerin">
                         <div class="logo" style=" width: 100%; text-align: center;">
-                            <img src="https://teltik.pw/pdf/img/logo.png" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
+                            <img src="{{  isset($invoice['company_logo']) ? $invoice['company_logo'] : ''  }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
                         </div>
-                        <div class="invoice">
+                        <div style='margin-top:20px' class="invoice">
                             <h2>INVOICE</h2>
                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                 <tbody>
@@ -46,7 +46,7 @@
                         </div>
                         <!-- Customer Info -->
 
-                        <div style='position:absolute; left:0; right:0; margin: auto; top: 65px;' class="linksfooter">
+                        <div style='position:absolute; left:0; right:0; margin: auto; top: 100px;' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
                                 <p><span>{{ $invoice['customer_name'] }}</span></p>
@@ -55,16 +55,31 @@
                             </div>
                         </div>
                         
-                        <div class="bill_info">
+                        <div style='position:absolute; right:15px; margin: auto; top: 100px;' class="bill_info">
                             <h2>Your Monthly Bill As Of</h2>
                             <h3>{{ $invoice['today_date'] }}</h3>
                         </div>
                         
                         <div class="info">
-                            <h2>Important Information</h2>
-                            <p>1. You are <strong>not</strong> enrolled in Autopay. Amount will <strong>not</strong> be forwarded for automatic processing.</p>
-                            <p>2. Pay online <a href="http://www.ResellerDomain.com">ResellerDomain.com</a></p>
-                        </div>
+                                <h2>Important Information</h2>
+                                <p>1. You are 
+                                    <strong>
+                                        @if (isset($invoice['customer_auto_pay']) && $invoice['customer_auto_pay'])
+                                        
+                                        @else 
+                                            not
+                                        @endif
+                                    </strong> 
+                                    enrolled in Autopay. Amount will 
+                                    <strong>
+                                        @if (isset($invoice['customer_auto_pay']) && $invoice['customer_auto_pay'])
+                                    
+                                        @else 
+                                            not
+                                        @endif    
+                                    </strong> be forwarded for automatic processing.</p>
+                                <p>2. Pay online <a href="{{ isset($invoice['reseller_domain']) ? $invoice['reseller_domain'] : '' }}">teltik.pw</a></p>
+                            </div>
                     </div>
                     <div class="billing_detail">
                         <div class="containerin">
@@ -178,7 +193,7 @@
                                                     <td colspan="2">Let’s talk!<span> Call us anytime</span></td>
                                                 </tr>
                                                 <tr>
-                                                    <td colspan="2">Reseller Phone Number</td>
+                                                    <td colspan="2">{{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -317,8 +332,8 @@
                         <div class="footer">
                             <div class="container">
                                 <div class="center">
-                                    <a href="#">Contact us: 1-800-555-1212</a>
-                                    <a href="#">ResellerDomain.com</a>
+                                    <a href="#">Contact us: {{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}</a>
+                                    <a href="{{ isset($invoice['reseller_domain']) ? $invoice['reseller_domain'] : '' }}">teltik.pw</a>
                                 </div>
                             </div>
                         </div>
@@ -327,8 +342,10 @@
             </div>
         </div>
     </div>
-    @include('templates.test-statement')
-    @include('templates.test-statement-2')
+
 </body>
 
 </html>
+
+@include('templates.test-statement')
+@include('templates.test-statement-2')

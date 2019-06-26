@@ -59,11 +59,13 @@ class EmailWithAttachment extends Notification
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
        
         $replaceWith = [$bizVerification->fname, $bizVerification->lname];
-
+       
         $column = array_column($templateVales, 'format_name');
 
         $body = $emailTemplate->body($column, $bizVerification);
-        
+
+        $body = str_replace($strings, $replaceWith, $emailTemplate->body);
+       
         $data = ['company_id' => $this->order->company_id,
             'to'                       => $bizVerification->email,
             'business_verficiation_id' => $bizVerification->id,

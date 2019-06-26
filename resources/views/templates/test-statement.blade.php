@@ -8,11 +8,11 @@
 </head>
 
 <body>
-    <div class="wrapper page1">
+    <div style='position:relative;margin-top:400px;' class="wrapper page1">
         <div class="container">
             <div class="header">
                 <div class="logo">
-                    <a href="#"><img src="https://teltik.pw/pdf/img/logo.png" alt="logo"></a>
+                    <a href="#"><img src="{{ isset($invoice['company_logo']) ? $invoice['company_logo'] : '' }}" alt="logo"></a>
                 </div>
                 <div class="statement">
                     <p>Statement For:</p>
@@ -215,7 +215,7 @@
                     </div>
                 </div>
                 <div class="container">
-                    <h3>Page <strong> 1</strong>/2 </h3>
+                    <h3>Page <strong> 2</strong>/3 </h3>
                 </div>
 
                 <div style='page-break-after:always;'>&nbsp;</div>

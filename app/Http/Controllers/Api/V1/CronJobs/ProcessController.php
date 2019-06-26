@@ -50,14 +50,16 @@ class ProcessController extends BaseController
     	$subscriptions = Subscription::todayEqualsDowngradeDate()->get();
         
     	foreach ($subscriptions as $subscription) {
-    		$subscription->update([
-	    		'upgrade_downgrade_status' => 'for-downgrade',
-	    		'old_plan_id'    		   => $subscription->plan_id,
-	    		'plan_id'        		   => $subscription->new_plan_id,
-	    		'new_plan_id'    		   => null,
-	    		'downgrade_date' 		   => null,
-    		]);
-
+            if ($subscription->new_plan_id) {
+                $subscription->update([
+                    'upgrade_downgrade_status' => 'for-downgrade',
+                    'old_plan_id'    		   => $subscription->plan_id,
+                    'plan_id'        		   => $subscription->new_plan_id,
+                    'new_plan_id'    		   => null,
+                    'downgrade_date' 		   => null,
+                ]);
+    
+            }
     		// Need to add row in 'subscription_log' with category="downgrade-" => NOT CLEARED
     	}
     	return true;

@@ -54,7 +54,7 @@ class Customer extends Authenticatable
 
     public function company()
     {
-    	return $this->hasOne('App\Model\Company', 'id');
+    	return $this->hasOne('App\Model\Company', 'id', 'company_id');
     }
 
     public function subscription()

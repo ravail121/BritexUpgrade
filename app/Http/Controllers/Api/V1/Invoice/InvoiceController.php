@@ -194,6 +194,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 
         $this->addShippingCharges($order);
 
+        $this->ifTotalDue($order);
+
         if(isset($order)) {
             event(new InvoiceGenerated($order));
         }
@@ -203,7 +205,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     public function getTax(Request $request)
     {
-        $order = Order::where('hash', $request->hash)->first();
+        $order      = Order::where('hash', $request->hash)->first();
         $taxes      = $order->invoice->invoiceItem->where('type', self::TAXES)->sum('amount');
         $shipping   = $order->invoice->invoiceItem->where('description', self::SHIPPING)->sum('amount');
         return ['taxes' => $taxes, 'shipping' => $shipping];
@@ -274,6 +276,18 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     }
 
+    protected function ifTotalDue($order)
+    {
+        $totalAmount    = $order->invoice->subtotal;
+        $paidAmount     = $order->invoice->creditsToInvoice->sum('amount');
+        $totalDue       = $totalAmount > $paidAmount ? $totalAmount - $paidAmount : 0;
+        $order->invoice->update(
+            [
+                'total_due'     => $totalDue
+            ]
+        );
+    }
+
     /**
      * Generates the Invoice template and downloads the invoice.pdf file
      * 
@@ -289,7 +303,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
 
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
-
+  
             $regulatoryFee          = $order->invoice->cal_regulatory;
             $stateTax               = $order->invoice->cal_stateTax;
             $taxes                  = $order->invoice->cal_taxes;
@@ -344,14 +358,18 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'total_coupons'             => self::formatNumber($totalCoupons),
                 'account_charges_discount'  => self::formatNumber($accountChargesDiscount),
                 'total_line_charges'        => self::formatNumber($totalLineCharges),
-                'total_account_summary_charge' => self::formatNumber($planCharges + $oneTimeCharges + $usageCharges + $taxAndShipping - $credits)
+                'total_account_summary_charge' => self::formatNumber($planCharges + $oneTimeCharges + $usageCharges + $taxAndShipping - $credits),
+                'customer_auto_pay'         => $order->customer->auto_pay,
+                'company_logo'              => $order->customer->company->logo,
+                'reseller_phone_number'     => $order->customer->company->support_phone_number,
+                'reseller_domain'           => $order->customer->company->url
                 
             ];
 
             $invoice = array_merge($data, $invoice);
  
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+                $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
                 return $pdf->download('invoice.pdf');
             
             } else {
@@ -412,7 +430,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             'start_date'            => $order->invoice->start_date,
             'end_date'              => $order->invoice->end_date,
             'due_date'              => $order->invoice->due_date,
-            'total_due'             => $order->invoice->total_due,
+            'total_due'             => self::formatNumber($order->invoice->total_due),
             'subtotal'              => $order->invoice->subtotal,
             'invoice_item'          => $order->invoice->invoiceItem,
             'today_date'            => $this->carbon->toFormattedDateString(),

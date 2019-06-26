@@ -96,11 +96,11 @@ class RegenerateInvoiceController extends Controller
                     $openOrderInvoices      = $invoices->where('customer_id', $customerId);
                     
                     foreach ($openOrderInvoices as $orderInvoice) {
-
+                       
                         $currentDate        = Carbon::parse($orderInvoice->created_at);
 
                         $currentTime        = $currentDate->format('H:i');
-                            
+                        
                         if ($currentDate > $openMonthlyInvoiceDate && $invoice->id != $orderInvoice->id) {
                             
                             $pendingOrderInvoices[]   = ['invoice' => $orderInvoice, 'monthly_invoice_id' => $invoiceId];
@@ -114,16 +114,16 @@ class RegenerateInvoiceController extends Controller
                             } 
 
                         }
-
+                        
                     }
-
+                    
                 }
 
             }
 
         }
         
-        $subscriptionData   = $this->processPendingOrderInvoices($pendingOrderInvoices);
+        $this->processPendingOrderInvoices($pendingOrderInvoices);
         
 
     }
@@ -134,7 +134,7 @@ class RegenerateInvoiceController extends Controller
         $subscriptionIds  = [];
 
         foreach ($pendingOrderInvoices as $invoice) {
-           
+            
             $invoiceItems = $invoice['invoice']->invoiceItem;
 
             $invoiceId    = $invoice['monthly_invoice_id'];
@@ -156,13 +156,20 @@ class RegenerateInvoiceController extends Controller
         }
         
         $regeneratedAmount  = $this->regenerateAmount($subscriptionIds);
-        $invoice            = $this->storeInvoiceItems($regeneratedAmount);
-        $updateInvoice      = $this->updateInvoice($invoice);
-        $order              = $invoice ? Order::where('invoice_id', $invoice->id)->first() : null;
+        $invoiceIds         = $this->storeInvoiceItems($regeneratedAmount);
 
-        if(isset($order)) {
-            event(new InvoiceGenerated($order));
+        foreach ($invoiceIds as $id) {
+
+            $invoice            = Invoice::find($id);
+            $updateInvoice      = $this->updateInvoice($invoice);
+            $order              = $invoice ? Order::where('invoice_id', $invoice->id)->first() : null;
+    
+            if(isset($order)) {
+                event(new InvoiceGenerated($order));
+            }
+
         }
+
 
     }
 
@@ -186,53 +193,80 @@ class RegenerateInvoiceController extends Controller
                 InvoiceItem::TYPES['plan_charges'],
                 InvoiceItem::TYPES['feature_charges'],
                 InvoiceItem::TYPES['regulatory_fee'],
-                InvoiceItem::TYPES['taxes'],
+                InvoiceItem::TYPES['taxes']
             ])->sum('amount');
 
             $subtotal           = $totalCharges - $totalDiscounts;
             $totalCredits       = app('App\Http\Controllers\Api\V1\Invoice\InvoiceController')->availableCreditsAmount($invoice->customer_id);
+            
             $invoice->update(
                 [
                     'subtotal'  => $subtotal,
                     'created_at'=> Carbon::now()
                 ]
             );
+            $totalDue           = $this->totalDue($invoice);
 
         }
 
     }
 
+    protected function totalDue($invoice)
+    {
+        $totalAmount    = $invoice->subtotal;
+        $paidAmount     = $invoice->creditsToInvoice->sum('amount');
+        $totalDue       = $totalAmount;
+        if ($paidAmount && $paidAmount < $totalAmount) {
+            $totalDue = $totalAmount - $paidAmount;
+        }
+        $invoice->update(
+            [
+                'total_due'     => $totalDue
+            ]
+        );
+        
+    }
+
     protected function storeInvoiceItems($regeneratedAmount)
     {
+        $invoiceIds = [];
         if ($regeneratedAmount['items'] && $regeneratedAmount['total']) {
-        
-            $invoiceId = $regeneratedAmount['total'][0]['invoice_id'];
+            
             foreach ($regeneratedAmount['items'] as $amount) {
                 
                 InvoiceItem::create($amount);
                 
             }
-            $invoice                = Invoice::find($invoiceId);
-            $customer               = Customer::find($invoice->customer_id);
-            $usedCouponsIds         = $invoice ? $invoice->invoiceItem->where('type', 6)->pluck('product_id') : null;
-            $filterUniqueCouponIds  = [];
 
-            if ($usedCouponsIds) {
-                foreach ($usedCouponsIds as $id) {
-                    if (!in_array($id, $filterUniqueCouponIds) && $id) {
-                        $filterUniqueCouponIds[] = $id;                  
+
+            foreach ($regeneratedAmount['total'] as $total) {
+                
+                $invoice                = Invoice::find($total['invoice_id']);
+                $customer               = Customer::find($invoice->customer_id);
+                $usedCouponsIds         = $invoice ? $invoice->invoiceItem->where('type', 6)->pluck('product_id') : null;
+                $filterUniqueCouponIds  = [];
+
+                if ($usedCouponsIds) {
+                    foreach ($usedCouponsIds as $id) {
+                        if (!in_array($id, $filterUniqueCouponIds) && $id) {
+                            $filterUniqueCouponIds[] = $id;                  
+                        }
                     }
                 }
-            }
 
-            $regenerateCoupons          = $this->regenerateCoupons($filterUniqueCouponIds, $invoice);
+                $regenerateCoupons          = $this->regenerateCoupons($filterUniqueCouponIds, $invoice);
 
-            if ($regenerateCoupons) {
-                $accountCoupons         = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerAccountCoupons($customer, $invoice);
-                $subscriptionCoupons    = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+                if ($regenerateCoupons) {
+                    $accountCoupons         = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerAccountCoupons($customer, $invoice);
+                    $subscriptionCoupons    = app('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController')->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+                }
+                if (!in_array($invoice->id, $invoiceIds)) {
+                    $invoiceIds[] = $invoice->id;
+                }
+
             }
-            
-            return $invoice;
+                
+                return $invoiceIds;
 
         }
         
