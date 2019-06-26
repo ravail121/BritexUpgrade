@@ -94,6 +94,11 @@ class Subscription extends Model
         return $this->hasMany('App\Model\SubscriptionAddon', 'subscription_id', 'id');
     }
 
+    public function subscriptionAddonNotRemoved()
+    {
+        return $this->subscriptionAddon()->notRemoved();
+    }
+
     public function billableSubscriptionAddons()
     {
         return $this->subscriptionAddon()->billable();

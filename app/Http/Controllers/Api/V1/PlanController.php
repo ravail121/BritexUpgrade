@@ -153,9 +153,12 @@ class PlanController extends BaseController
  
 
         $activeAddon = $this->activeAddons($subscription->id);
-
+        $removalAddon = $this->removalScheduledAddon($subscription->id);
         if (!$subscription) {
-            return $this->respondError('Invalid Subcription ID');
+            return $this->respond('Invalid Subcription ID');
+        }
+        if ($subscription->upgrade_downgrade_status == "downgrade-scheduled") {
+            return $this->respond('Downgrade Already Scheduled');
         } 
 
         $condition = [
@@ -179,6 +182,7 @@ class PlanController extends BaseController
         $plans['account_status'] = $accountStatus;
         $plans['active_plan'] = $subscription->plan_id;
         $plans['active_addons'] = $activeAddon;
+        $plans['removal_scheduled_addon'] = $removalAddon;
         
         return $this->respond($plans);
     }
@@ -202,9 +206,19 @@ class PlanController extends BaseController
 
     public function activeAddons($subscriptionId)
     {
-        $allActiveAddon = SubscriptionAddon::whereSubscriptionId($subscriptionId)->pluck('addon_id')->toArray();
+        $allActiveAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId]])->whereNotIn('status', ['removed','removal-scheduled'])->pluck('addon_id')->toArray();
         if($allActiveAddon){
             return implode(",", $allActiveAddon);
+        }
+        return ;
+    }
+
+    private function removalScheduledAddon($subscriptionId)
+    {
+        $allRemovalAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId]])->whereNotIn('status', ['removed','removal-scheduled'])->pluck('addon_id')->toArray();
+        $allRemovalAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId],['status', 'removal-scheduled']])->pluck('addon_id')->toArray();
+        if($allRemovalAddon){
+            return implode(",", $allRemovalAddon);
         }
         return ;
     }
@@ -260,42 +274,37 @@ class PlanController extends BaseController
 
         $orderGroupData['plan_prorated_amt'] = $amount;
 
-        if($plan_prorated_amt >= 0){
+        if($plan_prorated_amt > 0){
             //UPGARDE
-            //
-            // if($data['plan'] == $data['active_plans']){
-            //     //Added new Addon in Same Plan
-            //     OrderGroup::where([['order_id' , $subscription->order_id],['old_subscription_plan_id', '<>', null], ['paid', null]])->delete();
-            //     $oldOrderGroup = OrderGroup::where([['order_id' , $subscription->order_id],['plan_id', $data['active_plans']]])->orderBy('id', 'DESC')->first();
-
-            //     $status = $this->samePlanAddons($request, $oldOrderGroup, $subscription, $data['active_plans']);
-            //     $subscription->order['status'] = $status;
-
-            //     if($paidInvoice == "1" && $subscription->order['status'] = 'upgrade'){
-            //         $status = $this->samePlanAddons($request, $oldOrderGroup, $subscription, $data['active_plans'], $paidInvioce =1);
-            //     }
-
-            //     return $this->respond($subscription->order);
-
-            // }
-            
             $orderGroupData['change_subscription'] = '1';
             $order['status'] = 'upgrade';
 
+        }elseif ($plan_prorated_amt == 0) {
+            if($data['plan'] == $data['active_plans']){
+                //Added new Addon in Same Plan
+                $orderGroupData ['change_subscription'] = '0';
+                if(!$request->addon){
+                    // return $this->respondError('Downgrade Plan');
+                    $order['status'] = 'downgrade';
+                }else{
+                    $order['status'] = 'sameplan';
+                }
+            }else{
+                $orderGroupData['change_subscription'] = '1';
+                $order['status'] = 'upgrade';
+            }
         }else{
             //DOWNGRADE
             $orderGroupData ['change_subscription'] = '-1';
-
             $order['status'] = 'downgrade';
-            $subscription->order['newPlan'] = $newPlan;
-            $subscription->order['subscription_id'] = $data['subscription_id'];
         }
 
         $orderGroup = OrderGroup::create($orderGroupData);   
 
         $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
 
-        if($paidInvoice == "1" && $order['status'] == 'upgrade'){
+
+        if($paidInvoice == "1" && $order['status'] != 'downgrade'){
             $orderGroup = OrderGroup::create($orderGroupData);   
 
             $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
@@ -313,7 +322,7 @@ class PlanController extends BaseController
         $activeAddons = [];
         if($request->active_addons){
             $activeAddons = explode(",",$request->active_addons);
-            $removedAddon=array_diff($activeAddons, $addons);
+            $removedAddon = array_diff($activeAddons, $addons);
             if(!empty($removedAddon)){
                 $this->updateRemovedAddon($removedAddon, $subscription->id, $orderGroup->id);
             }
@@ -332,12 +341,12 @@ class PlanController extends BaseController
                 'order_group_id'   => $orderGroupId,
             ];
         foreach ($addons as $key => $addon) {
-            $subscriptionAddon = SubscriptionAddon::where([['subscription_id', $subscription_id],['addon_id',$addon],['status','active']])->first();
+            $subscriptionAddon = SubscriptionAddon::where([['subscription_id', $subscription_id],['addon_id',$addon]])->whereIn('status', ['active', 'for-adding'])->first();
             if($subscriptionAddon){
                 $data['addon_id'] = $addon;
                 $data['subscription_addon_id'] = $subscriptionAddon->id;
 
-                OrderGroupAddon::create($data);
+                $orderGroupAddon = OrderGroupAddon::create($data);
             }
         }
     }

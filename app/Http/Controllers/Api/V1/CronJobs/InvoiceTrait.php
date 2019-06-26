@@ -9,9 +9,10 @@ use App\Model\InvoiceItem;
 trait InvoiceTrait
 {
     
-    public function addRegulatorFeesToSubscription($subscription, $invoice, $isTaxable)
+    public function addRegulatorFeesToSubscription($subscription, $invoice, $isTaxable, $order = null)
     {
         $amount = 0;
+
         $plan   = $subscription->plan;
 
         if ($plan->regulatory_fee_type == Plan::REGULATORY_FEE_TYPES['fixed_amount']) {
@@ -19,8 +20,15 @@ trait InvoiceTrait
 
         } elseif ($plan->regulatory_fee_type == Plan::REGULATORY_FEE_TYPES['percentage_of_plan_cost']) {
 
+            if($subscription->upgrade_downgrade_status == null){
+                $proratedAmount = $order->planProRate($plan->id);
+                $planAmount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
+            }else{
+                $planAmount = $plan->amount_recurring - $subscription->oldPlan->amount_recurring;
+            }
+
             $regulatoryAmount   = $plan->regulatory_fee_amount/100;
-            $subscriptionAmount = $plan->amount_recurring;
+            $subscriptionAmount = $planAmount;
 
             $amount = $regulatoryAmount * $subscriptionAmount;
         }

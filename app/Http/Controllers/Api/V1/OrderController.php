@@ -76,7 +76,7 @@ class OrderController extends BaseController
                         'imei_number'       => $og->imei_number,
                         'plan_prorated_amt' => $og->plan_prorated_amt,
                         'subscription'      => $og->subscription,
-                        'status'      =>$og->subscription ? $og->plan->amount_recurring - $og->subscription->plan->amount_recurring > 0 ? "Upgrade" : "Downgrade" : null,
+                        'status'            => null,
                     );
 
                 if(isset($tmp['subscription'])){
@@ -85,17 +85,31 @@ class OrderController extends BaseController
                         $tmp['plan']['to'] = $og->customer->billing_end;
                         $tmp['plan']['amount_onetime'] = 0;
                     }else{
-                        $tmp['plan']['from'] = Carbon::now()->toDateString();
-                        $tmp['plan']['to'] = $og->customer->billing_start; 
-                    }
-                    if($tmp['status'] == "Downgrade"){
-                        $tmp['plan']['amount_onetime'] = 0;
 
+                        $today = Carbon::now();
+                        $billingStart = Carbon::parse($og->customer->billing_start)->subDays(1);
+                        $tmp['plan']['from'] = $today->toDateString();
+                        if($billingStart < $today){
+                            $tmp['plan']['to'] = $og->customer->billing_end;
+                        }else{
+                            $tmp['plan']['to'] = $billingStart->toDateString();
+                        }
+
+                    }
+
+                    if ($og->change_subscription == '0') {
+                       $tmp['status'] = "SamePlan";
+                       $tmp['plan']['amount_onetime'] = 0;
+                    }elseif($og->plan->amount_recurring - $og->subscription->plan->amount_recurring >= 0){
+                        $tmp['status'] = "Upgrade";
+                    }else{
+                        $tmp['status'] = "Downgrade";
+                        $tmp['plan']['amount_onetime'] = 0;
                     }
                 }
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
-                    $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt'], 'subscription_addon_id'=> $a['subscription_addon_id']]);
+                    $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt'], 'subscription_addon_id'=> $a['subscription_addon_id'], 'subscription_id' => $a['subscription_id']]);
                     
                     array_push($tmp['addons'], collect($a['addon']));
                 }

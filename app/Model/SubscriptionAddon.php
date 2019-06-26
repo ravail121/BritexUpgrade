@@ -33,6 +33,11 @@ class SubscriptionAddon extends Model
         return $query->where('removal_date', $today->toDateString());
     }
 
+    public function scopeNotRemoved($query)
+    {
+        return $query->whereNotIn('status', ['removed']);
+    }
+
     public function scopeBillable($query)
     {
         return $query->whereIn('status', [
@@ -61,7 +66,6 @@ class SubscriptionAddon extends Model
             self::STATUSES['for-removal']
         ]);
     }
-   
 
     public function addons()
     {

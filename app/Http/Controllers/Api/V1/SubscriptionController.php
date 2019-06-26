@@ -9,6 +9,7 @@ use App\Model\Port;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Model\OrderGroup;
+use App\Model\PlanToAddon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
@@ -36,30 +37,20 @@ class SubscriptionController extends BaseController
 
         if($request->subscription){
             $subscription = Subscription::find($request->subscription['id']);
-            $data=$request->validate([
+            $data = $request->validate([
                 'order_id'  => 'required',
-                'status'  => 'sometimes|required',
             ]);
-            $data['old_plan_id'] = $subscription->plan_id;
-            $data['new_plan_id'] = $request->plan_id;
-            $data['upgrade_downgrade_date_submitted'] = Carbon::now();
-
-            if($data['status'] =="Upgrade"){
+            if($request->status == "Upgrade"){
+                $data['old_plan_id'] = $subscription->plan_id;
+                $data['new_plan_id'] = $request->plan_id;
+                $data['upgrade_downgrade_date_submitted'] = Carbon::now();
                 $data['plan_id'] = $request->plan_id;
                 $data['upgrade_downgrade_status'] = 'for-upgrade';
-
-                $updateSubcription = $subscription->update($data);
-                
-                return $this->respond(['subscription_id' => $subscription->id]);
             }else{
-                $data['upgrade_downgrade_status'] = 'downgrade-scheduled';
-                $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1);
-
-                $updateSubcription = $subscription->update($data);
+                $data['upgrade_downgrade_status'] = 'add-new-addons';
             }
-
+            $updateSubcription = $subscription->update($data);
             return $this->respond(['subscription_id' => $subscription->id]);
-
         }else{
             $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
 
@@ -74,16 +65,14 @@ class SubscriptionController extends BaseController
                 $arr = $this->generatePortData($request->porting_number, $subscription->id);
                 $port = Port::create($arr);
             }
-
+            return $this->respond(['subscription_id' => $subscription->id]);
         }
-        return $this->respond(['subscription_id' => $subscription->id]);
     }
 
     public function updateSubscription(Request $request)
     {
         $data=$request->validate([
             'id'  => 'required',
-            'plan_id'  => 'sometimes|required',
             'upgrade_downgrade_status'  => 'required',
             'new_plan_id'  => 'sometimes|required',
         ]);
@@ -93,7 +82,11 @@ class SubscriptionController extends BaseController
 
         $data['old_plan_id'] = $subscription->plan_id;
         $data['upgrade_downgrade_date_submitted'] = Carbon::now();
-        $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
+        if($data['old_plan_id'] == "downgrade-scheduled"){
+            $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
+        }else{
+            $data['plan_id'] = $data['new_plan_id'];
+        }
         $updateSubcription = $subscription->update($data);
 
         $removeSubcriptionAddonId = OrderGroupAddon::where([['order_group_id',$request->order_group],['subscription_addon_id', '<>', null]])->pluck('subscription_addon_id');
@@ -101,13 +94,14 @@ class SubscriptionController extends BaseController
             $subscriptionAddonData = [
                 'status'            => 'removal-scheduled',
                 'date_submitted'    => Carbon::now(),
-                'removal_date'      => $data['downgrade_date'],
+
+                'removal_date'      => Carbon::parse($subscription->customerRelation->billing_end)->addDays(1),
             ];
 
             SubscriptionAddon::whereIn('id', $removeSubcriptionAddonId)->update($subscriptionAddonData);
         }
 
-        
+
         return $this->respond(['subscription_id' => $subscription->id]);
     }
 
@@ -127,20 +121,34 @@ class SubscriptionController extends BaseController
         if($request->subscription_addon_id){
 
             $subscriptionAddon = SubscriptionAddon::find($request->subscription_addon_id);
-            $subscriptionAddonData = [
-                'status' => 'removed',
-                'removal_date' => Carbon::now(),
-                'date_submitted' => Carbon::now(),
-            ];
-            $subscriptionAddon->update($subscriptionAddonData);
+            
+            $planToAddon = PlanToAddon::where('plan_id', $request->plan_id)->pluck('addon_id');
 
+            if ($planToAddon->contains($request->addon_id)){
+                $date = Carbon::parse($subscriptionAddon->subscriptionDetail->customerRelation->billing_end)->addDays(1); 
+                $subscriptionAddonData = [
+                    'status' => 'removal-scheduled',
+                    'removal_date' => Carbon::now(),
+                    'date_submitted' => $date,
+                ];
+            }else{
+                $subscriptionAddonData = [
+                    'status' => 'removed',
+                    'removal_date' => Carbon::now(),
+                    'date_submitted' => Carbon::now(),
+                ];
+            }
+            $subscriptionAddon->update($subscriptionAddonData);
         }else{
             $subscriptionAddon = SubscriptionAddon::create([
                 'subscription_id' => $request->subscription_id,
                 'addon_id'        => $request->addon_id,
-                'status'          => SubscriptionAddon::STATUSES['active'],
+                'status'          => $request->addon_subscription_id ? SubscriptionAddon::STATUSES['for-adding'] : SubscriptionAddon::STATUSES['active'],
                 // 'removal_date'    => date('Y-m-d')
             ]);
+            if($request->addon_subscription_id){
+                return $this->respond(['new_subscription_addon_id' => $subscriptionAddon->id]);
+            }
         }
 
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);

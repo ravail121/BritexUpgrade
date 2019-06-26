@@ -113,7 +113,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             if (isset($invoice['subscription_id'])) {
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
-                $order        = $this->updateCustomerDates($subscription);
+
+                $order       = $this->updateCustomerDates($subscription);
 
                 $invoiceItem  = $this->subscriptionInvoiceItem($invoice['subscription_id']);
 
@@ -174,8 +175,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             $this->storeCoupon($request->couponAmount, $request->couponCode, $currentInvoice);
 
-        }else if($request->status == 'Downgrade'){
-            $this->downgradeInvoice($request);
+        }else if($request->status == 'Without Payment'){
+            $this->createInvoice($request);
             return $this->respond($msg);
         }
 
@@ -622,11 +623,18 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $array = array_merge($subarray, $array);
                 $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
                 
-            } 
-
-
-            if ($subscription->plan_id != null) {
+            }else{
                 $paidInvoice = 0;
+                $date = Carbon::today()->addDays(6)->endOfDay();
+                $invoice = Invoice::where([['customer_id', $subscription->customerRelation->id],['type', '1'],['status','2']])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+                if(isset($invoice)){
+                    $paidInvoice = 1;
+                }
+            }
+
+
+
+            if ($subscription->plan_id != null && $subscription->upgrade_downgrade_status != 'add-new-addons') {
                 $plan = Plan::find($subscription->plan_id);
 
                 if($subscription->upgrade_downgrade_status == null){
@@ -634,12 +642,6 @@ class InvoiceController extends BaseController implements ConstantInterface
                     $amount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
                 }else{
                     $amount = $plan->amount_recurring - $subscription->oldPlan->amount_recurring;
-
-                    $date = Carbon::today()->addDays(6)->endOfDay();
-                    $invoice = Invoice::where([['customer_id', $subscription->customerRelation->id],['type', '1'],['status','2']])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
-                    if(isset($invoice)){
-                        $paidInvoice = 1;
-                    }
                 }
 
                 $array = [
@@ -659,6 +661,26 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $regulatoryFee = $this->addRegulatorFeesToSubscription(
                     $subscription,
                     $invoiceItem->invoice,
+                    self::TAX_FALSE,
+                    $order
+                );
+
+                if($paidInvoice == 1){
+                    $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
+
+                    $regulatoryFee = $this->addRegulatorFeesToSubscription(
+                        $subscription,
+                        $invoiceItem->invoice,
+                        self::TAX_FALSE,
+                        $order
+                    );
+                }
+
+                //add activation charges in invoice-item table
+                $this->addActivationCharges(
+                    $subscription, 
+                    $invoiceItem->invoice,
+                    self::DESCRIPTION,
                     self::TAX_FALSE
                 );
 
@@ -690,10 +712,10 @@ class InvoiceController extends BaseController implements ConstantInterface
             }
             
             $order = Order::where('invoice_id', $this->input['invoice_id'])->first();
-
             if($subscription->upgrade_downgrade_status != null){
                 $orderGroupId = OrderGroup::whereOrderId($order->id)->pluck('id');
                 $orderGroupAddonId = OrderGroupAddon::whereIn('order_group_id', $orderGroupId)->where('subscription_id', $subscription->id)->pluck('addon_id');
+
 
                 $subscriptionAddons = $subscription->subscriptionAddon->whereIn('addon_id', $orderGroupAddonId);  
             }else{
@@ -715,7 +737,10 @@ class InvoiceController extends BaseController implements ConstantInterface
                         }
                         $addonAmount    = $proratedAmount >= 0 ? $proratedAmount : $addon->amount_recurring; 
                     }else{
-                        $addonAmount = $addon->amount_recurring; 
+                        if($subAddon->status == 'removal-scheduled' || $subAddon->status == 'removed' ){
+                            $addonAmount = 0; 
+                        }else{
+                            $addonAmount = $addon->amount_recurring;
                     }
                                        
 
@@ -737,20 +762,15 @@ class InvoiceController extends BaseController implements ConstantInterface
                 }
             }
 
-            //add activation charges in invoice-item table
-            $this->addActivationCharges(
-                $subscription, 
-                $invoiceItem->invoice,
-                self::DESCRIPTION,
-                self::TAX_FALSE
-            );
-
-            //add taxes to subscription items only
-            $taxes = $this->addTaxesToSubscription(
-                $subscription, 
-                $invoiceItem->invoice, 
-                self::TAX_FALSE
-            );
+            if($subscription->upgrade_downgrade_status == null){
+                //add taxes to subscription items only
+                $taxes = $this->addTaxesToSubscription(
+                    $subscription, 
+                    $invoiceItem->invoice, 
+                    self::TAX_FALSE
+                );
+            }
+            
 
 
 
@@ -1268,12 +1288,12 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
     }
 
-    public function downgradeInvoice(Request $request)
+    public function createInvoice(Request $request)
     {
         $data=$request->validate([
             'customer_id'    => 'required',
             'order_hash'     => 'required',
-            'order_groups'     => 'required',
+            'order_groups'   => 'required',
         ]);
 
         $customer = Customer::find($data['customer_id']);
@@ -1308,16 +1328,28 @@ class InvoiceController extends BaseController implements ConstantInterface
             'shipping_state'          => $order->shipping_state_id, 
             'shipping_zip'            => $order->shipping_zip,
         ]);
-        
-        $order->update(['invoice_id' => $invoice->id, 'status' => '1']);
 
-        $this->downgradeInvoiceItem($data['order_groups'], $invoice);
+        $orderCount = Order::where('customer_id', $order->customer_id)->where('status', 1)->max('order_num');
+        
+
+        $order->update([
+            'invoice_id' => $invoice->id,
+            'status' => '1',
+            'order_num' => $orderCount + 1,
+        ]);
+
+        $this->createInvoiceItem($data['order_groups'], $invoice);
     }
 
-    private function downgradeInvoiceItem($orderGroups, $invoice)
+    private function createInvoiceItem($orderGroups, $invoice)
     {
         foreach ($orderGroups as $orderGroup) {
             $subscription = Subscription::find($orderGroup['subscription']['id']);
+            if($subscription->upgrade_downgrade_date_submitted == "for-upgrade"){
+                $description = 'Upgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'];
+            }else{
+                $description = 'Downgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'];
+            }
             $data = [
                 'invoice_id'      => $invoice->id,
                 'subscription_id' => $subscription['id'],
@@ -1327,19 +1359,20 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'start_date'      => $invoice->start_date,
                 'type'            => 1,
                 'taxable'         => $orderGroup['plan']['taxable'],
-                'description'     => 'Downgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'],
+                'description'     => $description,
             ];
             InvoiceItem::create($data);
             if(isset($orderGroup['addons'])){
                 $addonData = [
-                        'invoice_id'      => $invoice->id,
-                        'subscription_id' => $subscription['id'],
-                        'product_type'    => self::ADDON_TYPE,
-                        'amount'          => 0,
-                        'type'            => 1,
-                        'start_date'      => $invoice->start_date,
-                        'description'     => 'Downgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'],
-                    ];
+                    'invoice_id'      => $invoice->id,
+                    'subscription_id' => $subscription['id'],
+                    'product_type'    => self::ADDON_TYPE,
+                    'amount'          => 0,
+                    'type'            => 1,
+                    'start_date'      => $invoice->start_date,
+                    'description'     => $description,
+                ];
+
                 foreach ($orderGroup['addons'] as $addon) {
 
                     $addonData['product_id'] = $addon['id'];
