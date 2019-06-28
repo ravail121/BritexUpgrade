@@ -84,7 +84,7 @@ class InvoiceController extends BaseController
 						 $_invoice = [];
 							 
 							//echo $subscription;
-							if($subscription->status= 'active' || $subscription->status = 'shipping' || $subscription->status = 'for-activation' && $pendingcharge){
+							if($subscription->status= 'active' || $subscription->status = 'shipping' || $subscription->status = 'for-activation' && $pendingcharges){
 									//echo "success";
 									$invoices = Invoice::where('customer_id',$customer->id)->get();
 								 // echo $invoices;
@@ -342,7 +342,7 @@ class InvoiceController extends BaseController
 			$charges = $this->getAmountFormated($charges);
 			$payment = $this->getAmountFormated($payment);
 			$pastDue = $this->getAmountFormated($pastDue);
-			$total = $this->getAmountFormated($total);
+			$total   = $this->getAmountFormated($total);
 			$dueDate = $this->getTotalDueDate($customer);
 
 

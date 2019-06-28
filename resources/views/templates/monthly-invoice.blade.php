@@ -46,7 +46,7 @@
                         </div>
                         <!-- Customer Info -->
 
-                        <div style='position:absolute; left:0; right:0; margin: auto; top: 100px;' class="linksfooter">
+                        <div style='position:absolute; left:0; right:0; margin: auto; top: 100px; border-color: transparent;' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
                                 <p><span>{{ $invoice['customer_name'] }}</span></p>
@@ -55,7 +55,7 @@
                             </div>
                         </div>
                         
-                        <div style='position:absolute; right:15px; margin: auto; top: 100px;' class="bill_info">
+                        <div style='position:absolute; right:15px; margin: auto; top: 100px; box-shadow:none; border-color: transparent;' class="bill_info">
                             <h2>Your Monthly Bill As Of</h2>
                             <h3>{{ $invoice['today_date'] }}</h3>
                         </div>

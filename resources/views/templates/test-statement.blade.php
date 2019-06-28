@@ -53,21 +53,23 @@
                                         @endisset
                                     </a></td>
                                 </tr>
-                                <tr>
-                                    <td>
-                                        @if (!empty($invoice['date_credit']))
-                                            Credit on 
-                                                {{ $invoice['date_credit'] }}
-                                        @else
-                                            Credit
-                                        @endif
-                                    </td>
-                                    <td colspan="2" class="last"><a>$
-                                        @isset ($invoice['total_old_credits'])
-                                            {{ $invoice['total_old_credits'] }}
-                                        @endisset
-                                    </a></td>
-                                </tr>
+                                @if($invoice['total_old_credits'] > 0)
+                                    <tr>
+                                        <td>
+                                            @if (!empty($invoice['date_credit']))
+                                                Credit on 
+                                                    {{ str_replace('-', '/', $invoice['date_credit']) }}
+                                            @else
+                                                Credit
+                                            @endif
+                                        </td>
+                                        <td colspan="2" class="last"><a>$
+                                            @isset ($invoice['total_old_credits'])
+                                                {{ $invoice['total_old_credits'] }}
+                                            @endisset
+                                        </a></td>
+                                    </tr>
+                                @endif
                                 <tr>
                                     <td colspan="3">
                                         <div class="sepratorline dark"></div>
@@ -108,25 +110,40 @@
 
                         <table class="test table-padding">
                             <tbody>
-                                <tr>
-                                    <td>Coverage Device Deposit</td>
-                                    <td colspan="2" class="last"><a>$
-                                        @isset ($invoice['total_one_time_charges'])
-                                            {{ $invoice['total_one_time_charges'] }}
-                                        @endisset
-                                    </a></td>
-                                </tr>
+                                @isset($invoice['standalone_items']['devices'])
+                                    @foreach($invoice['standalone_items']['devices'] as $item)
+                                        <tr>
+                                            <td>{{$item['name']}}</td>
+                                            <td colspan='2' class='last'>
+                                                {{number_format($item['amount'], 2)}}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    @endisset
+                                    @isset($invoice['standalone_items']['sims'])
+                                    @foreach($invoice['standalone_items']['sims'] as $item)
+                                        <tr>
+                                            <td>{{$item['name']}}</td>
+                                            <td colspan='2' class='last'>
+                                                {{number_format($item['amount'], 2)}}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endisset
+
                                 <tr>
                                     <td colspan="3">
-                                        <div class="sepratorline dark"></div>
+                                        @if (isset($invoice['one_time_standalone']) && $invoice['one_time_standalone'] > 0)
+                                            <div class="sepratorline dark"></div>
+                                        @endisset
                                     </td>
                                 </tr>
                                 <tr>
                                     <td></td>
                                     <td colspan="2" class="last total_value"><a><strong>
                                         Total One-Time Charges: $
-                                        @isset ($invoice['total_one_time_charges'])
-                                            {{ $invoice['total_one_time_charges'] }}
+                                        @isset ($invoice['one_time_standalone'])
+                                            {{ $invoice['one_time_standalone'] }}
                                         @endisset
                                     </strong></a></td>
                                 </tr>
@@ -145,16 +162,16 @@
                                 <tr>
                                     <td>Regulatory</td>
                                     <td colspan="2" class="last"><a>$ 
-                                        @isset ($invoice['regulatory_fee'])
-                                            {{ $invoice['regulatory_fee'] }}
+                                        @isset ($invoice['standalone_regulatory'])
+                                            {{ $invoice['standalone_regulatory'] }}
                                         @endisset
                                     </a></td>
                                 </tr>
                                 <tr>
                                     <td>State</td>
                                     <td colspan="2" class="last"><a>$ 
-                                        @isset ($invoice['state_tax'])
-                                            {{ $invoice['state_tax'] }}
+                                        @isset ($invoice['standalone_tax'])
+                                            {{ $invoice['standalone_tax'] }}
                                         @endisset
                                     </a></td>
                                 </tr>
@@ -166,8 +183,8 @@
                                 </tr>
                                 <tr>
                                     <td colspan="3" class="right total_value"><a><strong>Total Taxes/Fees: $
-                                        @isset ($invoice['taxes'])
-                                            {{ $invoice['taxes'] }}
+                                        @isset ($invoice['standalone_total_taxes_fees'])
+                                            {{ $invoice['standalone_total_taxes_fees'] }}
                                         @endisset
                                     </strong></a></td>
                                 </tr>
@@ -186,8 +203,8 @@
                                 <tr>
                                     <td></td>
                                     <td colspan="2" class="last total_value"><a><strong>Total Coupons: - $
-                                        @isset ($invoice['total_coupons'])
-                                            {{ $invoice['total_coupons'] }}
+                                        @isset ($invoice['standalone_coupons'])
+                                            {{ $invoice['standalone_coupons'] }}
                                         @endisset
                                     </strong></a></td>
                                 </tr>
@@ -205,8 +222,8 @@
                                 <tr>
                                     <td>Total Account Charges</td>
                                     <td colspan="3" class="right total_value">
-                                        @isset ($invoice['account_charges_discount'])
-                                            ${{ $invoice['account_charges_discount'] }}
+                                        @isset ($invoice['standalone_total'])
+                                            ${{ $invoice['standalone_total'] }}
                                         @endisset
                                     </td>
                                 </tr>

@@ -45,7 +45,7 @@
                             </table>
                         </div>
                         <!-- Customer Info -->
-                        <div style='position:absolute; left:0; right:0; margin: auto; top: 100px;' class="linksfooter">
+                        <div style='position:absolute; left:0; right:0; margin: auto; top: 100px; border-color: transparent;' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
                                 <p><span>{{ $invoice['customer_name'] }}</span></p>
@@ -54,7 +54,7 @@
                             </div>
                         </div>
                         
-                        <div style='position:absolute; right:15px; margin: auto; top: 100px;' class="bill_info">
+                        <div style='position:absolute; right:15px; margin: auto; top: 100px; border-color: transparent; box-shadow:none;' class="bill_info">
                             <h2>Bill for</h2>
                             <h3>{{ $invoice['today_date'] }}</h3>
                         </div>
@@ -238,6 +238,34 @@
                                     <td>$ </td>
                                 </tr>
                             -->
+
+                            <tr class="tfootQ">
+                                <td>Account Charges</td>
+                                <td>$ 0.00</td>
+                                <td>$ 
+                                    @isset($invoice['standalone_data']['standalone_onetime_charges'])
+                                        {{ $invoice['standalone_data']['standalone_onetime_charges'] }}
+                                    @endisset
+                                </td>
+                                <td>$ 0.00</td>
+                                <td>$ 
+                                    @isset($invoice['standalone_data']['taxes'])
+                                        {{ $invoice['standalone_data']['taxes'] }}
+                                    @endisset
+                                </td>
+                                <td>-$ 
+
+                                    @isset($invoice['standalone_data']) 
+                                        {{$invoice['standalone_data']['coupons']}} 
+                                    @endisset
+                                </td>
+                                <td>$ 
+                                    @isset($invoice['standalone_data']['total'])
+                                        {{ $invoice['standalone_data']['total'] }}
+                                    @endisset
+                                </td>
+                            </tr>
+
                                 @if (isset($invoice['subscriptions']) && count($invoice['subscriptions']))
                                     @foreach ($invoice['subscriptions'] as $subscription)
                                         <tr>
@@ -277,35 +305,6 @@
                                     </div>
                                 </td>
                             </tr>
-
-                            <tr class="tfootQ">
-                                    
-                                <td>Standalone</td>
-                                <td>$ 0.00</td>
-                                <td>$ 
-                                    @isset($invoice['standalone_data']['standalone_onetime_charges'])
-                                        {{ $invoice['standalone_data']['standalone_onetime_charges'] }}
-                                    @endisset
-                                </td>
-                                <td>$ 0.00</td>
-                                <td>$ 
-                                    @isset($invoice['standalone_data']['taxes'])
-                                        {{ $invoice['standalone_data']['taxes'] }}
-                                    @endisset
-                                </td>
-                                <td>-$ 
-
-                                    @isset($invoice['standalone_data']) 
-                                        {{$invoice['standalone_data']['coupons']}} 
-                                    @endisset
-                                </td>
-                                <td>$ 
-                                    @isset($invoice['standalone_data']['total'])
-                                        {{ $invoice['standalone_data']['total'] }}
-                                    @endisset
-                                </td>
-                            </tr>
-
                             <tr class="tfootQ">
                                 <td>Total</td>
                                 <td>$ 

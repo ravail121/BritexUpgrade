@@ -333,6 +333,10 @@ Route::middleware('APIToken')->group(function () {
         ]);
 
 
+        Route::post('/billing-details',[
+          'as'=>'api.customer.billing-details',
+          'uses'=>'CustomerController@saveBillingDetails',
+        ]);
 
         /*Route::get('/subscriptions',[
           'as'=>'api.customer.subscription_list',

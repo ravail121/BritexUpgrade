@@ -379,4 +379,21 @@ class CustomerController extends BaseController
       return Customer::find($request->id)->account_suspended;
     }
 
+    public function saveBillingDetails(Request $request)
+    {
+        $customerId = Order::where('hash', $request->hash)->first()->customer_id;
+        Customer::find($customerId)->update(
+            [
+                'billing_state_id'  => $request->billing_state_id,
+                'billing_fname'     => $request->billing_fname,
+                'billing_lname'     => $request->billing_lname,
+                'billing_address1'  => $request->billing_address1,
+                'billing_address2'  => $request->billing_address2,
+                'billing_city'      => $request->billing_city,
+                'billing_zip'       => $request->billing_zip,
+            ]
+        );
+        return ['success' => 'Details Added'];
+    }
+
 }

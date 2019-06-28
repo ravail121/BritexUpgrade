@@ -135,11 +135,6 @@ class InvoiceController extends BaseController implements ConstantInterface
                
                 $invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
                
-                foreach ($invoice['customer_standalone_device_id'] as $id) {
-                    $shippingAmount   = CustomerStandaloneDevice::find($id)->device->shipping_fee;
-                   //$this->addShippingChargesStandalone($shippingAmount, $orderId);
-                }
-               
                 $taxes = $this->addTaxesToStandalone(Order::find($orderId)->invoice, self::TAX_FALSE, self::DEVICE_TYPE);
                
                 $msg = (!$invoiceItem) ? 'Standalone Device Invoice item was not generated' : 'Invoice item generated successfully.' ;
@@ -157,11 +152,6 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $order = $this->updateCustomerDates($standaloneSim);
                         
                 $invoiceItem = $this->standaloneSimInvoiceItem($invoice['customer_standalone_sim_id']);
-
-                foreach ($invoice['customer_standalone_sim_id'] as $id) {
-                    $shippingAmount   = CustomerStandaloneSim::find($id)->first()->sim->shipping_fee;
-                   // $this->addShippingChargesStandalone($shippingAmount, $orderId);
-                }
 
                 $taxes = $this->addTaxesToStandalone(Order::find($orderId)->invoice, self::TAX_FALSE, self::SIM_TYPE);
 
@@ -182,17 +172,12 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 
         $order = Order::where('hash', $request->hash)->first();
+
+        $this->addShippingCharges($order);
     
         if ($request->customer_id) {
             $this->availableCreditsAmount($request->customer_id);
         }
-
-        if ($request->hash) {
-            $currentInvoice =  $order->invoice;
-            $this->addTaxesToSubtotal($currentInvoice);
-        }
-
-        $this->addShippingCharges($order);
 
         $this->ifTotalDue($order);
 
@@ -281,6 +266,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         $totalAmount    = $order->invoice->subtotal;
         $paidAmount     = $order->invoice->creditsToInvoice->sum('amount');
         $totalDue       = $totalAmount > $paidAmount ? $totalAmount - $paidAmount : 0;
+       
         $order->invoice->update(
             [
                 'total_due'     => $totalDue
@@ -303,7 +289,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
 
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
-  
+
             $regulatoryFee          = $order->invoice->cal_regulatory;
             $stateTax               = $order->invoice->cal_stateTax;
             $taxes                  = $order->invoice->cal_taxes;
@@ -329,43 +315,68 @@ class InvoiceController extends BaseController implements ConstantInterface
             $totalCoupons           = $order->invoice->invoiceItem->where('type', self::COUPONS)->sum('amount');
             $accountChargesDiscount = $totalAccountCharges - $totalCoupons - $shippingFee;
             $totalLineCharges       = $planCharges + $oneTimeCharges + $taxes + $usageCharges - $totalCoupons;
-
+            $standalone             = $order->invoice->invoiceItem->where('subscription_id', null);
+            $standaloneItems        = $standalone->where('type', InvoiceItem::TYPES['one_time_charges']);
+            $standaloneTaxes        = $standalone->where('type', InvoiceItem::TYPES['taxes'])->sum('amount');
+            $standaloneRegulatory   = $standalone->where('type', InvoiceItem::TYPES['regulatory_fee'])->sum('amount');
+            $standaloneCoupons      = $standalone->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
+            $standaloneTotal        = $standalone->where('description', '!=', 'Shipping Fee')->where('type', '!=', InvoiceItem::TYPES['coupon'])->sum('amount');
+            $subscriptionItems      = $order->invoice->invoiceItem->where('subscription_id', '!=', null)->where('description', '!=', 'Shipping Fee');
+            $subscriptionTaxesFees  = $subscriptionItems->whereIn('type',[InvoiceItem::TYPES['taxes'], InvoiceItem::TYPES['regulatory_fee']])->sum('amount');
+            $subscriptionCoupons    = $subscriptionItems->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
+            $subscriptionTotal      = $subscriptionItems->sum('amount');
+                                              
             $invoice = [
-                'service_charges'           => self::formatNumber($serviceCharges),
-                'taxes'                     => self::formatNumber($taxes),
-                'credits'                   => self::formatNumber($credits),
-                'total_charges'             => self::formatNumber($totalAccountCharges),
-                'total_one_time_charges'    => self::formatNumber($oneTimeCharges),
-                'total_usage_charges'       => self::formatNumber($usageCharges),
-                'plan_charges'              => self::formatNumber($planCharges),
-                'serviceChargesProrated'    => self::formatNumber($serviceChargesProrated),
-                'regulatory_fee'            => self::formatNumber($regulatoryFee),
-                'state_tax'                 => self::formatNumber($stateTax),
-                'total_account_charges'     => self::formatNumber($oneTimeCharges + $taxes),
-                'subtotal'                  => self::formatNumber($order->invoice->subtotal),
-                'shipping_fee'              => self::formatNumber($shippingFee),
-                'plans'                     => $this->plans($order),
-                'addons'                    => $this->addons($order),
-                'tax_and_shipping'          => self::formatNumber($taxAndShipping),
-                'standalone_data'           => $this->setStandaloneItemData($order),
-                'total_old_credits'         => self::formatNumber($oldUsedCredits),
-                'total_credits_to_invoice'  => self::formatNumber($totalCreditsToInvoice),
-                'total_payment'             => self::formatNumber($order->credits->sum('amount')),
-                'total_used_credits'        => self::formatNumber($totalCredits + $oldUsedCredits),
-                'date_payment'              => $order->credits->first() ? $order->credits->first()->date : '',
-                'date_credit'               => $order->invoice->creditsToInvoice->first() ? $order->invoice->creditsToInvoice->first()->created_at->format('y/m/d') : '',
-                'credits_and_coupons'       => self::formatNumber($totalCreditsToInvoice + $totalCoupons),
-                'total_coupons'             => self::formatNumber($totalCoupons),
-                'account_charges_discount'  => self::formatNumber($accountChargesDiscount),
-                'total_line_charges'        => self::formatNumber($totalLineCharges),
-                'total_account_summary_charge' => self::formatNumber($planCharges + $oneTimeCharges + $usageCharges + $taxAndShipping - $credits),
-                'customer_auto_pay'         => $order->customer->auto_pay,
-                'company_logo'              => $order->customer->company->logo,
-                'reseller_phone_number'     => $order->customer->company->support_phone_number,
-                'reseller_domain'           => $order->customer->company->url
-                
+                'service_charges'               =>   self::formatNumber($serviceCharges),
+                'taxes'                         =>   self::formatNumber($taxes),
+                'credits'                       =>   self::formatNumber($credits),
+                'total_charges'                 =>   self::formatNumber($totalAccountCharges),
+                'total_one_time_charges'        =>   self::formatNumber($oneTimeCharges),
+                'total_usage_charges'           =>   self::formatNumber($usageCharges),
+                'plan_charges'                  =>   self::formatNumber($planCharges),
+                'serviceChargesProrated'        =>   self::formatNumber($serviceChargesProrated),
+                'regulatory_fee'                =>   self::formatNumber($regulatoryFee),
+                'state_tax'                     =>   self::formatNumber($stateTax),
+                'total_account_charges'         =>   self::formatNumber($oneTimeCharges + $taxes),
+                'subtotal'                      =>   self::formatNumber($order->invoice->subtotal),
+                'shipping_fee'                  =>   self::formatNumber($shippingFee),
+                'plans'                         =>   $this->plans($order),
+                'addons'                        =>   $this->addons($order),
+                'tax_and_shipping'              =>   self::formatNumber($taxAndShipping),
+                'standalone_data'               =>   $this->setStandaloneItemData($order),
+                'total_old_credits'             =>   self::formatNumber($oldUsedCredits),
+                'total_credits_to_invoice'      =>   self::formatNumber($totalCreditsToInvoice),
+                'total_payment'                 =>   self::formatNumber($order->credits->sum('amount')),
+                'total_used_credits'            =>   self::formatNumber($totalCredits + $oldUsedCredits),
+                'date_payment'                  =>   $order->credits->first() ? $order->credits->first()->date : '',
+                'date_credit'                   =>   $order->invoice->creditsToInvoice->first() ? Carbon::parse($order->invoice->creditsToInvoice->first()->created_at)->toDateString() : '',
+                'credits_and_coupons'           =>   self::formatNumber($totalCreditsToInvoice + $totalCoupons),
+                'total_coupons'                 =>   self::formatNumber($totalCoupons),
+                'account_charges_discount'      =>   self::formatNumber($accountChargesDiscount),
+                'total_line_charges'            =>   self::formatNumber($totalLineCharges),
+                'total_account_summary_charge'  =>   self::formatNumber($planCharges + $oneTimeCharges + $usageCharges + $taxAndShipping - $credits),
+                'customer_auto_pay'             =>   $order->customer->auto_pay,
+                'company_logo'                  =>   $order->customer->company->logo,
+                'reseller_phone_number'         =>   $this->phoneNumberFormatted($order->customer->company->support_phone_number),
+                'reseller_domain'               =>   $order->customer->company->url,
+                'standalone_items'              =>   $this->getItemDetails($standaloneItems),
+                'one_time_standalone'           =>   self::formatNumber($standaloneItems->where('description', '!=', 'Shipping Fee')->sum('amount')),
+                'standalone_tax'                =>   self::formatNumber($standaloneTaxes),
+                'standalone_regulatory'         =>   self::formatNumber($standaloneRegulatory),
+                'standalone_total_taxes_fees'   =>   self::formatNumber($standaloneTaxes + $standaloneRegulatory),
+                'standalone_coupons'            =>   self::formatNumber($standaloneCoupons),
+                'standalone_total'              =>   self::formatNumber($standaloneTotal - $standaloneCoupons),
+                'subscription_items'            =>   $this->getItemDetails($subscriptionItems),
+                'subscription_act_fee'          =>   self::formatNumber($subscriptionItems->where('product_id', null)->where('type', InvoiceItem::TYPES['one_time_charges'])->sum('amount')),
+                'subscription_total_one_time'   =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['one_time_charges'])->sum('amount')),
+                'subscription_total_tax'        =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['taxes'])->sum('amount')),
+                'subscription_total_reg_fee'    =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['regulatory_fee'])->sum('amount')),
+                'subscription_total_tax_fee'    =>   self::formatNumber($subscriptionTaxesFees),
+                'subscription_usage_charges'    =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['usage_charges'])->sum('amount')),
+                'subscription_coupons'          =>   self::formatNumber($subscriptionCoupons),
+                'subscription_total'            =>   self::formatNumber($subscriptionTotal - $subscriptionCoupons)
             ];
-
+            
             $invoice = array_merge($data, $invoice);
  
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
@@ -382,6 +393,49 @@ class InvoiceController extends BaseController implements ConstantInterface
         return 'Sorry, something went wrong please try again later......';
         
     }
+
+    protected function phoneNumberFormatted($number)
+    {
+        $number = preg_replace("/[^\d]/","",$number);
+    
+        $length = strlen($number);
+
+        if($length == 10) {
+            $number = preg_replace("/^1?(\d{3})(\d{3})(\d{4})$/", "$1-$2-$3", $number);
+        }
+            
+        return $number;
+    }
+
+
+    protected function getItemDetails($items)
+    {
+
+        $devices     = [];
+        $sims        = [];
+    
+        foreach ($items as $item) {
+
+            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['device']) {
+
+                $name      = Device::find($item['product_id'])->name;
+                $devices[] = ['name' => $name, 'amount' => $item['amount']];
+
+            }
+
+            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['sim']) {
+
+                $name      = Sim::find($item['product_id'])->name;
+                $sims[]    = ['name' => $name, 'amount' => $item['amount']];
+
+            }
+
+        }
+        
+        return ['devices' => $devices, 'sims' => $sims];
+
+    }
+
 
     protected function plans($order)
     {
@@ -473,6 +527,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         
         return $standalone;
     }
+    
 
     protected function setOrderInvoiceData($order)
     {
@@ -491,7 +546,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'subscription_id' => $subscription->id,
                 'plan_charges'    => self::formatNumber($planCharges),
                 'onetime_charges' => self::formatNumber($onetimeCharges),
-                'phone'           => $subscription->phone_number,
+                'phone'           => $this->phoneNumberFormatted($subscription->phone_number),
                 'usage_charges'   => $usageCharges,
                 'tax'             => $tax,
                 'total'           => self::formatNumber($total)
@@ -528,7 +583,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'usage_charges'         => self::formatNumber($this->getSubscriptionsData($order, $id, 'usage_charges')),
                 'coupon'                => self::formatNumber($this->getSubscriptionsData($order, $id, 'coupon')),
                 'manual'                => self::formatNumber($this->getSubscriptionsData($order, $id, 'manual')),
-                'phone'                 => $phone,
+                'phone'                 => $this->phoneNumberFormatted($phone),
                 'plan_and_addons'       => self::formatNumber($planCharges + $addonCharges),
                 'tax_and_regulatory'    => self::formatNumber($totalTax + $totalRegulatory),
                 'total_discounts'       => self::formatNumber($totalCoupons + $totalManual),
@@ -607,6 +662,7 @@ class InvoiceController extends BaseController implements ConstantInterface
  
     protected function subscriptionInvoiceItem($subscriptionIds)
     {
+        $paidInvoice = 0;
         $invoiceItem = null;
         $order = Order::where('invoice_id', $this->input['invoice_id'])->first();
         foreach ($subscriptionIds as $index => $subscriptionId) {
@@ -642,7 +698,6 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
                 
             }else{
-                $paidInvoice = 0;
                 $date = Carbon::today()->addDays(6)->endOfDay();
                 $invoice = Invoice::where([['customer_id', $subscription->customerRelation->id],['type', '1'],['status','2']])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
                 if(isset($invoice)){
@@ -789,13 +844,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                     self::TAX_FALSE
                 );
             }
-            
 
-
-
-            //$customer = app('App\Http\Controllers\Api\V1\InvoiceController')->customer();
-           //
-    
 
         }
        
@@ -905,6 +954,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
 
         if (array_sum($totalShippingFee) > 0) {
+            
             $order->invoice->invoiceItem()->create(
                 [
                     'invoice_id'        => $order->invoice->id,
@@ -921,72 +971,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
 
     }
-  
-/*
-    public function addShippingCharges($order, $type)
-    {
-        $deviceFee      = 0;
-        $simFee         = 0;
-        $subscriptions  = $order->subscriptions;
-        
-        if ($subscriptions) {
-            foreach ($subscriptions as $item) {
-
-                $device = $item->invoiceItemDetail->where('product_type', self::DEVICE_TYPE)->first();
-                $sim    = $item->invoiceItemDetail->where('product_type', self::SIM_TYPE)->first();
-
-                if (isset($device)) {
-                    $deviceFee = Device::find($device->product_id)->shipping_fee ? Device::find($device->product_id)->shipping_fee : 0;
-                } else {
-                    $deviceFee = 0;
-                }
-                
-                if (isset($sim)) {
-                    $simFee = Sim::find($sim->product_id)->shipping_fee ?  Sim::find($sim->product_id)->shipping_fee : 0;    
-                } 
-
-                $totalFee = $simFee + $deviceFee;
-
-                if ($totalFee > 0) {
-                    $order->invoice->invoiceItem()->create(
-                        [
-                            'invoice_id'        => $order->invoice->id,
-                            'subscription_id'   => $item->id,
-                            'product_type'      => '',
-                            'product_id'        => null,
-                            'type'              => InvoiceItem::TYPES['one_time_charges'],
-                            'start_date'        => $order->invoice->start_date,
-                            'description'       => self::SHIPPING,
-                            'amount'            => $deviceFee + $simFee,
-                            'taxable'           => 0, 
-                        ]
-                    );
-                }
-            }
-        }          
-    }
-
-*/
-    protected function addShippingChargesStandalone($charges, $orderId)
-    {
-        $invoice = Order::find($orderId)->invoice;
-       
-        if ($charges > 0) {
-            $invoice->invoiceItem()->create([
-                'invoice_id'        => $invoice->id,
-                'subscription_id'   => 0,
-                'product_type'      => '',
-                'product_id'        => null,
-                'type'              => InvoiceItem::TYPES['one_time_charges'],
-                'start_date'        => $invoice->start_date,
-                'description'       => self::SHIPPING,
-                'amount'            => $charges,
-                'taxable'           => 0,                
-            ]);
-        }
-        
-    }
-
 
     /**
      * Creates inovice_item for customer_standalone_device
@@ -1083,13 +1067,19 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     public function addTaxesToSubtotal($invoice)
     {
-        $taxAmount = $invoice->invoiceItem()->where('type', InvoiceItem::TYPES['taxes'])->sum('amount');
-        $subTotal  = $invoice->subtotal;
-        $invoice->update(
-            [
-                'subtotal' => $taxAmount + $subTotal
-            ]
-        );
+        
+        $taxAmount              = $invoice->invoiceItem()->where('type', InvoiceItem::TYPES['taxes'])->sum('amount');
+        $subTotalByInvoiceItems = $invoice->invoiceItem->sum('amount');
+        $subTotal               = $invoice->subtotal;
+        
+        if ($subTotal != $subTotalByInvoiceItems && $subTotalByInvoiceItems - $subTotal == $taxAmount) {
+            $invoice->update(
+                [
+                    'subtotal' => $taxAmount + $subTotal
+                ]
+            );
+        }
+
     }
 
 
