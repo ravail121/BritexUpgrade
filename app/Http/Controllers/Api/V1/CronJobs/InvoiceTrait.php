@@ -124,6 +124,29 @@ trait InvoiceTrait
         }
     }
 
+    public function addTaxesToUpgrade($invoice, $isTaxable)
+    {
+        $taxPercentage = $invoice->customer->stateTax->rate / 100;
 
+        $taxesWithoutSubscriptions  = $invoice->invoiceItem
+                                        ->where('taxable', 1)
+                                        ->sum('amount');
+                                        
+        if ($taxesWithoutSubscriptions > 0) {
+            $invoice->invoiceItem()->create(
+                [
+                    'invoice_id'   => $invoice->id,
+                    'subscription_id' => null,
+                    'product_type' => '',
+                    'product_id'   => null,
+                    'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                    'start_date'   => $invoice->start_date,
+                    'description'  => "(Taxes)",
+                    'amount'       => $taxPercentage * sprintf("%.2f", $taxesWithoutSubscriptions),
+                    'taxable'      => $isTaxable,            
+                ]
+            );
+        }  
+    }
 
 }

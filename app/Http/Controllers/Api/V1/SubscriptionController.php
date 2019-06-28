@@ -46,11 +46,10 @@ class SubscriptionController extends BaseController
                 $data['upgrade_downgrade_date_submitted'] = Carbon::now();
                 $data['plan_id'] = $request->plan_id;
                 $data['upgrade_downgrade_status'] = 'for-upgrade';
-            }else{
-                $data['upgrade_downgrade_status'] = 'add-new-addons';
+                $updateSubcription = $subscription->update($data);
+                return $this->respond(['subscription_id' => $subscription->id]);
             }
-            $updateSubcription = $subscription->update($data);
-            return $this->respond(['subscription_id' => $subscription->id]);
+            return $this->respond(['same_subscription_id' => $subscription->id]);
         }else{
             $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
 
@@ -146,9 +145,9 @@ class SubscriptionController extends BaseController
                 'status'          => $request->addon_subscription_id ? SubscriptionAddon::STATUSES['for-adding'] : SubscriptionAddon::STATUSES['active'],
                 // 'removal_date'    => date('Y-m-d')
             ]);
-            if($request->addon_subscription_id){
-                return $this->respond(['new_subscription_addon_id' => $subscriptionAddon->id]);
-            }
+            // if($request->addon_subscription_id){
+            //     return $this->respond(['new_subscription_addon_id' => $subscriptionAddon->id]);
+            // }
         }
 
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
