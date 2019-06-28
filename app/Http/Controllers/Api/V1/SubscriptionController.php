@@ -72,18 +72,19 @@ class SubscriptionController extends BaseController
         $data=$request->validate([
             'id'  => 'required',
             'upgrade_downgrade_status'  => 'required',
-            'new_plan_id'  => 'sometimes|required',
         ]);
         $order = Order::whereHash($request->order_hash)->first();
         $data['order_id'] = $order->id;
         $subscription = Subscription::find($data['id']);
 
-        $data['old_plan_id'] = $subscription->plan_id;
+        
         $data['upgrade_downgrade_date_submitted'] = Carbon::now();
         if($data['old_plan_id'] == "downgrade-scheduled"){
             $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
+            $data['new_plan_id'] = $subscription->new_plan_id;
         }else{
-            $data['plan_id'] = $data['new_plan_id'];
+            $data['old_plan_id'] = $subscription->plan_id;
+            $data['plan_id'] = $request->new_plan_id;
         }
         $updateSubcription = $subscription->update($data);
 
