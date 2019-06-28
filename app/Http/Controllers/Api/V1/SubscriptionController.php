@@ -42,7 +42,6 @@ class SubscriptionController extends BaseController
             ]);
             if($request->status == "Upgrade"){
                 $data['old_plan_id'] = $subscription->plan_id;
-                $data['new_plan_id'] = $request->plan_id;
                 $data['upgrade_downgrade_date_submitted'] = Carbon::now();
                 $data['plan_id'] = $request->plan_id;
                 $data['upgrade_downgrade_status'] = 'for-upgrade';

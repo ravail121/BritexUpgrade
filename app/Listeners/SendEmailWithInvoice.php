@@ -140,11 +140,10 @@ class SendEmailWithInvoice
         if ($order) {
             
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
-            
+
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
-            
+
             $regulatoryFee          = $order->invoice->cal_regulatory;
-           
             $stateTax               = $order->invoice->cal_stateTax;
             $taxes                  = $order->invoice->cal_taxes;
             $credits                = $order->invoice->cal_credits;
@@ -169,40 +168,68 @@ class SendEmailWithInvoice
             $totalCoupons           = $order->invoice->invoiceItem->where('type', self::COUPONS)->sum('amount');
             $accountChargesDiscount = $totalAccountCharges - $totalCoupons - $shippingFee;
             $totalLineCharges       = $planCharges + $oneTimeCharges + $taxes + $usageCharges - $totalCoupons;
-
+            $standalone             = $order->invoice->invoiceItem->where('subscription_id', null);
+            $standaloneItems        = $standalone->where('type', InvoiceItem::TYPES['one_time_charges']);
+            $standaloneTaxes        = $standalone->where('type', InvoiceItem::TYPES['taxes'])->sum('amount');
+            $standaloneRegulatory   = $standalone->where('type', InvoiceItem::TYPES['regulatory_fee'])->sum('amount');
+            $standaloneCoupons      = $standalone->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
+            $standaloneTotal        = $standalone->where('description', '!=', 'Shipping Fee')->where('type', '!=', InvoiceItem::TYPES['coupon'])->sum('amount');
+            $subscriptionItems      = $order->invoice->invoiceItem->where('subscription_id', '!=', null)->where('description', '!=', 'Shipping Fee');
+            $subscriptionTaxesFees  = $subscriptionItems->whereIn('type',[InvoiceItem::TYPES['taxes'], InvoiceItem::TYPES['regulatory_fee']])->sum('amount');
+            $subscriptionCoupons    = $subscriptionItems->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
+            $subscriptionTotal      = $subscriptionItems->sum('amount');
+                                              
             $invoice = [
-                'service_charges'           => self::formatNumber($serviceCharges),
-                'taxes'                     => self::formatNumber($taxes),
-                'credits'                   => self::formatNumber($credits),
-                'total_charges'             => self::formatNumber($totalAccountCharges),
-                'total_one_time_charges'    => self::formatNumber($oneTimeCharges),
-                'total_usage_charges'       => self::formatNumber($usageCharges),
-                'plan_charges'              => self::formatNumber($planCharges),
-                'serviceChargesProrated'    => self::formatNumber($serviceChargesProrated),
-                'regulatory_fee'            => self::formatNumber($regulatoryFee),
-                'state_tax'                 => self::formatNumber($stateTax),
-                'total_account_charges'     => self::formatNumber($oneTimeCharges + $taxes),
-                'subtotal'                  => self::formatNumber($order->invoice->subtotal),
-                'shipping_fee'              => self::formatNumber($shippingFee),
-                'plans'                     => $this->plans($order),
-                'addons'                    => $this->addons($order),
-                'tax_and_shipping'          => self::formatNumber($taxAndShipping),
-                'standalone_data'           => $this->setStandaloneItemData($order),
-                'total_old_credits'         => self::formatNumber($oldUsedCredits),
-                'total_credits_to_invoice'  => self::formatNumber($totalCreditsToInvoice),
-                'total_payment'             => self::formatNumber($order->credits->sum('amount')),
-                'total_used_credits'        => self::formatNumber($totalCredits + $oldUsedCredits),
-                'date_payment'              => $order->credits->first() ? $order->credits->first()->date : '',
-                'date_credit'               => $order->invoice->creditsToInvoice->first() ? $order->invoice->creditsToInvoice->first()->created_at->format('y/m/d') : '',
-                'credits_and_coupons'       => self::formatNumber($totalCreditsToInvoice + $totalCoupons),
-                'total_coupons'             => self::formatNumber($totalCoupons),
-                'account_charges_discount'  => self::formatNumber($accountChargesDiscount),
-                'total_line_charges'        => self::formatNumber($totalLineCharges),
-                'total_account_summary_charge' => self::formatNumber($planCharges + $oneTimeCharges + $usageCharges + $taxAndShipping - $credits)
-                
+                'service_charges'               =>   self::formatNumber($serviceCharges),
+                'taxes'                         =>   self::formatNumber($taxes),
+                'credits'                       =>   self::formatNumber($credits),
+                'total_charges'                 =>   self::formatNumber($totalAccountCharges),
+                'total_one_time_charges'        =>   self::formatNumber($oneTimeCharges),
+                'total_usage_charges'           =>   self::formatNumber($usageCharges),
+                'plan_charges'                  =>   self::formatNumber($planCharges),
+                'serviceChargesProrated'        =>   self::formatNumber($serviceChargesProrated),
+                'regulatory_fee'                =>   self::formatNumber($regulatoryFee),
+                'state_tax'                     =>   self::formatNumber($stateTax),
+                'total_account_charges'         =>   self::formatNumber($oneTimeCharges + $taxes),
+                'subtotal'                      =>   self::formatNumber($order->invoice->subtotal),
+                'shipping_fee'                  =>   self::formatNumber($shippingFee),
+                'plans'                         =>   $this->plans($order),
+                'addons'                        =>   $this->addons($order),
+                'tax_and_shipping'              =>   self::formatNumber($taxAndShipping),
+                'standalone_data'               =>   $this->setStandaloneItemData($order),
+                'total_old_credits'             =>   self::formatNumber($oldUsedCredits),
+                'total_credits_to_invoice'      =>   self::formatNumber($totalCreditsToInvoice),
+                'total_payment'                 =>   self::formatNumber($order->credits->sum('amount')),
+                'total_used_credits'            =>   self::formatNumber($totalCredits + $oldUsedCredits),
+                'date_payment'                  =>   $order->credits->first() ? $order->credits->first()->date : '',
+                'date_credit'                   =>   $order->invoice->creditsToInvoice->first() ? Carbon::parse($order->invoice->creditsToInvoice->first()->created_at)->toDateString() : '',
+                'credits_and_coupons'           =>   self::formatNumber($totalCreditsToInvoice + $totalCoupons),
+                'total_coupons'                 =>   self::formatNumber($totalCoupons),
+                'account_charges_discount'      =>   self::formatNumber($accountChargesDiscount),
+                'total_line_charges'            =>   self::formatNumber($totalLineCharges),
+                'total_account_summary_charge'  =>   self::formatNumber($planCharges + $oneTimeCharges + $usageCharges + $taxAndShipping - $credits),
+                'customer_auto_pay'             =>   $order->customer->auto_pay,
+                'company_logo'                  =>   $order->customer->company->logo,
+                'reseller_phone_number'         =>   $this->phoneNumberFormatted($order->customer->company->support_phone_number),
+                'reseller_domain'               =>   $order->customer->company->url,
+                'standalone_items'              =>   $this->getItemDetails($standaloneItems),
+                'one_time_standalone'           =>   self::formatNumber($standaloneItems->where('description', '!=', 'Shipping Fee')->sum('amount')),
+                'standalone_tax'                =>   self::formatNumber($standaloneTaxes),
+                'standalone_regulatory'         =>   self::formatNumber($standaloneRegulatory),
+                'standalone_total_taxes_fees'   =>   self::formatNumber($standaloneTaxes + $standaloneRegulatory),
+                'standalone_coupons'            =>   self::formatNumber($standaloneCoupons),
+                'standalone_total'              =>   self::formatNumber($standaloneTotal - $standaloneCoupons),
+                'subscription_items'            =>   $this->getItemDetails($subscriptionItems),
+                'subscription_act_fee'          =>   self::formatNumber($subscriptionItems->where('product_id', null)->where('type', InvoiceItem::TYPES['one_time_charges'])->sum('amount')),
+                'subscription_total_one_time'   =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['one_time_charges'])->sum('amount')),
+                'subscription_total_tax'        =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['taxes'])->sum('amount')),
+                'subscription_total_reg_fee'    =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['regulatory_fee'])->sum('amount')),
+                'subscription_total_tax_fee'    =>   self::formatNumber($subscriptionTaxesFees),
+                'subscription_usage_charges'    =>   self::formatNumber($subscriptionItems->where('type', InvoiceItem::TYPES['usage_charges'])->sum('amount')),
+                'subscription_coupons'          =>   self::formatNumber($subscriptionCoupons),
+                'subscription_total'            =>   self::formatNumber($subscriptionTotal - $subscriptionCoupons)
             ];
             
-
             $invoice = array_merge($data, $invoice);
             
             
@@ -211,6 +238,48 @@ class SendEmailWithInvoice
         return $invoice;
 
     }
+
+    protected function phoneNumberFormatted($number)
+    {
+        $number = preg_replace("/[^\d]/","",$number);
+    
+        $length = strlen($number);
+
+        if($length == 10) {
+            $number = preg_replace("/^1?(\d{3})(\d{3})(\d{4})$/", "$1-$2-$3", $number);
+        }
+            
+        return $number;
+    }
+
+    protected function getItemDetails($items)
+    {
+
+        $devices     = [];
+        $sims        = [];
+    
+        foreach ($items as $item) {
+
+            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['device']) {
+
+                $name      = Device::find($item['product_id'])->name;
+                $devices[] = ['name' => $name, 'amount' => $item['amount']];
+
+            }
+
+            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['sim']) {
+
+                $name      = Sim::find($item['product_id'])->name;
+                $sims[]    = ['name' => $name, 'amount' => $item['amount']];
+
+            }
+
+        }
+        
+        return ['devices' => $devices, 'sims' => $sims];
+
+    }
+
 
     
     protected function plans($order)
@@ -250,10 +319,9 @@ class SendEmailWithInvoice
             $creditToInvoice = 0;
             $paymentMethod = '';
             $paymentDate = '';
-            //$oldUsedCredits = 0;
+
         }
-        //$oldCreditToInvoice = $order->credits->where('type', 2)->first();
-        //$oldUsedCredits = isset($oldCreditToInvoice) ? $oldCreditToInvoice->usedOnInvoices->sum('amount') : 0;
+
         $arr = [
             'invoice_num'           => $order->invoice->id,
             'subscriptions'         => [],

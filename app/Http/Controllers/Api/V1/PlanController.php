@@ -235,17 +235,12 @@ class PlanController extends BaseController
         );
         $subscription = Subscription::find($data['subscription_id']);
 
-        if($request->order_hash){
-            $order = Order::Hash($request->order_hash)->first();
-        }else{
-            $orderData = $subscription->order->toArray();
-            $orderData['invoice_id'] = null;
-            $orderData['status'] = 0;
-            $orderData['hash'] = md5(time());
-            $orderData['order_num'] = null;
-            $order = Order::create($orderData);
-
-        }
+        $orderData = $subscription->order->toArray();
+        $orderData['invoice_id'] = null;
+        $orderData['status'] = 0;
+        $orderData['hash'] = md5(time());
+        $orderData['order_num'] = null;
+        $order = Order::create($orderData);
 
         $orderGroupData = [
             'plan_id'                      => $data['plan'],
@@ -307,13 +302,13 @@ class PlanController extends BaseController
         if($paidInvoice == "1" && $order['status'] != 'downgrade'){
             $orderGroup = OrderGroup::create($orderGroupData);   
 
-            $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
+            $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans'], 'paidInvoice');
         }
 
         return $this->respond($order);
     }
 
-    public function updateAddons($request, $orderGroup, $subscription, $plan)
+    public function updateAddons($request, $orderGroup, $subscription, $plan, $paidInvoice=null)
     {
         $addons = $request->addon;
         if(!$addons){
@@ -323,7 +318,7 @@ class PlanController extends BaseController
         if($request->active_addons){
             $activeAddons = explode(",",$request->active_addons);
             $removedAddon = array_diff($activeAddons, $addons);
-            if(!empty($removedAddon)){
+            if(!empty($removedAddon) && $paidInvoice ==null){
                 $this->updateRemovedAddon($removedAddon, $subscription->id, $orderGroup->id);
             }
 
