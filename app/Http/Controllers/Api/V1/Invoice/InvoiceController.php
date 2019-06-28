@@ -721,7 +721,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'taxable'      => $plan->taxable
                 ];
                 if($subscription->upgrade_downgrade_status =='for-upgrade'){
-                    \Log::info($subscription);
+                    
                     $array['description'] = 'Upgrade from plan '.$subscription->old_plan_id.' to plan '.$subscription->plan_id;  
                 }
                 
