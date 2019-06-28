@@ -237,7 +237,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             ];
 
             $customerCouponInfinite = [
-                'cycles_remaining'  => null
+                'cycles_remaining'  => -1
             ];
 
             $customerCouponFinite = [
@@ -246,13 +246,13 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             if ($couponCycles > 1) {
 
-                array_push($customerCoupon, $customerCouponFinite);
-                CustomerCoupon::create($customerCoupon);
+                $data = array_merge($customerCoupon, $customerCouponFinite);
+                CustomerCoupon::create($data);
 
             } elseif ($couponCycles == 0) {
-
-                array_push($customerCoupon, $customerCouponInfinite);
-                CustomerCoupon::create($customerCoupon);
+                
+                $data = array_merge($customerCoupon, $customerCouponInfinite);
+                CustomerCoupon::create($data);
 
             }
         }

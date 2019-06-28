@@ -240,7 +240,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         foreach ($customerCouponRedeemable as $customerCoupon) {
             $coupon = $customerCoupon->coupon;
 
-            if($customerCoupon->cycles_remaining < 1) continue;
+            if($customerCoupon->cycles_remaining == 0) continue;
 
             list($isApplicable, $subscriptions) = 
                         $this->isCustomerAccountCouponApplicable(
@@ -270,9 +270,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         'taxable'         => self::TAX_FALSE,
                     ]);
                 }
-
-                $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
-
+                if ($customerCoupon['cycles_remaining'] > 0) {
+                    $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
+                }
                 // ToDo: Add logs,Order not provided in requirements
             }
 
@@ -358,7 +358,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             foreach ($subscriptionCouponRedeemable as $subscriptionCoupon) {
                 $coupon = $subscriptionCoupon->coupon;
 
-                if($subscriptionCoupon->cycles_remaining < 1) continue;
+                if($subscriptionCoupon->cycles_remaining == 0) continue;
 
                 $coupon->load('couponProductTypes', 'couponProducts');
 
@@ -379,7 +379,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                     'taxable'         => self::TAX_FALSE,
                 ]);
 
-                $subscriptionCoupon->update(['cycles_remaining' => $subscriptionCoupon['cycles_remaining'] - 1]);
+                if ($subscriptionCoupon['cycles_remaining'] > 0) {
+                    $subscriptionCoupon->update(['cycles_remaining' => $subscriptionCoupon['cycles_remaining'] - 1]);
+                }
+                    
             }
 
         }

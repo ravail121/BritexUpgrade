@@ -20,6 +20,8 @@ use App\Model\Subscription;
 use App\Model\InvoiceItem;
 use App\Model\Plan;
 use App\Model\Addon;
+use App\Model\Device;
+use App\Model\Sim;
 
 class SendEmailWithInvoice
 {
