@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Model\Addon;
 use App\Model\Order;
-use App\Model\Coupon;
 use App\Model\Customer;
 use App\Model\Plan;
-use App\Model\OrderCoupon;
-use App\Model\OrderGroup;
 use App\Model\Subscription;
 use App\Model\Invoice;
 use App\Model\InvoiceItem;
@@ -66,10 +62,7 @@ class RegenerateInvoiceController extends Controller
 
     public function regenerateInvoice()
     {
-        $today                  = Carbon::today();
         $invoiceGroups          = Customer::customerInvoiceGroups();
-        $allOpenInvocies        = [];
-        $customerInvoices       = [];
         $openMonthlyInvoiceDate = 0;
         $pendingOrderInvoices   = [];
 
@@ -85,46 +78,37 @@ class RegenerateInvoiceController extends Controller
 
                 if ($invoice->type == self::TYPES['monthly'] && $invoice->status == self::STATUS['open']) {
 
-                    $openMonthlyInvoiceDate = Carbon::parse($invoice->created_at);
-                   
-                    $openMonthlyInvoiceTime = $openMonthlyInvoiceDate->format('H:i');
-    
+                    $openMonthlyInvoiceDate = $invoice->getOriginal('created_at');
+
                     $customerId             = $invoice->customer_id;
 
                     $invoiceId              = $invoice->id;
 
                     $openOrderInvoices      = $invoices->where('customer_id', $customerId);
-                    
+
                     foreach ($openOrderInvoices as $orderInvoice) {
-                       
-                        $currentDate        = Carbon::parse($orderInvoice->created_at);
 
-                        $currentTime        = $currentDate->format('H:i');
-                        
+                        $currentDate        = $orderInvoice->getOriginal('created_at');
+
                         if ($currentDate > $openMonthlyInvoiceDate && $invoice->id != $orderInvoice->id) {
-                            
-                            $pendingOrderInvoices[]   = ['invoice' => $orderInvoice, 'monthly_invoice_id' => $invoiceId];
-                            
-                        } elseif ($currentDate == $openMonthlyInvoiceDate && $invoice->id != $orderInvoice->id) {
-                            
-                            if ($currentTime > $openMonthlyInvoiceTime) {
-                                
-                                $pendingOrderInvoices[]   = ['invoice' => $orderInvoice, 'monthly_invoice_id' => $invoiceId];
 
-                            } 
+                            $pendingOrderInvoices[]   = ['invoice' => $orderInvoice, 'monthly_invoice_id' => $invoiceId];
 
                         }
-                        
+
                     }
-                    
+
                 }
 
             }
 
         }
-        
-        $this->processPendingOrderInvoices($pendingOrderInvoices);
-        
+
+        if (count($pendingOrderInvoices)) {
+
+            $this->processPendingOrderInvoices($pendingOrderInvoices);
+
+        }
 
     }
 
@@ -157,19 +141,22 @@ class RegenerateInvoiceController extends Controller
         
         $regeneratedAmount  = $this->regenerateAmount($subscriptionIds);
         $invoiceIds         = $this->storeInvoiceItems($regeneratedAmount);
+        
+        if ($invoiceIds) {
 
-        foreach ($invoiceIds as $id) {
+            foreach ($invoiceIds as $id) {
 
-            $invoice            = Invoice::find($id);
-            $updateInvoice      = $this->updateInvoice($invoice);
-            $order              = $invoice ? Order::where('invoice_id', $invoice->id)->first() : null;
-    
-            if(isset($order)) {
-                event(new InvoiceGenerated($order));
+                $invoice            = Invoice::find($id);
+                $updateInvoice      = $this->updateInvoice($invoice);
+                $order              = $invoice ? Order::where('invoice_id', $invoice->id)->first() : null;
+        
+                if(isset($order)) {
+                    event(new InvoiceGenerated($order));
+                }
+
             }
 
         }
-
 
     }
 
@@ -238,7 +225,6 @@ class RegenerateInvoiceController extends Controller
                 
             }
 
-
             foreach ($regeneratedAmount['total'] as $total) {
                 
                 $invoice                = Invoice::find($total['invoice_id']);
@@ -266,7 +252,7 @@ class RegenerateInvoiceController extends Controller
 
             }
                 
-                return $invoiceIds;
+            return $invoiceIds;
 
         }
         
@@ -289,14 +275,6 @@ class RegenerateInvoiceController extends Controller
 
             $invoice        = $customer->invoice->where('type', 1)->where('status', 1)->first();
 
-            $startDate      = Carbon::parse($customer->billing_start);
-
-            $endDate        = Carbon::parse($customer->billing_end);
-
-            $totalDays      = $startDate->diffInDays($endDate);
-
-            $remainingDays  = Carbon::today()->diffInDays($endDate);
-
             $plan           = Plan::find($subscription->plan_id);
 
             $planCharges    = $plan->amount_recurring;
@@ -315,14 +293,12 @@ class RegenerateInvoiceController extends Controller
                 $total[]        = ['invoice_id' => $invoice->id, 'amount' => $rate];
             }
 
-
             //Regulatory Fee
             $regulatoryFee      = $plan->regulatory_fee_type == 2 ? $planCharges * $plan->regulatory_fee_amount / 100 : $plan->regulatory_fee_amount;
 
             $total[]            = ['invoice_id' => $invoice->id, 'amount' => $regulatoryFee];
             
             $invoiceItems[]     = $this->taxesAndFeesAmount($invoice, $subscription, $regulatoryFee, self::FEE_TYPES['regulatory'], self::FEE_DESCRIPTION['regulatory']);
-
 
             //Addons Charges and tax
             if (isset($order->orderGroup->order_group_addon)) {

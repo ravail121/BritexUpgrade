@@ -429,7 +429,7 @@ class CouponController extends Controller
     
                             if ($plan['type'] == $isLimited) {
         
-                                $planAmount   = $isProrated ? $isProrated : $plan->amount_recurring;
+                                $planAmount     = $isProrated ? $isProrated : $plan->amount_recurring;
     
                                 $couponAmount[] = $isPercentage ? $coupon['amount'] * $planAmount / 100 : $coupon['amount'];
 
@@ -439,13 +439,12 @@ class CouponController extends Controller
                                     'amount'                => $coupon['amount'],
                                     'order'                 => $order
                                 ];
-                                
-    
+
                             }
     
                         } else {
                            
-                            $planAmount = $isProrated ? $isProrated : $plan->amount_recurring;
+                            $planAmount     = $isProrated ? $isProrated : $plan->amount_recurring;
     
                             $couponAmount[] = $isPercentage ? $coupon['amount'] * $planAmount / 100 : $coupon['amount'];
 

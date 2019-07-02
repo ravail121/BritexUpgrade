@@ -12,16 +12,16 @@ trait InvoiceTrait
     public function addRegulatorFeesToSubscription($subscription, $invoice, $isTaxable, $order = null)
     {
         $amount = 0;
-
+        
         $plan   = $subscription->plan;
-
+        
         if ($plan->regulatory_fee_type == Plan::REGULATORY_FEE_TYPES['fixed_amount']) {
             $amount = $plan->regulatory_fee_amount;
 
         } elseif ($plan->regulatory_fee_type == Plan::REGULATORY_FEE_TYPES['percentage_of_plan_cost']) {
-
+            
             if($subscription->upgrade_downgrade_status == null){
-                $proratedAmount = $order->planProRate($plan->id);
+                $proratedAmount = $order ? $order->planProRate($plan->id) : null;
                 $planAmount = $proratedAmount == null ? $plan->amount_recurring : $proratedAmount;
             }else{
                 $planAmount = $plan->amount_recurring - $subscription->oldPlan->amount_recurring;

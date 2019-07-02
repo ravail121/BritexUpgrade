@@ -262,14 +262,14 @@ class SendEmailWithInvoice
     
         foreach ($items as $item) {
 
-            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['device']) {
+            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['device']  && $item['amount']) {
 
                 $name      = Device::find($item['product_id'])->name;
                 $devices[] = ['name' => $name, 'amount' => $item['amount']];
 
             }
 
-            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['sim']) {
+            if ($item['product_type'] == InvoiceItem::PRODUCT_TYPE['sim']  && $item['amount']) {
 
                 $name      = Sim::find($item['product_id'])->name;
                 $sims[]    = ['name' => $name, 'amount' => $item['amount']];
@@ -287,7 +287,8 @@ class SendEmailWithInvoice
     protected function plans($order)
     {
         $allPlans = $order->invoice->invoiceItem
-            ->where('type', InvoiceItem::TYPES['plan_charges']);
+            ->where('type', InvoiceItem::TYPES['plan_charges'])
+            ->where('amount', '!=', null);;
         
         foreach ($allPlans as $plan) {
             $plans[]    = ['name' => Plan::find($plan->product_id)->name, 'amount' => $plan->amount];
