@@ -124,7 +124,7 @@ trait InvoiceTrait
         }
     }
 
-    public function addTaxesToUpgrade($invoice, $isTaxable)
+    public function addTaxesToUpgrade($invoice, $isTaxable, $subscriptionId = null)
     {
         $taxPercentage = $invoice->customer->stateTax->rate / 100;
 
@@ -136,8 +136,8 @@ trait InvoiceTrait
             $invoice->invoiceItem()->create(
                 [
                     'invoice_id'   => $invoice->id,
-                    'subscription_id' => null,
-                    'product_type' => '',
+                    'subscription_id' => $subscriptionId,
+                    'product_type' => $subscriptionId,
                     'product_id'   => null,
                     'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                     'start_date'   => $invoice->start_date,

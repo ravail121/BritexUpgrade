@@ -379,6 +379,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
  
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
+                return View('templates/onetime-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
                 return $pdf->download('invoice.pdf');
             
@@ -533,14 +534,29 @@ class InvoiceController extends BaseController implements ConstantInterface
         $arr = $this->invoiceData($order);
 
         foreach ($order->subscriptions as $subscription) {
-            $planCharges    = $subscription->cal_plan_charges;
-            $onetimeCharges = $subscription->cal_onetime_charges;
-            $usageCharges   = $subscription->cal_usage_charges;
-            $tax            = $subscription->cal_taxes;
-            $total          = $order->invoice->invoiceItem->where('subscription_id', $subscription->id)->sum('amount');
-            $shippingFee    = $order->invoice->invoiceItem
-                                            ->where('subscription_id', $subscription->id)
-                                            ->where( 'description', 'Shipping Fee')->sum('amount');
+            if($subscription->upgrade_downgrade_status){
+                $planCharges    = $this->getSubscriptionsData($order, $subscription->id, 'plan_charges');
+                $addonCharges       = $this->getSubscriptionsData($order, $subscription->id, 'feature_charges');
+                $planCharges    = $planCharges + $addonCharges;
+                $onetimeCharges = 0;
+                $usageCharges   = $subscription->cal_usage_charges;
+                $tax            = $this->getSubscriptionsData($order, $subscription->id, 'taxes');
+                $total          = $order->invoice->invoiceItem
+                                    ->where('subscription_id', $subscription->id)
+                                    ->sum('amount');
+                $shippingFee    = 0;
+            }else{
+                $planCharges    = $subscription->cal_plan_charges;
+                $onetimeCharges = $subscription->cal_onetime_charges;
+                $usageCharges   = $subscription->cal_usage_charges;
+                $tax            = $subscription->cal_taxes;
+                $total          = $order->invoice->invoiceItem
+                                    ->where('subscription_id', $subscription->id)
+                                    ->sum('amount');
+                $shippingFee    = $order->invoice->invoiceItem
+                                                ->where('subscription_id', $subscription->id)
+                                                ->where( 'description', 'Shipping Fee')->sum('amount');
+            }
             $subscriptionData = [
                 'subscription_id' => $subscription->id,
                 'plan_charges'    => self::formatNumber($planCharges),
@@ -825,10 +841,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                     self::TAX_FALSE
                 );
             }else{
-                $this->addTaxesToUpgrade($order->invoice, self::TAX_FALSE);
-                if($paidInvoice == 1){
-                    $this->addTaxesToUpgrade($order->invoice, self::TAX_FALSE);
-                }
+                $this->addTaxesToUpgrade($order->invoice, self::TAX_FALSE, $subscription->id);
             }
 
 
@@ -897,11 +910,10 @@ class InvoiceController extends BaseController implements ConstantInterface
 
                     if($paidInvoice == 1){
                         $invoiceItem = InvoiceItem::create($array);
-                        $this->addTaxesToUpgrade($order->invoice, self::TAX_FALSE);
                     }
                 }
 
-                $this->addTaxesToUpgrade($order->invoice, self::TAX_FALSE);
+                $this->addTaxesToUpgrade($order->invoice, self::TAX_FALSE, $subscription->id);
             }
         }   
         return $invoiceItem;    
