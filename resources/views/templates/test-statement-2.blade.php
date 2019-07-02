@@ -167,14 +167,18 @@
                                 </tr>
                             @endforeach
                             @endisset
-                            <tr>
-                                <td>Activation Fee</td>
-                                <td colspan='2' class='last'>
-                                    @isset($invoice['subscription_act_fee'])
-                                        {{$invoice['subscription_act_fee']}}
-                                    @endisset
-                                </td>
-                            </tr>
+                            @isset($invoice['subscription_act_fee'])
+                                @if ($invoice['subscription_act_fee'] != 0)
+                                    <tr>
+                                        <td>Activation Fee</td>
+                                        <td colspan='2' class='last'>
+                                            
+                                            {{$invoice['subscription_act_fee']}}
+
+                                        </td>
+                                    </tr>
+                                @endif
+                            @endisset
                             <tr>
                                 
                                 <td colspan="3">

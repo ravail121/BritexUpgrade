@@ -116,53 +116,61 @@ class CouponController extends Controller
                 $appliedToTypes     = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $couponSpecificTypes, $order->id, $orderGroupCart) : 0;
                 $appliedToProducts  = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $couponProductTypes, $order->id, $orderGroupCart) : 0;
                 
-                if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
+                if ($coupon['active']) {
 
-                    if ($this->couponCanBeUsed($coupon)) {
+                    if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
 
-                        if ($this->couponNotReachedMaxLimit($coupon)) {
+                        if ($this->couponCanBeUsed($coupon)) {
 
-                            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
-                            
-                            return ['total' => $total, 'applied_to' => [
-                                    'applied_to_all'        => $appliedToAll['applied_to'],
-                                    'applied_to_types'      => $appliedToTypes['applied_to'],
-                                    'applied_to_products'   => $appliedToProducts['applied_to']
-                                ]
-                            ];
+                            if ($this->couponNotReachedMaxLimit($coupon)) {
+
+                                $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
+                                
+                                return ['total' => $total, 'applied_to' => [
+                                        'applied_to_all'        => $appliedToAll['applied_to'],
+                                        'applied_to_types'      => $appliedToTypes['applied_to'],
+                                        'applied_to_products'   => $appliedToProducts['applied_to']
+                                    ]
+                                ];
+
+                            } else {
+
+                                return [
+                                    'coupon_max_used' => $coupon['num_uses']
+                                ];
+
+                            }
+
 
                         } else {
 
                             return [
-                                'coupon_max_used' => $coupon['num_uses']
+                                'coupon_not_usable' => [
+                                    'start_date' => $coupon['start_date'],
+                                    'end_date'   => $coupon['end_date']
+                                ]
                             ];
 
                         }
 
-
-                    } else {
-
+                    } else {    
+                        
                         return [
-                            'coupon_not_usable' => [
-                                'start_date' => $coupon['start_date'],
-                                'end_date'   => $coupon['end_date']
+                            'not_eligible' => [
+                                'multiline_min' => $coupon['multiline_min'],
+                                'multiline_max' => $coupon['multiline_max'],
+                                'active_subs'   => count($cartPlans + $billablePlans)
                             ]
-                        ];
-
+                        ]; 
+                    
                     }
 
-                } else {    
-                    
-                    return [
-                        'not_eligible' => [
-                            'multiline_min' => $coupon['multiline_min'],
-                            'multiline_max' => $coupon['multiline_max'],
-                            'active_subs'   => count($cartPlans + $billablePlans)
-                        ]
-                    ]; 
-                
+                } else {
+
+                    return ['error' => 'Coupon not active anymore'];
+
                 }
-                
+
             }
             
         }
@@ -188,11 +196,11 @@ class CouponController extends Controller
     {
         $isApplicable       = true;
 
-        $today              = strtotime(Carbon::today());
-
-        $couponStartDate    = strtotime(($coupon['start_date']));
+        $today              = Carbon::now();
         
-        $couponExpiryDate   = strtotime(($coupon['end_date']));
+        $couponStartDate    = Carbon::parse($coupon['start_date']);
+        
+        $couponExpiryDate   = Carbon::parse($coupon['end_date']);
 
         if ($couponStartDate && $couponExpiryDate) {
 
@@ -221,12 +229,13 @@ class CouponController extends Controller
 
         $totalSubscriptions = array_merge($cartPlans, $billablePlans);
 
-        if (count($totalSubscriptions) < $coupon['multiline_min'] || count($totalSubscriptions) > $coupon['multiline_max']) {
-            
-            $isApplicable = false;
-            
+        if ($coupon['multiline_min'] || $coupon['multiline_max']) {
+            if (count($totalSubscriptions) < $coupon['multiline_min'] || count($totalSubscriptions) > $coupon['multiline_max']) {
+                
+                $isApplicable = false;
+                
+            }
         }
-
         return $isApplicable;
 
     }
@@ -253,13 +262,6 @@ class CouponController extends Controller
 
                 $planType       = $plan->type;
 
-                $orderCouponProduct[]   = [
-                    'order_product_type'    => self::SPECIFIC_TYPES['PLAN'],
-                    'order_product_id'      => $og->plan_id,
-                    'amount'                => $coupon['amount'],
-                    'order'                 => $order
-                ];
-
                 if ($multilineRestrict) {
 
                     if ($planType == $multilineRestrict[0]) {
@@ -267,6 +269,13 @@ class CouponController extends Controller
                         $planAmount[]           = $og->plan_prorated_amt ? $og->plan_prorated_amt : $plan->amount_recurring;
 
                         $countItems[]           = $og->plan_id;
+
+                        $orderCouponProduct[]   = [
+                            'order_product_type'    => self::SPECIFIC_TYPES['PLAN'],
+                            'order_product_id'      => $og->plan_id,
+                            'amount'                => $coupon['amount'],
+                            'order'                 => $order
+                        ];
                         
                     }
 
@@ -275,6 +284,13 @@ class CouponController extends Controller
                     $planAmount[]   = $og->plan_prorated_amt ? $og->plan_prorated_amt : $plan->amount_recurring;
 
                     $countItems[]   = $og->plan_id;
+
+                    $orderCouponProduct[]   = [
+                        'order_product_type'    => self::SPECIFIC_TYPES['PLAN'],
+                        'order_product_id'      => $og->plan_id,
+                        'amount'                => $coupon['amount'],
+                        'order'                 => $order
+                    ];
 
                 }
 

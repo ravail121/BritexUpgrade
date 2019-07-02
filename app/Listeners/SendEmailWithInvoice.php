@@ -391,7 +391,7 @@ class SendEmailWithInvoice
                 'subscription_id' => $subscription->id,
                 'plan_charges'    => self::formatNumber($planCharges),
                 'onetime_charges' => self::formatNumber($onetimeCharges),
-                'phone'           => $subscription->phone_number,
+                'phone'           => $this->phoneNumberFormatted($subscription->phone_number),
                 'usage_charges'   => $usageCharges,
                 'tax'             => $tax,
                 'total'           => self::formatNumber($total)
@@ -428,7 +428,7 @@ class SendEmailWithInvoice
                 'usage_charges'         => self::formatNumber($this->getSubscriptionsData($order, $id, 'usage_charges')),
                 'coupon'                => self::formatNumber($this->getSubscriptionsData($order, $id, 'coupon')),
                 'manual'                => self::formatNumber($this->getSubscriptionsData($order, $id, 'manual')),
-                'phone'                 => $phone,
+                'phone'                 => $this->phoneNumberFormatted($phone),
                 'plan_and_addons'       => self::formatNumber($planCharges + $addonCharges),
                 'tax_and_regulatory'    => self::formatNumber($totalTax + $totalRegulatory),
                 'total_discounts'       => self::formatNumber($totalCoupons + $totalManual),
