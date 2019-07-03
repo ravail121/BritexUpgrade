@@ -74,9 +74,14 @@ trait UsaEpayTransaction
 
    public function couponData($order, $request)
    {
-       $orderCoupon = OrderCoupon::where('order_id', $order->id)->first();
+    //IN case of adding a new card $order = null commented by suraj
+        if($order == null){
+            $orderCoupon = null;
+        }else{    
+            $orderCoupon = OrderCoupon::where('order_id', $order->id)->first();
+        }
 
-       if($orderCoupon) {
+        if($orderCoupon) {
 
            $coupon = Coupon::where('id', $orderCoupon->coupon_id)->first();
 
@@ -92,11 +97,11 @@ trait UsaEpayTransaction
 
            return $data;
 
-       } else {
+        } else {
 
            $defaultData['key'] = env('SOURCE_KEY');
            $defaultData['usesandbox'] = 1;
-       }
+        }
 
        return $defaultData;
    }
