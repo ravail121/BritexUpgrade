@@ -796,7 +796,6 @@ class InvoiceController extends BaseController implements ConstantInterface
             
 
             if ($subscriptionAddons) {
-                
                 foreach ($subscriptionAddons as $subAddon) {
 
                     $addon = Addon::find($subAddon->addon_id);
@@ -829,7 +828,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
                     $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
 
-                    if($paidInvoice == 1 && $subscription->upgrade_downgrade_status == null){
+                    if($paidInvoice == 1 && $subscription->upgrade_downgrade_status != null){
                         $invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
                     }
                 }

@@ -36,6 +36,7 @@ class DeviceController extends Controller
 			$plan      = Plan::find($request->plan_id);
 			$deviceIds = $plan->devices()->pluck('device_id')->toArray();
 			$visibleDevices = $visibleDevices->whereIn('id', $deviceIds);
+			$visibleSims    = [];
 		}
 
 		if($carrierId = $request->input('carrier_id')){
