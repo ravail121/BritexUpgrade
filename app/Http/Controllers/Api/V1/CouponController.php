@@ -118,7 +118,7 @@ class CouponController extends Controller
                 
                 if ($coupon['active']) {
 
-                    if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
+                    if ($this->isApplicable($cartPlans, $billablePlans, $coupon)['applicable']) {
 
                         if ($this->couponCanBeUsed($coupon)) {
 
@@ -158,8 +158,8 @@ class CouponController extends Controller
                         return [
                             'not_eligible' => [
                                 'multiline_min' => $coupon['multiline_min'],
-                                'multiline_max' => $coupon['multiline_max'],
-                                'active_subs'   => count($cartPlans + $billablePlans)
+                                'multiline_max' => $coupon['multiline_max'] ? $coupon['multiline_max'] : 'Unlimited',
+                                'active_subs'   => $this->isApplicable($cartPlans, $billablePlans, $coupon)['eligible_subs']
                             ]
                         ]; 
                     
@@ -225,18 +225,44 @@ class CouponController extends Controller
 
     protected function isApplicable($cartPlans, $billablePlans, $coupon)
     {
-        $isApplicable       = true;
+        $isApplicable    = true;
 
-        $totalSubscriptions = array_merge($cartPlans, $billablePlans);
+        $totalPlans      = [];
+        $totalCartPlans  = [];
 
-        if ($coupon['multiline_min'] || $coupon['multiline_max']) {
-            if (count($totalSubscriptions) < $coupon['multiline_min'] || count($totalSubscriptions) > $coupon['multiline_max']) {
-                
-                $isApplicable = false;
-                
+        if ($coupon['multiline_restrict_plans']) {
+            $multilineRestrict  = $coupon->multilinePlanTypes->pluck('plan_type');
+            foreach ($billablePlans as $plan) {
+                if ($multilineRestrict->contains($plan['type'])) {
+                    $totalPlans[] = $plan;
+                }
+            }
+            foreach ($cartPlans['items'] as $plan) {
+                if ($multilineRestrict->contains($plan['type'])) {
+                    $totalCartPlans[] = $plan;
+                }
             }
         }
-        return $isApplicable;
+
+        $totalSubscriptions = array_merge($totalPlans, $totalCartPlans);
+
+        if ($coupon['multiline_min']) {
+
+            if (count($totalSubscriptions) < $coupon['multiline_min']) {
+
+                $isApplicable = false;
+
+            } elseif ($coupon['multiline_max']) {
+
+                if (count($totalSubscriptions) > $coupon['multiline_max']) {
+
+                    $isApplicable = false;
+
+                }
+            }
+        }
+
+        return ['applicable' => $isApplicable, 'eligible_subs' => count($totalSubscriptions)];
 
     }
 
@@ -381,11 +407,11 @@ class CouponController extends Controller
         if ($multilineRestrict) {
             
             foreach ($plans as $plan) {
-            
+                
                 $planType = $plan['type'];
                 
-                if ($planType == $multilineRestrict[0]) {
-
+                if ($multilineRestrict->contains($planType)) {
+                    
                     $applicablePlans[] = $plan;
 
                 }
@@ -417,7 +443,7 @@ class CouponController extends Controller
 
                 $isLimited = $coupon['sub_type'] > 0 ? $coupon['sub_type'] : false;
 
-                if (isset($orderGroupCart['devices']['items'])) {
+                if (isset($orderGroupCart['plans']['items'])) {
 
                     foreach ($plans as $plan) {
                     

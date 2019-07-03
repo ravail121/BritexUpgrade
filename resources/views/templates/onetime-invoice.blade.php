@@ -301,7 +301,7 @@
                             <tr>
                                 <td colspan="7" class="lh0">
                                     <div class="total_img">
-                                        <img src="https://teltik.pw/pdf/img/shape.png" alt="shape">
+                                        <img src="https://teltik.pw/pdf/img/shape.png" alt="">
                                     </div>
                                 </td>
                             </tr>

@@ -101,22 +101,21 @@ class OrderGroupController extends Controller
 
     public function getSim(Request $request)
     {
-        return OrderGroup::find($request->id);
+        
+        return OrderGroup::find($request->id)->sim_num;
         
     }
 
     public function editSim(Request $request)
     {
         $newSimNumber   = $request->newSimNumber;
-        $portNewNumber  = $request->portNewNumber;
-        $areaNewCode    = $request->areaNewCode;
 
         $orderGroupId   = $request->orderGroupId;
         $orderGroup     = OrderGroup::find($orderGroupId);
         
-        $newSimNumber   ? $orderGroup->update(['sim_num'        => $newSimNumber])  : null;
-        $portNewNumber  ? $orderGroup->update(['porting_number' => $portNewNumber]) : null;
-        $areaNewCode    ? $orderGroup->update(['area_code'      => $areaNewCode])   : null;
+        $newSimNumber   ? $orderGroup->update(['sim_num' => $newSimNumber])  : null;
+
+        return ['new_sim_num' => $newSimNumber];
 
     }
 

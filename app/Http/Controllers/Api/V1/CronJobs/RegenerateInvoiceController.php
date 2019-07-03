@@ -234,7 +234,7 @@ class RegenerateInvoiceController extends Controller
 
                 if ($usedCouponsIds) {
                     foreach ($usedCouponsIds as $id) {
-                        if (!in_array($id, $filterUniqueCouponIds) && $id) {
+                        if ($id && !in_array($id, $filterUniqueCouponIds)) {
                             $filterUniqueCouponIds[] = $id;                  
                         }
                     }

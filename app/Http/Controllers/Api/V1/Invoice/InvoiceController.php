@@ -323,7 +323,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $subscriptionItems      = $order->invoice->invoiceItem->where('subscription_id', '!=', null)->where('description', '!=', 'Shipping Fee');
             $subscriptionTaxesFees  = $subscriptionItems->whereIn('type',[InvoiceItem::TYPES['taxes'], InvoiceItem::TYPES['regulatory_fee']])->sum('amount');
             $subscriptionCoupons    = $subscriptionItems->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
-            $subscriptionTotal      = $subscriptionItems->sum('amount');
+            $subscriptionTotal      = $subscriptionItems->where('type', '!=',InvoiceItem::TYPES['coupon'])->sum('amount');
 
             $invoice = [
                 'service_charges'               =>   self::formatNumber($serviceCharges),
@@ -379,11 +379,12 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
  
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                return View('templates/onetime-invoice', compact('invoice'));
+                //return View('templates/onetime-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
                 return $pdf->download('invoice.pdf');
             
             } else {
+                return View('templates/monthly-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 

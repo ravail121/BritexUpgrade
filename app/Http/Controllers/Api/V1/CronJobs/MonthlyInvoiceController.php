@@ -283,13 +283,14 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     {
         $isApplicable  = true;
         
-        if($multilineMin = $coupon->multiline_min){
+        //if($multilineMin = $coupon->multiline_min){
             // if coupon.multiline_restrict_plans == true means
             // only specific subscription are considered for
             // coupon.multiline_min criteria
+            $multilineMin = $coupon->multiline_min;
             if($coupon->multiline_restrict_plans){
                 $supportedPlanTypes = $coupon->multilinePlanTypes->pluck('plan_type');
-
+                
                 $subscriptions = $subscriptions->filter(function($subscription, $key) use ($supportedPlanTypes){
                     return $supportedPlanTypes->contains($subscription->plan->type);
                 });
@@ -297,7 +298,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
             $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
 
-        }
+        //}
 
         // ToDO:
         // 1. What if user has more subscriptions?
@@ -311,35 +312,90 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
     private function customerAccountCouponAmount($subscription, $coupon)
     {
-        $plan = $subscription->plan;
+        $plan           = $subscription->plan;
+        $addons         = $subscription->subscriptionAddon;
+
+        if ($addons) {
+            $addonAmount = $this->getAddonAmountForCoupons($addons);
+        }
 
         // Had to use continue, so used if else 
         // and not switch statement
         if($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']){
-            $couponProductTypeForPlans = $coupon->couponProductTypes->where('type', CouponProductType::TYPES['plan']);
-            $couponProductTypeForThisPlan = $couponProductTypeForPlans->where('sub_type', $plan->type)->first();
+            $couponProductTypeForPlans      = $coupon->couponProductTypes->where('type', CouponProductType::TYPES['plan']);
+            $couponProductTypeForThisPlan   = $couponProductTypeForPlans->where('sub_type', '!=', 0)->where('sub_type', $plan->type)->first();
+            $couponProductTypeForAddons     = $coupon->couponProductTypes->where('type', CouponProductType::TYPES['addon'])->first();
             
             // Coupon doesnot support plans or 
             // doesnot supports this plan
-            if(!$couponProductTypeForPlans || !$couponProductTypeForThisPlan ) return false;
+            //if(!$couponProductTypeForPlans || !$couponProductTypeForThisPlan ) return false;
+            $addonTotalAmount   = 0;
+            $planAmount         = 0;
+            
+            if($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']){
+                $addonTotalAmount   = $addonAmount['total_amount'] && $couponProductTypeForAddons ? $couponProductTypeForAddons->amount * $addonAmount['total_amount'] / 100 : 0;
 
-            $amount = $couponProductTypeForThisPlan->amount;
+                if ($couponProductTypeForThisPlan) {
+                    $planAmount = $couponProductTypeForThisPlan->amount * $plan->amount_recurring / 100;
+                } else {
+                    if ($couponProductTypeForPlans) {
+                        $planAmount = $couponProductTypeForPlans->first()->amount * $plan->amount_recurring / 100;
+                    }
+                }
+
+                $amount = $planAmount + $addonTotalAmount;
+                
+            } else {
+                $addonTotalAmount   = $addonAmount['count'] && $couponProductTypeForAddons ? $couponProductTypeForAddons->amount * $addonAmount['count'] : 0;
+                if ($couponProductTypeForThisPlan) {
+                    $planAmount = $couponProductTypeForThisPlan->amount;
+                } else {
+                    if ($couponProductTypeForPlans) {
+                        $planAmount = $couponProductTypeForPlans->first()->amount;
+                    }
+                }
+
+                $amount = $planAmount + $addonTotalAmount;
+            }
 
         } elseif($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT']){
-            $couponProductsForPlans = $coupon->couponProducts->where('product_type', CouponProduct::PRODUCT_TYPES['plan']);
-            $couponProductForThisPlan = $couponProductsForPlans->where('product_id', $plan->id)->first();
+            $couponProductsForPlans         = $coupon->couponProducts->where('product_type', CouponProduct::PRODUCT_TYPES['plan']);
+            $couponProductForThisPlan       = $couponProductsForPlans->where('product_id', $plan->id)->first();
 
-            // Coupon doesnot support plans or 
-            // doesnot supports this plan
-            if(!$couponProductsForPlans || !$couponProductForThisPlan ) return false;
+            $addonTotalAmount   = [];
+            $planAmount         = 0;
+            
+            //Checks if plan coupon supports plan
+            if($couponProductForThisPlan) {
+                if ($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']) {
+                    $planAmount = $couponProductForThisPlan->amount * $plan->amount_recurring / 100;
+                } else {
+                    $planAmount = $couponProductForThisPlan->amount;
+                }
+            }
 
-            $amount = $couponProductForThisPlan->amount;
+            //Checks if plan coupon supports addons
+            foreach ($addons as $subAddon) {
+                $addon  = Addon::find($subAddon->addon_id);
+                $couponProductForAddons     = $coupon->couponProducts->where('product_type', CouponProductType::TYPES['addon'])->where('product_id', $addon->id)->first();
+                
+                if ($couponProductForAddons) {
+                    if ($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']) {
+                        $addonTotalAmount[] = $couponProductForAddons->amount * $addon->amount_recurring / 100;
+                    } else {
+                        $addonTotalAmount[] = $couponProductForAddons->amount;
+                    }
+                }
+            }
+            //Add both amounts
+            $amount = $planAmount + array_sum($addonTotalAmount);
+
         } else {
-            $amount = $coupon->amount;
-        }
-
-        if($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']){
-            $amount = $plan->amount_recurring * ($amount/100);
+            $amount = $addonAmount['count'] ? $coupon->amount + ($coupon->amount * $addonAmount['count']) : $coupon->amount;
+            if($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']){
+                $addonTotalAmount   = $addonAmount['total_amount'] ? $addonAmount['total_amount'] : 0;
+                $amount             = ($plan->amount_recurring + $addonTotalAmount) * ($coupon->amount/100);
+            }
         }
 
         return $amount;
@@ -387,6 +443,19 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
         }
 
+    }
+
+    protected function getAddonAmountForCoupons($addons)
+    {
+        $totalAmount = [];
+        $count       = 0;
+        $ids         = [];
+        foreach ($addons as $addon) {
+            $totalAmount[] = Addon::find($addon->addon_id)->amount_recurring;
+            $count += 1;
+            $ids[]  = $addon->id;
+        }
+        return ['total_amount' => array_sum($totalAmount), 'count' => $count];
     }
 
     protected function insertOrder($invoice)
