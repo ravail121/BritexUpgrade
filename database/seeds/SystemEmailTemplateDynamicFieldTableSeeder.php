@@ -50,37 +50,37 @@ class SystemEmailTemplateDynamicFieldTableSeeder extends Seeder
                 'code' => 'biz-verification-approved', 
                 'description' => 'Customer last name in biz verification application'
             ],
-            [   'name' => 'business_verification__fname',     
+            [   'name' => 'customer__fname',     
                 'code' => 'account-suspension-customer', 
-                'description' => 'Customer first name in biz verification application'
+                'description' => 'Customer first name'
             ],
-            [   'name' => 'business_verification__lname', 
+            [   'name' => 'customer__lname', 
                 'code' => 'account-suspension-customer', 
-                'description' => 'Customer last name in biz verification application'
+                'description' => 'Customer last name'
             ],
-            [   'name' => 'business_verification__fname',     
+            [   'name' => 'customer__fname',     
                 'code' => 'account-suspension-admin', 
-                'description' => 'Customer first name in biz verification application'
+                'description' => 'Customer first name'
             ],
-            [   'name' => 'business_verification__lname', 
+            [   'name' => 'customer__lname', 
                 'code' => 'account-suspension-admin', 
-                'description' => 'Customer last name in biz verification application'
+                'description' => 'Customer last name'
             ],
-            [   'name' => 'business_verification__fname',     
+            [   'name' => 'customer__fname',     
                 'code' => 'one-time-invoice', 
-                'description' => 'Customer first name in biz verification application'
+                'description' => 'Customer first name'
             ],
-            [   'name' => 'business_verification__lname', 
+            [   'name' => 'customer__lname', 
                 'code' => 'one-time-invoice', 
-                'description' => 'Customer last name in biz verification application'
+                'description' => 'Customer last name'
             ],
-            [   'name' => 'business_verification__fname',     
+            [   'name' => 'customer__fname',     
                 'code' => 'monthly-invoice', 
-                'description' => 'Customer first name in biz verification application'
+                'description' => 'Customer first name'
             ],
-            [   'name' => 'business_verification__lname', 
+            [   'name' => 'customer__lname', 
                 'code' => 'monthly-invoice', 
-                'description' => 'Customer last name in biz verification application'
+                'description' => 'Customer last name'
             ],
             [   'name' => 'business_verification__fname',     
                 'code' => 'biz-verification-rejected', 
@@ -94,19 +94,19 @@ class SystemEmailTemplateDynamicFieldTableSeeder extends Seeder
                 'code' => 'biz-verification-rejected', 
                 'description' => 'Name of business in application'
             ],
-            [   'name' => 'customer_fname', 
+            [   'name' => 'customer__fname', 
                 'code' => 'reset-password', 
                 'description' => 'Customer first name'
             ],
-            [   'name' => 'customer_lname', 
+            [   'name' => 'customer__lname', 
                 'code' => 'reset-password', 
                 'description' => 'Customer last name'
             ],
-            [   'name' => 'customer_fname', 
+            [   'name' => 'customer__fname', 
                 'code' => 'port-complete', 
                 'description' => 'Customer first name'
             ],
-            [   'name' => 'customer_lname', 
+            [   'name' => 'customer__lname', 
                 'code' => 'port-complete', 
                 'description' => 'Customer last name'
             ],

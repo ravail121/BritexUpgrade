@@ -14,6 +14,7 @@ use App\Model\InvoiceItem;
 use App\Model\CustomerCoupon;
 use App\Model\SubscriptionCoupon;
 use App\Events\InvoiceGenerated;
+use Illuminate\Http\Request;
 
 class RegenerateInvoiceController extends Controller
 {
@@ -60,7 +61,7 @@ class RegenerateInvoiceController extends Controller
         echo "Regenerate Invoice <br>";
     }
 
-    public function regenerateInvoice()
+    public function regenerateInvoice(Request $request)
     {
         $invoiceGroups          = Customer::customerInvoiceGroups();
         $openMonthlyInvoiceDate = 0;
@@ -95,7 +96,7 @@ class RegenerateInvoiceController extends Controller
                             $pendingOrderInvoices[]   = ['invoice' => $orderInvoice, 'monthly_invoice_id' => $invoiceId];
 
                         }
-
+                        $request->headers->set('authorization', $orderInvoice->customer->company->api_key);
                     }
 
                 }

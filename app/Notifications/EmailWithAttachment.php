@@ -50,17 +50,26 @@ class EmailWithAttachment extends Notification
     public function toMail($notifiable)
     {
 
-        $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'one-time-invoice')->first();
-        
         $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
-        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
+        $emailTemplate = '';
+        $templateValues = '';
+
+        if ($this->order->invoice->type == 2) {
+            $emailTemplate      = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'one-time-invoice')->first();
+            $templateValues     = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
         
+        } elseif ($this->order->invoice->type == 1) {
+            $emailTemplate      = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'monthly-invoice')->first();
+            $templateValues     = SystemEmailTemplateDynamicField::where('code', 'monthly-invoice')->get()->toArray();
+
+        }
+       
         $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
        
         $replaceWith = [$bizVerification->fname, $bizVerification->lname];
         
-        $column = array_column($templateVales, 'format_name');
+        $column = array_column($templateValues, 'format_name');
 
         $body = $emailTemplate->body($column, $bizVerification);
         

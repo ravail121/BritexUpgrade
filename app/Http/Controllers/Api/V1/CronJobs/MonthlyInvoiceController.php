@@ -59,7 +59,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
      * 
      * @return Response
      */
-    public function generateMonthlyInvoice()
+    public function generateMonthlyInvoice(Request $request)
     {
 
         // $customers = Customer::shouldBeGeneratedNewInvoices();
@@ -131,11 +131,13 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $insertOrder = $this->insertOrder($invoice);
                 
                 $order       = Order::where('invoice_id', $invoice->id)->first();
-                      
+
+                $request->headers->set('authorization', $order->company->api_key);
+
                 if(isset($order)) {
                     event(new InvoiceGenerated($order));
                 }
-
+                
                 /*foreach ($customer->billableSubscriptions as $billableSubscription) {
                     $this->response = $this->triggerEvent($customer);
                     break;
