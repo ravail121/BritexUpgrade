@@ -74,7 +74,7 @@ trait UsaEpayTransaction
 
    public function couponData($order, $request)
    {
-    //IN case of adding a new card $order = null commented by suraj
+    //IN case of adding a new card $order = null commented
         if($order == null){
             $orderCoupon = null;
         }else{    

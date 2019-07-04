@@ -1,8 +1,8 @@
 @component('mail::layout')
     {{-- Header --}}
     @slot('header')
-        @component('mail::header', ['url' => config('app.url')])
         @isset($companyDetail)
+            @component('mail::header', ['url' => $companyDetail->url])
             <img src="{{$companyDetail->email_header}}" />
         @endisset
         @endcomponent
