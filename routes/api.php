@@ -177,10 +177,6 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.order_group.taxrate'  ,
           'uses' => 'OrderGroupController@taxrate'  
         ]);
-        Route::get('/get-sim', [
-          'as' => 'api.order_group.getSim'  ,
-          'uses' => 'OrderGroupController@getSim'  
-        ]);
         Route::get('/edit-sim', [
           'as' => 'api.order_group.editSim'  ,
           'uses' => 'OrderGroupController@editSim'  

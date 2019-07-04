@@ -179,7 +179,7 @@ class SendEmailWithInvoice
             $subscriptionItems      = $order->invoice->invoiceItem->where('subscription_id', '!=', null)->where('description', '!=', 'Shipping Fee');
             $subscriptionTaxesFees  = $subscriptionItems->whereIn('type',[InvoiceItem::TYPES['taxes'], InvoiceItem::TYPES['regulatory_fee']])->sum('amount');
             $subscriptionCoupons    = $subscriptionItems->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
-            $subscriptionTotal      = $subscriptionItems->sum('amount');
+            $subscriptionTotal      = $subscriptionItems->where('type', '!=',InvoiceItem::TYPES['coupon'])->sum('amount');
                                               
             $invoice = [
                 'service_charges'               =>   self::formatNumber($serviceCharges),

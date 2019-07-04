@@ -57,7 +57,7 @@ class RegenerateInvoiceController extends Controller
 
     public function __construct()
     {
-        echo "Regenerate Invoice";
+        echo "Regenerate Invoice <br>";
     }
 
     public function regenerateInvoice()
@@ -149,7 +149,7 @@ class RegenerateInvoiceController extends Controller
                 $invoice            = Invoice::find($id);
                 $updateInvoice      = $this->updateInvoice($invoice);
                 $order              = $invoice ? Order::where('invoice_id', $invoice->id)->first() : null;
-        
+                echo '<li>Invoice with id: '.$id.' has been regenerated.</li>';
                 if(isset($order)) {
                     event(new InvoiceGenerated($order));
                 }
@@ -350,17 +350,21 @@ class RegenerateInvoiceController extends Controller
             $cyclesRemainingSubscription    = $subscriptionCoupon ? $subscriptionCoupon->cycles_remaining : null;
 
             if ($customerCoupon) {
-                $customerCoupon->update(
-                    [
-                        'cycles_remaining' => $cyclesRemainingAccount + 1
-                    ]
-                );
+                if ($customerCoupon->cycles_remaining > 0) {
+                    $customerCoupon->update(
+                        [
+                            'cycles_remaining' => $cyclesRemainingAccount + 1
+                        ]
+                    );
+                }
             } elseif ($subscriptionCoupon) {
-                $subscriptionCoupon->update(
-                    [
-                        'cycles_remaining' => $cyclesRemainingSubscription + 1
-                    ]
-                );
+                if ($subscriptionCoupon->cycles_remaining > 0) {
+                    $subscriptionCoupon->update(
+                        [
+                            'cycles_remaining' => $cyclesRemainingSubscription + 1
+                        ]
+                    );
+                }
             }
         }
         if ($invoice->invoiceItem()->where('type', 6)->delete()) {

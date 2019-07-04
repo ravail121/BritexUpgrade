@@ -239,9 +239,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
         foreach ($customerCouponRedeemable as $customerCoupon) {
             $coupon = $customerCoupon->coupon;
-
+            
             if($customerCoupon->cycles_remaining == 0) continue;
-
+            
             list($isApplicable, $subscriptions) = 
                         $this->isCustomerAccountCouponApplicable(
                             $coupon,
@@ -249,6 +249,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         );
             
             if($isApplicable){
+                
                 $coupon->load('couponProductTypes', 'couponProducts');
 
                 foreach($subscriptions as $subscription){
@@ -283,11 +284,11 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     {
         $isApplicable  = true;
         
-        //if($multilineMin = $coupon->multiline_min){
+        if($multilineMin = $coupon->multiline_min){
             // if coupon.multiline_restrict_plans == true means
             // only specific subscription are considered for
             // coupon.multiline_min criteria
-            $multilineMin = $coupon->multiline_min;
+           
             if($coupon->multiline_restrict_plans){
                 $supportedPlanTypes = $coupon->multilinePlanTypes->pluck('plan_type');
                 
@@ -297,8 +298,8 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             }
 
             $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
-
-        //}
+            
+        }
 
         // ToDO:
         // 1. What if user has more subscriptions?

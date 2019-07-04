@@ -99,13 +99,6 @@ class OrderGroupController extends Controller
         return $rate;
     }
 
-    public function getSim(Request $request)
-    {
-        
-        return OrderGroup::find($request->id)->sim_num;
-        
-    }
-
     public function editSim(Request $request)
     {
         $newSimNumber   = $request->newSimNumber;

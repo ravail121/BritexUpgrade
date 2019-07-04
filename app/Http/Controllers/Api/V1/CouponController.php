@@ -227,24 +227,28 @@ class CouponController extends Controller
     {
         $isApplicable    = true;
 
-        $totalPlans      = [];
-        $totalCartPlans  = [];
+        $restrictedBillablePlans  = [];
+        $restrictedCartPlans      = [];
 
         if ($coupon['multiline_restrict_plans']) {
             $multilineRestrict  = $coupon->multilinePlanTypes->pluck('plan_type');
             foreach ($billablePlans as $plan) {
                 if ($multilineRestrict->contains($plan['type'])) {
-                    $totalPlans[] = $plan;
+                    $restrictedBillablePlans[] = $plan;
                 }
             }
-            foreach ($cartPlans['items'] as $plan) {
-                if ($multilineRestrict->contains($plan['type'])) {
-                    $totalCartPlans[] = $plan;
-                }
-            }
-        }
+            if (isset($cartPlans['items'])) {
 
-        $totalSubscriptions = array_merge($totalPlans, $totalCartPlans);
+                foreach ($cartPlans['items'] as $plan) {
+                    if ($multilineRestrict->contains($plan['type'])) {
+                        $restrictedCartPlans[] = $plan;
+                    }
+                }
+            }
+            $totalSubscriptions = array_merge($restrictedBillablePlans, $restrictedCartPlans);
+        } else {
+            $totalSubscriptions = array_merge($cartPlans, $billablePlans);
+        }
 
         if ($coupon['multiline_min']) {
 
