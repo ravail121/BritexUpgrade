@@ -705,48 +705,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 );
             }
         }
-        $this->addTaxesToAddons($subscriptionAddons);
+        
         
         return $subscriptionAddons;
-    }
-
-
-    protected function addTaxesToAddons($subscriptionAddons)
-    {
-        $invoiceId      = '';
-        $addonAmount    = [];
-        $invoice        = '';
-        foreach ($subscriptionAddons as $addon) {
-            $invoice  = Invoice::find($addon->invoice_id);
-            $customer = Customer::find($invoice->customer_id);
-            if ($addon->taxable) {
-                $addonAmount[] = $addon->amount;
-            }
-        }
-
-        $invoiceItem = $invoice->invoiceItem;
-
-        $ifTaxExists = $invoiceItem->where('type', InvoiceItem::TYPES['taxes'])->pluck('amount')->first();
-
-        $adddonTax   = $customer->stateTax->rate * array_sum($addonAmount) / 100;
-
-        $updateTax   = ['amount' => $ifTaxExists + $adddonTax];
-        
-        if ($ifTaxExists) {
-            $invoiceItem->where('type', InvoiceItem::TYPES['taxes'])->update($updateTax);
-        } else {
-            InvoiceItem::create([
-                'subscription_id' => $invoiceItem->first()->subscription_id,
-                'product_type'    => '',
-                'product_id'      => null,
-                'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-                'start_date'      => $invoice->start_date,
-                'description'     => '(Taxes)',
-                'amount'          => $adddonTax,
-                'taxable'         => self::TAX_FALSE
-            ]);
-        }
-        
     }
 
 

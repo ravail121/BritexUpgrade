@@ -45,7 +45,8 @@ class Customer extends Authenticatable
         'shipping_fname',
         'shipping_lname',
         'billing_fname',
-        'billing_lname'
+        'billing_lname',
+        'auto_pay'
     ];
 
     protected $attributes = [

@@ -298,6 +298,11 @@ trait UsaEpayTransaction
             ]);
 
             $customer = Customer::find($order->customer_id);
+            if($request->auto_pay){
+                $customer->update(['auto_pay' => '1']);
+            }else{
+                $customer->update(['auto_pay' => '0']);
+            }
             if ($customer->billing_address1 == 'N/A') {
                 $customer->update([
                     'billing_fname'    => $request->billing_fname, 
