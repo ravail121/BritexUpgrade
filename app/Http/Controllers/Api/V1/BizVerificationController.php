@@ -15,6 +15,7 @@ use App\Model\BusinessVerificationDocs;
 use App\Http\Controllers\BaseController;
 use App\Events\BusinessVerificationCreated;
 use App\Events\BusinessVerificationApproved;
+use App\Model\Customer;
 
 class BizVerificationController extends BaseController
 { 
@@ -52,6 +53,7 @@ class BizVerificationController extends BaseController
             $businessVerification->update($dataWithoutDocs);
 
         } else {
+            $request->headers->set('authorization', $order->company->api_key);
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
             event(new BusinessVerificationCreated($request->order_hash, $businessVerification->hash));
         }

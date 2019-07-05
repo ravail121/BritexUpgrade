@@ -33,6 +33,9 @@ class ForgotPasswordController extends BaseController
             }
         }
 
+        $customer = Customer::where('email', $email)->first();
+        $request->headers->set('authorization', $customer->company->api_key);
+
         return $this->insertToken($email);
     }
 
@@ -54,6 +57,7 @@ class ForgotPasswordController extends BaseController
                 'email' => $email,
                 'token' => $hash
             ];
+
         PasswordReset::create($user);
         event(new ForgotPassword($user));
         return $user;

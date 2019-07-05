@@ -13,16 +13,16 @@ use App\Http\Controllers\BaseController;
 
 class ProcessController extends BaseController
 {
-    public function processSubscriptions()
+    public function processSubscriptions(Request $request)
     {
-    	$this->processSuspensions();
+    	$this->processSuspensions($request);
         $this->processDowngrades();
         $this->processAddonRemovals();
 
     	return $this->respond(['message' => 'Processed Successfully']);
     }
 
-    public function processSuspensions()
+    public function processSuspensions($request)
     {
         $pendingMonthlyInvoices = Invoice::monthly()->pendingPayment()->overDue()->get();
 
@@ -39,7 +39,7 @@ class ProcessController extends BaseController
                     'account_past_due_date' => Carbon::today()
                 ]);
             }
-
+            $request->headers->set('authorization', $customer->company->api_key);
             event(new AccountSuspended($customer));
         }
     }

@@ -55,7 +55,7 @@ class InformAdminAccountSuspended extends Notification
 
         $column = array_column($templateVales, 'format_name');
 
-        $adminBody = $emailTemplate->body($column, $bizVerification);
+        $adminBody = $adminTemplate->body($column, $bizVerification);
 
         $data = ['company_id' => $this->order->company_id,
             'to'                       => $bizVerification->email,

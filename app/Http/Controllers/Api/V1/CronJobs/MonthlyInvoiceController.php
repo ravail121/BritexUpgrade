@@ -88,7 +88,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $invoice = Invoice::create($this->getInvoiceData($customer));
 
                 $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
-
+                
                 $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
 
                 $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
@@ -127,6 +127,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $totalDue = $this->applyCredits($customer, $invoice);
 
                 $invoice->update(['total_due' => $totalDue]);
+
+                if ($totalDue == 0) {
+                    $invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
+                }
     
                 $insertOrder = $this->insertOrder($invoice);
                 
@@ -201,7 +205,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $taxPercentage = ($customer->stateTax->rate)/100;
         
         $taxableBillableSubscriptionInvoiceItems = $billableSubscriptionInvoiceItems->where('taxable', true)->all();
-
+        
         // For each plan/subscription
         // Calculate total of plan + feature, one-time or usage charges
         // and apply tax on it
@@ -260,7 +264,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                     // Possibility of returning 0 as well but
                     // returns false when coupon is not applicable
-                    if($amount === false) continue;
+                    if($amount === false || $amount == 0) continue;
 
                     $invoice->invoiceItem()->create([
                         'subscription_id' => $subscription->id,
@@ -701,8 +705,48 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 );
             }
         }
-
+        $this->addTaxesToAddons($subscriptionAddons);
+        
         return $subscriptionAddons;
+    }
+
+
+    protected function addTaxesToAddons($subscriptionAddons)
+    {
+        $invoiceId      = '';
+        $addonAmount    = [];
+        $invoice        = '';
+        foreach ($subscriptionAddons as $addon) {
+            $invoice  = Invoice::find($addon->invoice_id);
+            $customer = Customer::find($invoice->customer_id);
+            if ($addon->taxable) {
+                $addonAmount[] = $addon->amount;
+            }
+        }
+
+        $invoiceItem = $invoice->invoiceItem;
+
+        $ifTaxExists = $invoiceItem->where('type', InvoiceItem::TYPES['taxes'])->pluck('amount')->first();
+
+        $adddonTax   = $customer->stateTax->rate * array_sum($addonAmount) / 100;
+
+        $updateTax   = ['amount' => $ifTaxExists + $adddonTax];
+        
+        if ($ifTaxExists) {
+            $invoiceItem->where('type', InvoiceItem::TYPES['taxes'])->update($updateTax);
+        } else {
+            InvoiceItem::create([
+                'subscription_id' => $invoiceItem->first()->subscription_id,
+                'product_type'    => '',
+                'product_id'      => null,
+                'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                'start_date'      => $invoice->start_date,
+                'description'     => '(Taxes)',
+                'amount'          => $adddonTax,
+                'taxable'         => self::TAX_FALSE
+            ]);
+        }
+        
     }
 
 
