@@ -28,13 +28,14 @@ class BizVerificationController extends BaseController
 
     public function post(Request $request)
     {
+        $order = $this->getOrderId($request->order_hash);
+        $request->headers->set('authorization', $order->company->api_key);
         $hasError = $this->validateData($request);
 
         if ($hasError) {
             return $hasError;
         }
 
-        $order = $this->getOrderId($request->order_hash);
         if (!$order) {
             return $this->respondError('Oops! Something, went wrong...');
         }
@@ -53,9 +54,11 @@ class BizVerificationController extends BaseController
             $businessVerification->update($dataWithoutDocs);
 
         } else {
-            $request->headers->set('authorization', $order->company->api_key);
+            
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
+            \Log::info('if not approved - '.$businessVerification);
             event(new BusinessVerificationCreated($request->order_hash, $businessVerification->hash));
+            
         }
 
 

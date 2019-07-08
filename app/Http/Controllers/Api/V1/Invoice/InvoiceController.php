@@ -181,6 +181,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         $this->ifTotalDue($order);
 
         if(isset($order)) {
+            $request->headers->set('authorization', $order->company->api_key);
             event(new InvoiceGenerated($order));
         }
 

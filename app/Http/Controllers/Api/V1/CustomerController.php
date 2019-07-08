@@ -267,7 +267,7 @@ class CustomerController extends BaseController
                 null
             )
         );
-        \Log::info($data);
+        
 
         if (isset($data['password'])) {
             $currentPassword = Customer::whereHash($data['hash'])->first();
