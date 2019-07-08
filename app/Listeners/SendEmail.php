@@ -41,11 +41,11 @@ class SendEmail
         $businessHash = $event->bizHash;
 
         $order = Order::hash($orderHash)->first();
-        \Log::info('Order - '.$order);
+
         $email = EmailTemplate::where('company_id', $order->company_id)->where('code', 'biz-verification-submitted')->first();
-        \Log::info('Email - '.$email);
+        
         $businessVerification = BusinessVerification::hash($businessHash)->first();
-        \Log::info('bizVerify - '.$businessVerification);
+
         $configurationSet = $this->setMailConfiguration($order);
 
         if ($configurationSet) {
@@ -53,7 +53,7 @@ class SendEmail
         }
 
         Notification::route('mail', $email->to)->notify(new BizVerification($order, $businessVerification));  
-        \Log::info('sent');
+   
     }
 
 }

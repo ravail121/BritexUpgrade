@@ -33,9 +33,11 @@ class BizVerificationController extends BaseController
         $hasError = $this->validateData($request);
 
         if ($hasError) {
+            
             return $hasError;
         }
 
+        
         if (!$order) {
             return $this->respondError('Oops! Something, went wrong...');
         }
@@ -54,22 +56,22 @@ class BizVerificationController extends BaseController
             $businessVerification->update($dataWithoutDocs);
 
         } else {
-            
+           
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
-            \Log::info('if not approved - '.$businessVerification);
             event(new BusinessVerificationCreated($request->order_hash, $businessVerification->hash));
             
         }
-
-
+        
+        
         if($request->hasFile('doc_file')) {
+            
             $uploadedAndInserted = $this->uploadAndInsertDocument($request->doc_file, $businessVerification);
 
             if (!$uploadedAndInserted) {
                 return $this->respondError('File Could not be uploaded.');
             }
         }
-                
+        
         return $this->respond(['order_hash' => $request->order_hash]);
     }
 
@@ -131,13 +133,14 @@ class BizVerificationController extends BaseController
      */
     protected function validateData($request)
     {
+        
         return $this->validate_input($request->all(), [
 		   'fname'         => 'required|string',
 		   'lname'         => 'required|string',
 		   'email'         => 'required|string',
 		   'business_name' => 'required|string',
-		   'tax_id'        => 'required|string',
-		   'doc_file'      => 'required|file|max:500000',
+		   //'tax_id'        => 'sometimes|string',
+		   //'doc_file'      => 'file|max:500000',
 		   'order_hash'    => 'required|string',
 		]);
 	}
@@ -152,8 +155,8 @@ class BizVerificationController extends BaseController
      */
     protected function uploadAndInsertDocument($file, $businessVerification)
     {
-        \Log::info('.........function 1............bizverCon');
-        \Log::info($file);
+        //\Log::info('.........function 1............bizverCon');
+        //\Log::info($file);
         $path = BusinessVerificationDocs::directoryLocation($businessVerification->order->company_id, $businessVerification->id);
 
         if ($uploaded = $this->moveOneFile($path, $file)) {

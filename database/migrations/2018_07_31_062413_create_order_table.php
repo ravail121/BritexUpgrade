@@ -115,7 +115,7 @@ class CreateOrderTable extends Migration
            $table->tinyinteger('approved');
            $table->char('hash', 60);
            $table->text('business_name');
-           $table->char('tax_id');
+           $table->char('tax_id')->nullable();
            $table->text('fname');
            $table->text('lname');
            $table->text('email');
