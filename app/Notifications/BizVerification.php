@@ -10,6 +10,7 @@ use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class BizVerification extends Notification
