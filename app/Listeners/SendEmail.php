@@ -52,7 +52,7 @@ class SendEmail
             return false;
         }
 
-        Notification::route('mail', $email->to)->notify(new BizVerification($order, $businessVerification));  
+        Notification::route('mail', $businessVerification->email)->notify(new BizVerification($order, $businessVerification));  
    
     }
 
