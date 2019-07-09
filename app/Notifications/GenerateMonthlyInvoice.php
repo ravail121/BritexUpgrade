@@ -14,7 +14,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 
 class GenerateMonthlyInvoice extends Notification
 {
-    use Queueable;
+    use Queueable , EmailRecord;
 
     public $order;
     public $pdf;
@@ -56,44 +56,44 @@ class GenerateMonthlyInvoice extends Notification
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
 
-        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $company, $this->bizVerification, $templateVales, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',]);
+        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $this->order->company_id, $bizVerification, $templateVales, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',]);
 
         return $mailMessage;
 
-        $column = array_column($templateVales, 'format_name');
+    //     $column = array_column($templateVales, 'format_name');
 
-        $body = $emailTemplate->body($column, $bizVerification);
+    //     $body = $emailTemplate->body($column, $bizVerification);
 
-        $data = ['company_id' => $this->order->company_id,
-            'to'                       => $bizVerification->email,
-            'business_verficiation_id' => $bizVerification->id,
-            'subject'                  => $emailTemplate->subject,
-            'from'                     => $emailTemplate->from,
-            'body'                     => $body,
-        ];
+    //     $data = ['company_id' => $this->order->company_id,
+    //         'to'                       => $bizVerification->email,
+    //         'business_verficiation_id' => $bizVerification->id,
+    //         'subject'                  => $emailTemplate->subject,
+    //         'from'                     => $emailTemplate->from,
+    //         'body'                     => $body,
+    //     ];
 
-        $response = $this->emailLog($data);
+    //     $response = $this->emailLog($data);
 
-        return (new MailMessage)
-                    ->subject($emailTemplate->subject)
-                    ->from($emailTemplate->from)
-                    ->line($body)
-                    ->attachData($this->pdf->output(), 'monthly-invoice.pdf', [
-                        'mime' => 'application/pdf',
-                    ]);
-    }
+    //     return (new MailMessage)
+    //                 ->subject($emailTemplate->subject)
+    //                 ->from($emailTemplate->from)
+    //                 ->line($body)
+    //                 ->attachData($this->pdf->output(), 'monthly-invoice.pdf', [
+    //                     'mime' => 'application/pdf',
+    //                 ]);
+    // }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function emailLog($data)
-    {
-        $emailLog = EmailLog::create($data);  
+    // /**
+    //  * Get the array representation of the notification.
+    //  *
+    //  * @param  mixed  $notifiable
+    //  * @return array
+    //  */
+    // public function emailLog($data)
+    // {
+    //     $emailLog = EmailLog::create($data);  
 
-        return $emailLog;
+    //     return $emailLog;
     }
 
 }

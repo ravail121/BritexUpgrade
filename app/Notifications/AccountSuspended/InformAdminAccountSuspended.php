@@ -14,7 +14,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 
 class InformAdminAccountSuspended extends Notification
 {
-    use Queueable;
+    use Queueable, EmailRecord;
 
     public $order;
 
@@ -53,37 +53,9 @@ class InformAdminAccountSuspended extends Notification
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'account-suspension-admin')->get()->toArray();
 
-        $column = array_column($templateVales, 'format_name');
+        $mailMessage = $this->getMailDetails($adminTemplate, $this->order->company_id, $bizVerification, $templateVales);
 
-        $adminBody = $adminTemplate->body($column, $bizVerification);
-
-        $data = ['company_id' => $this->order->company_id,
-            'to'                       => $bizVerification->email,
-            'business_verficiation_id' => $bizVerification->id,
-            'subject'                  => $adminTemplate->subject,
-            'from'                     => $adminTemplate->from,
-            'body'                     => $adminBody,
-        ];
-
-        $response = $this->emailLog($data);
-        
-        return (new MailMessage)
-                    ->subject($adminTemplate->subject)
-                    ->from($adminTemplate->from)
-                    ->line($adminBody);
-    }
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function emailLog($data)
-    {
-        $emailLog = EmailLog::create($data);  
-
-        return $emailLog;
+        return $mailMessage;
     }
 
 }

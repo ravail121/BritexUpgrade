@@ -9,10 +9,10 @@ use Illuminate\Notifications\Messages\MailMessage;
 
 trait EmailRecord 
 {
-    public function getMailDetails($emailTemplate, $company, $bizVerification, $templateVales)
+    public function getMailDetails($emailTemplate, $companyId, $bizVerification, $templateVales)
     {
 
-        $body = $this->createEmailLog($company, $bizVerification, $emailTemplate);
+        $body = $this->createEmailLog($companyId, $bizVerification, $emailTemplate, $templateVales);
 
         $mailMessage = (new MailMessage)
                     ->subject($emailTemplate->subject)
@@ -36,12 +36,12 @@ trait EmailRecord
         return $mailMessage;
     }
 
-    protected function createEmailLog($company, $bizVerification, $emailTemplate, $templateVales)
+    protected function createEmailLog($companyId, $bizVerification, $emailTemplate, $templateVales)
     {
         $column = array_column($templateVales, 'format_name');
         $body = $emailTemplate->body($column, $bizVerification);
 
-        $data = ['company_id' => $company->id,
+        $data = ['company_id' => $companyId,
             'to'                       => $bizVerification->email,
             'business_verficiation_id' => $bizVerification->id,
             'subject'                  => $emailTemplate->subject,
@@ -62,9 +62,9 @@ trait EmailRecord
         return $emailLog;
     }
 
-    public function getEmailWithAttachment($emailTemplate, $company, $bizVerification, $templateVales, $pdf, $type, $attachData)
+    public function getEmailWithAttachment($emailTemplate, $companyId, $bizVerification, $templateVales, $pdf, $type, $attachData)
     {
-        $mailMessage = $this->getMailDetails($emailTemplate, $company, $bizVerification, $templateVales);
+        $mailMessage = $this->getMailDetails($emailTemplate, $companyId, $bizVerification, $templateVales);
 
         $mailMessage->attachData($pdf, $type, $attachData);
 

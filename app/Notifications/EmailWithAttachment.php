@@ -14,7 +14,7 @@ use App\Model\EmailLog;
 
 class EmailWithAttachment extends Notification
 {
-    use Queueable;
+    use Queueable  , EmailRecord;
 
     public $order;
     public $pdf;
@@ -64,42 +64,10 @@ class EmailWithAttachment extends Notification
             $templateValues     = SystemEmailTemplateDynamicField::where('code', 'monthly-invoice')->get()->toArray();
 
         }
-       
-        $strings     = ['[FIRST_NAME]', '[LAST_NAME]'];
-       
-        $replaceWith = [$bizVerification->fname, $bizVerification->lname];
-        
-        $column = array_column($templateValues, 'format_name');
 
-        $body = $emailTemplate->body($column, $bizVerification);
-        
-        $data = ['company_id' => $this->order->company_id,
-            'to'                       => $bizVerification->email,
-            'business_verficiation_id' => $bizVerification->id,
-            'subject'                  => $emailTemplate->subject,
-            'from'                     => $emailTemplate->from,
-            'body'                     => $body,
-        ];
+        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $this->order->company_id, $bizVerification, $templateValues, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',]);
 
-        $response = $this->emailLog($data);
-
-        return (new MailMessage)
-                    ->subject($emailTemplate->subject)
-                    ->from($emailTemplate->from)
-                    ->line($body)
-                    ->attachData($this->pdf->output(), 'invoice.pdf', [
-                        'mime' => 'application/pdf',
-                    ]);
-                    // ->attachData($this->pdf, 'invoice.pdf', [
-                    //     'mime' => 'application/pdf',
-                    // ]);
-    }
-
-    public function emailLog($data)
-    {
-        $emailLog = EmailLog::create($data);  
-
-        return $emailLog;
+        return $mailMessage;
     }
 
 }

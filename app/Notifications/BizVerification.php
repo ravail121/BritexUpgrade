@@ -58,7 +58,7 @@ class BizVerification extends Notification
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'biz-verification-submitted')->get()->toArray();
 
-        $mailMessage = $this->getMailDetails($emailTemplate, $company, $this->bizVerification, $templateVales);
+        $mailMessage = $this->getMailDetails($emailTemplate, $company->id, $this->bizVerification, $templateVales);
 
         return $mailMessage;
     }
