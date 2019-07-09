@@ -56,6 +56,10 @@ class GenerateMonthlyInvoice extends Notification
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
 
+        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $company, $this->bizVerification, $templateVales, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',]);
+
+        return $mailMessage;
+
         $column = array_column($templateVales, 'format_name');
 
         $body = $emailTemplate->body($column, $bizVerification);

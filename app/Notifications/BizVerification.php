@@ -10,12 +10,11 @@ use Illuminate\Bus\Queueable;
 use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class BizVerification extends Notification
 {
-    use Queueable;
+    use Queueable, EmailRecord;
     
     public $order;
     public $bizVerification;
@@ -59,49 +58,8 @@ class BizVerification extends Notification
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'biz-verification-submitted')->get()->toArray();
 
-        $column = array_column($templateVales, 'format_name');
-
-        $body = $emailTemplate->body($column, $this->bizVerification);
-            
-        $mailMessage = (new MailMessage)
-                    ->subject($emailTemplate->subject)
-                    ->from($emailTemplate->from);
-        
-        if($emailTemplate->reply_to){
-            $mailMessage->replyTo($emailTemplate->reply_to);
-        }
-
-        if($emailTemplate->cc){
-            $mailMessage->cc($emailTemplate->cc);
-        }
-
-        if($emailTemplate->bcc){
-            $mailMessage->bcc($emailTemplate->bcc);
-        }
-
-        $mailMessage->line($body);
-
-        /*$mailMessage->markdown('vendor.notifications.email', ['company' => $company]);*/
-
-        $data = ['company_id' => $company->id,
-            'to'                       => $this->bizVerification->email,
-            'business_verficiation_id' => $this->bizVerification->id,
-            'subject'                  => $emailTemplate->subject,
-            'from'                     => $emailTemplate->from,
-            'cc'                       => $emailTemplate->cc,
-            'bcc'                      => $emailTemplate->bcc,
-            'body'                     => $body,
-        ];
-
-        $response = $this->emailLog($data);
+        $mailMessage = $this->getMailDetails($emailTemplate, $company, $this->bizVerification, $templateVales);
 
         return $mailMessage;
-    }
-
-    public function emailLog($data)
-    {
-        $emailLog = EmailLog::create($data);  
-
-        return $emailLog;
     }
 }

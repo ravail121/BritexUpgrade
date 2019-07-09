@@ -15,7 +15,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 
 class BizVerificationApproved extends Notification
 {
-    use Queueable;
+    use Queueable, EmailRecord;
     
     const URL = '/checkout?verification_hash=';
 
@@ -60,33 +60,9 @@ class BizVerificationApproved extends Notification
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'biz-verification-approved')->get()->toArray();
 
-        $column = array_column($templateVales, 'format_name');
+        $mailMessage = $this->getMailDetails($emailTemplate, $company, $this->bizVerification, $templateVales);
 
-        array_push($column, '[HERE]');
-
-        $body = $emailTemplate->body($column, $this->bizVerification, $url);
-
-        $data = ['company_id' => $company->id,
-            'to'                       => $this->bizVerification->email,
-            'business_verficiation_id' => $this->bizVerification->id,
-            'subject'                  => $emailTemplate->subject,
-            'from'                     => $emailTemplate->from,
-            'body'                     => $body,
-        ];
-
-        $response = $this->emailLog($data);
-    
-        return (new MailMessage)
-                    ->subject($emailTemplate->subject)
-                    ->from($emailTemplate->from)
-                    ->line($body);
-    }
-
-    public function emailLog($data)
-    {
-        $emailLog = EmailLog::create($data);  
-
-        return $emailLog;
+        return $mailMessage;
     }
 
 }
