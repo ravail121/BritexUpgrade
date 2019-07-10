@@ -64,7 +64,7 @@ class EmailWithAttachment extends Notification
             $templateValues     = SystemEmailTemplateDynamicField::where('code', 'monthly-invoice')->get()->toArray();
 
         }
-        $note = 'Invoice Link '.env('APP_BASE_URL').'/invoice?order_hash='.$this->order->hash;
+        $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$this->order->hash;
 
         $mailMessage = $this->getEmailWithAttachment($emailTemplate, $this->order, $bizVerification, $templateValues, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',], $note);
 
