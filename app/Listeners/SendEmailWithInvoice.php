@@ -391,7 +391,7 @@ class SendEmailWithInvoice
                 'subscription_id' => $subscription->id,
                 'plan_charges'    => self::formatNumber($planCharges),
                 'onetime_charges' => self::formatNumber($onetimeCharges),
-                'phone'           => $this->phoneNumberFormatted($subscription->phone_number),
+                'phone'           => $subscription->phone_number ? $this->phoneNumberFormatted($subscription->phone_number) : 'Pending',
                 'usage_charges'   => $usageCharges,
                 'tax'             => $tax,
                 'total'           => self::formatNumber($total)

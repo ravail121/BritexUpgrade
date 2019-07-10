@@ -23,11 +23,13 @@ trait EmailRecord
         }
 
         if($emailTemplate->cc){
-            $mailMessage->cc($emailTemplate->cc);
+            $cc = explode(",",$emailTemplate->cc);
+            $mailMessage->cc($cc);
         }
 
         if($emailTemplate->bcc){
-            $mailMessage->bcc($emailTemplate->bcc);
+            $bcc = explode(",",$emailTemplate->bcc);
+            $mailMessage->bcc($bcc);
         }
 
         $mailMessage->line($body);
