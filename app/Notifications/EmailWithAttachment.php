@@ -66,7 +66,7 @@ class EmailWithAttachment extends Notification
         }
         $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$this->order->hash;
 
-        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $this->order, $bizVerification, $templateValues, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',], $note);
+        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $this->order, $bizVerification, $templateValues, $this->pdf->output(), 'invoice.pdf', ['mime' => 'application/pdf',], $note);
 
         return $mailMessage;
     }

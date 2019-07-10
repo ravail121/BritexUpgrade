@@ -328,8 +328,8 @@ class SendEmailWithInvoice
         $arr = [
             'invoice_num'           => $order->invoice->id,
             'subscriptions'         => [],
-            'end_date'              => $order->invoice->end_date,
-            'due_date'              => $order->invoice->due_date,
+            'end_date'              => Carbon::parse($order->invoice->end_date)->format('m/d/Y'),
+            'due_date'              => Carbon::parse($order->invoice->due_date)->format('m/d/Y'),
             'total_due'             => $order->invoice->total_due,
             'subtotal'              => $order->invoice->subtotal,
             'invoice_item'          => $order->invoice->invoiceItem,

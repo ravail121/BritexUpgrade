@@ -12,7 +12,7 @@ trait EmailRecord
     public function getMailDetails($emailTemplate, $order, $bizVerification, $templateVales, $note = null)
     {
 
-        $body = $this->createEmailLog($order, $bizVerification, $emailTemplate, $templateVales, $note = null);
+        $body = $this->createEmailLog($order, $bizVerification, $emailTemplate, $templateVales, $note);
 
         $mailMessage = (new MailMessage)
                     ->subject($emailTemplate->subject)
