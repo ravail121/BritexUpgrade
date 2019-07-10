@@ -51,11 +51,9 @@ class InformCustomerAccountSuspended extends Notification
         
         $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
-        $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
-
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'account-suspension-customer')->get()->toArray();
 
-        $mailMessage = $this->getMailDetails($customerTemplate, $this->order->company_id, $bizVerification, $templateVales);
+        $mailMessage = $this->getMailDetails($customerTemplate, $this->order, $bizVerification, $templateVales);
 
         return $mailMessage;
     }

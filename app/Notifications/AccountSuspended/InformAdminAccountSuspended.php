@@ -53,7 +53,7 @@ class InformAdminAccountSuspended extends Notification
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'account-suspension-admin')->get()->toArray();
 
-        $mailMessage = $this->getMailDetails($adminTemplate, $this->order->company_id, $bizVerification, $templateVales);
+        $mailMessage = $this->getMailDetails($adminTemplate, $this->order, $bizVerification, $templateVales);
 
         return $mailMessage;
     }

@@ -276,7 +276,7 @@ class Invoice extends Model implements ConstantInterface
     public function getTypeDescriptionAttribute()
     {
         $value = $this->type;
-        if ($value == 1) {
+        if ($this->type == 2) {
             return 'One-time invoice';
         }
         return 'Monthly invoice';
