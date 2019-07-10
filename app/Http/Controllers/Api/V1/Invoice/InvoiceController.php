@@ -106,7 +106,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     public function oneTimeInvoice(Request $request)
     {
         $msg = '';
-       
+        
         if ($request->data_to_invoice) {
             
             $invoice = $request->data_to_invoice;
@@ -180,7 +180,16 @@ class InvoiceController extends BaseController implements ConstantInterface
 
         $this->ifTotalDue($order);
 
-        if(isset($order)) {
+        if ($order->invoice->status === 2){
+            $startDate = $order->invoice->start_date;
+            $order->invoice->update(
+                [
+                    'due_date' => $startDate
+                ]
+            );
+        }
+
+        if (isset($order)) {
             $request->headers->set('authorization', $order->company->api_key);
             event(new InvoiceGenerated($order));
         }
@@ -283,13 +292,17 @@ class InvoiceController extends BaseController implements ConstantInterface
     public function get(Request $request)
     {
         $order = Order::hash($request->order_hash)->first();
-
-        if ($order) {
+        
+        if ($order && $order->invoice && $order->invoice->invoiceItem) {
+            
+            $data = '';
             
             $proratedAmount = !isset($order->orderGroup->plan_prorated_amt) ? 0 : $order->orderGroup->plan_prorated_amt;
-
+            
             $data = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
 
+        
+            
             $regulatoryFee          = $order->invoice->cal_regulatory;
             $stateTax               = $order->invoice->cal_stateTax;
             $taxes                  = $order->invoice->cal_taxes;
@@ -348,8 +361,8 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'total_credits_to_invoice'      =>   self::formatNumber($totalCreditsToInvoice),
                 'total_payment'                 =>   self::formatNumber($order->credits->sum('amount')),
                 'total_used_credits'            =>   self::formatNumber($totalCredits + $oldUsedCredits),
-                'date_payment'                  =>   $order->credits->first() ? $order->credits->first()->date : '',
-                'date_credit'                   =>   $order->invoice->creditsToInvoice->first() ? Carbon::parse($order->invoice->creditsToInvoice->first()->created_at)->toDateString() : '',
+                'date_payment'                  =>   $order->credits->first() ? Carbon::parse($order->credits->first()->date)->format('m/d/Y') : '',
+                'date_credit'                   =>   $order->invoice->creditsToInvoice->first() ? Carbon::parse($order->invoice->creditsToInvoice->first()->created_at)->format('m/d/Y') : '',
                 'credits_and_coupons'           =>   self::formatNumber($totalCreditsToInvoice + $totalCoupons),
                 'total_coupons'                 =>   self::formatNumber($totalCoupons),
                 'account_charges_discount'      =>   self::formatNumber($accountChargesDiscount),
@@ -378,7 +391,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             ];
             
             $invoice = array_merge($data, $invoice);
- 
+
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
                 return $pdf->download('invoice.pdf');
@@ -388,8 +401,11 @@ class InvoiceController extends BaseController implements ConstantInterface
                 return $pdf->download('invoice.pdf');
                 
             }
-
+        } else {
+            return 'Sorry, we could not find the details for your invoice';
         }
+
+        
         return 'Sorry, something went wrong please try again later......';
         
     }
@@ -482,7 +498,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         $arr = [
             'invoice_num'           => $order->invoice->id,
             'subscriptions'         => [],
-            'start_date'            => $order->invoice->start_date,
             'end_date'              => $order->invoice->end_date,
             'due_date'              => $order->invoice->due_date,
             'total_due'             => self::formatNumber($order->invoice->total_due),
@@ -499,8 +514,8 @@ class InvoiceController extends BaseController implements ConstantInterface
             'payment_method'        => $paymentMethod,
             'payment_date'          => $paymentDate,
             'regulatory_fee'        => $order->invoice->invoiceItem,
-            'start_date'            => $order->invoice->start_date,
-            'end_date'              => $order->invoice->end_date,
+            'start_date'            => Carbon::parse($order->invoice->start_date)->format('m/d/Y'),
+            'end_date'              => Carbon::parse($order->invoice->end_date)->format('m/d/Y'),
         ];
         return $arr;
     }
@@ -562,7 +577,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'subscription_id' => $subscription->id,
                 'plan_charges'    => self::formatNumber($planCharges),
                 'onetime_charges' => self::formatNumber($onetimeCharges),
-                'phone'           => $this->phoneNumberFormatted($subscription->phone_number),
+                'phone'           => $subscription->phone_number ? $this->phoneNumberFormatted($subscription->phone_number) : 'Pending',
                 'usage_charges'   => $usageCharges,
                 'tax'             => $tax,
                 'total'           => self::formatNumber($total)
@@ -1317,7 +1332,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             'total_due' => $dues,
             'items' => $invoice_items
         ];
-
+       
         //add activation charges
 
         $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');

@@ -203,8 +203,8 @@ class SendEmailWithInvoice
                 'total_credits_to_invoice'      =>   self::formatNumber($totalCreditsToInvoice),
                 'total_payment'                 =>   self::formatNumber($order->credits->sum('amount')),
                 'total_used_credits'            =>   self::formatNumber($totalCredits + $oldUsedCredits),
-                'date_payment'                  =>   $order->credits->first() ? $order->credits->first()->date : '',
-                'date_credit'                   =>   $order->invoice->creditsToInvoice->first() ? Carbon::parse($order->invoice->creditsToInvoice->first()->created_at)->toDateString() : '',
+                'date_payment'                  =>   $order->credits->first() ? Carbon::parse($order->credits->first()->date)->format('m/d/Y') : '',
+                'date_credit'                   =>   $order->invoice->creditsToInvoice->first() ? Carbon::parse($order->invoice->creditsToInvoice->first()->created_at)->format('m/d/Y') : '',
                 'credits_and_coupons'           =>   self::formatNumber($totalCreditsToInvoice + $totalCoupons),
                 'total_coupons'                 =>   self::formatNumber($totalCoupons),
                 'account_charges_discount'      =>   self::formatNumber($accountChargesDiscount),
@@ -328,7 +328,6 @@ class SendEmailWithInvoice
         $arr = [
             'invoice_num'           => $order->invoice->id,
             'subscriptions'         => [],
-            'start_date'            => $order->invoice->start_date,
             'end_date'              => $order->invoice->end_date,
             'due_date'              => $order->invoice->due_date,
             'total_due'             => $order->invoice->total_due,
@@ -345,8 +344,8 @@ class SendEmailWithInvoice
             'payment_method'        => $paymentMethod,
             'payment_date'          => $paymentDate,
             'regulatory_fee'        => $order->invoice->invoiceItem,
-            'start_date'            => $order->invoice->start_date,
-            'end_date'              => $order->invoice->end_date,
+            'start_date'            => Carbon::parse($order->invoice->start_date)->format('m/d/Y'),
+            'end_date'              => Carbon::parse($order->invoice->end_date)->format('m/d/Y'),
         ];
         return $arr;
     }

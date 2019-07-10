@@ -82,7 +82,7 @@ trait InvoiceTrait
     public function addTaxesToStandalone($invoice, $isTaxable, $item)
     {
         $taxPercentage = $invoice->customer->stateTax->rate / 100;
-
+        
         $taxesWithoutSubscriptions  = $invoice->invoiceItem
                                         ->where('subscription_id', null)
                                         ->where('product_type', $item)

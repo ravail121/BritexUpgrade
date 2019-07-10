@@ -86,6 +86,12 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 }
 
                 $invoice = Invoice::create($this->getInvoiceData($customer));
+                
+                $dueDate = Carbon::parse($invoice->start_date)->subDay();
+
+                $dueDateChange = $invoice->update([
+                    'due_date' => $dueDate
+                ]);
 
                 $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
                 

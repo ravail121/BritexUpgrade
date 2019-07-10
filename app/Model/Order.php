@@ -17,9 +17,11 @@ class Order extends Model
 
     public function isOrder($order)
     {
-        if ($order->invoice->type === 2) {
-            return true;
-        }
+        if (isset($order->invoice)) {
+            if ($order->invoice->type === 2) {
+                return true;
+            }
+        } 
     }
 
     public function order_group(){

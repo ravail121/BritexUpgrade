@@ -28,8 +28,9 @@ class CustomerController extends BaseController
    
   public function post(Request $request)
   {
-    if ($request->customer_id) {
 
+    if ($request->customer_id) {
+      
         if($request->fname){
 
             $customer = $this->updateCustomer($request);
@@ -139,27 +140,26 @@ class CustomerController extends BaseController
   protected function updateCustomer($request)
   {
     if ($request->customer_id) {
-        
-        $request['password'] = Hash::make($request['password']);
-        $customer = Customer::find($request->customer_id);
-       
-        $customer->update(['fname'    => $request->fname,
-                'lname'               => $request->lname,
-                'email'               => $request->email,
-                'company_name'        => $request->company_name,
-                'phone'               => $request->phone,
-                'alternate_phone'     => $request->alternate_phone,
-                'password'            => $request->password, 
-                'pin'                 => $request->pin,  
-                'shipping_address1'   => $request->shipping_address1,
-                'shipping_address2'   => $request->shipping_address2,
-                'shipping_city'       => $request->shipping_city,
-                'shipping_state_id'   => $request->shipping_state_id,
-                'shipping_zip'        => $request->shipping_zip,
-                'shipping_fname'      => $request->shipping_fname,
-                'shipping_lname'      => $request->shipping_lname
-        ]);
-        return $customer;
+      $request['password'] = Hash::make($request['password']);
+      $customer = Customer::find($request->customer_id);
+      
+      $customer->update(['fname'    => $request->fname,
+              'lname'               => $request->lname,
+              'email'               => $request->email,
+              'company_name'        => $request->company_name,
+              'phone'               => $request->phone,
+              'alternate_phone'     => $request->alternate_phone,
+              'password'            => $request->password, 
+              'pin'                 => $request->pin,  
+              'shipping_address1'   => $request->shipping_address1,
+              'shipping_address2'   => $request->shipping_address2,
+              'shipping_city'       => $request->shipping_city,
+              'shipping_state_id'   => $request->shipping_state_id,
+              'shipping_zip'        => $request->shipping_zip,
+              'shipping_fname'      => $request->shipping_fname,
+              'shipping_lname'      => $request->shipping_lname
+      ]);
+      return $customer;
     }
   }
 

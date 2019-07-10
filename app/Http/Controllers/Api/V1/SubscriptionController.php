@@ -165,9 +165,9 @@ class SubscriptionController extends BaseController
     {
         $order = Order::find($request->order_id);
         $plan  = Plan::find($request->plan_id);
-
-        $phone  = ($order->customer_id) ? $order->customer->phone : '' ;
-
+        
+        // $phone  = ($order->customer_id) && !$request->porting_number ? $order->customer->phone : '';
+        // $phone = '';
 
         if ($request->sim_type == null) {
             $sim = Sim::find($request->sim_id);
@@ -178,7 +178,6 @@ class SubscriptionController extends BaseController
         	'order_id'                         =>  $request->order_id,
         	'customer_id'                      =>  $order->customer_id,
         	'plan_id'                          =>  $request->plan_id,
-        	'phone_number'                     =>  $phone,
             'status'                           =>  $request->status,
             'sub_status'                       =>  'active',
             'upgrade_downgrade_status'         =>  '',

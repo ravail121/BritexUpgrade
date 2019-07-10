@@ -154,11 +154,12 @@
                 <div class="taxes">
                     <div class="container">
                         <div class="table-padding">
-                            <h2>Taxes/Fees</h2>
+                            <h2>Taxes</h2>
                             <div class="sepratorline"></div>
                         </div>
                         <table class="test table-padding">
                             <tbody>
+                                {{-- 
                                 <tr>
                                     <td>Regulatory</td>
                                     <td colspan="2" class="last"><a>$ 
@@ -167,6 +168,7 @@
                                         @endisset
                                     </a></td>
                                 </tr>
+                                --}}
                                 <tr>
                                     <td>State</td>
                                     <td colspan="2" class="last"><a>$ 

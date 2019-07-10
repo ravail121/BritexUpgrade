@@ -303,8 +303,9 @@
                         <table>
                             <tr>
                                 <td>Total Line Charges 
-                                    @if (isset($invoice['subscriptions'][0]['phone']))
-                                        {{ $invoice['subscriptions'][0]['phone'] }}
+                                    @if (isset($invoice['subscriptions'][0]['phone']) && $invoice['subscriptions'][0]['phone'] != 'Pending')
+                                        ({{ $invoice['subscriptions'][0]['phone'] }})
+                                        
                                     @else
                                         <p></p>
                                     @endif 
