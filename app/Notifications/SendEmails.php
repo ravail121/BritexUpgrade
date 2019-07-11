@@ -2,35 +2,37 @@
 
 namespace App\Notifications;
 
+use App\Model\Order;
+use App\Model\EmailLog;
+use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
+use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class EmailWithAttachment extends Notification
+class SendEmails extends Notification
 {
-    use Queueable  , EmailRecord;
+    use Queueable, EmailRecord;
 
     public $order;
-    public $pdf;
-    public $emailTemplate;
+    public $customerTemplate;
     public $bizVerification;
-    public $templateValues;
-    public $note;
+    public $templateVales;
 
     /**
      * Create a new notification instance.
      *
      * @return Order $order
      */
-    public function __construct($order, $pdf, $emailTemplate, $bizVerification, $templateValues, $note)
+      
+    public function __construct(Order $order, $customerTemplate, $bizVerification, $templateVales)
     {
         $this->order = $order;
-        $this->pdf   = $pdf;
-        $this->emailTemplate = $emailTemplate;
-        $this->bizVerification   = $bizVerification;
-        $this->templateValues = $templateValues;
-        $this->note   = $note;
+        $this->customerTemplate = $customerTemplate;
+        $this->bizVerification = $bizVerification;
+        $this->templateVales = $templateVales;
     }
 
     /**
@@ -52,7 +54,7 @@ class EmailWithAttachment extends Notification
      */
     public function toMail($notifiable)
     {
-        $mailMessage = $this->getEmailWithAttachment($this->emailTemplate, $this->order, $this->bizVerification, $this->templateValues, $this->pdf->output(), 'invoice.pdf', ['mime' => 'application/pdf',], $this->note);
+        $mailMessage = $this->getMailDetails($this->customerTemplate, $this->order, $this->bizVerification, $this->templateVales);
 
         return $mailMessage;
     }

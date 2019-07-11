@@ -1,6 +1,14 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Events\BusinessVerificationCreated;
+use App\Events\InvoiceGenerated;
+use App\Events\MonthlyInvoice;
+use App\Model\Customer;
+use App\Model\Order;
+use App\Model\Subscription;
+use App\Model\CustomerStandaloneDevice;
+use App\Model\CustomerStandaloneSim;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +41,31 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 			$message->to($request->to ?: 'vanak.roopak@gmail.com');
 			$message->subject('Email Arrived');
 	}));
+});
+
+Route::get('testing',function()
+{
+  event(new BusinessVerificationCreated('0c4c659fa09a9b343f4292275614f1cb1567e68f', 'fd2dc9cf7246389ddecca51aacbefe5970e454b8'));
+  $order = Order::find('4880');
+  event(new InvoiceGenerated($order));
+  // $customer = Customer::find('112');
+  // event(new MonthlyInvoice($customer));
+});
+
+Route::get('insert_order_num',function()
+{
+  $subscriptions = Subscription::all();
+  foreach ($subscriptions as $key => $subscription) {
+    $subscription->update(['order_num' => $subscription->order['order_num']]);
+  }
+  $ccds = CustomerStandaloneDevice::all();
+  foreach ($ccds as $key => $ccd) {
+    $ccd->update(['order_num' => $ccd->order['order_num']]);
+  }
+  $ccds = CustomerStandaloneSim::all();
+  foreach ($ccds as $key => $ccd) {
+    $ccd->update(['order_num' => $ccd->order['order_num']]);
+  }
 });
 
 Route::get('/cron-jobs-monthly-invoice', [

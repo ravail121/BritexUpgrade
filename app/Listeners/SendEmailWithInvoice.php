@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Invoice;
 use App\Model\Company;
+use App\Model\EmailTemplate;
 use App\Events\InvoiceGenerated;
 use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
@@ -16,6 +17,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use App\Notifications\EmailWithAttachment;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\SystemEmailTemplateDynamicField;
 use App\Model\Subscription;
 use App\Model\InvoiceItem;
 use App\Model\Plan;
@@ -91,8 +93,24 @@ class SendEmailWithInvoice
         }
 
         $bizVerification = BusinessVerification::find($order->customer->business_verification_id);
-       
-        $bizVerification->notify(new EmailWithAttachment($order, $pdf));        
+
+        $emailTemplate = '';
+        $templateValues = '';
+
+        if ($order->invoice->type == 2) {
+            $emailTemplates      = EmailTemplate::where('company_id', $order->company_id)->where('code', 'one-time-invoice')->get();
+            $templateValues     = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
+        
+        } elseif ($order->invoice->type == 1) {
+            $emailTemplates      = EmailTemplate::where('company_id', $order->company_id)->where('code', 'monthly-invoice')->get();
+            $templateValues     = SystemEmailTemplateDynamicField::where('code', 'monthly-invoice')->get()->toArray();
+
+        }
+        $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$order->hash;
+
+        foreach ($emailTemplates as $key => $emailTemplate) {
+            $bizVerification->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateValues, $note));
+        }        
     }
 
 

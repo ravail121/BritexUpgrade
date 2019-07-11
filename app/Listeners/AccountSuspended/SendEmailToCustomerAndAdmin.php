@@ -9,11 +9,12 @@ use App\Model\Order;
 use App\Model\Company;
 use App\Model\EmailTemplate;
 use App\Events\AccountSuspended;
+use App\Notifications\SendEmails;
+use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Notifications\AccountSuspended\InformAdminAccountSuspended;
-use App\Notifications\AccountSuspended\InformCustomerAccountSuspended;
+use App\Model\SystemEmailTemplateDynamicField;
 
 class SendEmailToCustomerAndAdmin
 {
@@ -47,12 +48,21 @@ class SendEmailToCustomerAndAdmin
             return false;
         }
 
-        $email = EmailTemplate::where('company_id', $order->company_id)->where('code', 'account-suspension-admin')->first();
+        $customerTemplates = EmailTemplate::where('company_id', $order->company_id)->where('code', 'account-suspension-customer')->get();
+        
+        $bizVerification = BusinessVerification::find($order->customer->business_verification_id);
 
+        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'account-suspension-customer')->get()->toArray();
 
-        $customer->notify(new InformCustomerAccountSuspended($order));
+        $adminTemplates = EmailTemplate::where('company_id', $order->company_id)->where('code', 'account-suspension-admin')->get();
 
-        Notification::route('mail', $email->from)->notify(new InformAdminAccountSuspended($order));        
+        foreach ($customerTemplates as $key => $customerTemplate) {
+            $customer->notify(new SendEmail($order, $customerTemplate, $bizVerification, $templateVales));   
+        }
+        
+        foreach ($adminTemplates as $key => $adminTemplate) {
+            Notification::route('mail', $adminTemplate->to)->notify(new SendEmails($order, $adminTemplate, $bizVerification, $templateVales));        
+        }
     }
 
 

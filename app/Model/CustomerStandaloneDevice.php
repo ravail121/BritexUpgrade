@@ -17,6 +17,7 @@ class CustomerStandaloneDevice extends Model
     	'tracking_num',
     	'imei',
         'shipping_date',
+        'order_num',
     ];
 
     public function device()

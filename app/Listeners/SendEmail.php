@@ -7,12 +7,13 @@ use Mail;
 use Notification;
 use App\Model\Order;
 use App\Model\EmailTemplate;
+use App\Notifications\SendEmails;
 use App\Model\BusinessVerification;
-use App\Notifications\BizVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use App\Events\BusinessVerificationCreated;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Model\SystemEmailTemplateDynamicField;
 use App\Support\Configuration\MailConfiguration;
 
 class SendEmail
@@ -41,8 +42,6 @@ class SendEmail
         $businessHash = $event->bizHash;
 
         $order = Order::hash($orderHash)->first();
-
-        $email = EmailTemplate::where('company_id', $order->company_id)->where('code', 'biz-verification-submitted')->first();
         
         $businessVerification = BusinessVerification::hash($businessHash)->first();
 
@@ -52,7 +51,13 @@ class SendEmail
             return false;
         }
 
-        Notification::route('mail', $businessVerification->email)->notify(new BizVerification($order, $businessVerification));  
+        $emailTemplates = EmailTemplate::where('company_id', $order->company_id)->where('code', 'biz-verification-submitted')->get();
+
+        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'biz-verification-submitted')->get()->toArray();
+
+        foreach ($emailTemplates as $key => $emailTemplate) {
+            Notification::route('mail', $businessVerification->email)->notify(new SendEmails($order, $emailTemplate, $businessVerification, $templateVales));
+        }  
    
     }
 

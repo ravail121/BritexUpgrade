@@ -17,6 +17,7 @@ class CustomerStandaloneSim extends Model
     	'tracking_num',
     	'sim_num',
         'shipping_date',
+        'order_num',
     ];
 
     public function sim()

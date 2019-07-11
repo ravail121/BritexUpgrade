@@ -40,6 +40,7 @@ class Subscription extends Model
       'suspended_date',
       'closed_date',
       'shipping_date',
+      'order_num',
     ];
 
     protected $dates = [

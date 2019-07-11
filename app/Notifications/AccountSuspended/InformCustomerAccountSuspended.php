@@ -6,6 +6,7 @@ use App\Model\Order;
 use App\Model\EmailLog;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
+use App\Notifications\EmailRecord;
 use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,15 +18,22 @@ class InformCustomerAccountSuspended extends Notification
     use Queueable, EmailRecord;
 
     public $order;
+    public $customerTemplate;
+    public $bizVerification;
+    public $templateVales;
 
     /**
      * Create a new notification instance.
      *
      * @return Order $order
      */
-    public function __construct(Order $order)
+      
+    public function __construct(Order $order, $customerTemplate, $bizVerification, $templateVales)
     {
         $this->order = $order;
+        $this->customerTemplate = $customerTemplate;
+        $this->bizVerification = $bizVerification;
+        $this->templateVales = $templateVales;
     }
 
     /**
@@ -47,13 +55,7 @@ class InformCustomerAccountSuspended extends Notification
      */
     public function toMail($notifiable)
     {
-        $customerTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'account-suspension-customer')->first();
-        
-        $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
-
-        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'account-suspension-customer')->get()->toArray();
-
-        $mailMessage = $this->getMailDetails($customerTemplate, $this->order, $bizVerification, $templateVales);
+        $mailMessage = $this->getMailDetails($this->customerTemplate, $this->order, $this->bizVerification, $this->templateVales);
 
         return $mailMessage;
     }

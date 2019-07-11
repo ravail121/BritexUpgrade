@@ -7,6 +7,7 @@ use Mail;
 use Config;
 use App\Model\Order;
 use App\Model\Company;
+use App\Model\EmailTemplate;
 use App\Events\MonthlyInvoice;
 use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
@@ -14,6 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Notifications\GenerateMonthlyInvoice;
+use App\Model\SystemEmailTemplateDynamicField;
 
 class SendMonthlyInvoiceMail
 {
@@ -65,8 +67,17 @@ class SendMonthlyInvoiceMail
             return false;
         }
 
+        $emailTemplates = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'monthly-invoice')->get();
+        
+        $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
-        $customer->notify(new GenerateMonthlyInvoice($order, $pdf));        
+        $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
+
+        $note = 'Invoice Link '.route('api.invoice.get').'?order_hash='.$this->order->hash;
+
+        foreach ($emailTemplates as $key => $emailTemplate) {
+            $customer->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateVales, $note));
+        }          
     }
 
 
