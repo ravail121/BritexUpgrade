@@ -73,8 +73,8 @@ class PaymentController extends BaseController implements ConstantInterface
             $this->addCreditToInvoiceRow($invoice, $msg['credit'], $this->tran);
 
             if ($invoice) {
-
-                $orderCount = Order::where('status', 1)->max('order_num');
+                
+                $orderCount = Order::where([['status', 1],['company_id', $order->company_id]])->max('order_num');
 
                 $order->update([
                     'status'     => 1, 

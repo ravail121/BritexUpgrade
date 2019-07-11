@@ -43,17 +43,13 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
-Route::get('testing',function()
-{
-  event(new BusinessVerificationCreated('0c4c659fa09a9b343f4292275614f1cb1567e68f', 'fd2dc9cf7246389ddecca51aacbefe5970e454b8'));
-  $order = Order::find('4880');
-  event(new InvoiceGenerated($order));
-  // $customer = Customer::find('112');
-  // event(new MonthlyInvoice($customer));
-});
-
 Route::get('insert_order_num',function()
 {
+  $orders = Order::where([['company_id', '1'],['status', '1']])->orderBy('id')->get();
+  foreach ($orders as $key => $order) {
+    $order->update(['order_num' => $key+1]);
+  }
+
   $subscriptions = Subscription::all();
   foreach ($subscriptions as $key => $subscription) {
     $subscription->update(['order_num' => $subscription->order['order_num']]);

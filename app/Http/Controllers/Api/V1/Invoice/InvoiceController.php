@@ -1420,7 +1420,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             'shipping_zip'            => $order->shipping_zip,
         ]);
 
-        $orderCount = Order::where('status', 1)->max('order_num');
+        $orderCount = Order::where([['status', 1],['company_id', $customer->company_id]])->max('order_num');
         
 
         $order->update([
