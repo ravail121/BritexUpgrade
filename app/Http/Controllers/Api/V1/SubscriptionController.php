@@ -192,7 +192,6 @@ class SubscriptionController extends BaseController
             'old_plan_id'                      =>  self::DEFAULT_INT,
             'new_plan_id'                      =>  self::DEFAULT_INT,
             'downgrade_date'                   =>  date('Y-m-d'),
-            'tracking_num'                     =>  ($order->order_num) ?: self::DEFAULT_INT,
         	'device_id'                        =>  $request->device_id,
         	'device_os'                        =>  ($request->operating_system) ?: '',
         	'device_imei'                      =>  ($request->imei_number) ?: '',

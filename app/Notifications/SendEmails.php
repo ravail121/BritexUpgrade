@@ -22,7 +22,7 @@ class SendEmails extends Notification
      * @return Order $order
      */
       
-    public function __construct(Order $order, $customerTemplate, $bizVerification, $templateVales)
+    public function __construct($order, $customerTemplate, $bizVerification, $templateVales)
     {
         $this->order = $order;
         $this->customerTemplate = $customerTemplate;
