@@ -5,6 +5,7 @@ namespace App\Listeners;
 use PDF;
 use Mail;
 use Config;
+use Notification;
 use App\Model\Order;
 use App\Model\Company;
 use App\Model\EmailTemplate;
@@ -12,7 +13,6 @@ use App\Events\MonthlyInvoice;
 use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Notifications\GenerateMonthlyInvoice;
 use App\Model\SystemEmailTemplateDynamicField;
@@ -76,7 +76,12 @@ class SendMonthlyInvoiceMail
         $note = 'Invoice Link '.route('api.invoice.get').'?order_hash='.$this->order->hash;
 
         foreach ($emailTemplates as $key => $emailTemplate) {
-            $customer->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateVales, $note));
+            if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
+                $email = $emailTemplate->to;
+            }else{
+                $email = $customer->email;
+            }
+            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateVales, $note));
         }          
     }
 

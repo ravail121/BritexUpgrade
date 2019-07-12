@@ -18,10 +18,6 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\SendEmail',
         ],
 
-        'App\Events\BusinessVerificationApproved' => [
-            'App\Listeners\SendApprovalEmail',
-        ],
-
         'App\Events\InvoiceGenerated' => [
             'App\Listeners\SendEmailWithInvoice',
         ],

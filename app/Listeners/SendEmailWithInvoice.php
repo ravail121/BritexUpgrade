@@ -5,6 +5,7 @@ namespace App\Listeners;
 use PDF;
 use Mail;
 use Config;
+use Notification;
 use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Invoice;
@@ -14,7 +15,6 @@ use App\Events\InvoiceGenerated;
 use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
 use App\Notifications\EmailWithAttachment;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Model\SystemEmailTemplateDynamicField;
@@ -109,7 +109,12 @@ class SendEmailWithInvoice
         $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$order->hash;
 
         foreach ($emailTemplates as $key => $emailTemplate) {
-            $bizVerification->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateValues, $note));
+            if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
+                $email = $emailTemplate->to;
+            }else{
+                $email = $bizVerification->email;
+            }
+            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateValues, $note));
         }        
     }
 

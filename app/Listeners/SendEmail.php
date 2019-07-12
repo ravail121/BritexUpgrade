@@ -56,7 +56,12 @@ class SendEmail
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'biz-verification-submitted')->get()->toArray();
 
         foreach ($emailTemplates as $key => $emailTemplate) {
-            Notification::route('mail', $businessVerification->email)->notify(new SendEmails($order, $emailTemplate, $businessVerification, $templateVales));
+            if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
+                $email = $emailTemplate->to;
+            }else{
+                $email = $businessVerification->email;
+            }
+            Notification::route('mail', $email)->notify(new SendEmails($order, $emailTemplate, $businessVerification, $templateVales));
         }  
    
     }
