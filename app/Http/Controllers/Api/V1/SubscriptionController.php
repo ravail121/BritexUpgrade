@@ -40,11 +40,13 @@ class SubscriptionController extends BaseController
             $data = $request->validate([
                 'order_id'  => 'required',
             ]);
+            $order = Order::find($request->order_id);
             if($request->status == "Upgrade"){
                 $data['old_plan_id'] = $subscription->plan_id;
                 $data['upgrade_downgrade_date_submitted'] = Carbon::now();
                 $data['plan_id'] = $request->plan_id;
                 $data['upgrade_downgrade_status'] = 'for-upgrade';
+                $data['order_num'] = $order->order_num;
                 $updateSubcription = $subscription->update($data);
                 return $this->respond(['subscription_id' => $subscription->id]);
             }
@@ -75,6 +77,7 @@ class SubscriptionController extends BaseController
         ]);
         $order = Order::whereHash($request->order_hash)->first();
         $data['order_id'] = $order->id;
+        $data['order_num'] = $order->order_num;
         $subscription = Subscription::find($data['id']);
 
         
@@ -177,6 +180,7 @@ class SubscriptionController extends BaseController
     	return [
         	'order_id'                         =>  $request->order_id,
         	'customer_id'                      =>  $order->customer_id,
+            'order_num'                        =>  $order->order_num,
         	'plan_id'                          =>  $request->plan_id,
             'status'                           =>  $request->status,
             'sub_status'                       =>  'active',
@@ -193,7 +197,7 @@ class SubscriptionController extends BaseController
         	'device_os'                        =>  ($request->operating_system) ?: '',
         	'device_imei'                      =>  ($request->imei_number) ?: '',
             'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : self::DEFAULT_INT,
-            'requested_area_code'              =>  ($request->area_code) ?: self::DEFAULT_INT,
+            'requested_area_code'              =>  $request->area_code,
         ];
     }
 

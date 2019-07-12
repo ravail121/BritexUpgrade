@@ -50,9 +50,7 @@ class StandaloneRecordController extends BaseController
 	      return $hasError;
 	    }
 
-	    $order = Order::find($request->order_id);
-
-        $this->data = $this->setData($request, $order->order_num);
+        $this->data = $this->setData($request);
 
         $record = CustomerStandaloneDevice::create(array_merge($this->data, [
             'device_id' => $request->device_id,
@@ -78,9 +76,7 @@ class StandaloneRecordController extends BaseController
           return $hasError;
         }
 
-        $order = Order::find($request->order_id);
-
-        $this->data = $this->setData($request, $order->order_num);
+        $this->data = $this->setData($request);
 
         $record = CustomerStandaloneSim::create(array_merge($this->data, [
             'sim_id'  => $request->sim_id, 
@@ -97,14 +93,15 @@ class StandaloneRecordController extends BaseController
      * Sets data as array
      * 
      * @param  Request $request
-     * @param  int $orderNum
      * @return array
      */
-    protected function setData($request, $orderNum)
+    protected function setData($request)
     {
+        $order = Order::find($request->order_id);
         return [
             'customer_id'  => $request->customer_id,
             'order_id'     => $request->order_id,
+            'order_num'    => $order->order_num,
             'tracking_num' => self::DEFAULT_TRACKING_NUM,
             'status'       => self::DEFAULT_STATUS,
         ];

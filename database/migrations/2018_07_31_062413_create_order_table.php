@@ -522,12 +522,12 @@ class CreateOrderTable extends Migration
             $table->integer('old_plan_id')->nullable(); 
             $table->integer('new_plan_id')->nullable();
             $table->date('downgrade_date')->nullable();
-            $table->integer('tracking_num');
+            $table->string('tracking_num');
             $table->unsignedInteger('device_id')->nullable();
             $table->text('device_os')->nullable();
             $table->string('device_imei', 16);
             $table->text('subsequent_porting');
-            $table->integer('requested_area_code');
+            $table->string('requested_area_code')->nullable();
             $table->unsignedInteger('ban_id')->nullable();
             $table->unsignedInteger('ban_group_id')->nullable();
             $table->date('activation_date')->nullable();
