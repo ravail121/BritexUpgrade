@@ -1133,7 +1133,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 if ($shippingFee) { $itemWithShippingCharges[] = [
                     'amount'            => $shippingFee, 
                     'subscription_id'   => $item->subscription_id, 
-                    'taxable'           => $item->taxable,
+                    'taxable'           => 0,
                     'invoice_id'        => $item->invoice_id,
                     'start_date'        => Carbon::today()
                 ]; }
@@ -1145,7 +1145,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 if ($shippingFee) { $itemWithShippingCharges[] = [
                     'amount'            => $shippingFee, 
                     'subscription_id'   => $item->subscription_id, 
-                    'taxable'           => $item->taxable, 
+                    'taxable'           => 0, 
                     'invoice_id'        => $item->invoice_id,
                     'start_date'        => Carbon::today()
                 ]; }
