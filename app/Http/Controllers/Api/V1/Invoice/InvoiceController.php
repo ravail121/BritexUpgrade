@@ -1134,7 +1134,8 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'amount'            => $shippingFee, 
                     'subscription_id'   => $item->subscription_id, 
                     'taxable'           => $item->taxable,
-                    'invoice_id'        => $item->invoice_id
+                    'invoice_id'        => $item->invoice_id,
+                    'start_date'        => Carbon::today()
                 ]; }
 
             } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['sim']) {
@@ -1145,7 +1146,8 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'amount'            => $shippingFee, 
                     'subscription_id'   => $item->subscription_id, 
                     'taxable'           => $item->taxable, 
-                    'invoice_id'        => $item->invoice_id
+                    'invoice_id'        => $item->invoice_id,
+                    'start_date'        => Carbon::today()
                 ]; }
 
             }
