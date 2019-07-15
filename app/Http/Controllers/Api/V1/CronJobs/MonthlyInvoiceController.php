@@ -476,10 +476,12 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $hash = md5(time());
     
         if ($invoice->type === Invoice::TYPES['monthly']) {
+            $count = Order::where('company_id', Company::Id['britex'])->max('order_num');
             Order::create([
                 'status'        => 1,
                 'invoice_id'    => $invoice->id,
                 'hash'          => $hash,
+                'order_num'     => $count+1,
                 'company_id'    => Company::Id['britex'],
                 'customer_id'   => $invoice->customer_id,
             ]);

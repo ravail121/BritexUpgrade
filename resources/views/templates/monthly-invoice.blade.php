@@ -49,10 +49,12 @@
                         <div style='position:absolute; left:0; right:0; margin: auto; top: 100px; border-color: transparent;' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
-                                <p><span>{{ $invoice['customer_name'] }}</span></p>
+                                <p><span>{{ $invoice['company_name'] }},</span></p>
+                                <p><span>{{ $invoice['customer_name'] }},</span></p>
                                 <p><span>{{ $invoice['customer_address'] }}</span></p>
                                 <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
-                            </div>
+                            </div>                                <p><span>{{ $invoice['company_name'] }},</span></p>
+                            <p><span>{{ $invoice['customer_name'] }},</span></p>
                         </div>
                         
                         <div style='position:absolute; right:15px; margin: auto; top: 100px; box-shadow:none; border-color: transparent;' class="bill_info">
@@ -339,6 +341,15 @@
                         </div>
                     </div>
                 </div>
+                <div style='text-align:center; margin-top: 35px; margin-bottom: 35px;' class="container">
+                    <p>Page <strong> 1</strong>/
+                        @isset ($invoice['max_pages'])
+                            {{$invoice['max_pages']}}
+                        @else 
+                            3
+                        @endisset
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -347,5 +358,15 @@
 
 </html>
 
+
 @include('templates.test-statement')
-@include('templates.test-statement-2')
+
+@if (count($invoice['subscription_per_page']))
+
+    @foreach ($invoice['subscription_per_page'] as $subscription)
+
+        @include('templates.test-statement-2')
+
+    @endforeach
+
+@endif

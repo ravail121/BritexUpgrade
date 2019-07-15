@@ -91,7 +91,7 @@
 
         </div>
 
-
+        
         <div class="container">
             <div class="account">
                     <div class="table-padding">
@@ -105,7 +105,7 @@
                     <div class="container" style="margin-top: 25px;">
                         <div class="table-padding">
                             <h2>One-Time Charges</h2>
-                            <div class="sepratorline"></div>
+                            @if (isset($invoice['one_time_standalone']) && $invoice['one_time_standalone'] > 0)<div class="sepratorline"></div>@endif
                         </div>
 
                         <table class="test table-padding">
@@ -120,7 +120,7 @@
                                         </tr>
                                     @endforeach
                                     @endisset
-                                    @isset($invoice['standalone_items']['sims'])
+                                @isset($invoice['standalone_items']['sims'])
                                     @foreach($invoice['standalone_items']['sims'] as $item)
                                         <tr>
                                             <td>{{$item['name']}}</td>
@@ -130,12 +130,17 @@
                                         </tr>
                                     @endforeach
                                 @endisset
-
+                                @if(isset($invoice['standalone_shipping']) && $invoice['standalone_shipping'] > 0)
+                                    <tr>
+                                        <td>Shipping Fee</td>
+                                        <td colspan='2' class='last'>
+                                            {{number_format($invoice['standalone_shipping'], 2)}}
+                                        </td>
+                                    </tr>
+                                @endisset
                                 <tr>
                                     <td colspan="3">
-                                        @if (isset($invoice['one_time_standalone']) && $invoice['one_time_standalone'] > 0)
-                                            <div class="sepratorline dark"></div>
-                                        @endisset
+                                        <div class="sepratorline dark"></div>
                                     </td>
                                 </tr>
                                 <tr>
@@ -155,7 +160,9 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Taxes</h2>
-                            <div class="sepratorline"></div>
+                            @if (isset($invoice['standalone_total_taxes_fees']) && $invoice['standalone_total_taxes_fees'] > 0)
+                                <div class="sepratorline"></div>
+                            @endif
                         </div>
                         <table class="test table-padding">
                             <tbody>
@@ -170,12 +177,14 @@
                                 </tr>
                                 --}}
                                 <tr>
-                                    <td>State</td>
-                                    <td colspan="2" class="last"><a>$ 
-                                        @isset ($invoice['standalone_tax'])
-                                            {{ $invoice['standalone_tax'] }}
-                                        @endisset
-                                    </a></td>
+                                    @if (isset($invoice['standalone_tax']) && $invoice['standalone_tax'] > 0)
+                                        <td>State</td>
+                                        <td colspan="2" class="last"><a>$ 
+                                        
+                                                {{ $invoice['standalone_tax'] }}
+                                            
+                                        </a></td>
+                                    @endisset
                                 </tr>
 
                                 <tr>
@@ -234,7 +243,13 @@
                     </div>
                 </div>
                 <div class="container">
-                    <h3>Page <strong> 2</strong>/3 </h3>
+                    <h3>Page <strong> 2</strong>/
+                        @isset ($invoice['max_pages'])
+                            {{$invoice['max_pages']}}
+                        @else 
+                            3
+                        @endisset
+                    </h3>
                 </div>
 
                 <div style='page-break-after:always;'>&nbsp;</div>
