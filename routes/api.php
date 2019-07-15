@@ -1,14 +1,9 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Events\BusinessVerificationCreated;
 use App\Events\InvoiceGenerated;
-use App\Events\MonthlyInvoice;
-use App\Model\Customer;
+use App\Events\BusinessVerificationCreated;
 use App\Model\Order;
-use App\Model\Subscription;
-use App\Model\CustomerStandaloneDevice;
-use App\Model\CustomerStandaloneSim;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,25 +38,13 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
-Route::get('insert_order_num',function()
+Route::get('test',function()
 {
-  $orders = Order::where([['company_id', '1'],['status', '1']])->orderBy('id')->get();
-  foreach ($orders as $key => $order) {
-    $order->update(['order_num' => $key+1]);
-  }
-
-  $subscriptions = Subscription::all();
-  foreach ($subscriptions as $key => $subscription) {
-    $subscription->update(['order_num' => $subscription->order['order_num']]);
-  }
-  $ccds = CustomerStandaloneDevice::all();
-  foreach ($ccds as $key => $ccd) {
-    $ccd->update(['order_num' => $ccd->order['order_num']]);
-  }
-  $ccds = CustomerStandaloneSim::all();
-  foreach ($ccds as $key => $ccd) {
-    $ccd->update(['order_num' => $ccd->order['order_num']]);
-  }
+    event(new BusinessVerificationCreated('9481c5b5035e97eedb157178665093a0747c4ac3', '5c016c5875bc044c2abfd91326e27d06efc2cfd9'));
+    $order = Order::find('5803');
+    event(new InvoiceGenerated($order));
+    $order = Order::find('5804');
+    event(new InvoiceGenerated($order));
 });
 
 Route::get('/cron-jobs-monthly-invoice', [

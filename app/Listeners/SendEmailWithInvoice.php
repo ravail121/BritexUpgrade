@@ -92,7 +92,8 @@ class SendEmailWithInvoice
             return false;
         }
 
-        $bizVerification = BusinessVerification::find($order->customer->business_verification_id);
+        $customer = $order->customer;
+        $dataRow['customer'] = $customer;
 
         $emailTemplate = '';
         $templateValues = '';
@@ -108,13 +109,28 @@ class SendEmailWithInvoice
         }
         $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$order->hash;
 
+        $names = array_column($templateValues, 'name');
+        $column = array_column($templateValues, 'format_name');
+
+        $table = null;
+
+        foreach ($names as $key => $name) {
+            $dynamicField = explode("__",$name);
+            if($table != $dynamicField[0]){
+                $data = $dataRow[$dynamicField[0]]; 
+                $table = $dynamicField[0];
+            }
+            $replaceWith[$key] = $data->{$dynamicField[1]};
+        }
+
         foreach ($emailTemplates as $key => $emailTemplate) {
             if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
                 $email = $emailTemplate->to;
             }else{
-                $email = $bizVerification->email;
+                $email = $customer->email;
             }
-            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateValues, $note));
+            $body = $emailTemplate->body($column, $replaceWith);
+            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $customer->business_verification_id, $body, $email, $note));
         }        
     }
 

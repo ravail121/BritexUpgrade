@@ -44,6 +44,7 @@ class SendEmail
         $order = Order::hash($orderHash)->first();
         
         $businessVerification = BusinessVerification::hash($businessHash)->first();
+        $dataRow['business_verification'] = $businessVerification;
 
         $configurationSet = $this->setMailConfiguration($order);
 
@@ -55,14 +56,29 @@ class SendEmail
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'biz-verification-submitted')->get()->toArray();
 
+        $names = array_column($templateVales, 'name');
+        $column = array_column($templateVales, 'format_name');
+
+        $table = null;
+
+        foreach ($names as $key => $name) {
+            $dynamicField = explode("__",$name);
+            if($table != $dynamicField[0]){
+                $data = $dataRow[$dynamicField[0]]; 
+                $table = $dynamicField[0];
+            }
+            $replaceWith[$key] = $data->{$dynamicField[1]};
+        }
+
         foreach ($emailTemplates as $key => $emailTemplate) {
             if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
                 $email = $emailTemplate->to;
             }else{
                 $email = $businessVerification->email;
             }
-            Notification::route('mail', $email)->notify(new SendEmails($order, $emailTemplate, $businessVerification, $templateVales));
-        }  
+            $body = $emailTemplate->body($column, $replaceWith);
+            Notification::route('mail', $email)->notify(new SendEmails($order, $emailTemplate, $businessVerification->id, $body, $email));
+        }
    
     }
 

@@ -187,7 +187,6 @@ class BizVerificationController extends BaseController
 
         }
         event(new BusinessVerificationCreated($orderHash, $order->bizVerification->hash));
-        // event(new BusinessVerificationApproved($orderHash, $order->bizVerification->hash));
 
         return $this->respond(['email' => $order->bizVerification->email]);   
     }

@@ -9,11 +9,16 @@ use Illuminate\Notifications\Messages\MailMessage;
 
 trait EmailRecord 
 {
-    public function getMailDetails($emailTemplate, $order, $bizVerification, $templateVales, $note = null)
+    public function getMailDetails($emailTemplate, $order, $bizVerificationId, $body, $email, $note)
     {
+        $this->createEmailLog($order, $bizVerificationId, $emailTemplate, $body , $email, $note);
+        $mailMessage = $this->addEmailDetails($emailTemplate, $body);
 
-        $body = $this->createEmailLog($order, $bizVerification, $emailTemplate, $templateVales, $note);
+        return $mailMessage;
+    }
 
+    protected function addEmailDetails($emailTemplate, $body)
+    {
         $mailMessage = (new MailMessage)
                     ->subject($emailTemplate->subject)
                     ->from($emailTemplate->from);
@@ -34,20 +39,16 @@ trait EmailRecord
 
         $mailMessage->line($body);
 
-
         return $mailMessage;
     }
 
-    protected function createEmailLog($order, $bizVerification, $emailTemplate, $templateVales, $note)
+    protected function createEmailLog($order, $bizVerificationId, $emailTemplate, $body, $email, $note)
     {
-        $column = array_column($templateVales, 'format_name');
-        $body = $emailTemplate->body($column, $bizVerification);
-
         $data = [
             'company_id'               => $order->company_id,
             'customer_id'              => $order->customer_id,
-            'to'                       => $bizVerification->email,
-            'business_verficiation_id' => $bizVerification->id,
+            'to'                       => $email,
+            'business_verficiation_id' => $bizVerificationId,
             'subject'                  => $emailTemplate->subject,
             'from'                     => $emailTemplate->from,
             'cc'                       => $emailTemplate->cc,
@@ -57,13 +58,11 @@ trait EmailRecord
         ];
 
         $emailLog = EmailLog::create($data);
-
-        return $body;
     }
 
-    public function getEmailWithAttachment($emailTemplate, $order, $bizVerification, $templateVales, $pdf, $type, $attachData, $note = null)
+    public function getEmailWithAttachment($emailTemplate, $order, $bizVerificationId, $body, $email, $pdf, $type, $attachData, $note = null)
     {
-        $mailMessage = $this->getMailDetails($emailTemplate, $order, $bizVerification, $templateVales, $note);
+        $mailMessage = $this->getMailDetails($emailTemplate, $order, $bizVerificationId, $body, $email, $note);
 
         $mailMessage->attachData($pdf, $type, $attachData);
 

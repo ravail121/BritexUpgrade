@@ -12,14 +12,12 @@ class EmailTemplate extends Model
         'company_id', 'code', 'from', 'to', 'subject', 'body', 'notes', 'reply_to', 'cc', 'bcc', 
     ];
 
-    public function body($strings, $data, $url = null) {
-    	
-    	$replaceWith = [$data->fname, $data->lname, $data->business_name, $url];
-    	
-    	$body = str_replace($strings, $replaceWith, $this->body);
-    	
-    	return $body;
-    } 
+    public function body($strings, $replaceWith) {
+        
+        $body = str_replace($strings, $replaceWith, $this->body);
+        
+        return $body;
+    }
 
     public function customerBody($strings, $data) {
         

@@ -14,8 +14,8 @@ class EmailWithAttachment extends Notification
     public $order;
     public $pdf;
     public $emailTemplate;
-    public $bizVerification;
-    public $templateValues;
+    public $bizVerificationId;
+    public $email;
     public $note;
 
     /**
@@ -23,14 +23,15 @@ class EmailWithAttachment extends Notification
      *
      * @return Order $order
      */
-    public function __construct($order, $pdf, $emailTemplate, $bizVerification, $templateValues, $note)
+    public function __construct($order, $pdf, $emailTemplate, $bizVerificationId, $body, $email, $note)
     {
         $this->order = $order;
         $this->pdf   = $pdf;
         $this->emailTemplate = $emailTemplate;
-        $this->bizVerification   = $bizVerification;
-        $this->templateValues = $templateValues;
-        $this->note   = $note;
+        $this->bizVerificationId   = $bizVerificationId;
+        $this->body = $body;
+        $this->email = $email;
+        $this->note = $note;
     }
 
     /**
@@ -52,7 +53,7 @@ class EmailWithAttachment extends Notification
      */
     public function toMail($notifiable)
     {
-        $mailMessage = $this->getEmailWithAttachment($this->emailTemplate, $this->order, $this->bizVerification, $this->templateValues, $this->pdf->output(), 'invoice.pdf', ['mime' => 'application/pdf',], $this->note);
+        $mailMessage = $this->getEmailWithAttachment($this->emailTemplate, $this->order, $this->bizVerificationId, $this->body, $this->email, $this->pdf->output(), 'invoice.pdf', ['mime' => 'application/pdf',], $this->note);
 
         return $mailMessage;
     }

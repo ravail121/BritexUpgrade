@@ -15,6 +15,8 @@ class SendEmails extends Notification
     public $customerTemplate;
     public $bizVerification;
     public $templateVales;
+    public $email;
+    public $note;
 
     /**
      * Create a new notification instance.
@@ -22,12 +24,14 @@ class SendEmails extends Notification
      * @return Order $order
      */
       
-    public function __construct($order, $customerTemplate, $bizVerification, $templateVales)
+    public function __construct($order, $emailTemplate, $bizVerification, $body, $email, $note =null)
     {
         $this->order = $order;
-        $this->customerTemplate = $customerTemplate;
+        $this->emailTemplate = $emailTemplate;
         $this->bizVerification = $bizVerification;
-        $this->templateVales = $templateVales;
+        $this->body = $body;
+        $this->email = $email;
+        $this->note = $note;
     }
 
     /**
@@ -49,7 +53,7 @@ class SendEmails extends Notification
      */
     public function toMail($notifiable)
     {
-        $mailMessage = $this->getMailDetails($this->customerTemplate, $this->order, $this->bizVerification, $this->templateVales);
+        $mailMessage = $this->getMailDetails($this->emailTemplate, $this->order, $this->bizVerification, $this->body, $this->email, $this->note);
 
         return $mailMessage;
     }
