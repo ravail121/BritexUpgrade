@@ -179,8 +179,11 @@ class Customer extends Authenticatable
 
     public static function customerInvoiceGroups()
     {
-        $customers          = self::whereNotNull('billing_end')->get();
+        $customers          = self::whereNotNull('billing_end')
+                                    ->whereDate('billing_end', '>=', Carbon::today()->format('Y-m-d'))->get();
+
         $invoices           = [];
+        
         foreach ($customers as $customer) {
             $invoice = $customer->invoice;
             

@@ -76,7 +76,7 @@ class UpdateController extends BaseController
                 if ($customer) {
                     $this->updateSubscriptions($customer->id);
 
-                    //event(new AccountSuspend($customer));
+                    event(new AccountSuspended(Customer::find($customer->id)));
                 }
 
             }
