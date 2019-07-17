@@ -336,7 +336,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $standaloneCoupons      = $standalone->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
             $standaloneTotal        = $standalone->where('type', '!=', InvoiceItem::TYPES['coupon'])->sum('amount');
             $subscriptionItems      = $this->allSubscriptionData($order);
-                                            
+            
             $invoice = [
                 'invoice_type'                  =>   $order->invoice->type,
                 'service_charges'               =>   self::formatNumber($serviceCharges),
@@ -747,6 +747,15 @@ class InvoiceController extends BaseController implements ConstantInterface
             ];
         }
         return $data;
+    }
+
+    protected function previousBill($order)
+    {
+        $lastInvoiceId  = $order->customer->invoice
+                                ->where('type', Invoice::TYPES['monthly'])
+                                ->where('id', '!=', $order->invoice_id)
+                                ->max('id');
+        $lastAmountPaid = Invoice::find($lastInvoiceId); 
     }
 
 

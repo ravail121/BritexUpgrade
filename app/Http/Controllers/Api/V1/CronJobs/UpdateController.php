@@ -23,10 +23,10 @@ class UpdateController extends BaseController
      * 
      * @return Response
      */
-    public function checkUpdates()
+    public function checkUpdates(Request $request)
     {
         $this->updateCustomerDates();
-        $this->updateInvoiceStatus();
+        $this->updateInvoiceStatus($request);
         $this->moveSubscriptionSuspendToClose();
         $this->updateProratedAmounts();
         $this->scheduledSupensions();
@@ -62,7 +62,7 @@ class UpdateController extends BaseController
      *  
      * @return boolean
      */
-    protected function updateInvoiceStatus()
+    protected function updateInvoiceStatus($request)
     {
         $invoices = Invoice::where('type', 1)->where('status', 1)->get();
 
@@ -75,7 +75,7 @@ class UpdateController extends BaseController
                 $customer = $this->updateAccountSuspended($invoice->customer_id);
                 if ($customer) {
                     $this->updateSubscriptions($customer->id);
-
+                    $request->headers->set('authorization', $customer->company->api_key);
                     event(new AccountSuspended(Customer::find($customer->id)));
                 }
 
