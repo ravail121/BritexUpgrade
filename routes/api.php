@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use App\Events\InvoiceGenerated;
 use App\Events\BusinessVerificationCreated;
+use App\Events\AccountSuspended;
+use App\Model\Customer;
 use App\Model\Order;
 
 /*
@@ -40,11 +42,12 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 
 Route::get('test',function()
 {
-    event(new BusinessVerificationCreated('9481c5b5035e97eedb157178665093a0747c4ac3', '5c016c5875bc044c2abfd91326e27d06efc2cfd9'));
-    $order = Order::find('5803');
-    event(new InvoiceGenerated($order));
-    $order = Order::find('5804');
-    event(new InvoiceGenerated($order));
+    event(new AccountSuspended(Customer::find('133')));
+    // event(new BusinessVerificationCreated('9481c5b5035e97eedb157178665093a0747c4ac3', '5c016c5875bc044c2abfd91326e27d06efc2cfd9'));
+    // $order = Order::find('5803');
+    // event(new InvoiceGenerated($order));
+    // $order = Order::find('5804');
+    // event(new InvoiceGenerated($order));
 });
 
 Route::get('/cron-jobs-monthly-invoice', [

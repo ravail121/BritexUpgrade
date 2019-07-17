@@ -2,7 +2,6 @@
 
 namespace App\Listeners;
 
-
 use Mail;
 use Notification;
 use App\Model\Order;

@@ -49,19 +49,41 @@ class SendEmailToCustomerAndAdmin
         }
 
         $customerTemplates = EmailTemplate::where('company_id', $order->company_id)->where('code', 'account-suspension-customer')->get();
-        
-        $bizVerification = BusinessVerification::find($order->customer->business_verification_id);
+
+        $customer = $order->customer;
+        $dataRow['customer'] = $customer; 
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'account-suspension-customer')->get()->toArray();
 
         $adminTemplates = EmailTemplate::where('company_id', $order->company_id)->where('code', 'account-suspension-admin')->get();
 
+        $names = array_column($templateVales, 'name');
+        $column = array_column($templateVales, 'format_name');
+
+        $table = null;
+
+        foreach ($names as $key => $name) {
+            $dynamicField = explode("__",$name);
+            if($table != $dynamicField[0]){
+                $data = $dataRow[$dynamicField[0]]; 
+                $table = $dynamicField[0];
+            }
+            $replaceWith[$key] = $data->{$dynamicField[1]};
+        }
+
         foreach ($customerTemplates as $key => $customerTemplate) {
-            $customer->notify(new SendEmail($order, $customerTemplate, $bizVerification, $templateVales));   
+            if(filter_var($customerTemplate->to, FILTER_VALIDATE_EMAIL)){
+                $email = $customerTemplate->to;
+            }else{
+                $email = $customer->email;
+            }
+            $body = $customerTemplate->body($column, $replaceWith);
+            Notification::route('mail', $email)->notify(new SendEmails($order, $customerTemplate, $customer->business_verification_id, $body, $email));  
         }
         
         foreach ($adminTemplates as $key => $adminTemplate) {
-            Notification::route('mail', $adminTemplate->to)->notify(new SendEmails($order, $adminTemplate, $bizVerification, $templateVales));        
+            $body = $adminTemplate->body($column, $replaceWith);
+            Notification::route('mail', $adminTemplate->to)->notify(new SendEmails($order, $customerTemplate, $customer->business_verification_id, $body, $email));      
         }
     }
 
