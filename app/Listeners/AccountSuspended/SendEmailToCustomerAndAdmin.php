@@ -83,7 +83,7 @@ class SendEmailToCustomerAndAdmin
         
         foreach ($adminTemplates as $key => $adminTemplate) {
             $body = $adminTemplate->body($column, $replaceWith);
-            Notification::route('mail', $adminTemplate->to)->notify(new SendEmails($order, $customerTemplate, $customer->business_verification_id, $body, $email));      
+            Notification::route('mail', $adminTemplate->to)->notify(new SendEmails($order, $customerTemplate, $customer->business_verification_id, $body, $adminTemplate->to));      
         }
     }
 
