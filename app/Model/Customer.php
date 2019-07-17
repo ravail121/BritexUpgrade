@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Events\InvoiceGenerated;
 
 class Customer extends Authenticatable
 {
@@ -240,7 +241,17 @@ class Customer extends Authenticatable
         $customers = $customers->filter(function($customer, $i) use ($today){
             $billingEndParsed = Carbon::parse($customer->billing_end);
             $billingEndFiveDaysBefore   = $billingEndParsed->copy()->subDays(5);
-
+            if ($today > $billingEndParsed) {
+                $invoiceGenerated = $customer->invoice
+                                    ->where('type', 1)
+                                    ->where('status', 1);
+                                    
+                if (!count($invoiceGenerated)) {
+                    return 
+                        $today >= $billingEndFiveDaysBefore &&
+                        $today > $billingEndParsed;
+                }
+            }
             // Is today between customer.billing_date and -5 days
             return 
                 $today >= $billingEndFiveDaysBefore &&

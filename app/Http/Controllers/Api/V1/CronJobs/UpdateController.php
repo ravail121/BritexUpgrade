@@ -26,7 +26,7 @@ class UpdateController extends BaseController
     public function checkUpdates()
     {
         $this->updateCustomerDates();
-        //$this->updateInvoiceStatus();
+        $this->updateInvoiceStatus();
         $this->moveSubscriptionSuspendToClose();
         $this->updateProratedAmounts();
         $this->scheduledSupensions();

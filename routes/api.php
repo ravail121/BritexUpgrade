@@ -65,6 +65,11 @@ Route::get('/cron-jobs-orders', [
     'uses'=> 'Api\V1\CronJobs\OrderController@order',
 ]);
 
+Route::get('/update-cron', [
+  'as'=>'api.cron.update',
+  'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
+]);
+
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
 	Route::group(['namespace' => 'CronJobs'], function(){
