@@ -15,6 +15,8 @@ use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use App\Model\CustomerStandaloneSim;
+use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 
 
@@ -362,9 +364,23 @@ class CustomerController extends BaseController
         ]);
         $customer = Customer::whereHash($request->hash)->first();
 
-        $billingDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan.subscription', 'orders.allOrderGroup.device.customerStandaloneDevice','orders.allOrderGroup.sim.customerStandaloneSim','orders.allOrderGroup.order_group_addon.addon','orders.invoice')->find($customer['id']);
+        $customerDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan', 'orders.allOrderGroup.device','orders.allOrderGroup.sim','orders.allOrderGroup.order_group_addon.addon','orders.invoice')->find($customer['id'])->toArray();
+
+        foreach ($customerDetails['orders'] as $key => $order) {
+            foreach ($order['all_order_group'] as $orderGroupKey => $orderGroup) {
+                if($orderGroup['plan']){
+                    $customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['plan']['subscription'] = Subscription::where([['plan_id', $orderGroup['plan']['id']],['order_id', $order['id']]])->first(); 
+                }
+                if($orderGroup['device']){
+                    $customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['device']['customer_standalone_device'] = CustomerStandaloneDevice::where([['device_id', $orderGroup['device']['id']],['order_id', $order['id']]])->first(); 
+                }
+                if($orderGroup['sim']){
+                    $customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['sim']['customer_standalone_sim'] = CustomerStandaloneSim::where([['sim_id', $orderGroup['sim']['id']],['order_id', $order['id']]])->first(); 
+                }
+            }
+        }
         
-        return $this->respond($billingDetails);
+        return $this->respond($customerDetails);
     }  
 
     public function proratedDays(Request $request)

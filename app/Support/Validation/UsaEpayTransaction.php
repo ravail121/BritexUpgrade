@@ -140,8 +140,10 @@ trait UsaEpayTransaction
         }
 
         $data['card']        = $this->createCustomerCard($request, $order, $tran);
-        $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1);
-        $data['credit']      = $this->createCredits($order, $tran, $invoice);
+        if(!isset($data['card']['new'])){
+            $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1);
+            $data['credit']      = $this->createCredits($order, $tran, $invoice);
+        }
         $data['success']     = true;
         
         return $data;
@@ -315,6 +317,7 @@ trait UsaEpayTransaction
 
                 ]);
             }
+            return ['card' => $customerCreditCard, 'new' => true ];
         }
 
         return ['card' => $customerCreditCard];

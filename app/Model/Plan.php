@@ -25,6 +25,10 @@ class Plan extends Model
         return $this->hasOne('App\Model\Subscription','plan_id');
     }
 
+    public function subscriptions(){
+        return $this->hasMany('App\Model\Subscription','plan_id');
+    }
+    
     public function device_to_plan()
     {
         return $this->hasMany('App\Model\DeviceToPlan', 'id');
