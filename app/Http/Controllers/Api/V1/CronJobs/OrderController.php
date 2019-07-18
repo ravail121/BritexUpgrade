@@ -182,7 +182,7 @@ class OrderController extends BaseController
                             return $this->respond(['message' => 'Something went wrong!']);
                     }
                 } else {
-                    \Log::info("----Order not present for This standAloneDevice Id {$standAloneDevice->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
+                    \Log::info("----Order not present for This standAloneDevice Id {$standAloneSim->id} associated with this Order Id {$standAloneDevice->order_id}. Order Generation");
                 }
             }
         }    
