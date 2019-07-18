@@ -137,7 +137,7 @@ trait InvoiceTrait
                 [
                     'invoice_id'   => $invoice->id,
                     'subscription_id' => $subscriptionId,
-                    'product_type' => $subscriptionId,
+                    'product_type' => '',
                     'product_id'   => null,
                     'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                     'start_date'   => $invoice->start_date,
