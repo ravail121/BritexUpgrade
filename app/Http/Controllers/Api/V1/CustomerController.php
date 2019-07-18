@@ -381,8 +381,7 @@ class CustomerController extends BaseController
 
     public function saveBillingDetails(Request $request)
     {
-        $customerId = Order::where('hash', $request->hash)->first()->customer_id;
-        Customer::find($customerId)->update(
+        Customer::find($request->id)->update(
             [
                 'billing_state_id'  => $request->billing_state_id,
                 'billing_fname'     => $request->billing_fname,
