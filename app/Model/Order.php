@@ -82,6 +82,11 @@ class Order extends Model
         return $this->hasMany('App\Model\Subscription', 'order_id', 'id');
     }
 
+    public function scopecompleteOrders($query)
+    {
+        return $query->where('status', '1');
+    }
+
     public function getCompareDatesAttribute()
     {
         $today     = Carbon::today();

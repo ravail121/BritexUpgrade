@@ -101,9 +101,9 @@ class Customer extends Authenticatable
 
     public function orders()
     {
-        return $this->hasMany('App\Model\Order');
+        return $this->hasMany('App\Model\Order')->completeOrders();
     }
-
+    
     public function order()
     {
         return $this->belongsTo('App\Model\Order');
