@@ -397,7 +397,8 @@ class CustomerController extends BaseController
 
     public function saveBillingDetails(Request $request)
     {
-        Customer::find($request->id)->update(
+        $customer = Customer::find($request->id);
+        $customer->update(
             [
                 'billing_state_id'  => $request->billing_state_id,
                 'billing_fname'     => $request->billing_fname,
@@ -408,7 +409,7 @@ class CustomerController extends BaseController
                 'billing_zip'       => $request->billing_zip,
             ]
         );
-        return ['success' => 'Details Added'];
+        return ['success' => 'Details Added', 'id' => $customer->billing_state_id];
     }
 
 }
