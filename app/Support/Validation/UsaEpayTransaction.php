@@ -215,7 +215,7 @@ trait UsaEpayTransaction
             'error'                  => $tran->error,
             'exp'                    => $card->expiration,
             'last4'                  => substr($card->last4, -4),
-            'card_type'              => $card->card_types,
+            'card_type'              => $card->card_type,
             'amount'                 => $tran->amount,
             'card_token'             => $card->token,
         ]);
