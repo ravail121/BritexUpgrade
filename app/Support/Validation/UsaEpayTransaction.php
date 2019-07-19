@@ -37,13 +37,16 @@ trait UsaEpayTransaction
    * @param  Request   $request
    * @return boolean
    */
-   protected function setUsaEpayData($tran, $request)
+   protected function setUsaEpayData($tran, $request, $command = null)
    {
        $orderhash = $request->order_hash;
        $order = Order::whereHash($orderhash)->first();
        $couponData = $this->couponData($order, $request);
        $this->stringReplacement($request);
 
+        if($command){
+            $tran->command = $command;
+        }
        $tran->key         = $couponData['key'];
        $tran->usesandbox  = $couponData['usesandbox'];
        $tran->card        = $request->payment_card_no;
@@ -138,12 +141,13 @@ trait UsaEpayTransaction
         if(!$order){
             return ['success' => false];
         }
-
         $data['card']        = $this->createCustomerCard($request, $order, $tran);
-        if(!isset($data['card']['new'])){
-            $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1);
+        
+        if(!$tran->command == 'authonly'){
+            $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1, $data['card']);
             $data['credit']      = $this->createCredits($order, $tran, $invoice);
         }
+
         $data['success']     = true;
         
         return $data;
@@ -197,21 +201,23 @@ trait UsaEpayTransaction
      * @param  int  $order_id
      * @return Response
      */
-    protected function createPaymentLogs($order, $tran, $response)
+    protected function createPaymentLogs($order, $tran, $response, $card)
     {
+        $card = $card['card'];
+
         return PaymentLog::create([
             'customer_id'            => $order->customer_id, 
             'order_id'               => $order->id,
             // 'invoice_id'             => $order->invoice_id, 
             'transaction_num'        => $tran->authcode, 
-            'processor_customer_num' => $tran->card, 
+            'processor_customer_num' => $tran->refnum, 
             'status'                 => $response,
             'error'                  => $tran->error,
-            'exp'                    => $tran->exp,
-            'last4'                  => substr($tran->last4, -4),
-            'card_type'              => $tran->cardType,
+            'exp'                    => $card->expiration,
+            'last4'                  => substr($card->last4, -4),
+            'card_type'              => $card->card_types,
             'amount'                 => $tran->amount,
-            'card_token'             => $tran->cardref,
+            'card_token'             => $card->token,
         ]);
     }
 
@@ -273,21 +279,13 @@ trait UsaEpayTransaction
      * @return Order object
      */
     protected function createCustomerCard($request, $order, $tran)
-    {
-        $customerCreditCard = CustomerCreditCard::where('cardholder', $request->payment_card_holder)
-                    ->where('number', $request->payment_card_no)
-                    ->where('expiration', $request->expires_mmyy)
-                    ->where('cvc', $request->payment_cvc)
-                    ->where('customer_id', $order->customer_id)
-                    ->first();
-
-        if (!$customerCreditCard) {
+    {   
+        if (!$request->card_id) {
             $customerCreditCard = CustomerCreditCard::create([
                 'token'            => $tran->cardref,
                 'api_key'          => $order->company->api_key, 
                 'customer_id'      => $order->customer_id, 
                 'cardholder'       => $request->payment_card_holder,
-                'number'           => $request->payment_card_no,
                 'expiration'       => $request->expires_mmyy,
                 'last4'            => $tran->last4,
                 'card_type'        => $tran->cardType,
@@ -317,7 +315,9 @@ trait UsaEpayTransaction
 
                 ]);
             }
-            return ['card' => $customerCreditCard, 'new' => true ];
+            return ['card' => $customerCreditCard];
+        }else{
+            $customerCreditCard = CustomerCreditCard::find($request->card_id);
         }
 
         return ['card' => $customerCreditCard];

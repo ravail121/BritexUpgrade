@@ -81,7 +81,7 @@ class CardController extends BaseController implements ConstantInterface
             ]);
         }
 
-        return $this->processTransaction($request);
+        return $this->processTransaction($request, 'authonly');
 
     }
 
@@ -112,8 +112,9 @@ class CardController extends BaseController implements ConstantInterface
 
     protected function creditCardData($card, $request)
     {
+        $request->card_id             =  $card->id;
         $request->payment_card_holder =  $card->cardholder;
-        $request->payment_card_no     =  $card->number;
+        $request->payment_card_no     =  $card->token;
         $request->expires_mmyy        =  $card->expiration;
         $request->payment_cvc         =  $card->cvc;
         $request->shipping_address1   =  $card->customer->shipping_address1;    
@@ -134,11 +135,11 @@ class CardController extends BaseController implements ConstantInterface
 
 
 
-    protected function processTransaction($request)
+    protected function processTransaction($request, $command = null)
     {
         $order = Order::where('customer_id', $request->customer_id)->first();
         if ($order) {
-            $this->tran = $this->setUsaEpayData($this->tran, $request);
+            $this->tran = $this->setUsaEpayData($this->tran, $request, $command);
 
             if($this->tran->Process()) {
                 if($request->without_order){

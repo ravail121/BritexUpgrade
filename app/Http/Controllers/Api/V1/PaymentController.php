@@ -42,14 +42,24 @@ class PaymentController extends BaseController implements ConstantInterface
     * @return string     Json Response
     */
     public function chargeNewCard(Request $request)
-    { 
+    {
         $this->setConstantData($request);
-        $validation = $this->validateCredentials($request);
+        if($request->customer_card == 'customer_card'){
+            $validation = $this->validateCredentials($request);
 
-        if ($validation->fails()) {
-            return $this->respond([
-                'message' => $validation->getMessageBag()->all()
-            ]);
+            if ($validation->fails()) {
+                return $this->respond([
+                    'message' => $validation->getMessageBag()->all()
+                ]);
+            }
+        }else{
+            $creditCard = CustomerCreditCard::find($request->customer_card);
+            if(!$creditCard){
+                return $this->respond([
+                    'message' => 'Sorry Card not Found'
+                ]);
+            }
+            $this->creditCardData($creditCard, $request);
         }
 
         if (!$request->order_hash) {
@@ -64,10 +74,10 @@ class PaymentController extends BaseController implements ConstantInterface
         $this->tran = $this->setUsaEpayData($this->tran, $request);
 
         if($this->tran->Process()) {
+            
             $msg = $this->transactionSuccessful($request, $this->tran);
 
             $data    = $this->setInvoiceData($order, $msg['credit'], $request);
-
             $invoice = Invoice::create($data);
             
             $this->addCreditToInvoiceRow($invoice, $msg['credit'], $this->tran);
@@ -95,6 +105,29 @@ class PaymentController extends BaseController implements ConstantInterface
         }
 
         return $this->respond($msg); 
+    }
+
+    protected function creditCardData($card, $request)
+    {
+        $request->card_id             =  $card->id;
+        $request->payment_card_holder =  $card->cardholder;
+        $request->payment_card_no     =  $card->token;
+        $request->expires_mmyy        =  $card->expiration;
+        $request->payment_cvc         =  $card->cvc;
+        $request->shipping_address1   =  $card->customer->shipping_address1;    
+        $request->zip                 =  $card->customer->shipping_zip;         
+        $request->fname               =  $card->customer->fname;
+        $request->lname               =  $card->customer->lname;
+        $request->company_name        =  $card->customer->company_name;
+        $request->billing_address1    =  $card->billing_address1;
+        $request->billing_city        =  $card->billing_city;
+        $request->billing_state_id    =  $card->billing_state_id;
+        $request->billing_zip         =  $card->billing_zip;
+        $request->primary_contact     =  $card->customer->phone;
+        $request->email               =  $card->customer->email;
+
+        return $request;
+    
     }
 
 
