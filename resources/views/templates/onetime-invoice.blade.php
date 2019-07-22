@@ -105,11 +105,11 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Previous Balance</td>
-                                                    <td class="detail">--</td>
+                                                    <td class="detail">0.00</td>
                                                 </tr>
                                                 <tr>
                                                     <td>Payments Received </td>
-                                                    <td class="detail">--</td>
+                                                    <td class="detail">0.00</td>
                                                 </tr>
                                                 <tr>
                                                     <td class="thankyou" colspan="2">
@@ -120,7 +120,7 @@
                                                 </tr>
                                                 <tr>
                                                     <td>Balance Forward</td>
-                                                    <td class="detail">--</td>
+                                                    <td class="detail">0.00</td>
                                                 </tr>
                                             </tbody>
                                         </table>

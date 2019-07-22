@@ -335,7 +335,8 @@ class InvoiceController extends BaseController implements ConstantInterface
             $standaloneCoupons      = $standalone->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
             $standaloneTotal        = $standalone->where('type', '!=', InvoiceItem::TYPES['coupon'])->sum('amount');
             $subscriptionItems      = $this->allSubscriptionData($order);
-            
+            $previousBill           = $this->previousBill($order);
+
             $invoice = [
                 'invoice_type'                  =>   $order->invoice->type,
                 'service_charges'               =>   self::formatNumber($serviceCharges),
@@ -370,6 +371,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'reseller_domain'               =>   $order->customer->company->url,
                 'standalone_items'              =>   $this->getItemDetails($standaloneItems),
                 'one_time_standalone'           =>   self::formatNumber($standaloneItems->sum('amount')),
+                'previous_bill'                 =>   $previousBill,
                 'standalone_tax'                =>   self::formatNumber($standaloneTaxes),
                 'standalone_regulatory'         =>   self::formatNumber($standaloneRegulatory),
                 'standalone_shipping'           =>   self::formatNumber($shippingFeeStandalone),
@@ -383,12 +385,12 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
 
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                
+                return view('templates/onetime-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
                 return $pdf->download('invoice.pdf');
             
             } else {
-                
+                return view('templates/monthly-invoice', compact('invoice'));
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 
@@ -754,7 +756,18 @@ class InvoiceController extends BaseController implements ConstantInterface
                                 ->where('type', Invoice::TYPES['monthly'])
                                 ->where('id', '!=', $order->invoice_id)
                                 ->max('id');
-        $lastAmountPaid = Invoice::find($lastInvoiceId); 
+                                
+        $lastInvoice        = Invoice::find($lastInvoiceId);
+
+        $previousTotalDue   = $lastInvoice->subtotal;
+        $amountPaid         = $lastInvoice->creditsToInvoice->sum('amount');
+        $pending            = $previousTotalDue > $amountPaid ? $previousTotalDue - $amountPaid : 0;
+
+        return [
+            'previous_amount'    => self::formatNumber($previousTotalDue),
+            'previous_payment'   => self::formatNumber($amountPaid),
+            'previous_pending'   => self::formatNumber($pending)
+        ];
     }
 
 
@@ -1515,7 +1528,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         $customer = Customer::find($data['customer_id']);
         $end_date = Carbon::parse($customer->billing_end)->addDays(1);
         $order = Order::whereHash($data['order_hash'])->first();
-
+            
         $invoice = Invoice::create([
             'customer_id'             => $customer->id,
             'end_date'                => $end_date,

@@ -220,7 +220,8 @@ class SendEmailWithInvoice
             $standaloneCoupons      = $standalone->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
             $standaloneTotal        = $standalone->where('type', '!=', InvoiceItem::TYPES['coupon'])->sum('amount');
             $subscriptionItems      = $this->allSubscriptionData($order);
-                                            
+            $previousBill           = $this->previousBill($order);
+
             $invoice = [
                 'invoice_type'                  =>   $order->invoice->type,
                 'service_charges'               =>   self::formatNumber($serviceCharges),
@@ -255,6 +256,7 @@ class SendEmailWithInvoice
                 'reseller_domain'               =>   $order->customer->company->url,
                 'standalone_items'              =>   $this->getItemDetails($standaloneItems),
                 'one_time_standalone'           =>   self::formatNumber($standaloneItems->sum('amount')),
+                'previous_bill'                 =>   $previousBill,
                 'standalone_tax'                =>   self::formatNumber($standaloneTaxes),
                 'standalone_regulatory'         =>   self::formatNumber($standaloneRegulatory),
                 'standalone_shipping'           =>   self::formatNumber($shippingFeeStandalone),
@@ -614,6 +616,26 @@ class SendEmailWithInvoice
             ];
         }
         return $data;
+    }
+
+    protected function previousBill($order)
+    {
+        $lastInvoiceId  = $order->customer->invoice
+                                ->where('type', Invoice::TYPES['monthly'])
+                                ->where('id', '!=', $order->invoice_id)
+                                ->max('id');
+                                
+        $lastInvoice        = Invoice::find($lastInvoiceId);
+
+        $previousTotalDue   = $lastInvoice->subtotal;
+        $amountPaid         = $lastInvoice->creditsToInvoice->sum('amount');
+        $pending            = $previousTotalDue > $amountPaid ? $previousTotalDue - $amountPaid : 0;
+
+        return [
+            'previous_amount'    => self::formatNumber($previousTotalDue),
+            'previous_payment'   => self::formatNumber($amountPaid),
+            'previous_pending'   => self::formatNumber($pending)
+        ];
     }
 
     

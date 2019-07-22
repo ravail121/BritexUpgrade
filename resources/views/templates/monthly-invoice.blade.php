@@ -107,12 +107,22 @@
                                             <tbody>
                                                 <tr>
                                                     <td>Previous Balance</td>
-                                                    <td class="detail">$ </td>
+                                                    <td class="detail">$ 
+                                                        @isset ($invoice['previous_bill']['previous_amount'])
+                                                            {{$invoice['previous_bill']['previous_amount']}}
+                                                        @else
+                                                            0.00
+                                                        @endisset
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td>Payments Received </td>
-                                                    <td class="detail">
-                                                       $
+                                                    <td class="detail">-$
+                                                        @isset ($invoice['previous_bill']['previous_payment'])
+                                                                {{$invoice['previous_bill']['previous_payment']}}
+                                                        @else
+                                                            0.00
+                                                        @endisset
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -124,7 +134,13 @@
                                                 </tr>
                                                 <tr>
                                                     <td>Balance Forward</td>
-                                                    <td class="detail">$</td>
+                                                    <td class="detail">$
+                                                        @isset ($invoice['previous_bill']['previous_pending'])
+                                                            {{$invoice['previous_bill']['previous_pending']}}
+                                                        @else
+                                                            0.00
+                                                        @endisset
+                                                    </td>
                                                 </tr>
                                             </tbody>
                                         </table>

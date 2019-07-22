@@ -128,7 +128,7 @@ class CardController extends BaseController implements ConstantInterface
         $request->billing_zip         =  $card->billing_zip;
         $request->primary_contact     =  $card->customer->phone;
         $request->email               =  $card->customer->email;
-
+        
         return $request;
     
     }
