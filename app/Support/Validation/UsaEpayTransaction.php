@@ -144,7 +144,7 @@ trait UsaEpayTransaction
         $data['card'] = $this->createCustomerCard($request, $order, $tran);
         
         if(!$tran->command == 'authonly'){
-            $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1, $data['card']);
+            $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1, $data['card']['card']);
             $data['credit']      = $this->createCredits($order, $tran, $invoice);
         }
 
@@ -190,7 +190,7 @@ trait UsaEpayTransaction
     protected function transactionFail($order, $tranFail)
     {
         $this->createPaymentLogs($order, $tranFail, 0);
-        return ['message' => 'Card Declined: (' . $tranFail->result . '). Reason: '. $tranFail->error];
+        return ['message' => $tranFail->error];
     }
 
 
@@ -201,10 +201,8 @@ trait UsaEpayTransaction
      * @param  int  $order_id
      * @return Response
      */
-    protected function createPaymentLogs($order, $tran, $response, $card)
+    protected function createPaymentLogs($order, $tran, $response, $card = null)
     {
-        $card = $card['card'];
-
         return PaymentLog::create([
             'customer_id'            => $order->customer_id, 
             'order_id'               => $order->id,
@@ -213,11 +211,11 @@ trait UsaEpayTransaction
             'processor_customer_num' => $tran->refnum, 
             'status'                 => $response,
             'error'                  => $tran->error,
-            'exp'                    => $card->expiration,
-            'last4'                  => substr($card->last4, -4),
-            'card_type'              => $card->card_type,
+            'exp'                    => $tran->exp,
+            'last4'                  => $card ? substr($card->last4, -4) : null,
+            'card_type'              => $card ? $card->card_type : null,
             'amount'                 => $tran->amount,
-            'card_token'             => $card->token,
+            'card_token'             => $card ? $card->token : null,
         ]);
     }
 
@@ -286,6 +284,7 @@ trait UsaEpayTransaction
                 ->where('cvc', $request->payment_cvc)
                 ->where('customer_id', $order->customer_id)
                 ->first();
+                
             if (!$customerCreditCard) {    
                 $customerCreditCard = CustomerCreditCard::create([
                     'token'            => $tran->cardref,

@@ -155,8 +155,6 @@ class BizVerificationController extends BaseController
      */
     protected function uploadAndInsertDocument($file, $businessVerification)
     {
-        //\Log::info('.........function 1............bizverCon');
-        //\Log::info($file);
         $path = BusinessVerificationDocs::directoryLocation($businessVerification->order->company_id, $businessVerification->id);
 
         if ($uploaded = $this->moveOneFile($path, $file)) {

@@ -65,7 +65,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         // $customers = Customer::shouldBeGeneratedNewInvoices();
         $customers = Customer::shouldBeGeneratedNewInvoices();
         
-        //\Log::info($customers);
         foreach ($customers as $customer) {
             /*if( $customer->openMonthlyInvoice ){
 

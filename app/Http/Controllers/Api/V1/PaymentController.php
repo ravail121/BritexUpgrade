@@ -101,7 +101,7 @@ class PaymentController extends BaseController implements ConstantInterface
             
       
         } else {
-            $msg = $this->transactionFail($order->id, $this->tran);
+            $msg = $this->transactionFail($order, $this->tran);
         }
 
         return $this->respond($msg); 
