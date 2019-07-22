@@ -44,7 +44,7 @@ class PaymentController extends BaseController implements ConstantInterface
     public function chargeNewCard(Request $request)
     {
         $this->setConstantData($request);
-        if($request->customer_card == 'customer_card'){
+        if($request->customer_card == 'customer_card' || !$request->customer_card){
             $validation = $this->validateCredentials($request);
 
             if ($validation->fails()) {
