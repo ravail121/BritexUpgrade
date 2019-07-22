@@ -213,60 +213,60 @@ class InvoiceController extends BaseController implements ConstantInterface
    
     public function storeCoupon($couponAmount, $couponCode, $invoice)
     {
-        
-        //store coupon in invoice_items.
-        if ($couponAmount) {
-            $invoice->invoiceItem()->create(
-                [
-                    'subscription_id' => null,
-                    'product_type'    => '',
-                    'product_id'      => null,
-                    'type'            => InvoiceItem::TYPES['coupon'],
-                    'description'     => "(Coupon) ".$couponCode,
-                    'amount'          => $couponAmount,
-                    'start_date'      => $invoice->start_date,
-                    'taxable'         => self::TAX_FALSE,
-                ]
-            );
+        if ($couponCode) {
+            //store coupon in invoice_items.
+            if ($couponAmount) {
+                $invoice->invoiceItem()->create(
+                    [
+                        'subscription_id' => null,
+                        'product_type'    => '',
+                        'product_id'      => null,
+                        'type'            => InvoiceItem::TYPES['coupon'],
+                        'description'     => "(Coupon) ".$couponCode,
+                        'amount'          => $couponAmount,
+                        'start_date'      => $invoice->start_date,
+                        'taxable'         => self::TAX_FALSE,
+                    ]
+                );
+            }
+
+            $couponNumUses   = Coupon::where('code', $couponCode)->pluck('num_uses')->first();
+
+            Coupon::where('code', $couponCode)->update([
+                'num_uses' => $couponNumUses + 1 
+            ]);
+
+            //store coupon in customer_coupon table if eligible
+            $coupon         = Coupon::where('code', $couponCode)->first();
+            $couponCycles   = $coupon->num_cycles;
+            $couponId       = $coupon->id;
+
+            $customerCoupon = [
+                'customer_id'       => $invoice->customer_id,
+                'coupon_id'         => $couponId,
+                
+            ];
+
+            $customerCouponInfinite = [
+                'cycles_remaining'  => -1
+            ];
+
+            $customerCouponFinite = [
+                'cycles_remaining'  => $couponCycles - 1
+            ];
+
+            if ($couponCycles > 1) {
+
+                $data = array_merge($customerCoupon, $customerCouponFinite);
+                CustomerCoupon::create($data);
+
+            } elseif ($couponCycles == 0) {
+                
+                $data = array_merge($customerCoupon, $customerCouponInfinite);
+                CustomerCoupon::create($data);
+
+            }
         }
-
-        $couponNumUses   = Coupon::where('code', $couponCode)->pluck('num_uses')->first();
-
-        Coupon::where('code', $couponCode)->update([
-            'num_uses' => $couponNumUses + 1 
-        ]);
-
-        //store coupon in customer_coupon table if eligible
-        $coupon         = Coupon::where('code', $couponCode)->first();
-        $couponCycles   = $coupon->num_cycles;
-        $couponId       = $coupon->id;
-
-        $customerCoupon = [
-            'customer_id'       => $invoice->customer_id,
-            'coupon_id'         => $couponId,
-            
-        ];
-
-        $customerCouponInfinite = [
-            'cycles_remaining'  => -1
-        ];
-
-        $customerCouponFinite = [
-            'cycles_remaining'  => $couponCycles - 1
-        ];
-
-        if ($couponCycles > 1) {
-
-            $data = array_merge($customerCoupon, $customerCouponFinite);
-            CustomerCoupon::create($data);
-
-        } elseif ($couponCycles == 0) {
-            
-            $data = array_merge($customerCoupon, $customerCouponInfinite);
-            CustomerCoupon::create($data);
-
-        }
-
     }
 
     protected function ifTotalDue($order)
