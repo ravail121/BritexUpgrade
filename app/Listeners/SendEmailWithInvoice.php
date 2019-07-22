@@ -624,18 +624,20 @@ class SendEmailWithInvoice
                                 ->where('type', Invoice::TYPES['monthly'])
                                 ->where('id', '!=', $order->invoice_id)
                                 ->max('id');
-                                
-        $lastInvoice        = Invoice::find($lastInvoiceId);
+        if ($lastInvoiceId && $order->invoice->type == Invoice::TYPES['one-time']) {
 
-        $previousTotalDue   = $lastInvoice->subtotal;
-        $amountPaid         = $lastInvoice->creditsToInvoice->sum('amount');
-        $pending            = $previousTotalDue > $amountPaid ? $previousTotalDue - $amountPaid : 0;
+            $lastInvoice        = Invoice::find($lastInvoiceId);
 
-        return [
-            'previous_amount'    => self::formatNumber($previousTotalDue),
-            'previous_payment'   => self::formatNumber($amountPaid),
-            'previous_pending'   => self::formatNumber($pending)
-        ];
+            $previousTotalDue   = $lastInvoice->subtotal;
+            $amountPaid         = $lastInvoice->creditsToInvoice->sum('amount');
+            $pending            = $previousTotalDue > $amountPaid ? $previousTotalDue - $amountPaid : 0;
+
+            return [
+                'previous_amount'    => self::formatNumber($previousTotalDue),
+                'previous_payment'   => self::formatNumber($amountPaid),
+                'previous_pending'   => self::formatNumber($pending)
+            ];
+        }
     }
 
     

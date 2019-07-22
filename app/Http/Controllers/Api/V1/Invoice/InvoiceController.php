@@ -385,12 +385,12 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
 
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                return view('templates/onetime-invoice', compact('invoice'));
+                
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
                 return $pdf->download('invoice.pdf');
             
             } else {
-                return view('templates/monthly-invoice', compact('invoice'));
+                
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 
@@ -756,18 +756,20 @@ class InvoiceController extends BaseController implements ConstantInterface
                                 ->where('type', Invoice::TYPES['monthly'])
                                 ->where('id', '!=', $order->invoice_id)
                                 ->max('id');
-                                
-        $lastInvoice        = Invoice::find($lastInvoiceId);
+        if ($lastInvoiceId && $order->invoice->type == Invoice::TYPES['one-time']) {
 
-        $previousTotalDue   = $lastInvoice->subtotal;
-        $amountPaid         = $lastInvoice->creditsToInvoice->sum('amount');
-        $pending            = $previousTotalDue > $amountPaid ? $previousTotalDue - $amountPaid : 0;
+            $lastInvoice        = Invoice::find($lastInvoiceId);
 
-        return [
-            'previous_amount'    => self::formatNumber($previousTotalDue),
-            'previous_payment'   => self::formatNumber($amountPaid),
-            'previous_pending'   => self::formatNumber($pending)
-        ];
+            $previousTotalDue   = $lastInvoice->subtotal;
+            $amountPaid         = $lastInvoice->creditsToInvoice->sum('amount');
+            $pending            = $previousTotalDue > $amountPaid ? $previousTotalDue - $amountPaid : 0;
+
+            return [
+                'previous_amount'    => self::formatNumber($previousTotalDue),
+                'previous_payment'   => self::formatNumber($amountPaid),
+                'previous_pending'   => self::formatNumber($pending)
+            ];
+        }
     }
 
 
