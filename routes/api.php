@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Model\Order;
+use App\Events\InvoiceGenerated;
+use App\Events\BusinessVerificationCreated;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,7 +40,9 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 
 Route::get('test',function()
 {
-
+    $order = Order::find('4950');
+    event(new InvoiceGenerated($order));
+    event(new BusinessVerificationCreated("063b31c7bd6640a552574752d386b90feba87d5a", "239c099a096b447eaf3478945c0b636925537d9a"));
 });
 
 Route::get('/cron-jobs-monthly-invoice', [

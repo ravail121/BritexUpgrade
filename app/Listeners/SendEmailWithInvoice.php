@@ -97,32 +97,15 @@ class SendEmailWithInvoice
         $dataRow['customer'] = $customer;
 
         $emailTemplate = '';
-        $templateValues = '';
 
         if ($order->invoice->type == 2) {
             $emailTemplates      = EmailTemplate::where('company_id', $order->company_id)->where('code', 'one-time-invoice')->get();
-            $templateValues     = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
         
         } elseif ($order->invoice->type == 1) {
             $emailTemplates      = EmailTemplate::where('company_id', $order->company_id)->where('code', 'monthly-invoice')->get();
-            $templateValues     = SystemEmailTemplateDynamicField::where('code', 'monthly-invoice')->get()->toArray();
 
         }
         $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$order->hash;
-
-        $names = array_column($templateValues, 'name');
-        $column = array_column($templateValues, 'format_name');
-
-        $table = null;
-
-        foreach ($names as $key => $name) {
-            $dynamicField = explode("__",$name);
-            if($table != $dynamicField[0]){
-                $data = $dataRow[$dynamicField[0]]; 
-                $table = $dynamicField[0];
-            }
-            $replaceWith[$key] = $data->{$dynamicField[1]};
-        }
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
@@ -130,7 +113,28 @@ class SendEmailWithInvoice
             }else{
                 $email = $customer->email;
             }
-            $body = $emailTemplate->body($column, $replaceWith);
+
+            $names = array();
+            $column = preg_match_all('/\[(.*?)\]/s', $emailTemplate->body, $names);
+            $table = null;
+            $replaceWith = null;
+
+            foreach ($names[1] as $key => $name) {
+                $dynamicField = explode("__",$name);
+                if($table != $dynamicField[0]){
+                    if(isset($dataRow[$dynamicField[0]])){
+                        $data = $dataRow[$dynamicField[0]]; 
+                        $table = $dynamicField[0];
+                    }else{
+                        unset($names[0][$key]);
+                        continue;
+                    }
+                }
+                $replaceWith[$key] = $data->{$dynamicField[1]} ?: $names[0][$key];
+            }
+
+            $body = $emailTemplate->body($names[0], $replaceWith);
+
             Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $customer->business_verification_id, $body, $email, $note));
         }        
     }

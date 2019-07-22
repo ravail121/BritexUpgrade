@@ -22,11 +22,11 @@ class CreatePaymentLogTable extends Migration
             $table->bigInteger('processor_customer_num');
             $table->tinyInteger('status');
             $table->text('error');
-            $table->integer('exp');
-            $table->integer('last4');
-            $table->text('card_type');
+            $table->integer('exp')->nullable();
+            $table->integer('last4')->nullable();
+            $table->text('card_type')->nullable();
             $table->decimal('amount', 6, 2);
-            $table->string('card_token');
+            $table->string('card_token')->nullable();
             $table->timestamps();
 
             $table->foreign('customer_id')

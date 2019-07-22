@@ -18,7 +18,6 @@ class CreateCustomerCreditCardsTable extends Migration
             $table->string('api_key');
             $table->unsignedInteger('customer_id');
             $table->string('cardholder');
-            $table->string('number');
             $table->integer('expiration');
             $table->integer('cvc');
             $table->text('billing_address1');
