@@ -8,6 +8,7 @@ use App\Model\Credit;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
+use App\Model\PaymentLog;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
@@ -85,14 +86,13 @@ class PaymentController extends BaseController implements ConstantInterface
             if ($invoice) {
                 
                 $orderCount = Order::where([['status', 1],['company_id', $order->company_id]])->max('order_num');
-
                 $order->update([
                     'status'     => 1, 
                     'invoice_id' => $invoice->id,
                     'order_num'  => $orderCount+1
                 ]);
 
-
+                PaymentLog::where('order_id', $order->id)->update(['invoice_id' => $invoice->id]);
             } else {
                 $msg = $this->respond([
                     'invoice' => 'Failed to generate invoice.'
@@ -146,9 +146,7 @@ class PaymentController extends BaseController implements ConstantInterface
             return $arr;
         }
 
-        // $credit = Credit::where('customer_id', $customer->id)->latest()->first();
         $card = CustomerCreditCard::where('customer_id', $customer->id)->latest()->first();
-        
 
         if ($customer || $credit || $card) {
             $arr = [

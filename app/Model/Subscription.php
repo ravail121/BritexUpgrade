@@ -61,8 +61,9 @@ class Subscription extends Model
     ];
 
     const STATUS = [
-        'suspended'            => 'suspended',
-        'closed'               => 'closed'     
+        'suspended'         => 'suspended',
+        'closed'            => 'closed',
+        'active'            => 'active',
     ];
 
     public function Customer()

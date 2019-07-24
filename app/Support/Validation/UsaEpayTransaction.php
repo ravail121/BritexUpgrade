@@ -148,7 +148,7 @@ trait UsaEpayTransaction
             $data['credit']      = $this->createCredits($order, $tran, $invoice);
         }
 
-        $data['success']     = true;
+        $data['success'] = true;
         
         return $data;
     }

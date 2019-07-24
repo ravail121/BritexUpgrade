@@ -482,6 +482,11 @@ Route::middleware('APIToken')->group(function () {
             'as'=>'api.close.subcription',
             'uses'=> 'SubscriptionController@closeSubcription',
         ]);
+
+        Route::post('/change-sim', [
+            'as'=>'api.change.sim',
+            'uses'=> 'SubscriptionController@changeSim',
+        ]);
         //**
 
         Route::post('/create-device-record',[

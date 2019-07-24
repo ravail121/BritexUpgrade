@@ -8,6 +8,8 @@ use App\Model\Sim;
 use App\Model\Port;
 use App\Model\Plan;
 use App\Model\Order;
+use GuzzleHttp\Client;
+use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use App\Model\Subscription;
@@ -65,7 +67,10 @@ class SubscriptionController extends BaseController
                 $arr = $this->generatePortData($request->porting_number, $subscription->id);
                 $port = Port::create($arr);
             }
-            return $this->respond(['subscription_id' => $subscription->id]);
+            return $this->respond([
+                'success' => true,
+                'subscription_id' => $subscription->id
+            ]);
         }
     }
 
@@ -243,11 +248,10 @@ class SubscriptionController extends BaseController
     protected function validateData($request)
     {
     	return $this->validate_input($request->all(), [
-                'api_key'          => 'required|string',
-                'order_id'         => 'required|numeric',
-                'device_id'        => 'numeric',
-                'plan_id'          => 'numeric',
-                'sim_id'           => 'numeric',
+                'order_id'         => 'required|numeric|exists:order,id',
+                'device_id'        => 'numeric|exists:device,id',
+                'plan_id'          => 'required|numeric|exists:plan,id',
+                'sim_id'           => 'numeric|exists:sim,id',
                 'sim_num'          => 'numeric',
                 'sim_type'         => 'string',
                 'porting_number'   => 'string',
@@ -286,11 +290,11 @@ class SubscriptionController extends BaseController
         }
         $subcriptions = Subscription::where([
             ['phone_number', $request->phone_number],
-            ['status', '<>' , Subscription::STATUS['closed']]
+            ['status', Subscription::STATUS['active']]
         ])->get();
 
         if(!isset($subcriptions[0])){
-            return $this->respond(['message' => "No Subcription found with ".$request->phone_number. " Phone Number"]);
+            return $this->respond(['message' => "No Active Subcription found with ".$request->phone_number. " Phone Number"]);
         }
 
         foreach ($subcriptions as $key => $subcription) {
@@ -301,6 +305,55 @@ class SubscriptionController extends BaseController
             ]);
         }
 
-        return $this->respond(['message' => "Subcription Updated Sucessfully"]);
+        return $this->respond(['sucesss' => true]);
+    }
+
+    public function changeSim(Request $request)
+    {
+        $validation = $this->validate_input($request->all(), [
+            "customer_id"     => 'required|numeric',
+            "phone_number"    => 'required|numeric',
+            "sim_num"         => 'required',
+            ]
+        );
+        if ($validation) {
+            return $validation;
+        }
+        
+        $subcriptions = Subscription::where([
+            ['phone_number', $request->phone_number],
+            ['customer_id', $request->customer_id]
+        ])->get();
+
+        if(!isset($subcriptions[0])){
+            return $this->respond(['message' => "No Active Subcription found with ".$request->phone_number. " Phone Number"]);
+        }
+
+        foreach ($subcriptions as $key => $subcription) {
+            
+            $simNumber = $this->getSimNumber($request->phone_number, $request->customer_id);
+
+            // $subcription->update([
+            //    'sim_card_num' => $simNumber
+            // ]);
+            // return $this->respond(['sucesss' => true]);
+        }
+    }
+
+    protected function getSimNumber($phoneNumber, $customerId)
+    {
+        $customer = Customer::find($customerId);
+
+        $headers = [
+            'X-API-KEY' => $customer->company->goknows_api_key,
+        ];
+
+        $client = new Client([
+            'headers' => $headers
+        ]);
+
+        $response = $client->put(env('GO_KNOW_URL').$phoneNumber."?sim_number=8901260873754050066F");
+
+       return collect(json_decode($response->getBody(), true));
     }
 }
