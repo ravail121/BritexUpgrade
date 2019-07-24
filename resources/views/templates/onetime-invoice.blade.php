@@ -144,15 +144,6 @@
                                                         @endisset
                                                     </td>
                                                 </tr>
-
-                                                <tr>
-                                                    <td>Shipping fee</td>
-                                                    <td class="detail">$ 
-                                                        @isset ($invoice['shipping_fee'])
-                                                            {{ ($invoice['shipping_fee']) }}
-                                                        @endisset
-                                                    </td>
-                                                </tr>
                                                 
                                                 <tr>
                                                     <td>Coupons 
