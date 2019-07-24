@@ -190,7 +190,6 @@ class SubscriptionController extends BaseController
             'status'                           =>  $request->status,
             'sub_status'                       =>  'active',
             'upgrade_downgrade_status'         =>  '',
-        	'upgrade_downgrade_date_submitted' =>  date('Y-m-d'),
             'sim_id'                           =>  $request->sim_id,
             'sim_name'                         =>  $request->sim_type,
             'sim_card_num'                     =>  ($request->sim_num) ?: '',
@@ -313,12 +312,18 @@ class SubscriptionController extends BaseController
         $validation = $this->validate_input($request->all(), [
             "customer_id"     => 'required|numeric',
             "phone_number"    => 'required|numeric',
-            "sim_number"      => 'required|min:19|max:20',
+            "sim_num"         => 'required|min:19|max:20',
             ]
         );
         if ($validation) {
             return $validation;
         }
+
+        $simNumber = preg_replace('/[^0-9]/', '', $request->sim_num);
+        $length = strlen($simNumber);
+        if($length >20 || $length < 19){
+            return $this->respond(['details' => ["Invalid Sim Number"]], 400);
+        } 
         
         $subcriptions = Subscription::where([
             ['phone_number', $request->phone_number],
@@ -326,21 +331,21 @@ class SubscriptionController extends BaseController
         ])->get();
 
         if(!isset($subcriptions[0])){
-            return $this->respond(['message' => "No Active Subcription found with ".$request->phone_number. " Phone Number"]);
+            return $this->respond(['message' => "Phone Number Not Found"]);
         }
 
         foreach ($subcriptions as $key => $subcription) {
 
-            $response = $this->getSimNumber($request->phone_number, $request->sim_number, $request->customer_id);
+            $errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
 
-            if($response){
+            if(!$errorMessage){
                 $subcription->update([
-                   'sim_card_num' => $request->sim_number,
+                   'sim_card_num' => $simNumber,
                 ]);
                 return $this->respond(['success' => 1]);
             }
 
-            return $this->respond(['message' => 'Sim Number either Invalid or already updated']);
+            return $this->respond(['message' => $errorMessage]);
         }
     }
 
@@ -356,17 +361,19 @@ class SubscriptionController extends BaseController
             'headers' => $headers
         ]);
 
-        $response = null;
+        $errorMessage = null;
         try {
-            $response = $client->request('PUT', env('GO_KNOW_URL').$phoneNumber, [
+            $client->request('PUT', env('GO_KNOW_URL').$phoneNumber, [
                 'form_params' => [
                     'sim_number' => $sim_number,
                 ]
             ]);
-            return collect(json_decode($response->getBody(), true));
+            // return collect(json_decode($response->getBody(), true));
         } catch (\Exception $e) {
-            \Log::info($e->getMessage());
+
+            $responseBody = json_decode($e->getResponse()->getBody(true), true);
+            $errorMessage = $responseBody['message'];
         }
-        return $response;
+        return $errorMessage;
     }
 }
