@@ -249,7 +249,7 @@ class SubscriptionController extends BaseController
     {
     	return $this->validate_input($request->all(), [
                 'order_id'         => 'required|numeric|exists:order,id',
-                'device_id'        => 'numeric|exists:device,id',
+                'device_id'        => 'nullable|numeric|exists:device,id',
                 'plan_id'          => 'required|numeric|exists:plan,id',
                 'sim_id'           => 'required_without:sim_num|numeric|exists:sim,id',
                 'sim_num'          => 'required_without:sim_id|numeric',
