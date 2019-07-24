@@ -275,5 +275,32 @@ class SubscriptionController extends BaseController
         );
     }
 
+    public function closeSubcription(Request $request)
+    {
+        $validation = $this->validate_input($request->all(), [
+                'phone_number' => 'required|numeric',
+            ]
+        );
+        if ($validation) {
+            return $validation;
+        }
+        $subcriptions = Subscription::where([
+            ['phone_number', $request->phone_number],
+            ['status', '<>' , Subscription::STATUS['closed']]
+        ])->get();
 
+        if(!isset($subcriptions[0])){
+            return $this->respond(['message' => "No Subcription found with ".$request->phone_number. " Phone Number"]);
+        }
+
+        foreach ($subcriptions as $key => $subcription) {
+            $subcription->update([
+               'status' => Subscription::STATUS['closed'],
+               'sub_status' => Subscription::SUB_STATUSES['confirm-closing'],
+               'closed_date' => Carbon::now(),
+            ]);
+        }
+
+        return $this->respond(['message' => "Subcription Updated Sucessfully"]);
+    }
 }

@@ -1,9 +1,6 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Model\Order;
-use App\Events\InvoiceGenerated;
-use App\Events\BusinessVerificationCreated;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,9 +37,7 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 
 Route::get('test',function()
 {
-    $order = Order::find('4950');
-    event(new InvoiceGenerated($order));
-    event(new BusinessVerificationCreated("063b31c7bd6640a552574752d386b90feba87d5a", "239c099a096b447eaf3478945c0b636925537d9a"));
+
 });
 
 Route::get('/cron-jobs-monthly-invoice', [
@@ -482,12 +477,12 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'SubscriptionController@subscriptionAddons',
         ]);
 
-        //**NEW
-        // Route::post('/update-subscription-addon',[
-        //   'as'   => 'api.create.subscriptionaddon',
-        //   'uses' => 'SubscriptionController@updateSubscriptionAddon',
-        // ]);
-        //New**
+        //NEW**
+        Route::post('/close-subscription', [
+            'as'=>'api.close.subcription',
+            'uses'=> 'SubscriptionController@closeSubcription',
+        ]);
+        //**
 
         Route::post('/create-device-record',[
           'as'   => 'api.create.devicerecord',
@@ -498,7 +493,6 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.create.simrecord',
           'uses' => 'StandaloneRecordController@createSimRecord',
         ]);
-
       });
       
 
