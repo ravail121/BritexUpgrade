@@ -251,7 +251,7 @@ class SubscriptionController extends BaseController
                 'device_id'        => 'nullable|numeric|exists:device,id',
                 'plan_id'          => 'required|numeric|exists:plan,id',
                 'sim_id'           => 'nullable|required_without:sim_num|numeric|exists:sim,id',
-                'sim_num'          => 'nullable|required_without:sim_id|numeric',
+                'sim_num'          => 'nullable|required_without:sim_id|integer|digits_between:19,20',
                 'sim_type'         => 'nullable|string',
                 'porting_number'   => 'nullable|string',
                 'area_code'        => 'nullable|string|max:3',
