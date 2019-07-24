@@ -251,13 +251,13 @@ class SubscriptionController extends BaseController
                 'order_id'         => 'required|numeric|exists:order,id',
                 'device_id'        => 'numeric|exists:device,id',
                 'plan_id'          => 'required|numeric|exists:plan,id',
-                'sim_id'           => 'numeric|exists:sim,id',
-                'sim_num'          => 'numeric',
-                'sim_type'         => 'string',
-                'porting_number'   => 'string',
-                'area_code'        => 'string|max:3',
-                'operating_system' => 'string',
-                'imei_number'      => 'digits_between:14,16',
+                'sim_id'           => 'required_without:sim_num|numeric|exists:sim,id',
+                'sim_num'          => 'required_without:sim_id|numeric',
+                'sim_type'         => 'nullable|string',
+                'porting_number'   => 'nullable|string',
+                'area_code'        => 'nullable|string|max:3',
+                'operating_system' => 'nullable|string',
+                'imei_number'      => 'nullable|digits_between:14,16',
             ]
         );
     }
