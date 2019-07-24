@@ -68,7 +68,7 @@ class SubscriptionController extends BaseController
                 $port = Port::create($arr);
             }
             return $this->respond([
-                'success' => true,
+                'success' => 1,
                 'subscription_id' => $subscription->id
             ]);
         }
@@ -255,7 +255,7 @@ class SubscriptionController extends BaseController
                 'sim_num'          => 'numeric',
                 'sim_type'         => 'string',
                 'porting_number'   => 'string',
-                'area_code'        => 'string',
+                'area_code'        => 'string|max:3',
                 'operating_system' => 'string',
                 'imei_number'      => 'digits_between:14,16',
             ]
@@ -305,7 +305,7 @@ class SubscriptionController extends BaseController
             ]);
         }
 
-        return $this->respond(['sucesss' => true]);
+        return $this->respond(['success' => 1]);
     }
 
     public function changeSim(Request $request)
@@ -330,13 +330,13 @@ class SubscriptionController extends BaseController
         }
 
         foreach ($subcriptions as $key => $subcription) {
-            
+
             $simNumber = $this->getSimNumber($request->phone_number, $request->customer_id);
 
             // $subcription->update([
             //    'sim_card_num' => $simNumber
             // ]);
-            // return $this->respond(['sucesss' => true]);
+            // return $this->respond(['success' => 1]);
         }
     }
 
