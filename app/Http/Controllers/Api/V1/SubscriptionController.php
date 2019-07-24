@@ -313,7 +313,7 @@ class SubscriptionController extends BaseController
         $validation = $this->validate_input($request->all(), [
             "customer_id"     => 'required|numeric',
             "phone_number"    => 'required|numeric',
-            "sim_num"         => 'required',
+            "sim_number"      => 'required|min:19|max:20',
             ]
         );
         if ($validation) {
@@ -331,16 +331,20 @@ class SubscriptionController extends BaseController
 
         foreach ($subcriptions as $key => $subcription) {
 
-            $simNumber = $this->getSimNumber($request->phone_number, $request->customer_id);
+            $response = $this->getSimNumber($request->phone_number, $request->sim_number, $request->customer_id);
 
-            // $subcription->update([
-            //    'sim_card_num' => $simNumber
-            // ]);
-            // return $this->respond(['success' => 1]);
+            if($response){
+                $subcription->update([
+                   'sim_card_num' => $request->sim_number,
+                ]);
+                return $this->respond(['success' => 1]);
+            }
+
+            return $this->respond(['message' => 'Sim Number either Invalid or already updated']);
         }
     }
 
-    protected function getSimNumber($phoneNumber, $customerId)
+    protected function getSimNumber($phoneNumber, $sim_number, $customerId)
     {
         $customer = Customer::find($customerId);
 
@@ -352,8 +356,17 @@ class SubscriptionController extends BaseController
             'headers' => $headers
         ]);
 
-        $response = $client->put(env('GO_KNOW_URL').$phoneNumber."?sim_number=8901260873754050066F");
-
-       return collect(json_decode($response->getBody(), true));
+        $response = null;
+        try {
+            $response = $client->request('PUT', env('GO_KNOW_URL').$phoneNumber, [
+                'form_params' => [
+                    'sim_number' => $sim_number,
+                ]
+            ]);
+            return collect(json_decode($response->getBody(), true));
+        } catch (\Exception $e) {
+            \Log::info($e->getMessage());
+        }
+        return $response;
     }
 }
