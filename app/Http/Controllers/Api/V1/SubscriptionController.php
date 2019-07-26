@@ -39,7 +39,7 @@ class SubscriptionController extends BaseController
         if($request->order_id != 0){
             $response = $this->checkOrderWithCustomer($request->order_id, $request->customer_id);
             if($response){
-                return ['message' => $response];
+                return $this->respond(['details' => [$response]], 400);
             }
         }else{
                 $validation =  $this->validate_input($request->all(), [
@@ -214,7 +214,6 @@ class SubscriptionController extends BaseController
             'order_num'                        =>  $order ? $order->order_num : null,
         	'plan_id'                          =>  $request->plan_id,
             'status'                           =>  $request->status,
-            'sub_status'                       =>  'active',
             'upgrade_downgrade_status'         =>  '',
             'sim_id'                           =>  $request->sim_id,
             'sim_name'                         =>  $request->sim_type,
@@ -274,6 +273,9 @@ class SubscriptionController extends BaseController
         $simNum = null;
         if($request->sim_num){
             $simNum = preg_replace("/\F$/","",$request->sim_num);
+            if(preg_match("/[a-z]/i", $simNum)){
+                return $this->respond(['details' => ["Invalid Sim Number"]], 400);
+            }
         }
     	return $this->validate_input(array_merge($request->except('sim_num'), ['sim_num' => $simNum]), [
                 'order_id'         => 'required|numeric',
