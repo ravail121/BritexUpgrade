@@ -92,7 +92,7 @@ class SubscriptionController extends BaseController
     {
         $order = Order::find($orderId);
         if($order){
-            if($customerId || $order->customer_id != $customerId){
+            if($customerId && $order->customer_id != $customerId){
                 return "Order Id ".$orderId." does not belongs to this customer";
             }
         }else{

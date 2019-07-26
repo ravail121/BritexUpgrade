@@ -517,7 +517,7 @@ class CreateOrderTable extends Migration
             $table->char('upgrade_downgrade_status')->nullable(); 
             $table->date('upgrade_downgrade_date_submitted');
             $table->tinyInteger('port_in_progress')->default(0);
-            $table->text('sim_name');
+            $table->text('sim_name')->nullable();
             $table->text('sim_card_num');
             $table->integer('old_plan_id')->nullable(); 
             $table->integer('new_plan_id')->nullable();
