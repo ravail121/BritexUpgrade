@@ -318,7 +318,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                                         ]
                                     )->sum('amount');
             $serviceChargesProrated = $planCharges + $oneTimeCharges + $usageCharges;
-            $serviceCharges         = $proratedAmount == null ? $invoice->cal_service_charges : $serviceChargesProrated;
+            $serviceCharges         = $invoice->cal_service_charges;
             $shippingFee            = $invoiceItem->where('description', 'Shipping Fee')->sum('amount');
             $shippingFeeStandalone  = $invoiceItem->where('subscription_id', null)->where('description', 'Shipping Fee')->sum('amount');
             $tax                    = $taxes;
@@ -336,7 +336,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             $standaloneTotal        = $standalone->where('type', '!=', InvoiceItem::TYPES['coupon'])->sum('amount');
             $subscriptionItems      = $this->allSubscriptionData($order);
             $previousBill           = $this->previousBill($order);
-
+                                            
             $invoice = [
                 'invoice_type'                  =>   $order->invoice->type,
                 'service_charges'               =>   self::formatNumber($serviceCharges),

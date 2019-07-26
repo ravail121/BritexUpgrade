@@ -207,7 +207,7 @@ class SendEmailWithInvoice
                                         ]
                                     )->sum('amount');
             $serviceChargesProrated = $planCharges + $oneTimeCharges + $usageCharges;
-            $serviceCharges         = $proratedAmount == null ? $invoice->cal_service_charges : $serviceChargesProrated;
+            $serviceCharges         = $invoice->cal_service_charges;
             $shippingFee            = $invoiceItem->where('description', 'Shipping Fee')->sum('amount');
             $shippingFeeStandalone  = $invoiceItem->where('subscription_id', null)->where('description', 'Shipping Fee')->sum('amount');
             $tax                    = $taxes;

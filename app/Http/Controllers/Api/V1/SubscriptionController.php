@@ -36,6 +36,20 @@ class SubscriptionController extends BaseController
         if ($validation) {
             return $validation;
         }
+        if($request->order_id != 0){
+            $response = $this->checkOrderWithCustomer($request->order_id, $request->customer_id);
+            if($response){
+                return ['message' => $response];
+            }
+        }else{
+                $validation =  $this->validate_input($request->all(), [
+                'customer_id'      => 'required|numeric|exists:customer,id',
+            ]);
+
+            if ($validation) {
+                return $validation;
+            }
+        }
 
         if($request->subscription){
             $subscription = Subscription::find($request->subscription['id']);
@@ -71,6 +85,18 @@ class SubscriptionController extends BaseController
                 'success' => 1,
                 'subscription_id' => $subscription->id
             ]);
+        }
+    }
+
+    protected function checkOrderWithCustomer($orderId, $customerId)
+    {
+        $order = Order::find($orderId);
+        if($order){
+            if($customerId || $order->customer_id != $customerId){
+                return "Order Id ".$orderId." does not belongs to this customer";
+            }
+        }else{
+            return "Order with order_id ".$orderId." does not exisit";
         }
     }
 
@@ -184,8 +210,8 @@ class SubscriptionController extends BaseController
 
     	return [
         	'order_id'                         =>  $request->order_id,
-        	'customer_id'                      =>  $order->customer_id,
-            'order_num'                        =>  $order->order_num,
+        	'customer_id'                      =>  $order ? $order->customer_id : $request->customer_id,
+            'order_num'                        =>  $order ? $order->order_num : null,
         	'plan_id'                          =>  $request->plan_id,
             'status'                           =>  $request->status,
             'sub_status'                       =>  'active',
@@ -195,7 +221,6 @@ class SubscriptionController extends BaseController
             'sim_card_num'                     =>  ($request->sim_num) ?: '',
             'old_plan_id'                      =>  self::DEFAULT_INT,
             'new_plan_id'                      =>  self::DEFAULT_INT,
-            'downgrade_date'                   =>  date('Y-m-d'),
         	'device_id'                        =>  $request->device_id,
         	'device_os'                        =>  ($request->operating_system) ?: '',
         	'device_imei'                      =>  ($request->imei_number) ?: '',
@@ -246,12 +271,16 @@ class SubscriptionController extends BaseController
      */
     protected function validateData($request)
     {
-    	return $this->validate_input($request->all(), [
-                'order_id'         => 'required|numeric|exists:order,id',
+        $simNum = null;
+        if($request->sim_num){
+            $simNum = preg_replace("/\F$/","",$request->sim_num);
+        }
+    	return $this->validate_input(array_merge($request->except('sim_num'), ['sim_num' => $simNum]), [
+                'order_id'         => 'required|numeric',
                 'device_id'        => 'nullable|numeric|exists:device,id',
                 'plan_id'          => 'required|numeric|exists:plan,id',
                 'sim_id'           => 'nullable|required_without:sim_num|numeric|exists:sim,id',
-                'sim_num'          => 'nullable|required_without:sim_id|integer|digits_between:19,20',
+                'sim_num'          => 'nullable|required_without:sim_id|min:19|max:20',
                 'sim_type'         => 'nullable|string',
                 'porting_number'   => 'nullable|string',
                 'area_code'        => 'nullable|string|max:3',
@@ -368,7 +397,6 @@ class SubscriptionController extends BaseController
                     'sim_number' => $sim_number,
                 ]
             ]);
-            // return collect(json_decode($response->getBody(), true));
         } catch (\Exception $e) {
 
             $responseBody = json_decode($e->getResponse()->getBody(true), true);

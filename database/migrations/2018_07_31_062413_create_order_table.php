@@ -513,8 +513,8 @@ class CreateOrderTable extends Migration
             $table->unsignedInteger('plan_id')->nullable();
             $table->bigInteger('phone_number')->nullable();
             $table->char('status')->nullable();      
-            $table->char('suspend_restore_status');
-            $table->char('upgrade_downgrade_status');
+            $table->char('suspend_restore_status')->nullable(); 
+            $table->char('upgrade_downgrade_status')->nullable(); 
             $table->date('upgrade_downgrade_date_submitted');
             $table->tinyInteger('port_in_progress')->default(0);
             $table->text('sim_name');
