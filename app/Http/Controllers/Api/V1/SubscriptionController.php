@@ -36,18 +36,11 @@ class SubscriptionController extends BaseController
         if ($validation) {
             return $validation;
         }
-        if($request->order_id != 0){
-            $response = $this->checkOrderWithCustomer($request->order_id, $request->customer_id);
-            if($response){
-                return $this->respond(['details' => [$response]], 400);
-            }
-        }else{
-                $validation =  $this->validate_input($request->all(), [
-                'customer_id'      => 'required|numeric|exists:customer,id',
-            ]);
 
-            if ($validation) {
-                return $validation;
+        $order = Order::find($request->order_id);
+        if($request->customer_id){
+            if($order->customer_id != $request->order_id){
+                return $this->respond(['details' => "Order Id ".$order->id." does not belongs to this customer"]);
             }
         }
 
@@ -56,7 +49,7 @@ class SubscriptionController extends BaseController
             $data = $request->validate([
                 'order_id'  => 'required',
             ]);
-            $order = Order::find($request->order_id);
+
             if($request->status == "Upgrade"){
                 $data['old_plan_id'] = $subscription->plan_id;
                 $data['upgrade_downgrade_date_submitted'] = Carbon::now();
@@ -70,7 +63,7 @@ class SubscriptionController extends BaseController
         }else{
             $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
 
-            $insertData = $this->generateSubscriptionData($request);
+            $insertData = $this->generateSubscriptionData($request, $order);
             $subscription = Subscription::create($insertData);
 
             if(!$subscription) {
@@ -85,18 +78,6 @@ class SubscriptionController extends BaseController
                 'success' => 1,
                 'subscription_id' => $subscription->id
             ]);
-        }
-    }
-
-    protected function checkOrderWithCustomer($orderId, $customerId)
-    {
-        $order = Order::find($orderId);
-        if($order){
-            if($customerId && $order->customer_id != $customerId){
-                return "Order Id ".$orderId." does not belongs to this customer";
-            }
-        }else{
-            return "Order with order_id ".$orderId." does not exisit";
         }
     }
 
@@ -178,11 +159,7 @@ class SubscriptionController extends BaseController
                 'subscription_id' => $request->subscription_id,
                 'addon_id'        => $request->addon_id,
                 'status'          => $request->addon_subscription_id ? SubscriptionAddon::STATUSES['for-adding'] : SubscriptionAddon::STATUSES['active'],
-                // 'removal_date'    => date('Y-m-d')
             ]);
-            // if($request->addon_subscription_id){
-            //     return $this->respond(['new_subscription_addon_id' => $subscriptionAddon->id]);
-            // }
         }
 
         return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
@@ -193,15 +170,12 @@ class SubscriptionController extends BaseController
      * Returns data as array which is to be inserted in subscription table
      * 
      * @param  Request  $request
+     * @param  Order  $order
      * @return array
      */
-    protected function generateSubscriptionData($request)
+    protected function generateSubscriptionData($request, $order)
     {
-        $order = Order::find($request->order_id);
         $plan  = Plan::find($request->plan_id);
-        
-        // $phone  = ($order->customer_id) && !$request->porting_number ? $order->customer->phone : '';
-        // $phone = '';
 
         if ($request->sim_type == null) {
             $sim = Sim::find($request->sim_id);
@@ -210,8 +184,8 @@ class SubscriptionController extends BaseController
 
     	return [
         	'order_id'                         =>  $request->order_id,
-        	'customer_id'                      =>  $order ? $order->customer_id : $request->customer_id,
-            'order_num'                        =>  $order ? $order->order_num : null,
+        	'customer_id'                      =>  $order->customer_id,
+            'order_num'                        =>  $order->order_num,
         	'plan_id'                          =>  $request->plan_id,
             'status'                           =>  $request->status,
             'upgrade_downgrade_status'         =>  '',
@@ -278,7 +252,7 @@ class SubscriptionController extends BaseController
             }
         }
     	return $this->validate_input(array_merge($request->except('sim_num'), ['sim_num' => $simNum]), [
-                'order_id'         => 'required|numeric',
+                'order_id'         => 'required|numeric|exists:order,id',
                 'device_id'        => 'nullable|numeric|exists:device,id',
                 'plan_id'          => 'required|numeric|exists:plan,id',
                 'sim_id'           => 'nullable|required_without:sim_num|numeric|exists:sim,id',
