@@ -39,7 +39,7 @@ class SubscriptionController extends BaseController
 
         $order = Order::find($request->order_id);
         if($request->customer_id){
-            if($order->customer_id != $request->order_id){
+            if($order->customer_id != $request->customer_id){
                 return $this->respond(['details' => "Order Id ".$order->id." does not belongs to this customer"]);
             }
         }
