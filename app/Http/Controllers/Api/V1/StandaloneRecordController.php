@@ -15,6 +15,7 @@ class StandaloneRecordController extends BaseController
 
     const DEFAULT_STATUS       = 'shipping';
     const DEFAULT_TRACKING_NUM = 1;
+    const DEFAULT_PROSSED = 0;
 
 
     public $rules;
@@ -102,14 +103,10 @@ class StandaloneRecordController extends BaseController
             'customer_id'  => $request->customer_id,
             'order_id'     => $request->order_id,
             'order_num'    => $order->order_num,
-            'tracking_num' => self::DEFAULT_TRACKING_NUM,
             'status'       => self::DEFAULT_STATUS,
+            'processed'    => self::DEFAULT_PROSSED,
         ];
     }
-
-
-
-
 
     /**
      * Validates standalone_device_record_data

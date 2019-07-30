@@ -10,9 +10,10 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
+use App\Http\Controllers\BaseController;
 use Illuminate\Database\Eloquent\Builder;
 
-class OrderDataController extends Controller
+class OrderDataController extends BaseController
 {
     public function order() {
         
