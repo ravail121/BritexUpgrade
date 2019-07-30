@@ -41,6 +41,7 @@ class Subscription extends Model
       'closed_date',
       'shipping_date',
       'order_num',
+      'sent_to_readycloud',
     ];
 
     protected $dates = [
@@ -195,6 +196,11 @@ class Subscription extends Model
     public function scopeShipping($query)
     {
         return $query->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
+    }
+
+    public function scopeShippingData($query)
+    {
+        return $query->where('status', 'shipping');
     }
 
     public function scopeNotScheduledForSuspensionOrClosure($query)

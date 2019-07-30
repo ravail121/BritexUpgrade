@@ -55,6 +55,11 @@ Route::get('/cron-jobs-orders', [
     'uses'=> 'Api\V1\CronJobs\OrderController@order',
 ]);
 
+Route::get('/cron-jobs-orders-data', [
+    'as'=>'api.cron.orders.data',
+    'uses'=> 'Api\V1\CronJobs\OrderDataController@order',
+]);
+
 Route::get('/update-cron', [
   'as'=>'api.cron.update',
   'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',

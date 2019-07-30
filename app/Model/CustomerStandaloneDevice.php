@@ -18,6 +18,7 @@ class CustomerStandaloneDevice extends Model
     	'imei',
         'shipping_date',
         'order_num',
+        'processed',
     ];
 
     public function device()
@@ -36,6 +37,11 @@ class CustomerStandaloneDevice extends Model
     public function scopeShipping($query)
     {
         return $query->where([['status', 'shipping'],['processed', 0 ]]);
+    }
+
+    public function scopeShippingData($query)
+    {
+        return $query->where('status', 'shipping');
     }
 
     public function order()

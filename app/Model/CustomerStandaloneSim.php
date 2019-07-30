@@ -18,6 +18,7 @@ class CustomerStandaloneSim extends Model
     	'sim_num',
         'shipping_date',
         'order_num',
+        'processed',
     ];
 
     public function sim()
@@ -36,6 +37,11 @@ class CustomerStandaloneSim extends Model
     public function scopeShipping($query)
     {
         return $query->where([['status', 'shipping'],['processed', 0 ]]);
+    }
+
+    public function scopeShippingData($query)
+    {
+        return $query->where('status', 'shipping');
     }
 
     public function order()

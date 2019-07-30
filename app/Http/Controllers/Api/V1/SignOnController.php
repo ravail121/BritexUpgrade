@@ -28,6 +28,13 @@ class SignOnController extends BaseController
             $data['email'] = $customer->email;
         }else {
             $data['email'] = $data['identifier'];
+            $customer = Customer::whereEmail($data['email'])->first();
+        }
+
+        $companyId = \Request::get('company')->id;
+
+        if($customer->company_id != $companyId){
+            return $this->respondError("Invalid Company ID");
         }
 
         unset($data['identifier']);

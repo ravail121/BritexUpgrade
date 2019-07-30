@@ -19,7 +19,7 @@ class CreateCustomerStandaloneSimTable extends Migration
             $table->unsignedInteger('sim_id')->nullable();
             $table->unsignedInteger('order_id')->nullable();
             $table->string('status');
-            $table->bigInteger('tracking_num');
+            $table->bigInteger('tracking_num')->nullable();
             $table->text('sim_num');
             $table->timestamps();
 

@@ -82,6 +82,16 @@ class Order extends Model
         return $this->hasMany('App\Model\Subscription', 'order_id', 'id');
     }
 
+    public function standAloneDevices()
+    {
+        return $this->hasMany('App\Model\CustomerStandaloneDevice', 'order_id', 'id');
+    }
+
+    public function standAloneSims()
+    {
+        return $this->hasMany('App\Model\CustomerStandaloneSim', 'order_id', 'id');
+    }
+
     public function scopecompleteOrders($query)
     {
         return $query->where('status', '1');
