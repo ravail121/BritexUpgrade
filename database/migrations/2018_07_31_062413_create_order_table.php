@@ -511,7 +511,7 @@ class CreateOrderTable extends Migration
             $table->unsignedInteger('order_id')->nullable();
             $table->unsignedInteger('customer_id')->nullable();
             $table->unsignedInteger('plan_id')->nullable();
-            $table->bigInteger('phone_number')->nullable();
+            $table->string('phone_number')->nullable();
             $table->char('status')->nullable();      
             $table->char('suspend_restore_status')->nullable(); 
             $table->char('upgrade_downgrade_status')->nullable(); 
