@@ -33,6 +33,10 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\ForgotPassword' => [
             'App\Listeners\SendEmailWithPasswordHash',
         ],
+
+        'App\Events\AutoPayStatus' => [
+            'App\Listeners\SendEmailWithAutoPayStatus',
+        ],
     ];
 
     /**

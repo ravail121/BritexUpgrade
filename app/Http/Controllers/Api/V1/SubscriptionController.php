@@ -43,7 +43,6 @@ class SubscriptionController extends BaseController
                 return $this->respond(['details' => "Order Id ".$order->id." does not belongs to this customer"]);
             }
         }
-
         if($request->subscription){
             $subscription = Subscription::find($request->subscription['id']);
             $data = $request->validate([
@@ -57,10 +56,17 @@ class SubscriptionController extends BaseController
                 $data['upgrade_downgrade_status'] = 'for-upgrade';
                 $data['order_num'] = $order->order_num;
                 $updateSubcription = $subscription->update($data);
+                \Log::info($updateSubcription);
                 return $this->respond(['subscription_id' => $subscription->id]);
             }
             return $this->respond(['same_subscription_id' => $subscription->id]);
         }else{
+
+            $validation = $this->validateSim($request);
+            if ($validation) {
+                return $validation;
+            }
+
             $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
 
             $insertData = $this->generateSubscriptionData($request, $order);
@@ -233,9 +239,6 @@ class SubscriptionController extends BaseController
         ];
     }
 
-
-
-
     /**
      * Validates Data from Order-Group table
      * 
@@ -244,6 +247,21 @@ class SubscriptionController extends BaseController
      */
     protected function validateData($request)
     {
+    	return $this->validate_input($request->all(), [
+                'order_id'         => 'required|numeric|exists:order,id',
+                'device_id'        => 'nullable|numeric|exists:device,id',
+                'plan_id'          => 'required|numeric|exists:plan,id',
+                'porting_number'   => 'nullable|string',
+                'area_code'        => 'nullable|string|max:3',
+                'operating_system' => 'nullable|string',
+                'imei_number'      => 'nullable|digits_between:14,16',
+            ]
+        );
+    }
+
+
+    protected function validateSim($request)
+    {
         $simNum = null;
         if($request->sim_num){
             $simNum = preg_replace("/\F$/","",$request->sim_num);
@@ -251,17 +269,11 @@ class SubscriptionController extends BaseController
                 return $this->respond(['details' => ["Invalid Sim Number"]], 400);
             }
         }
-    	return $this->validate_input(array_merge($request->except('sim_num'), ['sim_num' => $simNum]), [
-                'order_id'         => 'required|numeric|exists:order,id',
-                'device_id'        => 'nullable|numeric|exists:device,id',
-                'plan_id'          => 'required|numeric|exists:plan,id',
+
+        return $this->validate_input(array_merge($request->except('sim_num'), ['sim_num' => $simNum]), [
                 'sim_id'           => 'nullable|required_without:sim_num|numeric|exists:sim,id',
                 'sim_num'          => 'nullable|required_without:sim_id|min:19|max:20',
                 'sim_type'         => 'nullable|string',
-                'porting_number'   => 'nullable|string',
-                'area_code'        => 'nullable|string|max:3',
-                'operating_system' => 'nullable|string',
-                'imei_number'      => 'nullable|digits_between:14,16',
             ]
         );
     }

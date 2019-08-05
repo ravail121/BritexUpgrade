@@ -9,6 +9,7 @@ use App\Model\OrderGroup;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Events\AutoPayStatus;
 use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
 use Illuminate\Support\Collection;
@@ -254,10 +255,34 @@ class CustomerController extends BaseController
     }
 
     $data = $this->additionalData($data);
+
+    if (isset($data['password'])) {
+        return $this->updatePassword($data);
+    }
+
+    $customer = Customer::whereHash($data['hash'])->first();
     
-    Customer::whereHash($data['hash'])->update($data);
+    $customer->update($data);
+
+    if (isset($data['auto_pay'])) {
+        event(new AutoPayStatus($customer));
+    }
    
     return $this->respond(['message' => 'sucessfully Updated']);
+  }
+
+  private function updatePassword($data)
+  {
+    $currentPassword = Customer::whereHash($data['hash'])->first();
+
+    if (Hash::check($data['old_password'], $currentPassword['password'])) {
+        $password['password'] = bcrypt($data['password']);
+        Customer::whereHash($data['hash'])->update($password);
+        return $this->respond('sucessfully Updated');    
+    }
+    else {
+        return $this->respondError('Incorrect Current Password');
+    }
   }
 
 
@@ -269,21 +294,6 @@ class CustomerController extends BaseController
                 null
             )
         );
-        
-
-        if (isset($data['password'])) {
-            $currentPassword = Customer::whereHash($data['hash'])->first();
-
-            if (Hash::check($data['old_password'], $currentPassword['password'])) {
-                $password['password'] = bcrypt($data['password']);
-                Customer::whereHash($data['hash'])->update($password);
-                return $this->respond('sucessfully Updated');    
-            }
-            else {
-                return $this->respondError('Incorrect Current Password');
-            }
-        }
-
         return $data;
     }
  
