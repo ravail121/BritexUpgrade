@@ -12,6 +12,11 @@ class Customer extends Authenticatable
 {
 
     use Notifiable;
+
+    const AUTO_PAY = [
+        'disable'    =>  0,
+        'enable'     =>  1,
+    ];
     
     protected $table = 'customer'; 
     protected $fillable = [

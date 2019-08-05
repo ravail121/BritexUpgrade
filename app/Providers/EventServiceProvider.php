@@ -37,6 +37,10 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\AutoPayStatus' => [
             'App\Listeners\SendEmailWithAutoPayStatus',
         ],
+
+        'App\Events\AutoPayReminder' => [
+            'App\Listeners\SendEmailToRemindAutoPay',
+        ],
     ];
 
     /**

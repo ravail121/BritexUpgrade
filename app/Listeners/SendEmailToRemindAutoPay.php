@@ -5,17 +5,16 @@ namespace App\Listeners;
 use Notification;
 use App\Model\Order;
 use App\Model\EmailTemplate;
-use App\Events\AutoPayStatus;
 use App\Listeners\EmailLayout;
+use App\Events\AutoPayReminder;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Support\Configuration\MailConfiguration;
 
-class SendEmailWithAutoPayStatus
+class SendEmailToRemindAutoPay
 {
-
     use Notifiable, MailConfiguration, EmailLayout;
     /**
      * Create the event listener.
@@ -33,7 +32,7 @@ class SendEmailWithAutoPayStatus
      * @param  object  $event
      * @return void
      */
-    public function handle(AutoPayStatus $event)
+    public function handle(AutoPayReminder $event)
     {
         $customer = $event->customer;
 
@@ -46,13 +45,15 @@ class SendEmailWithAutoPayStatus
         $dataRow['customer'] = $customer;
 
         $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)
-        ->where('code', $customer->auto_pay == '1' ? 'auto-pay-enabled' : 'auto-pay-disabled')
+        ->where('code', 'auto-pay-reminder')
         ->get();
 
         $order = Order::where('customer_id', $customer->id)->first();
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+
+            $row['body'] = $this->addFieldsToBody('[total_amount_due]', $customer->invoice[0]['subtotal'], $row['body']);
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

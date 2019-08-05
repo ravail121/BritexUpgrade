@@ -10,8 +10,8 @@ class Invoice extends Model implements ConstantInterface
 {
 
     const TYPES = [
-        'one-time'  => 2,
-        'monthly'   => 1
+        'monthly'   => 1,
+        'one-time'  => 2
     ];
 
     const INVOICESTATUS = [

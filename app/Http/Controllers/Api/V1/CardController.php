@@ -237,6 +237,25 @@ class CardController extends BaseController implements ConstantInterface
             return $this->respondError("Card Not Found");
         } 
     }
+
+
+    public function autoPayInvoice()
+    {
+        $date = Carbon::today()->addDays(1);
+        $customers = Customer::where([
+            ['billing_end', '<=', $date], ['auto_pay', Customer::AUTO_PAY['enable']
+        ]])->with('invoice')
+        ->whereHas('invoice', function ($query) {
+            $query->where([['status', Invoice::INVOICESTATUS['open']],['type', Invoice::TYPES['monthly']]]);
+        })->get();
+
+        foreach ($customers as $key => $customer) {
+            
+            // event(new AutoPayReminder($customer));
+        }
+    }
 }
+
+
 
 

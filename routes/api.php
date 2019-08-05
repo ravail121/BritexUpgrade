@@ -35,10 +35,7 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
-Route::get('test',function()
-{
-
-});
+Route::get('test', 'Api\V1\CronJobs\ReminderController@autoPayReminder');
 
 Route::get('/cron-jobs-monthly-invoice', [
     'as'=>'api.cron.monthly.invoice',
