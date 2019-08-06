@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Carbon\Carbon;
 use App\Model\Order;
+use App\Model\Invoice;
 use App\Model\Customer;
 use Illuminate\Http\Request;
+use App\Events\InvoiceAutoPaid;
 use App\Model\CustomerCreditCard;
 use App\Services\Payment\UsaEpay;
 use App\Http\Controllers\Controller;
+use App\Events\FailToAutoPaidInvoice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 
@@ -84,9 +88,6 @@ class CardController extends BaseController implements ConstantInterface
         return $this->processTransaction($request, 'authonly');
 
     }
-
-
-
 
     /**
      * [chargeCard description]
@@ -242,16 +243,51 @@ class CardController extends BaseController implements ConstantInterface
     public function autoPayInvoice()
     {
         $date = Carbon::today()->addDays(1);
+
         $customers = Customer::where([
             ['billing_end', '<=', $date], ['auto_pay', Customer::AUTO_PAY['enable']
-        ]])->with('invoice')
-        ->whereHas('invoice', function ($query) {
-            $query->where([['status', Invoice::INVOICESTATUS['open']],['type', Invoice::TYPES['monthly']]]);
-        })->get();
+        ]])->with('unpaidMounthlyInvoice')->get()->toArray();
+
+        $customersB = Customer::where([
+            ['billing_start', '<=', Carbon::today()], ['auto_pay', Customer::AUTO_PAY['enable']
+        ]])->with('unpaidAndClosedMounthlyInvoice')->get()->toArray();
+
+        $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
-            
-            // event(new AutoPayReminder($customer));
+            if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
+
+                if(isset($customer['unpaid_mounthly_invoice'][0])){
+                    $customer['mounthlyInvoice'] = $customer['unpaid_mounthly_invoice'][0]; 
+                }else{
+                    $customer['mounthlyInvoice'] = $customer['unpaid_and_closed_mounthly_invoice'][0];
+                }
+
+                $card = CustomerCreditCard::where([
+                    ['customer_id', $customer['id']],
+                    ['default', CustomerCreditCard::DEFAULT['default']]
+                ])->first();
+
+                if($card){
+                    $request = new Request;
+                    $request->replace([
+                        'credit_card_id' => $card->id,
+                        'amount'         => $customer['mounthlyInvoice']['subtotal'],
+                        'customer_id'    => $customer['id'],
+                    ]);
+                    $response = $this->chargeCard($request);
+                    if(isset($response->getData()->success) && $response->getData()->success =="true") {
+                            Invoice::find($customer['mounthlyInvoice']['id'])->update([
+                            'status' => Invoice::INVOICESTATUS['closed']
+                        ]);
+                        event(new InvoiceAutoPaid($customer));
+                    }else{
+                        event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
+                    }
+                }else{
+                    event(new FailToAutoPaidInvoice($customer, 'Default card Not Found'));
+                }
+            }
         }
     }
 }

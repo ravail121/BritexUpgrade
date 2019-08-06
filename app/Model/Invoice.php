@@ -15,8 +15,8 @@ class Invoice extends Model implements ConstantInterface
     ];
 
     const INVOICESTATUS = [
-        'open'      => 1,
-        'closed'    => 2
+        'open'          => 1,
+        'closed'        => 2
     ];
 
     protected $table = 'invoice';
@@ -193,6 +193,11 @@ class Invoice extends Model implements ConstantInterface
     public function scopeMonthlyInvoicePaid($query)
     {
         return $query->monthly()->closedAndPaid();
+    }
+
+    public function scopeMonthlyInvoiceClosedAndUnpaid($query)
+    {
+        return $query->monthly()->closedAndUnpaid();
     }
 
     public function scopeOverDue($query)

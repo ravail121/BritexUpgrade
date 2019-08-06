@@ -101,7 +101,17 @@ class Customer extends Authenticatable
 
     public function invoice()
     {
-     return $this->hasMany('App\Model\Invoice');
+        return $this->hasMany('App\Model\Invoice');
+    }
+
+    public function unpaidMounthlyInvoice()
+    {
+        return $this->invoice()->monthlyInvoicePending();
+    }
+
+    public function unpaidAndClosedMounthlyInvoice()
+    {
+        return $this->invoice()->monthlyInvoiceClosedAndUnpaid();
     }
 
     public function orders()

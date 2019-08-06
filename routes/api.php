@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
+// 
+Route::get('test', 'Api\V1\CardController@autoPayInvoice');
+
 
 $config = [
 		'driver'   => 'smtp',
@@ -35,7 +38,7 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
-Route::get('test', 'Api\V1\CronJobs\ReminderController@autoPayReminder');
+// Route::get('test', 'Api\V1\CronJobs\ReminderController@autoPayReminder');
 
 Route::get('/cron-jobs-monthly-invoice', [
     'as'=>'api.cron.monthly.invoice',

@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomerCreditCard extends Model
 {
+    const DEFAULT = [
+        'notDefault' =>  0,
+        'default'    =>  1,
+    ];
+
     protected $table = 'customer_credit_card'; 
 
     protected $fillable = [

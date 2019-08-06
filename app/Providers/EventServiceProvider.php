@@ -41,6 +41,14 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\AutoPayReminder' => [
             'App\Listeners\SendEmailToRemindAutoPay',
         ],
+
+        'App\Events\InvoiceAutoPaid' => [
+            'App\Listeners\SendEmailToRemindInvoiceAutoPaid',
+        ],
+
+        'App\Events\FailToAutoPaidInvoice' => [
+            'App\Listeners\SendEmailToRemindFailToAutoPaidInvoice',
+        ],
     ];
 
     /**
