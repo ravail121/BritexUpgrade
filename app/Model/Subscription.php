@@ -50,6 +50,10 @@ class Subscription extends Model
         'scheduled_close_date'
     ];
 
+    protected $appends = [
+        'phone_number_formatted'
+    ];
+
     const SUB_STATUSES = [
         'active'            => 'active',
         'suspend-scheduled' => 'suspend-scheduled',
@@ -235,6 +239,15 @@ class Subscription extends Model
     public function getIsStatusShippingOrForActivationAttribute()
     {
       return in_array($this->status, ['shipping', 'for-activation']);
+    }
+
+    public function getPhoneNumberFormattedAttribute()
+    {
+        if($this->phone_number){
+            $length = strlen((string)$this->phone_number) -6;
+            return preg_replace("/^1?(\d{3})(\d{3})(\d{".$length."})$/", "$1-$2-$3", $this->phone_number);  
+        }
+        return 'NA';
     }
 
     public function getIsStatusActiveNotUpgradeDowngradeStatusAttribute()
