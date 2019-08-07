@@ -385,12 +385,10 @@ class InvoiceController extends BaseController implements ConstantInterface
             $invoice = array_merge($data, $invoice);
 
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                
                 $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
                 return $pdf->download('invoice.pdf');
             
             } else {
-                
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 
@@ -494,7 +492,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             'total_due'             => self::formatNumber($order->invoice->total_due),
             'subtotal'              => $order->invoice->subtotal,
             'invoice_item'          => $order->invoice->invoiceItem,
-            'today_date'            => $this->carbon->toFormattedDateString(),
+            'today_date'            => Carbon::parse($order->invoice->created_at)->toFormattedDateString(), // $this->carbon->toFormattedDateString(),
             'company_name'          => $order->customer->company_name,
             'customer_name'         => $order->customer->full_name,
             'customer_address'      => $order->customer->shipping_address1,

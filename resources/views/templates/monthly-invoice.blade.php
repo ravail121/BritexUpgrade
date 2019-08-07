@@ -53,8 +53,7 @@
                                 <p><span>{{ $invoice['customer_name'] }},</span></p>
                                 <p><span>{{ $invoice['customer_address'] }}</span></p>
                                 <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
-                            </div>                                <p><span>{{ $invoice['company_name'] }},</span></p>
-                            <p><span>{{ $invoice['customer_name'] }},</span></p>
+                            </div>
                         </div>
                         
                         <div style='position:absolute; right:15px; margin: auto; top: 100px; box-shadow:none; border-color: transparent;' class="bill_info">
