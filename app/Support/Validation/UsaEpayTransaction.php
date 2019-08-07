@@ -207,8 +207,8 @@ trait UsaEpayTransaction
             'customer_id'            => $order->customer_id, 
             'order_id'               => $order->id,
             // 'invoice_id'             => $order->invoice_id, 
-            'transaction_num'        => $tran->authcode, 
-            'processor_customer_num' => $tran->refnum, 
+            'transaction_num'        => $tran->refnum, 
+            'processor_customer_num' => $tran->authcode, 
             'status'                 => $response,
             'error'                  => $tran->error,
             'exp'                    => $tran->exp,
@@ -344,6 +344,24 @@ trait UsaEpayTransaction
 
         return true;
     }
+
+
+    protected function setUsaEpayDataForRefund($tran, $request)
+    {
+        $couponData = $this->couponData(null, $request);
+
+        $tran->key         = $couponData['key'];
+        $tran->usesandbox  = $couponData['usesandbox'];
+        $tran->command     = 'cc:refund';
+        $tran->refnum      = $request->refnum;
+        $tran->amount      = $request->amount;
+        $tran->invoice     = $request->invoice;
+        $tran->email       = $request->email;
+
+        flush();
+
+       return $tran;
+   }
 
 
 

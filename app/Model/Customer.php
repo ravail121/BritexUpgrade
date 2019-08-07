@@ -59,6 +59,10 @@ class Customer extends Authenticatable
         'auto_pay' => 0,
     ];
 
+    protected $appends = [
+        'auto_pay_status'
+    ];
+
     public function company()
     {
     	return $this->hasOne('App\Model\Company', 'id', 'company_id');
@@ -185,6 +189,15 @@ class Customer extends Authenticatable
     public function getFullNameAttribute()
     {
         return $this->fname.' '.$this->lname;
+    }
+
+    public function getAutoPayStatusAttribute()
+    {
+        if($this->auto_pay == '1'){
+            return 'enable';
+        }else{
+            return 'disable';
+        }
     }
 
     public function getZipAddressAttribute()

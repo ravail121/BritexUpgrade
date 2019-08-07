@@ -640,7 +640,7 @@ class CreateOrderTable extends Migration
            $table->foreign('plan_id')->references('id')->on('plan')->default('0');
            $table->unsignedInteger('sim_id')->nullable();
            $table->foreign('sim_id')->references('id')->on('sim')->default('0');
-           $table->bigInteger('sim_num');
+           $table->string('sim_num');
            $table->text('sim_type');
            $table->text('porting_number');
            $table->text('area_code');

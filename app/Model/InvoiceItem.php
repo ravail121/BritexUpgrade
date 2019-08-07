@@ -17,6 +17,7 @@ class InvoiceItem extends Model implements ConstantInterface
         'taxes'            => 7,
         'manual'           => 8,
         'payment'          => 9,
+        'refund'           => 10,
     ];
 
     const PRODUCT_TYPE = [

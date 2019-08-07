@@ -17,7 +17,6 @@ use Illuminate\Http\Request;
 //     return $request->user();
 // });
 // 
-Route::get('test', 'Api\V1\CardController@autoPayInvoice');
 
 
 $config = [
@@ -434,6 +433,13 @@ Route::middleware('APIToken')->group(function () {
         Route::post('/charge-new-card',[
           'as'   => 'api.customer.creditcard',
           'uses' => 'PaymentController@chargeNewCard',
+        ]);
+
+        Route::get('test', 'PaymentController@processRefund');
+
+        Route::post('/process-refund',[
+          'as'   => 'api.process.refund',
+          'uses' => 'PaymentController@processRefund',
         ]);
 
         Route::get('/customer-cards',[
