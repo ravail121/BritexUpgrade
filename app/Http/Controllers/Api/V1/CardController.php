@@ -263,10 +263,9 @@ class CardController extends BaseController implements ConstantInterface
                     $customer['mounthlyInvoice'] = $customer['unpaid_and_closed_mounthly_invoice'][0];
                 }
 
-                $card = CustomerCreditCard::where([
-                    ['customer_id', $customer['id']],
-                    ['default', CustomerCreditCard::DEFAULT['default']]
-                ])->first();
+                $card = CustomerCreditCard::where(
+                    'customer_id', $customer['id']
+                )->orderBy('default', 'desc')->first();
 
                 if($card){
                     $request = new Request;
@@ -285,7 +284,7 @@ class CardController extends BaseController implements ConstantInterface
                         event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
                     }
                 }else{
-                    event(new FailToAutoPaidInvoice($customer, 'Default card Not Found'));
+                    event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));
                 }
             }
         }

@@ -14,6 +14,10 @@ class FailToAutoPaidInvoice
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $customer;
+    public $description;
+    
+
     /**
      * Create a new event instance.
      *

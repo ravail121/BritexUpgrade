@@ -15,6 +15,8 @@ class AutoPayReminder
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $customer;
+
     /**
      * Create a new event instance.
      *

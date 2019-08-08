@@ -13,6 +13,7 @@ use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\PaymentRefundLog;
+use App\Events\SendRefundInvoice;
 use App\Services\Payment\UsaEpay;
 use App\Model\CustomerCreditCard;
 use App\Http\Controllers\Controller;
@@ -208,7 +209,8 @@ class PaymentController extends BaseController implements ConstantInterface
     {
         $data = $request->validate([
             'refnum'     => 'required',
-            'amount'     => 'required|numeric'
+            'amount'     => 'required|numeric',
+            'credit'     => 'required',
         ]); 
 
         $this->setConstantData($request);
@@ -216,20 +218,14 @@ class PaymentController extends BaseController implements ConstantInterface
         $paymentLog = PaymentLog::where('transaction_num' , $data['refnum'])->first();
         if($this->tran->Process()) {
             $status = PaymentRefundLog::STATUS['success'];
-            $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $this->tran->amount);
+            $amount = $data['credit'] == '1' ? 0: $this->tran->amount;
+            $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount);
             if($invoice){
-                InvoiceItem::create([
-                    'invoice_id'      =>  $invoice->id,
-                    'product_type'    =>  " ",
-                    'start_date'      =>  Carbon::now(),
-                    'type'            =>  InvoiceItem::TYPES['refund'],
-                    'amount'          =>  $this->tran->amount,
-                    'description'     =>  'Refund',
-                    'taxable'         =>  '0'
-                ]);
+                $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
                 $msg = "success";
-                if($request->creadit){
-                    $credit = $this->createRefundCredit($invoice, $this->tran->amount);
+                if($request->credit == '1'){
+                    $credit = $this->createRefundCredit($invoice, $this->tran->amount, $request->staff_id );
+                    $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['manual', 'Manual-Credit']);
                     if(!$credit){
                        $msg = "Refund Processed but fail to add credits"; 
                     }
@@ -237,25 +233,30 @@ class PaymentController extends BaseController implements ConstantInterface
             }else{
                 $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
             }
-
+            $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status);
+            event(new SendRefundInvoice($paymentLog, $this->tran->amount));
         }else {
             $status = PaymentRefundLog::STATUS['fail'];
             $msg = $this->tran->error;
-
+            $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status);
+            // failed Mail event if want
         }
 
-        $paymentRefundLog = PaymentRefundLog::create([
+        return $this->respond([
+            'paymentRefundLog'=> $paymentRefundLog,
+            'message' => $msg
+        ]); 
+    }
+
+    protected function createPaymentRefundLog($paymentLog, $status)
+    {
+        return PaymentRefundLog::create([
             'payment_log_id'  =>  $paymentLog->id,
             'transaction_num' =>  $this->tran->refnum ?: null,
             'error'           =>  $this->tran->error,
             'amount'          =>  $this->tran->amount,
             'status'          =>  $status,
         ]);
-
-        return $this->respond([
-            'paymentRefundLog'=> $paymentRefundLog,
-            'message' => $msg
-        ]); 
     }
 
     protected function createRefundInvoice($invoiceId, $amount)
@@ -275,17 +276,29 @@ class PaymentController extends BaseController implements ConstantInterface
         }
     }
 
-    protected function createRefundCredit($invoice, $amount)
+    protected function createRefundCredit($invoice, $amount, $staffId)
     {
         return Credit::create([  
             'customer_id'       =>  $invoice->customer_id,
             'amount'            =>  $amount,
-            'applied_to_invoice'=>  $paymentLog->id,
             'type'              =>  '2',
             'date'              =>  Carbon::now(),
             'payment_method'    =>  '1',
             'description'       =>  'refund-credit',
-            'staff_id'          =>  $request->staff_id,
+            'staff_id'          =>  $staffId,
+        ]);
+    }
+
+    public function createRefundInvoiceItem($invoice, $amount, $type)
+    {
+        return InvoiceItem::create([
+            'invoice_id'      =>  $invoice->id,
+            'product_type'    =>  " ",
+            'start_date'      =>  Carbon::now(),
+            'type'            =>  InvoiceItem::TYPES[$type['0']],
+            'amount'          =>  $this->tran->amount,
+            'description'     =>  $type['1'],
+            'taxable'         =>  '0'
         ]);
     }
 }

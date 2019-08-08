@@ -37,7 +37,8 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
-// Route::get('test', 'Api\V1\CronJobs\ReminderController@autoPayReminder');
+// Route::get('test', 'App\Http\Controllers\Api\V1\CardController@autoPayInvoice');
+
 
 Route::get('/cron-jobs-monthly-invoice', [
     'as'=>'api.cron.monthly.invoice',
@@ -446,6 +447,9 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.get.customercards',
           'uses' => 'CardController@getCustomerCards',
         ]);
+
+        Route::get('testa', 'CardController@autoPayInvoice');
+
 
         Route::post('/add-card',[
           'as'   => 'api.add.cards',

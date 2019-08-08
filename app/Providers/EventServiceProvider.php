@@ -49,6 +49,10 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\FailToAutoPaidInvoice' => [
             'App\Listeners\SendEmailToRemindFailToAutoPaidInvoice',
         ],
+
+        'App\Events\SendRefundInvoice' => [
+            'App\Listeners\SendEmailForRefund',
+        ],
     ];
 
     /**

@@ -10,20 +10,22 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class InvoiceAutoPaid
+class SendRefundInvoice
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $customer;
+    public $paymentLog;
+    public $amount;
+
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($customer)
+    public function __construct($paymentLog, $amount)
     {
-        $this->customer = $customer;
-
+        $this->paymentLog = $paymentLog;
+        $this->amount = $amount;
     }
 
     /**
