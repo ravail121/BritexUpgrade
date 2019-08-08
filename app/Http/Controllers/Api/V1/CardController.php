@@ -269,13 +269,12 @@ class CardController extends BaseController implements ConstantInterface
 
                 if($card){
                     $invoice = Invoice::where('id', $customer['mounthlyInvoice']['id'])->with('order')->first();
-
-                    dd($invoice->order->order_hash);
+                    
                     $request = new Request;
                     $request->replace([
                         'credit_card_id' => $card->id,
                         'amount'         => $customer['mounthlyInvoice']['subtotal'],
-                        'order_hash'    => $invoice->order['order_hash'],
+                        'order_hash'    => $invoice->order->hash,
                     ]);
                     $response = $this->chargeCard($request);
                     if(isset($response->getData()->success) && $response->getData()->success =="true") {
