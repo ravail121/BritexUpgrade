@@ -110,7 +110,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         if ($request->data_to_invoice) {
             
             $invoice = $request->data_to_invoice;
-
+            
             if (isset($invoice['subscription_id'])) {
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
 
@@ -185,6 +185,18 @@ class InvoiceController extends BaseController implements ConstantInterface
             $order->invoice->update(
                 [
                     'due_date' => $startDate
+                ]
+            );
+        }
+
+        $updateDevicesWithNoId =  $order->invoice->invoiceItem->where('product_type', 'device')->where('product_id', 0);
+
+        foreach ($updateDevicesWithNoId as $item) {
+            $item->update(
+                [
+                'description' => '',
+                'type'  => 3,
+                'taxable' => 0
                 ]
             );
         }
@@ -782,7 +794,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         $customer = Customer::find($obj->customer_id);
         $order    = Order::find($obj->order_id);
 
-
         if ($customer->subscription_start_date == null && $customer->billing_start == null  && $customer->billing_end == null) {
 
             $customer->update([
@@ -791,14 +802,15 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
             ]);
         }
+      
         $this->input = [
             'invoice_id'  => $order->invoice_id, 
             'type'        => self::DEFAULT_INT, 
             'start_date'  => $order->invoice->start_date, 
             'description' => self::DESCRIPTION,
             'taxable'     => self::DEFAULT_INT,
-
         ];
+
         return $order;
     }
 
@@ -814,6 +826,7 @@ class InvoiceController extends BaseController implements ConstantInterface
  
     protected function subscriptionInvoiceItem($subscriptionIds)
     {
+        
         $paidInvoice = 0;
         $invoiceItem = null;
         $order = Order::where('invoice_id', $this->input['invoice_id'])->first();
@@ -826,7 +839,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             ];
                 
             if ($subscription->device_id !== null && $subscription->upgrade_downgrade_status == null) {
-
+                
                 $array = [
                     'product_type'    => self::DEVICE_TYPE,
                     'product_id'      => $subscription->device_id,

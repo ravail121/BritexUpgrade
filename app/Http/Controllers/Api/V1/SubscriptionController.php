@@ -247,9 +247,8 @@ class SubscriptionController extends BaseController
      */
     protected function validateData($request)
     {
-    	return $this->validate_input($request->all(), [
+    	$validate =  $this->validate_input($request->all(), [
                 'order_id'         => 'required|numeric|exists:order,id',
-                'device_id'        => 'nullable|numeric|exists:device,id',
                 'plan_id'          => 'required|numeric|exists:plan,id',
                 'porting_number'   => 'nullable|string',
                 'area_code'        => 'nullable|string|max:3',
@@ -257,6 +256,16 @@ class SubscriptionController extends BaseController
                 'imei_number'      => 'nullable|digits_between:14,16',
             ]
         );
+        if($validate){
+            return $validate;
+        }
+
+        if($request->device_id != 0){
+            $validate =  $this->validate_input($request->all(), [
+                'device_id'        => 'nullable|numeric|exists:device,id',
+            ]);
+        }
+        return $validate;
     }
 
 
