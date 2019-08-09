@@ -235,7 +235,7 @@ trait InvoiceTrait
             'taxes'                         =>   self::formatNumber($taxes),
             'credits'                       =>   self::formatNumber($credits),
             'total_charges'                 =>   self::formatNumber($totalAccountCharges),
-            'total_one_time_charges'        =>   self::formatNumber($oneTimeCharges + $shippingFee),
+            'total_one_time_charges'        =>   self::formatNumber($oneTimeCharges),
             'total_usage_charges'           =>   self::formatNumber($usageCharges),
             'plan_charges'                  =>   self::formatNumber($planCharges),
             'serviceChargesProrated'        =>   self::formatNumber($serviceChargesProrated),
