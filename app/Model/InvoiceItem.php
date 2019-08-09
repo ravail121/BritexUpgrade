@@ -105,7 +105,7 @@ class InvoiceItem extends Model implements ConstantInterface
 
     public function scopeOnetimeCharges($query)
     {
-        return $query->where('type', self::INVOICE_ITEM_TYPES['one_time_charges'])->where('description', '!=', 'Shipping Fee');
+        return $query->where('type', self::INVOICE_ITEM_TYPES['one_time_charges']);
                      
     }
 
