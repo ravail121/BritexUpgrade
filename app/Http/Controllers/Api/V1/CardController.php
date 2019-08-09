@@ -282,15 +282,15 @@ class CardController extends BaseController implements ConstantInterface
                         $invoice->update([
                             'status' => Invoice::INVOICESTATUS['closed']
                         ]);
-                        $request->headers->set('authorization', $order->company->api_key);
+                        $request->headers->set('authorization', $invoice->order->company->api_key);
                         event(new InvoiceAutoPaid($customer));
                     }else{
-                        $request->headers->set('authorization', $order->company->api_key);
+                        $request->headers->set('authorization', $invoice->order->company->api_key);
                         event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
                     }
                     PaymentLog::where('order_id', $invoice->order_id)->update(['invoice_id' => $invoice->id ]);
                 }else{
-                    $request->headers->set('authorization', $order->company->api_key);
+                    $request->headers->set('authorization', $invoice->order->company->api_key);
                     event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));
                 }
             }
