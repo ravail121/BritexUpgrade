@@ -14,7 +14,7 @@ class AddSubscriptionIdToPendingChargeTable extends Migration
     public function up()
     {
         Schema::table('pending_charge', function (Blueprint $table) {
-            $table->unsignedInteger('subscription_id')->after('customer_id');
+            $table->unsignedInteger('subscription_id')->default('0')->after('customer_id');
         });
     }
 

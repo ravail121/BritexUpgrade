@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Invoice;
 use App\Model\Customer;
+use App\Model\PaymentLog;
 use Illuminate\Http\Request;
 use App\Events\InvoiceAutoPaid;
 use App\Model\CustomerCreditCard;
@@ -256,6 +257,7 @@ class CardController extends BaseController implements ConstantInterface
 
         foreach ($customers as $key => $customer) {
             if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
+                $request = new Request;
 
                 if(isset($customer['unpaid_mounthly_invoice'][0])){
                     $customer['mounthlyInvoice'] = $customer['unpaid_mounthly_invoice'][0]; 
@@ -269,8 +271,7 @@ class CardController extends BaseController implements ConstantInterface
 
                 if($card){
                     $invoice = Invoice::where('id', $customer['mounthlyInvoice']['id'])->with('order')->first();
-                    
-                    $request = new Request;
+
                     $request->replace([
                         'credit_card_id' => $card->id,
                         'amount'         => $customer['mounthlyInvoice']['subtotal'],
@@ -281,11 +282,15 @@ class CardController extends BaseController implements ConstantInterface
                         $invoice->update([
                             'status' => Invoice::INVOICESTATUS['closed']
                         ]);
+                        $request->headers->set('authorization', $order->company->api_key);
                         event(new InvoiceAutoPaid($customer));
                     }else{
+                        $request->headers->set('authorization', $order->company->api_key);
                         event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
                     }
+                    PaymentLog::where('order_id', $invoice->order_id)->update(['invoice_id' => $invoice->id ]);
                 }else{
+                    $request->headers->set('authorization', $order->company->api_key);
                     event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));
                 }
             }
