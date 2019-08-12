@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
+use App\Events\SupportEmail;
 
 class SupportController extends Controller
 {
@@ -26,5 +27,13 @@ class SupportController extends Controller
 		$this->content['support'] = $support;   
 
 		return response()->json($this->content); 	
-    }
+		}
+		
+		public function sendEmail(Request $request)
+		{
+			$data = $request->all();
+			$company    = \Request::get('company');
+			$request->headers->set('authorization', $company->api_key);
+			event(new SupportEmail($data));
+		}
 }

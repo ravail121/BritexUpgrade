@@ -15,7 +15,12 @@ class EmailComposer
 
         $company = Company::whereApiKey($orderHash)->first();
 
-        $view->with('companyDetail', $company);
+        $view->with(
+            [
+                'companyDetail' => $company,
+                'templates'     => request()->header('templates')
+            ]
+        );
     }
 
 }

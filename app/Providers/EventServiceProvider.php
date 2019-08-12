@@ -53,6 +53,10 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\SendRefundInvoice' => [
             'App\Listeners\SendEmailForRefund',
         ],
+        
+        'App\Events\SupportEmail' => [
+            'App\Listeners\SendSupportEmail'
+        ],
     ];
 
     /**

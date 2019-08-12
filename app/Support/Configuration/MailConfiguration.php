@@ -15,7 +15,7 @@ trait MailConfiguration
      */
     protected function setMailConfiguration($data)
     {
-        $company = Company::find($data->company_id);
+        $company = Company::find($data->company_id ?: $data->id);
         $config = [
             'driver'   => $company->smtp_driver,
             'host'     => $company->smtp_host,

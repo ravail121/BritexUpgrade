@@ -386,9 +386,14 @@ Route::middleware('APIToken')->group(function () {
       Route::group(['prefix'=>'support','namespace'=>'Api\V1'],function()
       {
         Route::get('/',[
-       'as'=>'api.support.categories',
-       'uses'=>'SupportController@get',
+          'as'=>'api.support.categories',
+          'uses'=>'SupportController@get',
         ]);
+
+        Route::post('/email',[
+          'as'=>'api.support.email',
+          'uses'=>'SupportController@sendEmail',
+          ]);
       });
 
 
