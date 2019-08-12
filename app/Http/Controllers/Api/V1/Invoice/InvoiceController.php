@@ -312,7 +312,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             if($paymentRefundLog){
                 // return view('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
 
-                $pdf = PDF::loadView('templates/refund-invoice', compact('invoice'));
+                $pdf = PDF::loadView('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
                 return $pdf->download('invoice.pdf');
             }else{
                  return 'Sorry, we could not find any refund Invoice';
