@@ -13,7 +13,7 @@ class AddInvoiceIdInPaymentRefundLogTable extends Migration
      */
     public function up()
     {
-            Schema::table('companypayment_refund_log', function (Blueprint $table) {
+            Schema::table('payment_refund_log', function (Blueprint $table) {
                 $table->unsignedInteger('invoice_id')->after('payment_log_id')->nullable();
                 $table->foreign('invoice_id')->references('id')->on('invoice');
             });
