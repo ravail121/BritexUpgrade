@@ -300,4 +300,12 @@ class Invoice extends Model implements ConstantInterface
         return 'NA';
     }
 
+    public function getCreatedAtFormattedAttribute()
+    {
+        if($this->created_at){
+            return Carbon::parse($this->created_at)->format('M d, Y');   
+        }
+        return 'NA';
+    }
+
 }

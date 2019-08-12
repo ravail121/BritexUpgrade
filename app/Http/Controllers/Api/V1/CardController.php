@@ -254,10 +254,10 @@ class CardController extends BaseController implements ConstantInterface
         ]])->with('unpaidAndClosedMounthlyInvoice')->get()->toArray();
 
         $customers = array_merge($customers, $customersB);
+        $request = new Request;
 
         foreach ($customers as $key => $customer) {
             if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
-                $request = new Request;
 
                 if(isset($customer['unpaid_mounthly_invoice'][0])){
                     $customer['mounthlyInvoice'] = $customer['unpaid_mounthly_invoice'][0]; 
@@ -288,7 +288,8 @@ class CardController extends BaseController implements ConstantInterface
                         $request->headers->set('authorization', $invoice->order->company->api_key);
                         event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
                     }
-                    PaymentLog::where('order_id', $invoice->order_id)->update(['invoice_id' => $invoice->id ]);
+                    
+                    PaymentLog::where('order_id', $invoice->order->id)->update(['invoice_id' => $invoice->id ]);
                 }else{
                     $request->headers->set('authorization', $invoice->order->company->api_key);
                     event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));

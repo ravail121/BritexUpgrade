@@ -193,6 +193,17 @@ trait InvoiceTrait
 
     protected function dataForInvoice($invoice, $order = null)
     {
+        if($order){
+            $totalCredits           = $order->credits->sum('amount');
+            $oldUsedCredits         = $order->credits->first() ? $invoice->creditsToInvoice->where('credit_id', '!=', $order->credits->first()->id)->sum('amount') : $invoice->creditsToInvoice->sum('amount');
+            $subscriptionItems      = $this->allSubscriptionData($order);
+            $previousBill           = $this->previousBill($order);
+        }else{
+            $totalCredits           = 0;
+            $oldUsedCredits         = 0;
+            $subscriptionItems      = 0;
+            $previousBill           = 0;
+        }
         $invoiceItem            = $invoice->invoiceItem;
         $regulatoryFee          = $invoice->cal_regulatory;
         $stateTax               = $invoice->cal_stateTax;
@@ -214,8 +225,6 @@ trait InvoiceTrait
         $shippingFee            = $invoiceItem->where('description', 'Shipping Fee')->sum('amount');
         $shippingFeeStandalone  = $invoiceItem->where('subscription_id', null)->where('description', 'Shipping Fee')->sum('amount');
         $tax                    = $taxes;
-        $totalCredits           = $order->credits->sum('amount');
-        $oldUsedCredits         = $order->credits->first() ? $invoice->creditsToInvoice->where('credit_id', '!=', $order->credits->first()->id)->sum('amount') : $invoice->creditsToInvoice->sum('amount');
         $totalCreditsToInvoice  = $invoice->creditsToInvoice->sum('amount');
         $totalCoupons           = $invoiceItem->where('type', self::COUPONS)->sum('amount');
         $accountChargesDiscount = $totalAccountCharges - $totalCoupons - $shippingFee;
@@ -226,11 +235,9 @@ trait InvoiceTrait
         $standaloneRegulatory   = $standalone->where('type', InvoiceItem::TYPES['regulatory_fee'])->sum('amount');
         $standaloneCoupons      = $standalone->where('type', InvoiceItem::TYPES['coupon'])->sum('amount');
         $standaloneTotal        = $standalone->where('type', '!=', InvoiceItem::TYPES['coupon'])->sum('amount');
-        $subscriptionItems      = $this->allSubscriptionData($order);
-        $previousBill           = $this->previousBill($order);
                                         
         $invoice = [
-            'invoice_type'                  =>   $order->invoice->type,
+            'invoice_type'                  =>   $invoice->type,
             'service_charges'               =>   self::formatNumber($serviceCharges),
             'taxes'                         =>   self::formatNumber($taxes),
             'credits'                       =>   self::formatNumber($credits),

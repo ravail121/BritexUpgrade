@@ -22,6 +22,7 @@ use App\Model\OrderGroupAddon;
 use App\Model\Subscription;
 use App\Model\PendingCharge;
 use App\Model\CustomerCoupon;
+use App\Model\PaymentRefundLog;
 use App\Model\SubscriptionAddon;
 use App\Model\SubscriptionCoupon;
 use App\Model\CustomerStandaloneSim;
@@ -302,7 +303,23 @@ class InvoiceController extends BaseController implements ConstantInterface
      */
     public function get(Request $request)
     {
-        $order = Order::hash($request->order_hash)->first();
+        if($request->refundInvoiceId){
+            
+            $invoice = Invoice::where('id', $request->refundInvoiceId)->with('customer', 'invoiceItem')->first();
+
+            $paymentRefundLog = PaymentRefundLog::where('invoice_id', $invoice->id)->with('paymentLog')->first();
+
+            if($paymentRefundLog){
+                // return view('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
+
+                $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'));
+                return $pdf->download('invoice.pdf');
+            }else{
+                 return 'Sorry, we could not find any refund Invoice';
+            }
+        }else{
+            $order = Order::hash($request->order_hash)->first();
+        }
         return $this->generateInvoice($order);
     }
 
