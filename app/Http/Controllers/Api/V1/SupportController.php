@@ -34,6 +34,6 @@ class SupportController extends Controller
 			$data = $request->all();
 			$company    = \Request::get('company');
 			$request->headers->set('authorization', $company->api_key);
-			event(new SupportEmail($data));
+			return event(new SupportEmail($data));
 		}
 }

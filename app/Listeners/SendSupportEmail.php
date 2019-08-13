@@ -11,6 +11,8 @@ use Illuminate\Notifications\Notifiable;
 use App\Support\Configuration\MailConfiguration;
 use App\Model\Customer;
 use Illuminate\Support\Facades\Request;
+use App\Model\EmailTemplate;
+use Exception;
 
 class SendSupportEmail
 {
@@ -34,13 +36,19 @@ class SendSupportEmail
     public function handle(SupportEmail $event)
     {
         $data       = $event->data;
-        $customer   = Customer::where('email', $data['email'])->first();
         $company    = \Request::get('company');
-        
+        $emailTemplate = EmailTemplate::where('company_id', $company->id)->where('code', 'support-email')->get();
         $configurationSet = $this->setMailConfiguration($company);
         if ($configurationSet) {
             return false;
         }
-        Notification::route('mail', $company->support_email)->notify(new SendEmailToSupport($data));
+        try {
+            foreach ($emailTemplate as $template) {
+                Notification::route('mail', $template->to)->notify(new SendEmailToSupport($data, $template->from));
+            }
+        } catch (Exception $e) {
+            \Log::info($e->getMessage());
+            return false;
+        }
     }
 }

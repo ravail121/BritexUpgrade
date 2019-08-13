@@ -152,7 +152,7 @@ class CardController extends BaseController implements ConstantInterface
           
             } else {
                 if($request->without_order){
-                    return response()->json(['message' => 'Card  ' . $this->tran->result . ', Because '. $this->tran->error]);
+                    return response()->json(['message' => 'Card  ' . $this->tran->result . ', Because '. $this->tran->error, 'transaction' => $this->tran]);
                 }else{
                     $this->response = $this->transactionFail($order, $this->tran);
                 }

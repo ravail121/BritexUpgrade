@@ -171,7 +171,7 @@ trait UsaEpayTransaction
         if($invoice){
             $this->addCreditToInvoiceRow($invoice, $credit ,$tran);
         }
-        $response = response()->json(['success' => true,]);
+        $response = response()->json(['success' => true, 'transaction' => $tran]);
 
         return $response;
     }

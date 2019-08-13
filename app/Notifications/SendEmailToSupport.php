@@ -10,15 +10,16 @@ use Illuminate\Notifications\Messages\MailMessage;
 class SendEmailToSupport extends Notification
 {
     use Queueable, EmailRecord;
-    public $data;
+    public $data, $from;
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($data)
+    public function __construct($data, $from)
     {
         $this->data = $data;
+        $this->from = $from;
     }
 
     /**
@@ -43,10 +44,10 @@ class SendEmailToSupport extends Notification
         
         return (new MailMessage)
                     ->subject($this->data['subject'])
-                    ->from('no-reply@teltik.com')
-                    ->line('<strong>From: </strong>'.' '.$this->data['email'])
-                    ->line('<strong>Name: </strong>'.' '.$this->data['name'])
-                    ->line('<strong>Message: </strong>'.' '.$this->data['message']);
+                    ->from($this->from)
+                    ->line('<strong>From:</strong>'.' '.$this->data['email'])
+                    ->line('<strong>Name:</strong>'.' '.$this->data['name'])
+                    ->line('<strong>Message:</strong>'.' '.$this->data['message']);
     }
 
     /**
