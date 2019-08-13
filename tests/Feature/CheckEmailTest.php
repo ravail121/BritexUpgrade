@@ -81,8 +81,8 @@ class CheckEmailTest extends TestCase
 
     	$response->assertStatus(302);
     }
-
-    public function test_check_email_without_hash()
+    
+    public function test_check_email_already_exist()
     {
         $customerData = [
             'order_hash'        => '0058f7836a86d7cb60e4017c3f34758b3ce5cd87',
@@ -109,7 +109,11 @@ class CheckEmailTest extends TestCase
     	];
 
         $response = $this->withHeaders(self::HEADER_DATA)->get('api/check-email?'.http_build_query($urlData));
-
-    	$response->assertStatus(302);
+        
+    	$response->assertStatus(200)->assertJson(
+            [
+                'emailCount' => 1
+            ]
+        );
     }
 }

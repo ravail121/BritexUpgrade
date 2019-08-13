@@ -35,8 +35,9 @@ class PrimaryCardTest extends TestCase
 
         $customerResponse = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query($customerData));
         $customer =  $customerResponse->json();
+        
         $this->customerId = $customer['customer']['id'];
-
+        
         $cardData = [
             'billing_fname'          => $this->faker->firstName(),
             'billing_lname'          => $this->faker->lastName(),
@@ -53,8 +54,8 @@ class PrimaryCardTest extends TestCase
 
         $cardResponse = $this->withHeaders(self::HEADER_DATA)->post('api/add-card?'.http_build_query($cardData));
         $card =  $cardResponse->json();
-    	
-        $response = $this->withHeaders(self::HEADER_DATA)->post('/api/primary-card?customer_credit_card_id='.$card['card']['id'].'&id='.$customer['customer']['id']);
+    	$cardId = $card['card']['card']['id'];
+        $response = $this->withHeaders(self::HEADER_DATA)->post('/api/primary-card?customer_credit_card_id='.$cardId.'&id='.$customer['customer']['id']);
 
         $response->assertJson([
             'details' => 'Card Sucessfully Updated' ]);
@@ -125,7 +126,7 @@ class PrimaryCardTest extends TestCase
         $cardResponse = $this->withHeaders(self::HEADER_DATA)->post('api/add-card?'.http_build_query($cardData));
         $card =  $cardResponse->json();
         
-        $response = $this->withHeaders(self::HEADER_DATA)->post('/api/primary-card?customer_credit_card_id='.$card['card']['id']);
+        $response = $this->withHeaders(self::HEADER_DATA)->post('/api/primary-card?customer_credit_card_id='.$card['card']['card']['id']);
 
     	$response->assertStatus(302);
     }

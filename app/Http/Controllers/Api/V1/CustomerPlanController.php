@@ -15,9 +15,15 @@ class CustomerPlanController extends BaseController
 {
     public function get(Request $request){
 
-    	$customerId = Customer::whereHash($request->hash)->first(['id']);
+        if ($request->hash) {
+    	    $customerId = Customer::whereHash($request->hash)->first(['id']);
 
-    	return $this->respond(['customer-plans' => $this->getSubscriptions($customerId['id'])]);
+            return $this->respond(['customer-plans' => $this->getSubscriptions($customerId['id'])]);
+        } else {
+            return [
+                'error' => true
+            ];
+        }
     }
 
     public function getSubscriptions($customerId){

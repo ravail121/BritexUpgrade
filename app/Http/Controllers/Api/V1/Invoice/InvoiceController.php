@@ -111,7 +111,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         if ($request->data_to_invoice) {
             
             $invoice = $request->data_to_invoice;
-            
+            // \Log::info('Invoice: -'.$invoice);
             if (isset($invoice['subscription_id'])) {
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
 
@@ -132,9 +132,11 @@ class InvoiceController extends BaseController implements ConstantInterface
             if (isset($invoice['customer_standalone_device_id'])) {
                
                 $orderId = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'])->first()->order_id;
-               
-                $standaloneDevice = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'][0]);
-               
+
+                $deviceId = is_array($invoice['customer_standalone_device_id']) ? $invoice['customer_standalone_device_id'][0] : $invoice['customer_standalone_device_id'];
+
+                $standaloneDevice = CustomerStandaloneDevice::find($deviceId);
+                
                 $order = $this->updateCustomerDates($standaloneDevice);
                
                 $invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
@@ -348,7 +350,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
             ]);
         }
-      
+       
         $this->input = [
             'invoice_id'  => $order->invoice_id, 
             'type'        => self::DEFAULT_INT, 
@@ -1038,7 +1040,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     }
 
     protected function generate_new_invoice($customers){
-    
+        
         foreach ($customers as $customer) {
 
             // check invoice type and start_date
@@ -1087,7 +1089,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         $customer = Customer::find($data['customer_id']);
         $end_date = Carbon::parse($customer->billing_end)->addDays(1);
         $order = Order::whereHash($data['order_hash'])->first();
-            
+                
         $invoice = Invoice::create([
             'customer_id'             => $customer->id,
             'end_date'                => $end_date,

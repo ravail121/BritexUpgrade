@@ -37,8 +37,12 @@ class CustomerOrderTest extends TestCase
 
         $response = $this->withHeaders(self::HEADER_DATA)->get('/api/customer-orders?hash='.$customer['customer']['hash']);
 
-    	$response->assertStatus(200)->assertJson([
-            'orders' => true,
+    	// $response->assertStatus(200)->assertJson([
+        //     'orders' => true,
+        // ]);
+
+        $response->assertStatus(200)->assertJson([
+            'id' => true,
         ]);
     }
 

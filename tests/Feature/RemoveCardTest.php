@@ -54,7 +54,7 @@ class RemoveCardTest extends TestCase
         $cardResponse = $this->withHeaders(self::HEADER_DATA)->post('api/add-card?'.http_build_query($cardData));
         $card =  $cardResponse->json();
         
-        $response = $this->withHeaders(self::HEADER_DATA)->post('/api/remove-card?customer_credit_card_id='.$card['card']['id']);
+        $response = $this->withHeaders(self::HEADER_DATA)->post('/api/remove-card?customer_credit_card_id='.$card['card']['card']['id']);
 
         $response->assertJson([            
             'details' => 'Card Sucessfully Deleted'

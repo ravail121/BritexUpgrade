@@ -56,7 +56,6 @@ class SubscriptionController extends BaseController
                 $data['upgrade_downgrade_status'] = 'for-upgrade';
                 $data['order_num'] = $order->order_num;
                 $updateSubcription = $subscription->update($data);
-                \Log::info($updateSubcription);
                 return $this->respond(['subscription_id' => $subscription->id]);
             }
             return $this->respond(['same_subscription_id' => $subscription->id]);

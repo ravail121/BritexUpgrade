@@ -20,7 +20,7 @@ class DeviceTest extends TestCase
 
     public function saveDevice()
     {
-    	$response =$thsi->post('/add');
+    	$response =$this->post('/add');
     }
 
     public function getDevice()
