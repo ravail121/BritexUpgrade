@@ -25,4 +25,9 @@ class Port extends Model
         'account_pin_porting_from',
         'date_submitted',
     ];
+
+    public function subscription()
+    {
+        return $this->belongsTo('App\Model\Subscription');
+    }
 }

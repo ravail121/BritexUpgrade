@@ -95,6 +95,10 @@ class Subscription extends Model
 
     	return $this->hasMany('App\Model\SubscriptionAddon', 'id');
     }
+    public function getNamesOfSubscriptionAddonNotRemovedAttribute()
+    {
+        return $this->subscriptionAddonNotRemoved->load('addons')->pluck('addons.name');
+    }
 
     public function subscriptionAddon()
     {
@@ -164,7 +168,7 @@ class Subscription extends Model
 
     public function plans()
     {
-        return $this->belongsTo('App\Model\plan', 'plan_id');
+        return $this->belongsTo('App\Model\Plan', 'plan_id');
     }
 
     public function addon()
@@ -233,6 +237,7 @@ class Subscription extends Model
         $today = Carbon::today();
         $date  = Carbon::parse($this->suspended_date);
         $value = $today->diffInDays($date);
+        // , $value, $today
         return $value > $grace;
     }
 

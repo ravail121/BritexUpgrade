@@ -11,6 +11,8 @@ use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
+use App\Events\SendMailForShippingNumber;
+use App\Events\SubcriptionStatusChanged;
 use Illuminate\Database\Eloquent\Builder;
 
 class OrderDataController extends BaseController
@@ -83,8 +85,9 @@ class OrderDataController extends BaseController
         $subString = substr($boxdetail['part_number'], 0, 3);
 
         $partNumId = subStr($boxdetail['part_number'], 4);
-
+        $isSubcription = null;
         if($subString == 'SUB') {
+            $isSubcription = 1;
             $table = Subscription::find($partNumId);
 
         } elseif($subString == 'SIM') {
@@ -94,7 +97,13 @@ class OrderDataController extends BaseController
             $table = CustomerStandaloneSim::find($partNumId);
         }
         if($table){
-            $table->update(['tracking_num' => $boxes['tracking_number']]);
+            if($boxes['tracking_number'] != null){
+                $table->update(['tracking_num' => $boxes['tracking_number']]);
+                event(new SendMailForShippingNumber($boxes['tracking_number'], $table));
+                if($isSubcription){
+                    event(new SubcriptionStatusChanged($table->id));
+                }
+            }
         }
     }
 }

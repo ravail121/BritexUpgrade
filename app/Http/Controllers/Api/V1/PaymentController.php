@@ -212,10 +212,12 @@ class PaymentController extends BaseController implements ConstantInterface
             'amount'     => 'required|numeric',
             'credit'     => 'required',
         ]); 
-
+        
         $this->setConstantData($request);
         $this->tran = $this->setUsaEpayDataForRefund($this->tran, $request);
         $paymentLog = PaymentLog::where('transaction_num' , $data['refnum'])->first();
+        $customer   = Customer::find($paymentLog->customer_id);
+        $request->headers->set('authorization', $customer->company->api_key);
         if($this->tran->Process()) {
             $status = PaymentRefundLog::STATUS['success'];
             $amount = $data['credit'] == '1' ? 0: $this->tran->amount;
@@ -236,6 +238,7 @@ class PaymentController extends BaseController implements ConstantInterface
             $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice->id);
             event(new SendRefundInvoice($paymentLog, $this->tran->amount));
         }else {
+            
             $status = PaymentRefundLog::STATUS['fail'];
             $msg = $this->tran->error;
             $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status);
@@ -294,7 +297,7 @@ class PaymentController extends BaseController implements ConstantInterface
     {
         return InvoiceItem::create([
             'invoice_id'      =>  $invoice->id,
-            'product_type'    =>  " ",
+            'product_type'    =>  "refund",
             'start_date'      =>  Carbon::now(),
             'type'            =>  InvoiceItem::TYPES[$type['0']],
             'amount'          =>  $this->tran->amount,

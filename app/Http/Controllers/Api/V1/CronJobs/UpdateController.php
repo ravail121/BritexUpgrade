@@ -14,6 +14,7 @@ use App\Events\AccountSuspended;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Http\Controllers\BaseController;
+use App\Events\SubcriptionStatusChanged;
 
 class UpdateController extends BaseController
 {
@@ -27,10 +28,10 @@ class UpdateController extends BaseController
     {
         $this->updateCustomerDates();
         $this->updateInvoiceStatus($request);
-        $this->moveSubscriptionSuspendToClose();
+        $this->moveSubscriptionSuspendToClose($request);
         $this->updateProratedAmounts();
         $this->scheduledSupensions();
-        $this->scheduledClosings();
+        $this->scheduledClosings($request);
         
         return $this->respond(['message' => 'Updated Successfully']);
     }
@@ -45,7 +46,7 @@ class UpdateController extends BaseController
     {
         $customers = Customer::whereNotNull('billing_end')->get();
 
-        foreach ($customers as $customer) {
+        foreach ($customers as $customer) {$request->headers->set('authorization', $sub->customerRelation->company->api_key);
             if ($customer->today_greater_than_billing_end) {
                 $customer->update([
                     'billing_start' => $customer->add_day_to_billing_end,
@@ -90,7 +91,7 @@ class UpdateController extends BaseController
      *  
      * @return boolean
      */
-    protected function moveSubscriptionSuspendToClose()
+    protected function moveSubscriptionSuspendToClose($request)
     {
         $subscriptions = Subscription::where('status', Subscription::STATUS['suspended'])->get();
 
@@ -101,6 +102,8 @@ class UpdateController extends BaseController
                     'status' => Subscription::STATUS['closed'], 
                 ]);
             }
+            $request->headers->set('authorization', $subscription->customerRelation->company->api_key);
+            event(new SubcriptionStatusChanged($subscription->id));
         }
         return true;
     }
@@ -191,7 +194,7 @@ class UpdateController extends BaseController
         }
     }
 
-    protected function scheduledClosings()
+    protected function scheduledClosings($request)
     {
         $scheduledClosings = Subscription::where('scheduled_close_date', '<=', Carbon::today())->get();
         foreach ($scheduledClosings as $sub) {
@@ -201,6 +204,8 @@ class UpdateController extends BaseController
                 'scheduled_close_date'  => null,
                 'closed_date'           => Carbon::today()
             ]);
+            $request->headers->set('authorization', $sub->customerRelation->company->api_key);
+            event(new SubcriptionStatusChanged($sub->id));
         }
     }
 

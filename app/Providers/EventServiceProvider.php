@@ -57,6 +57,18 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\SupportEmail' => [
             'App\Listeners\SendSupportEmail'
         ],
+
+        'App\Events\ShippingNumber' => [
+            'App\Listeners\SendMailForShippingNumber'
+        ],
+
+        'App\Events\SubcriptionStatusChanged' => [
+            'App\Listeners\SendEmailForChangedSubcriptionStatus'
+        ],
+
+        'App\Events\PortPending' => [
+            'App\Listeners\SendPortStatusMail'
+        ]
     ];
 
     /**

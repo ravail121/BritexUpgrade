@@ -10,6 +10,7 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
+use App\Events\PortPending;
 
 class CustomerPlanController extends BaseController
 {
@@ -53,15 +54,18 @@ class CustomerPlanController extends BaseController
         $data['ssn_taxid']=  $request->ssn_taxid;
         $data['id'] = $request->id;
         $data['date_submitted'] = Carbon::now();
+        $request->headers->set('authorization', \Request::get('company')->api_key);
         if($data['id']){
             $updatePort = Port::find($data['id'])->update($data);
             if($updatePort){
+                event(new PortPending($data['id']));
                 return $this->respond('sucessfully Updated');
             }
         }else{
             $data['notes'] = '';
             $data['subscription_id'] = $request->subscription_id;
-            Port::create($data);
+            $id = Port::create($data)->id;
+            event(new PortPending($id));
             return $this->respond('sucessfully Updated');
         }
         

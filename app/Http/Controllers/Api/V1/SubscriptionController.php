@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
 use App\Http\Controllers\Controller;
+use App\Events\SubcriptionStatusChanged;
 use App\Http\Controllers\BaseController;
 
 class SubscriptionController extends BaseController
@@ -73,6 +74,10 @@ class SubscriptionController extends BaseController
 
             if(!$subscription) {
                 return $this->respondError(['subscription_id' => null]);
+            }
+
+            if($subscription['status'] == 'for-activation'){
+                event(new SubcriptionStatusChanged($subscription['id']));
             }
 
             if ($request->porting_number) {

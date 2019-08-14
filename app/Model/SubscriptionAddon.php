@@ -26,7 +26,6 @@ class SubscriptionAddon extends Model
     	return $this->belongsTo('App\Model\Subscription', 'subscription_id', 'id');
     }
 
-
     public function scopeTodayEqualsRemovalDate($query)
     {
     	$today = Carbon::today();

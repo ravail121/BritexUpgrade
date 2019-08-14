@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Events\ShippingNumber;
+use App\Model\CustomerStandaloneDevice;
+use App\Model\CustomerStandaloneSim;
+use App\Model\Subscription;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,7 +41,8 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
-// Route::get('test', 'App\Http\Controllers\Api\V1\CardController@autoPayInvoice');
+// Route::get('test', function(){
+// });
 
 
 Route::get('/cron-jobs-monthly-invoice', [
@@ -440,8 +445,6 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.customer.creditcard',
           'uses' => 'PaymentController@chargeNewCard',
         ]);
-
-        Route::get('test', 'PaymentController@processRefund');
 
         Route::post('/process-refund',[
           'as'   => 'api.process.refund',
