@@ -153,8 +153,9 @@
                                             {{$subscription['sim_name']}}
                                         @endisset
                                     </td>
+                                    
                                     <td colspan='2' class='last'>
-                                        @isset ($subscription['sim_charges'])
+                                        @if (isset($subscription['sim_charges']) && $subscription['sim_charges'] != 0)
                                             $ {{$subscription['sim_charges']}}
                                         @endisset
                                     </td>

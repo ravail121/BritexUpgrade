@@ -46,7 +46,7 @@ class PlanController extends BaseController
 
         if ($device_id = $request->input('device_id')) {
             $device = Device::find($device_id);
-
+            
             if ($device->type == 0) {
                 //Get plans from device_to_plan
                 // $device_to_plans = DeviceToPlan::with(['device', 'plan'])->where('device_id', $device_id)
@@ -64,7 +64,8 @@ class PlanController extends BaseController
                 $plans = $device->plans;
                 
             } else {
-                $plans = Plan::where(['type' => $device->type, 'company_id' => $company->id])->get();
+                $plans = Plan::where(
+                        ['type' => $device->type, 'company_id' => $company->id, 'carrier_id' => $device->carrier_id])->get();
             }
         } else {
             $plans = Plan::where('company_id', $company->id)->get();

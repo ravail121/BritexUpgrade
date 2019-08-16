@@ -57,7 +57,7 @@ class CouponController extends Controller
         
         isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
         
-        if (!$coupon) {
+        if (!$coupon || !$this->couponHasIncompleteData($coupon)) {
 
             return ['error' => 'Coupon is invalid'];
 
@@ -153,7 +153,7 @@ class CouponController extends Controller
 
                         }
 
-                    } else {    
+                    } else {
                         
                         return [
                             'not_eligible' => [
@@ -175,6 +175,19 @@ class CouponController extends Controller
             
         }
         
+    }
+
+    protected function couponHasIncompleteData($coupon) {
+        if ($coupon['multiline_restrict_plans'] && !count($coupon->multilinePlanTypes)) {
+            return false;
+        }
+        if ($coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES'] && !count($coupon->couponProductTypes)) {
+            return false;
+        }
+        if ($coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] && !count($coupon->couponProducts)) {
+            return false;
+        }
+        return true;
     }
 
     protected function couponNotReachedMaxLimit($coupon)
@@ -225,6 +238,7 @@ class CouponController extends Controller
 
     protected function isApplicable($cartPlans, $billablePlans, $coupon)
     {
+       
         $isApplicable    = true;
 
         $restrictedBillablePlans  = [];
@@ -251,7 +265,6 @@ class CouponController extends Controller
         }
 
         if ($coupon['multiline_min']) {
-
             if (count($totalSubscriptions) < $coupon['multiline_min']) {
 
                 $isApplicable = false;

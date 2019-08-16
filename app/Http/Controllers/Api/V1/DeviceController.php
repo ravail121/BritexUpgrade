@@ -38,7 +38,7 @@ class DeviceController extends Controller
 			$visibleDevices = $visibleDevices->whereIn('id', $deviceIds);
 			$visibleSims    = [];
 		}
-
+		
 		if($carrierId = $request->input('carrier_id')){
 			$visibleDevices = $visibleDevices->where('carrier_id', $carrierId);
 		}

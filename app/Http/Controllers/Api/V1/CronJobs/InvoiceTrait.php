@@ -280,7 +280,6 @@ trait InvoiceTrait
             'subscription_per_page'         =>   $subscriptionItems,
             'max_pages'                     =>   count($subscriptionItems) +  2
         ];
-
         return $invoice;
     }
 
