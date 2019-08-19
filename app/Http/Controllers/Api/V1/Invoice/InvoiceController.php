@@ -228,6 +228,7 @@ class InvoiceController extends BaseController implements ConstantInterface
    
     public function storeCoupon($couponAmount, $couponCode, $invoice)
     {
+        \Log::info('code: '.$couponCode);
         if ($couponCode) {
             //store coupon in invoice_items.
             if ($couponAmount) {
@@ -270,7 +271,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'cycles_remaining'  => $couponCycles - 1
             ];
 
-            if ($couponCycles > 1) {
+            if ($couponCycles > 0) {
 
                 $data = array_merge($customerCoupon, $customerCouponFinite);
                 CustomerCoupon::create($data);
@@ -1172,5 +1173,10 @@ class InvoiceController extends BaseController implements ConstantInterface
                 }
             }
         }
+    }
+
+    public function amountPaid(Request $request)
+    {
+        return Order::where('hash', $request->order_hash)->first()->invoice->creditsToInvoice->sum('amount');
     }
 }

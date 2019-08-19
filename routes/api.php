@@ -128,6 +128,11 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
     'uses'=> 'InvoiceController@getCoupons',
  
    ]);
+
+   Route::get('/invoice/amount-paid', [
+     'as' => 'api.invoice.amountPaid',
+     'uses' => 'InvoiceController@amountPaid',
+   ]);
 });
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){

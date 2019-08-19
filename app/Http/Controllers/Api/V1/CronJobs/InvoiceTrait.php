@@ -61,12 +61,7 @@ trait InvoiceTrait
     {
         
         $taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
-        /*
-        $taxesWithSubscriptions     = isset($subscription->id) ? $invoice->invoiceItem
-                                        ->where('subscription_id', $subscription->id)
-                                        ->where('taxable', 1)
-                                        ->sum('amount') : null;
-        */
+
         if ($taxPercentage > 0) {
             $taxesWithSubscriptions = $subscription->invoiceItemDetail->where('taxable', 1)->sum('amount');
 

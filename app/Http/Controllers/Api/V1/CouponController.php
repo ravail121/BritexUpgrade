@@ -50,6 +50,9 @@ class CouponController extends Controller
         'ADDON'     =>  'addons'
     ];
 
+    protected $failedResponse;
+    protected $totalSubscriptions;
+
     public function addCoupon(Request $request)
     {
         $coupon = Coupon::where('code', $request->code)->first();
@@ -57,9 +60,11 @@ class CouponController extends Controller
         
         isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
         
-        if (!$coupon || !$this->couponHasIncompleteData($coupon)) {
+        if (!$coupon) { return ['error' => 'Invalid coupon code']; }
 
-            return ['error' => 'Coupon is invalid'];
+        if (!$this->couponIsValid($coupon)) {
+
+            return ['error' => $this->failedResponse];
 
         } else {
             
@@ -70,6 +75,7 @@ class CouponController extends Controller
             $alreadyUsed           = count(CustomerCoupon::where('customer_id', $customer->id)->where('coupon_id', $coupon->id)->get());
             
             if ($alreadyUsed) {
+                
                 return ['error' => 'You have already used this coupon'];
             }
 
@@ -96,79 +102,36 @@ class CouponController extends Controller
                     ]);
 
                 }
-                $couponData = [
-                    'coupon'                => $coupon,
-                    'specificTypes'         => $coupon->couponProductTypes,
-                    'specificProducts'      => $coupon->couponProducts,
-                    'billablePlans'         => $billablePlans,
-                    'orderGroup'            => $orderGroup
-                ];
                 
-                $coupon                 = $couponData['coupon'];
-                $couponProductTypes     = $couponData['specificProducts'];
-                $couponSpecificTypes    = $couponData['specificTypes'];
+                $coupon                 = $coupon;
+                $couponProductTypes     = $coupon->couponProducts;
+                $couponSpecificTypes    = $coupon->couponProductTypes;
                 $orderGroupCart         = $request->orderGroupsCart;
-                $billablePlans          = $couponData['billablePlans'];
+                $billablePlans          = $billablePlans;
                 
                 $cartPlans              = isset($orderGroupCart['plans']['items']) ? ['items' => $orderGroupCart['plans']['items']]    : [];
 
                 $appliedToAll       = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order->id) : 0;
                 $appliedToTypes     = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $couponSpecificTypes, $order->id, $orderGroupCart) : 0;
-                $appliedToProducts  = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $couponProductTypes, $order->id, $orderGroupCart) : 0;
+                $appliedToProducts  = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $couponProductTypes, $order->id, $orderGroupCart) : 0;                
                 
-                if ($coupon['active']) {
+                
+                if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
 
-                    if ($this->isApplicable($cartPlans, $billablePlans, $coupon)['applicable']) {
+                    $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
-                        if ($this->couponCanBeUsed($coupon)) {
+                    return ['total' => $total, 'code' => $coupon->code, 'applied_to' => [
+                            'applied_to_all'        => $appliedToAll['applied_to'],
+                            'applied_to_types'      => $appliedToTypes['applied_to'],
+                            'applied_to_products'   => $appliedToProducts['applied_to'],
+                        ]
+                    ];
 
-                            if ($this->couponNotReachedMaxLimit($coupon)) {
-
-                                $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
-                                
-                                return ['total' => $total, 'code' => $coupon->code, 'applied_to' => [
-                                        'applied_to_all'        => $appliedToAll['applied_to'],
-                                        'applied_to_types'      => $appliedToTypes['applied_to'],
-                                        'applied_to_products'   => $appliedToProducts['applied_to'],
-                                    ]
-                                ];
-
-                            } else {
-
-                                return [
-                                    'coupon_max_used' => $coupon['num_uses']
-                                ];
-
-                            }
-
-
-                        } else {
-
-                            return [
-                                'coupon_not_usable' => [
-                                    'start_date' => $coupon['start_date'],
-                                    'end_date'   => $coupon['end_date']
-                                ]
-                            ];
-
-                        }
-
-                    } else {
-                        
-                        return [
-                            'not_eligible' => [
-                                'multiline_min' => $coupon['multiline_min'],
-                                'multiline_max' => $coupon['multiline_max'] ? $coupon['multiline_max'] : 'Unlimited',
-                                'active_subs'   => $this->isApplicable($cartPlans, $billablePlans, $coupon)['eligible_subs']
-                            ]
-                        ]; 
-                    
-                    }
 
                 } else {
-
-                    return ['error' => 'Coupon not active anymore'];
-
+                    
+                    return ['error' => $this->failedResponse];
+                
                 }
 
             }
@@ -177,70 +140,33 @@ class CouponController extends Controller
         
     }
 
-    protected function couponHasIncompleteData($coupon) {
-        if ($coupon['multiline_restrict_plans'] && !count($coupon->multilinePlanTypes)) {
-            return false;
-        }
-        if ($coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES'] && !count($coupon->couponProductTypes)) {
-            return false;
-        }
-        if ($coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] && !count($coupon->couponProducts)) {
-            return false;
-        }
-        return true;
-    }
-
-    protected function couponNotReachedMaxLimit($coupon)
+    protected function couponIsValid($coupon) 
     {
-
-        $maxLimitNotReached = true;
-
-        if ($coupon['num_uses'] >= $coupon['max_uses']) {
-
-            $maxLimitNotReached = false;
-
+        if ($coupon['active']) {
+            if ($coupon['multiline_restrict_plans'] && !count($coupon->multilinePlanTypes)) {
+                $this->failedResponse = 'Multiline plan data missing';
+                return false;
+            }
+            if ($coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES'] && !count($coupon->couponProductTypes)) {
+                $this->failedResponse = 'Coupon product types data missing';
+                return false;
+            }
+            if ($coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] && !count($coupon->couponProducts)) {
+                $this->failedResponse = 'Coupon product type data missing';
+                return false;
+            }
+            return true;
+        } else {
+            $this->failedResponse = 'Coupon is not active';
+            return false;
         }
-
-        return $maxLimitNotReached;
-
-    }
-
-    protected function couponCanBeUsed($coupon)
-    {
-        $isApplicable       = true;
-
-        $today              = Carbon::now();
-        
-        $couponStartDate    = Carbon::parse($coupon['start_date']);
-        
-        $couponExpiryDate   = Carbon::parse($coupon['end_date']);
-
-        if ($couponStartDate && $couponExpiryDate) {
-
-            if ($today < $couponStartDate || $today > $couponExpiryDate) {
-                
-                $isApplicable = false;
-            }
-
-        } elseif ($couponStartDate && !$couponExpiryDate) {
-
-            if ($today < $couponStartDate) {
-
-                $isApplicable = false;
-
-            }
-
-        } 
-
-        return $isApplicable;
-
     }
 
     protected function isApplicable($cartPlans, $billablePlans, $coupon)
     {
-       
+        
         $isApplicable    = true;
-
+        $this->failedResponse = '';
         $restrictedBillablePlans  = [];
         $restrictedCartPlans      = [];
 
@@ -267,21 +193,69 @@ class CouponController extends Controller
         if ($coupon['multiline_min']) {
             if (count($totalSubscriptions) < $coupon['multiline_min']) {
 
-                $isApplicable = false;
+                $this->failedResponse = 'Minimum subscription requirements not met';
+                return false;
 
-            } elseif ($coupon['multiline_max']) {
+            } 
+        } 
+        if ($coupon['multiline_max']) {
 
-                if (count($totalSubscriptions) > $coupon['multiline_max']) {
+            if (count($totalSubscriptions) > $coupon['multiline_max']) {
 
-                    $isApplicable = false;
+                $this->failedResponse = 'Maximum subscription requirements not met';
+                return false;
 
-                }
             }
         }
 
-        return ['applicable' => $isApplicable, 'eligible_subs' => count($totalSubscriptions)];
+        return $this->couponCanBeUsed($coupon);
 
     }
+
+    protected function couponCanBeUsed($coupon)
+    {
+        $isApplicable       = true;
+
+        $today              = Carbon::now();
+        
+        $couponStartDate    = Carbon::parse($coupon['start_date']);
+        
+        $couponExpiryDate   = Carbon::parse($coupon['end_date']);
+
+        $this->failedResponse = '';
+
+        if ($couponStartDate && $today < $couponStartDate) {
+
+            $this->failedResponse = 'Coupon is valid from '.$couponStartDate;
+            return false;
+
+        } elseif ($couponExpiryDate && ($today > $couponExpiryDate)) {
+
+            $this->failedResponse = 'Coupon expired on '.$couponExpiryDate;
+            return false;
+
+        } 
+
+        return $this->couponNotReachedMaxLimit($coupon);
+
+    }
+
+    protected function couponNotReachedMaxLimit($coupon)
+    {
+        $this->failedResponse = '';
+        $maxLimitNotReached = true;
+
+        if ($coupon['num_uses'] >= $coupon['max_uses']) {
+
+            $this->failedResponse = 'Coupon has reached maximum usage';
+            return false;
+
+        }
+        
+        return $maxLimitNotReached;
+
+    }
+
 
     protected function appliedToAll($coupon, $id)
     {
