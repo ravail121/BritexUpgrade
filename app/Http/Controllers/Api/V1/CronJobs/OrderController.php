@@ -76,9 +76,10 @@ class OrderController extends BaseController
         }
 
         if(($subscription->sim_id != 0) && ($subscription->device_id != 0)) {
-            $simData = $this->subscriptionWithSim($subscription);
-            $deviceData = $this->subscriptionWithDevice($subscription);
-            return [$simData, $deviceData];
+            return [ 0 => $this->subscriptionWithSimAndDevice($subscription)];
+            // $simData = $this->subscriptionWithSim($subscription);
+            // $deviceData = $this->subscriptionWithDevice($subscription);
+            // return [$simData, $deviceData];
         }
 
         return [];
@@ -99,6 +100,16 @@ class OrderController extends BaseController
     {
         return [
             'description' => $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'],
+            'part_number' => 'SUB-'.$subscription->id,
+            'unit_amount' => $subscription->device['amount_w_plan'],
+            'quantity'    =>   '1',
+        ];
+    }
+
+    public function subscriptionWithSimAndDevice($subscription)
+    {
+        return [
+            'description' => $subscription->sim_name.' '.'associated with'.' '.$subscription->plan['name'].' and '.$subscription->device['name'],
             'part_number' => 'SUB-'.$subscription->id,
             'unit_amount' => $subscription->device['amount_w_plan'],
             'quantity'    =>   '1',
