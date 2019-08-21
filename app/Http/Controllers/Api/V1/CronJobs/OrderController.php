@@ -25,11 +25,11 @@ class OrderController extends BaseController
             $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
         })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
             $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
-        })->get();
+        })->with('company')->get();
 
         try {
             foreach ($orders as $orderKey => $order) {
-                
+                $readyCloudApiKey = $order->company->readycloud_api_key;
                 $subscriptionRow = array();
                 $standAloneDeviceRow = array();
                 $standAloneSimRow = array();
@@ -48,7 +48,7 @@ class OrderController extends BaseController
                 $row = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
 
                     $apiData = $this->data($order, $row);
-                    $response = $this->SentToReadyCloud($apiData);
+                    $response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
 
                     if($response->getStatusCode() == 201) {
                         $order->subscriptions()->update(['sent_to_readycloud' => 1]);
@@ -184,10 +184,10 @@ class OrderController extends BaseController
         return json_encode($json);
     }
 
-    public function SentToReadyCloud($data)
+    public function SentToReadyCloud($data, $readyCloudApiKey)
     {
         $client = new Client();
-        $response = $client->request('POST', env('READY_CLOUD_URL'), [
+        $response = $client->request('POST', env('READY_CLOUD_URL').$readyCloudApiKey, [
             'headers' => ['Content-type' => 'application/json'],
             'body' => $data
         ]);

@@ -20,8 +20,8 @@ use App\Model\Subscription;
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
-// 
 
+Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
 
 $config = [
 		'driver'   => 'smtp',
@@ -460,9 +460,6 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.get.customercards',
           'uses' => 'CardController@getCustomerCards',
         ]);
-
-        Route::get('testa', 'CardController@autoPayInvoice');
-
 
         Route::post('/add-card',[
           'as'   => 'api.add.cards',

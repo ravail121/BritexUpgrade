@@ -27,21 +27,21 @@ class OrderDataController extends BaseController
             
         })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
             $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
-        })->get();
+        })->with('company')->get();
 
         foreach ($orders as $order) {
-            
-           $orderData = $this->getOrderData($order['order_num']);
+            $readyCloudApiKey = $order->company->readycloud_api_key;
+            $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey);
             if($orderData && isset($orderData['results'][0])){
                 foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
 
                     $boxesUrl = $orderDataValue['url']; 
 
-                    $boxes = $this->getOrderBoxesOrItemsData($boxesUrl);
+                    $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
                     if(!$boxes){
                          continue;
                     }
-                    $boxdetail = $this->getOrderBoxesOrItemsData($boxes['items'][0]['url']);
+                    $boxdetail = $this->getOrderBoxesOrItemsData($boxes['items'][0]['url'], $readyCloudApiKey);
                     if(!$boxdetail){
                         continue;
                     }
@@ -53,12 +53,12 @@ class OrderDataController extends BaseController
         return $this->respond(['message' => 'Tracking Number Updated Sucessfully']); 
     }
 
-    public function getOrderData($orderNum)
+    public function getOrderData($orderNum, $readyCloudApiKey)
     {
         try {
             $client = new Client();
             
-            $response = $client->request('GET', env('READY_CLOUD_URL').'&primary_id=BX-'.$orderNum);
+            $response = $client->request('GET', env('READY_CLOUD_URL').$readyCloudApiKey.'&primary_id=BX-'.$orderNum);
 
             return collect(json_decode($response->getBody(), true));
 
@@ -67,11 +67,11 @@ class OrderDataController extends BaseController
         }
     }
 
-    public function getOrderBoxesOrItemsData($boxesUrl)
+    public function getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey)
     {
         $client = new Client();
     try {
-        $response = $client->request('GET', 'https://www.readycloud.com'.$boxesUrl.'?bearer_token='.env('READY_CLOUD_TOKEN'));
+        $response = $client->request('GET', env('READY_CLOUD_BASE_URL').$boxesUrl.'?bearer_token='.$readyCloudApiKey);
         return collect(json_decode($response->getBody(), true));
 
     }catch (Exception $e) {

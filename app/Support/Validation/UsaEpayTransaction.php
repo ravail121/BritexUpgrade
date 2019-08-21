@@ -90,23 +90,20 @@ trait UsaEpayTransaction
 
            if($coupon->code == env('COUPON_CODE')) {
 
-               $data['key'] = env('SOURCE_KEY_SANDBOX');
-               $data['usesandbox'] = 1;
-           } else {
+                $data['key'] = env('SOURCE_KEY_SANDBOX');
+                $data['usesandbox'] = self::TRAN_TRUE;
 
-               $data['key'] = env('SOURCE_KEY');
-               $data['usesandbox'] = 1;
+                return $data;
            }
 
-           return $data;
-
-        } else {
-
-           $defaultData['key'] = env('SOURCE_KEY');
-           $defaultData['usesandbox'] = 1;
         }
+        
+        $customer = Customer::where('id', $request->customer_id)->with('company')->first();
 
-       return $defaultData;
+        $defaultData['key'] = $customer->company->usaepay_api_key;
+        $defaultData['usesandbox'] = self::TRAN_TRUE;
+        
+        return $defaultData;
    }
 
     private function getOrder($request)

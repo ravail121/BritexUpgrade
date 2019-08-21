@@ -372,7 +372,6 @@ class CreateOrderTable extends Migration
 
            });
 
-
            Schema::create('plan',function(Blueprint $table){
 
             $table->increments('id');
@@ -384,22 +383,22 @@ class CreateOrderTable extends Migration
             $table->unsignedInteger('tag_id')->nullable();
             $table->foreign('tag_id')->references('id')->on('tag');
             $table->text('name');
-            $table->text('image');
-            $table->text('description');
-            $table->text('notes')->nullable();;
-            $table->text('primary_image');
+            $table->text('image')->nullable();
+            $table->text('description')->nullable();
+            $table->text('notes')->nullable();
+            $table->text('primary_image')->nullable();
             $table->double('amount_recurring');
             $table->double('amount_onetime');
-            $table->tinyinteger('regulatory_fee_type');
+            $table->tinyinteger('regulatory_fee_type')->nullable();
             $table->double('regulatory_fee_amount');
             $table->tinyinteger('sim_required');
             $table->tinyinteger('taxable');
             $table->tinyinteger('show');
-            $table->text('sku');
-            $table->integer('data_limit');
-            $table->text('rate_plan_soc');
-            $table->text('rate_plan_bot_code');
-            $table->text('data_soc');
+            $table->text('sku')->nullable();
+            $table->integer('data_limit')->nullable();
+            $table->text('rate_plan_soc')->nullable();
+            $table->text('rate_plan_bot_code')->nullable();
+            $table->text('data_soc')->nullable();
             $table->tinyinteger('signup_porting');
             $table->tinyinteger('subsequent_porting');
             $table->tinyinteger('area_code');
