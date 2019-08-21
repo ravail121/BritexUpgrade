@@ -71,4 +71,14 @@ class Device extends Model implements ConstantInterface
     {
         return $this->hasMany('App\Model\DeviceToSim', 'id');
     }
+
+    public static function getDeviceName($id)
+    {
+        return self::find($id)->name;
+    }
+
+    public static function deviceWithSubscriptionCharges($id)
+    {
+        return self::find($id)->amount_w_plan;
+    }
 }

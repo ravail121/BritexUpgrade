@@ -73,4 +73,5 @@ class Credit extends Model
     {
         return $this->hasMany('App\Model\CreditToInvoice', 'credit_id', 'id');
     }
+
 }

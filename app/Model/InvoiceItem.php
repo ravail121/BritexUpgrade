@@ -129,4 +129,31 @@ class InvoiceItem extends Model implements ConstantInterface
         return $this->amount;
     }
 
+    public function standaloneDevice()
+    {
+        return $this->hasMany('App\Model\Device', 'id', 'product_id');
+    }
+
+    public function availableStandaloneDevices()
+    {
+        return $this->where(
+            ['product_type' => 'device'],
+            ['subscription_id' => 'null']
+        );
+    }
+
+    public function standaloneSim()
+    {
+        return $this->hasMany('App\Model\Sim', 'id', 'product_id');
+    }
+
+    public function availableStandaloneSims()
+    {
+        return $this->where(
+            ['product_type' => 'sim'],
+            ['subscription_id' => 'null']
+        );
+    }
+
+
 }

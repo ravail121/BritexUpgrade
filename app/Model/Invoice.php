@@ -19,6 +19,19 @@ class Invoice extends Model implements ConstantInterface
         'closed'        => 2
     ];
 
+    const InvoiceItemTypes = [
+        'plan_charges'     => 1,
+        'feature_charges'  => 2,
+        'one_time_charges' => 3,
+        'usage_charges'    => 4,
+        'regulatory_fee'   => 5,
+        'coupon'           => 6,
+        'taxes'            => 7,
+        'manual'           => 8,
+        'payment'          => 9,
+        'refund'           => 10,
+    ];
+
     protected $table = 'invoice';
 
     protected $fillable = [ 'customer_id', 'type', 'status', 'start_date', 'end_date', 'due_date', 'subtotal', 'total_due', 'prev_balance', 'payment_method', 'notes', 'business_name', 'billing_fname', 'billing_lname', 'billing_address_line_1', 'billing_address_line_2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_fname', 'shipping_lname', 'shipping_address_line_1', 'shipping_address_line_2', 'shipping_city', 'shipping_state', 'shipping_zip', 'created_at'
@@ -106,11 +119,11 @@ class Invoice extends Model implements ConstantInterface
     {
         $total = [];
         array_push($total, $this->cal_taxes);
-        //array_push($total, $this->cal_credits);
         array_push($total, $this->cal_service_charges);
+        $discount = $this->cal_credits;
 
         $totalCharges = array_sum($total);
-        return self::toTwoDecimals($totalCharges);
+        return self::toTwoDecimals($totalCharges - $discount);
     }
 
     public function creditsToInvoice()
@@ -306,6 +319,25 @@ class Invoice extends Model implements ConstantInterface
             return Carbon::parse($this->created_at)->format('M d, Y');   
         }
         return 'NA';
+    }
+
+    public static function standAloneTotal($id)
+    {
+        
+        // return Invoice::find($id);
+        $invoice = self::find($id)->invoiceItem->where('subscription_id', null);
+        $total = $invoice
+            ->where('type', '!=', self::InvoiceItemTypes['coupon'])
+            ->where('type', '!=', self::InvoiceItemTypes['manual'])
+            ->sum('amount');
+
+        $discounts = $invoice->whereIn('type', 
+        [
+            self::InvoiceItemTypes['coupon'], 
+            self::InvoiceItemTypes['manual']
+        ])->sum('amount');
+
+        return $total - $discounts;
     }
 
 }

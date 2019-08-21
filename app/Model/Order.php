@@ -146,4 +146,27 @@ class Order extends Model
     {
         return Carbon::parse($this->created_at)->format('Y-m-d\Th:i\Z');
     }
+
+    public static function oldCredits($order)
+    {
+        return $order->invoice->creditsToInvoice->where('credit_id', '!=', $order->credits->first()->id)->sum('amount');
+    }
+
+    public static function formatDate($date)
+    {
+        return Carbon::parse($date)->format('m/d/Y');
+    }
+
+    public static function phoneNumberFormatted($number)
+    {
+        $number = preg_replace("/[^\d]/","",$number);
+    
+        $length = strlen($number);
+
+        if($length == 10) {
+            $number = preg_replace("/^1?(\d{3})(\d{3})(\d{4})$/", "$1-$2-$3", $number);
+        }
+            
+        return $number;
+    }
 }

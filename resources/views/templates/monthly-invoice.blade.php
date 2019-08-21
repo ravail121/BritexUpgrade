@@ -15,7 +15,7 @@
                 <div class="head" style="padding: 0px 0px 0px;">
                     <div class="containerin">
                         <div class="logo" style=" width: 100%; text-align: center;">
-                            <img src="{{  isset($invoice['company_logo']) ? $invoice['company_logo'] : ''  }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
+                                <img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
                         </div>
                         <div style='margin-top:20px' class="invoice">
                             <h2>INVOICE</h2>
@@ -24,22 +24,22 @@
                                     <tr>
                                         <td>Invoice No.</td>
                                         <td width="20px"></td>
-                                        <td class="detail">{{ $invoice['invoice_num'] }}</td>
+                                        <td class="detail">{{ $data['invoice']->id }}</td>
                                     </tr>
                                     <tr>
                                         <td>Period Beginning</td>
                                         <td width="20px"></td>
-                                        <td class="detail">{{ str_replace('-', '/', $invoice['start_date']) }}</td>
+                                        <td class="detail">@date($data['order']->formatDate($data['order']->invoice->start_date))</td>
                                     </tr>
                                     <tr>
                                         <td>Period Ending</td>
                                         <td width="20px"></td>
-                                        <td class="detail">{{ str_replace('-', '/', $invoice['end_date']) }}</td>
+                                        <td class="detail">@date($data['order']->formatDate($data['order']->invoice->end_date))</td>
                                     </tr>
                                     <tr>
                                         <td>Due Date</td>
                                         <td width="20px"></td>
-                                        <td class="detail">{{ str_replace('-', '/', $invoice['due_date']) }}</td>
+                                        <td class="detail">@date($data['order']->formatDate($data['order']->invoice->due_date))</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -49,23 +49,23 @@
                         <div style='position:absolute; left:0; right:0; margin: auto; top: 100px; border-color: transparent;' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
-                                <p><span>{{ $invoice['company_name'] }},</span></p>
-                                <p><span>{{ $invoice['customer_name'] }},</span></p>
-                                <p><span>{{ $invoice['customer_address'] }}</span></p>
-                                <p><span>{{ $invoice['customer_zip_address'] }}</span></p>
+                                <p><span>{{ $data['order']->customer->company_name }},</span></p>
+                                <p><span>{{ $data['order']->customer->full_name }},</span></p>
+                                <p><span>{{ $data['order']->customer->shipping_address1 }}</span></p>
+                                <p><span>{{ $data['order']->customer->zip_address }}</span></p>
                             </div>
                         </div>
                         
                         <div style='position:absolute; right:15px; margin: auto; top: 100px; box-shadow:none; border-color: transparent;' class="bill_info">
                             <h2>Your Monthly Bill As Of</h2>
-                            <h3>{{ $invoice['today_date'] }}</h3>
+                            <h3>{{ $data['order']->invoice->start_date }}</h3>
                         </div>
                         
                         <div class="info">
                                 <h2>Important Information</h2>
                                 <p>1. You are 
                                     <strong>
-                                        @if (isset($invoice['customer_auto_pay']) && $invoice['customer_auto_pay'])
+                                        @if (isset($data['order']->customer->auto_pay) && $data['order']->customer->auto_pay)
                                         
                                         @else 
                                             not
@@ -73,13 +73,13 @@
                                     </strong> 
                                     enrolled in Autopay. Amount will 
                                     <strong>
-                                        @if (isset($invoice['customer_auto_pay']) && $invoice['customer_auto_pay'])
+                                        @if (isset($data['order']->customer->auto_pay) && $data['order']->customer->auto_pay)
                                     
                                         @else 
                                             not
                                         @endif    
                                     </strong> be forwarded for automatic processing.</p>
-                                <p>2. Pay online <a href="{{ isset($invoice['reseller_domain']) ? $invoice['reseller_domain'] : '' }}">teltik.pw</a></p>
+                                    <p>2. Pay online <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">teltik.com</a></p>
                             </div>
                     </div>
                     <div class="billing_detail">
@@ -107,8 +107,8 @@
                                                 <tr>
                                                     <td>Previous Balance</td>
                                                     <td class="detail">$ 
-                                                        @isset ($invoice['previous_bill']['previous_amount'])
-                                                            {{$invoice['previous_bill']['previous_amount']}}
+                                                        @isset ($data['previous_bill']['previous_amount'])
+                                                            {{$data['previous_bill']['previous_amount']}}
                                                         @else
                                                             0.00
                                                         @endisset
@@ -117,8 +117,8 @@
                                                 <tr>
                                                     <td>Payments Received </td>
                                                     <td class="detail">-$
-                                                        @isset ($invoice['previous_bill']['previous_payment'])
-                                                                {{$invoice['previous_bill']['previous_payment']}}
+                                                        @isset ($data['previous_bill']['previous_payment'])
+                                                                {{$data['previous_bill']['previous_payment']}}
                                                         @else
                                                             0.00
                                                         @endisset
@@ -134,8 +134,8 @@
                                                 <tr>
                                                     <td>Balance Forward</td>
                                                     <td class="detail">$
-                                                        @isset ($invoice['previous_bill']['previous_pending'])
-                                                            {{$invoice['previous_bill']['previous_pending']}}
+                                                        @isset ($data['previous_bill']['previous_pending'])
+                                                            {{$data['previous_bill']['previous_pending']}}
                                                         @else
                                                             0.00
                                                         @endisset
@@ -150,26 +150,27 @@
                                                 <tr>
                                                     <td>Services, Usage &amp; Charges</td>
                                                     <td class="detail">$ 
-                                                        @isset ($invoice['service_charges'])
-                                                            {{ $invoice['service_charges'] }}
-                                                        @endisset
+                                                        @if ($data['invoice']->cal_service_charges)
+                                                            {{ number_format($data['invoice']->cal_service_charges, 2) }}
+                                                        @endif
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td>Fees/Taxes</td>
                                                     <td class="detail">$ 
-                                                        @isset ($invoice['taxes'])
-                                                            {{ $invoice['taxes'] }}
-                                                        @endisset
+                                                        @if ($data['invoice']->cal_taxes)
+                                                            {{ number_format($data['invoice']->cal_taxes, 2) }}
+                                                        @endif
                                                     </td>
-                                                </tr>        
+                                                </tr>
+                                                
                                                 <tr>
                                                     <td>Coupons 
                                                         <div class="seprator"></div>
                                                     </td>
                                                     <td class="detail">-$ 
-                                                        @isset ($invoice['credits'])
-                                                            {{ $invoice['credits'] }}
+                                                        @isset ($data['invoice']->cal_credits)
+                                                            {{ number_format($data['invoice']->cal_credits, 2) }}
                                                         @endisset
                                                     </td>
                                                 </tr>
@@ -178,8 +179,8 @@
                                                     <td>Total Charges This Bill</td>
                                                     
                                                     <td class="detail">$ 
-                                                        @isset ($invoice['subtotal'])
-                                                            {{ $invoice['subtotal'] }}
+                                                        @isset ($data['invoice']->subtotal)
+                                                            {{ number_format($data['invoice']->subtotal, 2) }}
                                                         @endisset
                                                     </td>
                                                 </tr>
@@ -188,31 +189,33 @@
                                     </td>
                                     <td class="titlebx">
                                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                                            <tbody>
-                                                <tr>
-                                                    <td>Payments/Credits</td>
-                                                    <td class="detail">$ 
-                                                       
-                                                        {{ !empty($invoice['total_credits_to_invoice']) ? $invoice['total_credits_to_invoice'] : '0.00' }}
-                                                     
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Due {{ date('M', strtotime($invoice['due_date'])).' '.date('j', strtotime($invoice['due_date'])) }}</td>
-                                                    <td class="detail">$ {{ $invoice['total_due'] }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        <div class="seprator"></div>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td colspan="2">Let’s talk!<span> Call us anytime</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td colspan="2">{{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}</td>
-                                                </tr>
-                                            </tbody>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Payments/Credits</td>
+                                                        <td class="detail">$ 
+                                                            @isset ($data['invoice']->creditsToInvoice)
+                                                                {{ number_format($data['invoice']->creditsToInvoice->sum('amount'), 2) }}
+                                                            @endisset
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Due {{ date('M', strtotime($data['invoice']->due_date)).' '.date('j', strtotime($data['invoice']->due_date)) }}</td>
+                                                        <td class="detail">$ 
+                                                            {{ $data['invoice']->total_due ? number_format($data['invoice']->total_due, 2) : '0.00' }}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="seprator"></div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="2">Let’s talk!<span> Call us anytime</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td colspan="2">{{ isset($data['order']->company->support_phone_number) ? $data['order']->phoneNumberFormatted($data['order']->company->support_phone_number) : '' }}</td>
+                                                    </tr>
+                                                </tbody>
                                         </table>
                                     </td>
                                 </tr>
@@ -222,8 +225,7 @@
                 </div>
                 <div class="account_info">
                     <div class="containerin">
-                        <center>Account Summary</center>
-                        
+                    <center>Account Summary</center>
                         <table>
                             <thead>
                                 <tr>
@@ -237,58 +239,54 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!--
-                                <tr>
-                                    
-                                    <td>Account Charges</td>
-                                    <td>$</td>
-                                    <td>$</td>
-                                    <td>$</td>
-                                    <td>$</td>
-                                    <td>$</td>
-                                    <td>$</td>
-                                    
-                                </tr>
-                                -->
-                                @if (count($invoice['subscriptions']))
-                                    @foreach ($invoice['subscriptions'] as $subscription)
+                                @if (count($subscriptions))
+                                    @foreach ($subscriptions as $index => $subscription)
                                         <tr>
-                                            <td>
-                                                @isset ($subscription['phone'])
-                                                    {{ $subscription['phone'] }}
+                                            <td>@isset ($subscription->phone_number) 
+                                                    {{ $data['order']->phoneNumberFormatted($subscription->phone_number) }}
+                                                @else
+                                                    Pending
                                                 @endisset
                                             </td>
-                                            <td>$ 
-                                                @isset($subscription['plan_and_addons'])
-                                                    {{ $subscription['plan_and_addons'] }}
-                                                @endisset
+                                            
+                                            <td>$ @if ($subscription->cal_plan_charges) 
+                                                    {{ 
+                                                        number_format (
+                                                            $subscription->calculateChargesForAllproducts([1, 2], $data['invoice']->id, $subscription->id), 2
+                                                        )
+                                                    }} 
+                                                @endif
                                             </td>
-                                            <td>$
-                                                @isset($subscription['onetime_charges']) 
-                                                    {{ $subscription['onetime_charges'] }}
-                                                @endisset
+                                            <td>$ @if ($subscription->cal_onetime_charges)
+                                                    {{ 
+                                                        number_format (
+                                                            $subscription->calculateChargesForAllproducts([3], $data['invoice']->id, $subscription->id), 2
+                                                        )
+                                                    }}
+                                                @endif
                                             </td>
-                                            <td>$ 
-                                                @isset($subscription['usage_charges'])
-                                                    {{ $subscription['usage_charges'] }}
-                                                @endisset
+                                            <td>$ @if ($subscription->cal_usage_charges)
+                                                    {{ number_format ( $subscription->calculateChargesForAllproducts([4], $data['invoice']->id, $subscription->id), 2) }}
+                                                @endif
                                             </td>
-                                            <td>$ 
-                                                @isset($subscription['tax_and_regulatory'])
-                                                    {{ $subscription['tax_and_regulatory'] }}
-                                                @endisset
+                                            <td>$ @if($subscription->cal_taxes)
+                                                    {{ number_format ($subscription->calculateChargesForAllproducts([7, 5], $data['invoice']->id, $subscription->id), 2) }}
+                                                @endif
                                             </td>
-                                            <td>-$ 
-                                                @isset($subscription['total_discounts'])
-                                                    {{ $subscription['total_discounts'] }}
-                                                @endisset
+                                            <td>-$ @if($subscription->cal_credits)
+                                                    {{ 
+                                                        number_format ( $subscription->calculateChargesForAllproducts([6, 8, 10], $data['invoice']->id, $subscription->id), 2)
+                                                    }}
+                                                @endif</td>
+                                            <td>$ @if ($subscription->cal_total_charges)
+                                                    {{ 
+                                                        number_format(
+                                                            $subscription->totalSubscriptionCharges($data['invoice']->id, $subscription) - 
+                                                            $subscription->totalSubscriptionDiscounts($data['invoice']->id, $subscription), 2
+                                                        ) 
+                                                    }}
+                                                @endif
                                             </td>
-                                            <td>$ 
-                                                @isset($subscription['total'])
-                                                    {{ $subscription['total'] }} 
-                                                @endisset
-                                            </td>
-
                                         </tr>
                                     @endforeach
                                 @endif
@@ -304,37 +302,38 @@
                             <tr class="tfootQ">
                                 <td>Total</td>
                                 <td>$ 
-                                    @isset($invoice['service_charges'])
-                                        {{ $invoice['service_charges'] }}
-                                    @endisset
-                                </td>
-                                <td>$
-                                    @isset($invoice['total_one_time_charges']) 
-                                        {{ $invoice['total_one_time_charges'] }}
-                                    @endisset
+                                    @if($data['invoice']->cal_plan_charges)
+                                        {{ number_format($data['invoice']->cal_plan_charges, 2) }}
+                                    @endif
                                 </td>
                                 <td>$ 
-                                    @isset($invoice['total_usage_charges'])
-                                        {{ $invoice['total_usage_charges'] }}
-                                    @endisset
+                                    @if($data['invoice']->cal_onetime)
+                                        {{ number_format($data['invoice']->cal_onetime, 2) }}
+                                    @endif
                                 </td>
-                                <td>$
-                                    @isset($invoice['taxes']) 
-                                        {{ $invoice['taxes'] }}
-                                    @endisset
+                                <td>$ 
+                                    @if($data['invoice']->cal_usage_charges)
+                                        {{ number_format($data['invoice']->cal_usage_charges, 2) }}
+                                    @endif
+                                </td>
+                                <td>$ 
+                                    @if($data['invoice']->cal_taxes)
+                                        {{ number_format($data['invoice']->cal_taxes, 2) }}
+                                    @endif
                                 </td>
                                 <td>-$ 
-                                    @isset($invoice['credits'])
-                                        {{ $invoice['credits'] }}
-                                    @endisset
-                                </td>
+                                    @if(isset($data['invoice']->cal_credits) && $data['invoice']->cal_credits)
+                                        {{ number_format($data['invoice']->cal_credits, 2) }}
+                                    @endif
+                                    </td>
                                 <td>$ 
-                                    @isset($invoice['subtotal'])
-                                        {{ $invoice['subtotal'] }}
-                                    @endisset
+                                    @if($data['invoice']->cal_total_charges)
+                                    {{ 
+                                        number_format($data['invoice']->cal_total_charges, 2)
+                                    }}
+                                    @endif
                                 </td>
                             </tr>
-                            
                             <tr>
                                 <td colspan="7" class="lh0">
                                     <div class="total_img2">
@@ -349,8 +348,8 @@
                         <div class="footer">
                             <div class="container">
                                 <div class="center">
-                                    <a href="#">Contact us: {{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}</a>
-                                    <a href="{{ isset($invoice['reseller_domain']) ? $invoice['reseller_domain'] : '' }}">teltik.pw</a>
+                                    <a href="#">Contact us: <td colspan="2">{{ isset($data['order']->company->support_phone_number) ? $data['order']->phoneNumberFormatted($data['order']->company->support_phone_number) : '' }}</td></a>
+                                    <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">teltik.com</a>
                                 </div>
                             </div>
                         </div>
@@ -358,10 +357,10 @@
                 </div>
                 <div style='text-align:center; margin-top: 35px; margin-bottom: 35px;' class="container">
                     <p>Page <strong> 1</strong>/
-                        @isset ($invoice['max_pages'])
-                            {{$invoice['max_pages']}}
+                        @if (count($data['order']->subscriptions))
+                            {{ count($data['order']->subscriptions) + 2 }}
                         @else 
-                            3
+                            {{ count($subscriptions) + 2 }}
                         @endisset
                     </p>
                 </div>
@@ -375,13 +374,10 @@
 
 
 @include('templates.test-statement')
-
-@if (count($invoice['subscription_per_page']))
-
-    @foreach ($invoice['subscription_per_page'] as $subscription)
-
+@if (count($subscriptions))
+    @foreach ($subscriptions as $index => $subscription)
+        
         @include('templates.test-statement-2')
 
     @endforeach
-
 @endif

@@ -37,4 +37,14 @@ class Sim extends Model implements ConstantInterface
    {
         return $this->hasOne('App\Model\CustomerStandaloneSim','sim_id','id');
    }
+
+   public static function getSimName($id)
+   {
+        return self::find($id)->name;
+   }
+
+   public static function getSimCharges($id)
+   {
+        return self::find($id)->amount_w_plan;
+   }
 }

@@ -69,50 +69,50 @@ class SendEmailWithInvoice
      */
     public function handle(InvoiceGenerated $event)
     {
-        
-        $order         = $event->order;
-        
-        $customerOrder = Order::find($order->id);
+
+        $customerOrder = Order::find($event->order->id);
 
         $orderType     = $customerOrder->invoice->type;
-
-        $data          = $order->isOrder($order) ? $this->setOrderInvoiceData($order) : $this->setMonthlyInvoiceData($order);
         
-        $invoice       = $this->dataForInvoice($customerOrder->invoice, $customerOrder);
-
-        $invoice       = array_merge($data, $invoice);
+        $data          = $this->dataForInvoice($customerOrder);
         
         if ($orderType  == Invoice::TYPES['one-time']) {
             
-            $pdf = PDF::loadView('templates/onetime-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+            $pdf = PDF::loadView('templates/onetime-invoice', compact('data'))->setPaper('letter', 'portrait');
 
         } elseif ($orderType  == Invoice::TYPES['monthly']) {
+            $subscriptionIds = $customerOrder->invoice->invoiceItem->pluck('subscription_id')->toArray();
+            $subscriptions   = [];
+
+            foreach (array_unique($subscriptionIds) as $id) {
+                
+                array_push($subscriptions, Subscription::find($id));
+            }
            
-            $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');
+            $pdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');
 
         }
         
-        
-        $configurationSet = $this->setMailConfiguration($order);
+        $configurationSet = $this->setMailConfiguration($customerOrder);
         
         if ($configurationSet) {
             
             return false;
         }
 
-        $customer = $order->customer;
+        $customer = $customerOrder->customer;
         $dataRow['customer'] = $customer;
 
         $emailTemplate = '';
 
-        if ($order->invoice->type == 2) {
-            $emailTemplates      = EmailTemplate::where('company_id', $order->company_id)->where('code', 'one-time-invoice')->get();
+        if ($customerOrder->invoice->type == 2) {
+            $emailTemplates      = EmailTemplate::where('company_id', $customerOrder->company_id)->where('code', 'one-time-invoice')->get();
         
-        } elseif ($order->invoice->type == 1) {
-            $emailTemplates      = EmailTemplate::where('company_id', $order->company_id)->where('code', 'monthly-invoice')->get();
+        } elseif ($customerOrder->invoice->type == 1) {
+            $emailTemplates      = EmailTemplate::where('company_id', $customerOrder->company_id)->where('code', 'monthly-invoice')->get();
 
         }
-        $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$order->hash;
+        $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$customerOrder->hash;
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
@@ -142,7 +142,7 @@ class SendEmailWithInvoice
 
             $body = $emailTemplate->body($names[0], $replaceWith);
 
-            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $customer->business_verification_id, $body, $email, $note));
+            Notification::route('mail', $email)->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $body, $email, $note));
         }        
     }
 

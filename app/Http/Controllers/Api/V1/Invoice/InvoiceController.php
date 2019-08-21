@@ -228,7 +228,6 @@ class InvoiceController extends BaseController implements ConstantInterface
    
     public function storeCoupon($couponAmount, $couponCode, $invoice)
     {
-        \Log::info('code: '.$couponCode);
         if ($couponCode) {
             //store coupon in invoice_items.
             if ($couponAmount) {
@@ -246,16 +245,16 @@ class InvoiceController extends BaseController implements ConstantInterface
                 );
             }
 
-            $couponNumUses   = Coupon::where('code', $couponCode)->pluck('num_uses')->first();
+            $couponToProcess   = Coupon::where('code', $couponCode);
+            $numUses           = $couponToProcess->pluck('num_uses')->first();
 
-            Coupon::where('code', $couponCode)->update([
-                'num_uses' => $couponNumUses + 1 
+            $couponToProcess->update([
+                'num_uses' => $numUses + 1
             ]);
 
             //store coupon in customer_coupon table if eligible
-            $coupon         = Coupon::where('code', $couponCode)->first();
-            $couponCycles   = $coupon->num_cycles;
-            $couponId       = $coupon->id;
+            $couponCycles   = $couponToProcess->first()->num_cycles;
+            $couponId       = $couponToProcess->first()->id;
 
             $customerCoupon = [
                 'customer_id'       => $invoice->customer_id,

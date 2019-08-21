@@ -725,45 +725,60 @@ class CouponController extends Controller
 
     protected function orderCoupon(Request $request)
     {
+        
         if ($request['applied_to_all']) {
-            
+                
             foreach ($request['applied_to_all'] as $product) {
 
-                $order = Order::find($product['order']['id']);
+                if (isset($product['order']['id'])) {
     
-                $order->orderCoupon->orderCouponProduct()->create([
-                    'order_product_type'    => $product['order_product_type'],
-                    'order_product_id'      => $product['order_product_id'],
-                    'amount'                => $product['amount']
-                ]);
+                    $order = Order::find($product['order']['id']);
+        
+                    $order->orderCoupon->orderCouponProduct()->create([
+                        'order_product_type'    => $product['order_product_type'],
+                        'order_product_id'      => $product['order_product_id'],
+                        'amount'                => $product['amount']
+                    ]);
+
+                }
+
             }
+
         }
 
         if ($request['applied_to_types']) {
             
             foreach ($request['applied_to_types'] as $product) {
 
-                $order = Order::find($product['order']['id']);
-    
-                $order->orderCoupon->orderCouponProduct()->create([
-                    'order_product_type'    => $product['order_product_type'],
-                    'order_product_id'      => $product['order_product_id'],
-                    'amount'                => $product['amount']
-                ]);
+                if (isset($product['order']['id'])) {
+
+                    $order = Order::find($product['order']['id']);
+        
+                    $order->orderCoupon->orderCouponProduct()->create([
+                        'order_product_type'    => $product['order_product_type'],
+                        'order_product_id'      => $product['order_product_id'],
+                        'amount'                => $product['amount']
+                    ]);
+
+                }
             }
         }
 
         if ($request['applied_to_products']) {
             
             foreach ($request['applied_to_products'] as $product) {
+                
+                if (isset($product['order']['id'])) {
 
-                $order = Order::find($product['order']['id']);
-    
-                $order->orderCoupon->orderCouponProduct()->create([
-                    'order_product_type'    => $product['order_product_type'],
-                    'order_product_id'      => $product['order_product_id'],
-                    'amount'                => $product['amount']
-                ]);
+                    $order = Order::find($product['order']['id']);
+        
+                    $order->orderCoupon->orderCouponProduct()->create([
+                        'order_product_type'    => $product['order_product_type'],
+                        'order_product_id'      => $product['order_product_id'],
+                        'amount'                => $product['amount']
+                    ]);
+
+                }
             }
         }
 

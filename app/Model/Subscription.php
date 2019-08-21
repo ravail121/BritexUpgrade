@@ -71,6 +71,19 @@ class Subscription extends Model
         'active'            => 'active',
     ];
 
+    const InvoiceItemTypes = [
+        'plan_charges'     => 1,
+        'feature_charges'  => 2,
+        'one_time_charges' => 3,
+        'usage_charges'    => 4,
+        'regulatory_fee'   => 5,
+        'coupon'           => 6,
+        'taxes'            => 7,
+        'manual'           => 8,
+        'payment'          => 9,
+        'refund'           => 10,
+    ];
+
     public function Customer()
     {
         return $this->hasOne('App\Model\Customer', 'id');
@@ -80,6 +93,12 @@ class Subscription extends Model
     {
         return $this->belongsTo('App\Model\Sim', 'sim_id', 'id');
     }
+
+    public function simDetail()
+    {
+        return $this->hasOne('App\Model\Sim', 'id', 'sim_id');
+    }
+
 
     public function customerRelation()
     {
@@ -305,7 +324,14 @@ class Subscription extends Model
     {
         $invoiceItems = $this->invoiceItemDetail()->taxes()->get();
         return $this->calCharges($invoiceItems);
-    }    
+    }
+
+    public function getCalCreditsAttribute()
+    {
+        $invoiceItems = $this->invoiceItemDetail()->credits()->get();
+        return $this->calCharges($invoiceItems);
+        
+    }
 
 
     protected function calCharges($products)
@@ -329,5 +355,66 @@ class Subscription extends Model
     public static function toTwoDecimals($amount)
     {
         return number_format((float)$amount, 2, '.', '');
+    }
+
+    public function getCalTotalChargesAttribute()
+    {
+        $credits = $this->calCharges($this->invoiceItemDetail()->credits()->get());
+        $total = $this->calCharges($this->invoiceItemDetail()
+                    ->where('type', '!=', self::InvoiceItemTypes['coupon'])
+                    ->where('type', '!=', self::InvoiceItemTypes['refund'])
+                    ->where('type', '!=', self::InvoiceItemTypes['manual'])
+                    ->get());
+        return $total - $credits;
+        
+    }
+
+    public static function calculateChargesForAllproducts($types, $invoiceId, $subscriptionId)
+    {
+        $amount = [];
+        foreach ($types as $type) {
+            array_push($amount, self::find($subscriptionId)
+                ->invoiceItemDetail()
+                ->where('invoice_id', $invoiceId)
+                ->where('type', $type)
+                ->sum('amount'));
+        }
+        return array_sum($amount);
+    }
+
+    public static function totalSubscriptionCharges($invoiceId, $subscription)
+    {
+        $total = $subscription->invoiceItemDetail()->where('invoice_id', $invoiceId)
+                ->where('type', '!=', self::InvoiceItemTypes['coupon'])
+                ->where('type', '!=', self::InvoiceItemTypes['refund'])
+                ->where('type', '!=', self::InvoiceItemTypes['manual'])
+                ->sum('amount');
+        return $total;
+    }
+
+    public static function totalSubscriptionDiscounts($invoiceId, $subscription)
+    {
+        $discount  = $subscription->invoiceItemDetail()->where('invoice_id', $invoiceId)
+            ->where('type', [
+                self::InvoiceItemTypes['coupon'],
+                self::InvoiceItemTypes['refund'],
+                self::InvoiceItemTypes['manual']
+            ])->sum('amount');
+        return $discount;
+    }
+
+    public static function getAddonData($item, $invoiceId)
+    {
+        $amount = self::find($item->subscription_id)
+            ->invoiceItemDetail
+            ->where('invoice_id', $invoiceId)
+            ->where('type', self::InvoiceItemTypes['feature_charges'])
+            ->where('product_id', $item->addon_id)
+            ->sum('amount');
+        $name = Addon::find($item->addon_id)->name;
+        return [
+            'name' => $name,
+            'amount' => $amount
+        ];
     }
 }

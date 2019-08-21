@@ -46,7 +46,8 @@ class UpdateController extends BaseController
     {
         $customers = Customer::whereNotNull('billing_end')->get();
 
-        foreach ($customers as $customer) {$request->headers->set('authorization', $sub->customerRelation->company->api_key);
+        foreach ($customers as $customer) {
+            
             if ($customer->today_greater_than_billing_end) {
                 $customer->update([
                     'billing_start' => $customer->add_day_to_billing_end,
