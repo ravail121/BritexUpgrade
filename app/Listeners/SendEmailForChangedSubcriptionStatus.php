@@ -44,7 +44,8 @@ class SendEmailForChangedSubcriptionStatus
     {
         $subscriptionId = $event->subscriptionId;
         
-        $subscription = Subscription::find($subscriptionId);
+        $subscription = Subscription::where('id', $subscriptionId)->with('customerRelation', 'plans', 'ban')->first();
+        
         $dataRow = [
             'subscription' => $subscription,
             'customer'    => $subscription->customerRelation,

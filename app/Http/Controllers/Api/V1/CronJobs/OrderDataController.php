@@ -20,12 +20,13 @@ class OrderDataController extends BaseController
     public function order() {
         
         $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
-            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->orWhereNull('tracking_num');
+            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
 
         })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
-            $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->orWhereNull('tracking_num');        
+            $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
+            
         })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
-            $standAloneSim->where([['status', 'shipping'],['processed', 1]])->orWhereNull('tracking_num');
+            $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
         })->get();
 
         foreach ($orders as $order) {

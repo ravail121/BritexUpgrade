@@ -33,8 +33,8 @@ class SendPortStatusMail
      * @return void
      */
     public function handle(PortPending $event)
-    {   
-        $port           = Port::find($event->portId);
+    {
+        $port = Port::where('id', $event->portId)->with('subscription.order', 'subscription.customerRelation')->first();
         $subscription   = $port->subscription;
         $order          = $subscription->order;
         $customer       = $subscription->customerRelation;
