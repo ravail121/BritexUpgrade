@@ -232,7 +232,7 @@ class Subscription extends Model
 
     public function scopeNotScheduledForSuspensionOrClosure($query)
     {
-      return $query->whereNotIn('sub_status', ['suspend-scheduled', 'close-scheduled']);
+      return $query->whereNotIn('sub_status', ['suspend-scheduled', 'close-scheduled'])->orWhere('sub_status', null);
     }
 
     public function scopeNotScheduledForDowngrade($query)

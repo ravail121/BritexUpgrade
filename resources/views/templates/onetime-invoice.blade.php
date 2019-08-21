@@ -218,41 +218,43 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            <tr class="tfootQ">
-                                <td>Account Charges</td>
-                                <td>$ 0.00</td>
-                                <td>$ 
-                                    @if(count($data['standalone_items']->where('type', 3)))
-                                        {{ number_format($data['standalone_items']->where('type', 3)->sum('amount'), 2) }}
-                                    @else 
-                                        0.00
-                                    @endif
-                                </td>
-                                <td>$ 0.00</td>
-                                <td>$ 
-                                    @if(count($data['standalone_items']->where('type', 7)))
-                                        {{ number_format($data['standalone_items']->where('type', 7)->sum('amount'), 2) }}
-                                    @else 
-                                        0.00
-                                    @endif
-                                </td>
-                                <td>-$ 
+                            @if (!isset($ifUpgradeOrDowngradeInvoice))
+                                <tr class="tfootQ">
+                                    <td>Account Charges</td>
+                                    <td>$ 0.00</td>
+                                    <td>$ 
+                                        @if(count($data['standalone_items']->where('type', 3)))
+                                            {{ number_format($data['standalone_items']->where('type', 3)->sum('amount'), 2) }}
+                                        @else 
+                                            0.00
+                                        @endif
+                                    </td>
+                                    <td>$ 0.00</td>
+                                    <td>$ 
+                                        @if(count($data['standalone_items']->where('type', 7)))
+                                            {{ number_format($data['standalone_items']->where('type', 7)->sum('amount'), 2) }}
+                                        @else 
+                                            0.00
+                                        @endif
+                                    </td>
+                                    <td>-$ 
 
-                                    @if(count($data['standalone_items']->whereIn('type', [6, 8])))
-                                        {{number_format($data['standalone_items']->whereIn('type', [6, 8])->sum('amount'), 2)}}
-                                    @else 
-                                        0.00
-                                    @endif
-                                </td>
-                                <td>$ 
-                                    @if($data['standalone_items']->sum('amount'))
-                                        {{ number_format($data['invoice']->standAloneTotal($data['invoice']->id), 2)}}
-                                    @else
-                                        0.00
-                                    @endif
-                                </td>
-                            </tr>
-
+                                        @if(count($data['standalone_items']->whereIn('type', [6, 8])))
+                                            {{number_format($data['standalone_items']->whereIn('type', [6, 8])->sum('amount'), 2)}}
+                                        @else 
+                                            0.00
+                                        @endif
+                                    </td>
+                                    <td>$ 
+                                        @if($data['standalone_items']->sum('amount'))
+                                            {{ number_format($data['invoice']->standAloneTotal($data['invoice']->id), 2)}}
+                                        @else
+                                            0.00
+                                        @endif
+                                    </td>
+                                </tr>
+                            
+                        
                                 @if (count($data['order']->subscriptions))
                                     @foreach ($data['order']->subscriptions as $index => $subscription)
                                         <tr>
@@ -260,7 +262,6 @@
                                             <td>@isset ($subscription->phone_number) 
                                                     {{ $data['order']->phoneNumberFormatted($subscription->phone_number) }}
                                                 @else
-                                                {{$subscription->id}}
                                                     Pending
                                                 @endisset
                                             </td>
@@ -288,6 +289,27 @@
                                         </tr>
                                     @endforeach
                                 @endif
+                            @else
+                                <tr>            
+                                    <td>@isset ($subscription->phone_number) 
+                                            {{ $data['order']->phoneNumberFormatted($subscription->phone_number) }}
+                                        @else
+                                            Pending
+                                        @endisset
+                                    </td>
+                                    <td>$ {{ number_format($data['invoice']->cal_plan_charges, 2) }}
+                                    </td>
+                                    <td>$ {{ number_format($data['invoice']->cal_onetime_charges, 2) }}
+                                    </td>
+                                    <td>$ {{ number_format($data['invoice']->cal_usage_charges, 2) }}
+                                    </td>
+                                    <td>$ {{ number_format($data['invoice']->cal_taxes, 2) }}
+                                    </td>
+                                    <td>-$ {{ number_format($data['invoice']->cal_credits, 2) }}</td>
+                                    <td>$  {{ number_format($data['invoice']->cal_total_charges, 2)}}
+                                    </td>
+                                </tr>
+                            @endif
                             </tbody>
                             <tr>
                                 <td colspan="7" class="lh0">
@@ -296,41 +318,43 @@
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="tfootQ">
-                                <td>Total</td>
-                                <td>$ 
-                                    @if($data['invoice']->cal_plan_charges)
-                                        {{ number_format($data['invoice']->cal_plan_charges, 2) }}
-                                    @endif
-                                </td>
-                                <td>$ 
-                                    @if($data['invoice']->cal_onetime)
-                                        {{ number_format($data['invoice']->cal_onetime, 2) }}
-                                    @endif
-                                </td>
-                                <td>$ 
-                                    @if($data['invoice']->cal_usage_charges)
-                                        {{ number_format($data['invoice']->cal_usage_charges, 2) }}
-                                    @endif
-                                </td>
-                                <td>$ 
-                                    @if($data['invoice']->cal_taxes)
-                                        {{ number_format($data['invoice']->cal_taxes, 2) }}
-                                    @endif
-                                </td>
-                                <td>-$ 
-                                    @if($data['invoice']->cal_credits)
-                                        {{ number_format($data['invoice']->cal_credits, 2) }}
-                                    @endif
+                            @if (!isset($ifUpgradeOrDowngradeInvoice))
+                                <tr class="tfootQ">
+                                    <td>Total</td>
+                                    <td>$ 
+                                        @if($data['invoice']->cal_plan_charges)
+                                            {{ number_format($data['invoice']->cal_plan_charges, 2) }}
+                                        @endif
                                     </td>
-                                <td>$ 
-                                    @if($data['invoice']->cal_total_charges)
-                                    {{ 
-                                        number_format($data['invoice']->cal_total_charges, 2)
-                                    }}
-                                    @endif
-                                </td>
-                            </tr>
+                                    <td>$ 
+                                        @if($data['invoice']->cal_onetime)
+                                            {{ number_format($data['invoice']->cal_onetime, 2) }}
+                                        @endif
+                                    </td>
+                                    <td>$ 
+                                        @if($data['invoice']->cal_usage_charges)
+                                            {{ number_format($data['invoice']->cal_usage_charges, 2) }}
+                                        @endif
+                                    </td>
+                                    <td>$ 
+                                        @if($data['invoice']->cal_taxes)
+                                            {{ number_format($data['invoice']->cal_taxes, 2) }}
+                                        @endif
+                                    </td>
+                                    <td>-$ 
+                                        @if($data['invoice']->cal_credits)
+                                            {{ number_format($data['invoice']->cal_credits, 2) }}
+                                        @endif
+                                        </td>
+                                    <td>$ 
+                                        @if($data['invoice']->cal_total_charges)
+                                        {{ 
+                                            number_format($data['invoice']->cal_total_charges, 2)
+                                        }}
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endisset
                             <tr>
                                 <td colspan="7" class="lh0">
                                     <div class="total_img2">
@@ -357,8 +381,8 @@
                         @if (count($data['order']->subscriptions))
                             {{ count($data['order']->subscriptions) + 2 }}
                         @else 
-                            {{ count($data['order']->subscriptions) ?: count($subscriptions) + 2 }}
-                        @endisset
+                            1
+                        @endif
                     </p>
                 </div>
             </div>

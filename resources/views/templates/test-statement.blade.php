@@ -239,7 +239,7 @@
                         @if (count($data['order']->subscriptions))
                             {{ count($data['order']->subscriptions) + 2 }}
                         @else 
-                            {{ count($subscriptions) + 2 }}
+                           2
                         @endisset
                     </h3>
                 </div>

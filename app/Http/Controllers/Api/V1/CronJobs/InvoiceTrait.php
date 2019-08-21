@@ -162,9 +162,17 @@ trait InvoiceTrait
             $data = $this->dataForInvoice($order);
             
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                $pdf = PDF::loadView('templates/onetime-invoice', compact('data'));
-                return $pdf->download('invoice.pdf');
-            
+
+                $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
+
+                if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
+                    $pdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
+                    return $pdf->download('invoice.pdf');
+                } else {
+                    $pdf = PDF::loadView('templates/onetime-invoice', compact('data'));
+                    return $pdf->download('invoice.pdf');
+                }
+
             } else {
                 $subscriptionIds = $order->invoice->invoiceItem->pluck('subscription_id')->toArray();
                 $subscriptions   = [];
@@ -211,11 +219,59 @@ trait InvoiceTrait
             $pending            = $previousTotalDue > $amountPaid ? $previousTotalDue - $amountPaid : 0;
 
             return [
-                'previous_amount'    => self::formatNumber($previousTotalDue),
-                'previous_payment'   => self::formatNumber($amountPaid),
-                'previous_pending'   => self::formatNumber($pending)
+                'previous_amount'    => number_format($previousTotalDue, 2),
+                'previous_payment'   => number_format($amountPaid, 2),
+                'previous_pending'   => number_format($pending, 2)
             ];
         }
     }
+
+    protected function ifUpgradeOrDowngradeInvoice($order)
+    {
+        $subscriptionId = array_unique($order->invoice->invoiceItem->pluck('subscription_id')->toArray());
+        if (count($subscriptionId) == 1) {
+            $subscription = Subscription::find($subscriptionId[0]);
+            if ($subscription->upgrade_downgrade_status) {
+                $addonsIds = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['feature_charges'])->pluck('product_id');
+
+                $planData = [
+                    'name' => Plan::find($subscription->plan_id)->name,
+                    'amount' => $subscription->invoiceItemDetail
+                                ->where('invoice_id', $order->invoice->id)
+                                ->where('type', InvoiceItem::TYPES['plan_charges'])
+                                ->where('product_id', $subscription->plan_id)
+                                ->sum('amount'),
+                ];
+
+                $addonData = [];
+                if (count($addonsIds)) {
+                    foreach ($addonsIds as $id) {
+                        $ifAddonsAdded = $order->invoice->invoiceItem
+                                            ->where('type', InvoiceItem::TYPES['feature_charges'])
+                                            ->where('product_id', $id);
+                        if (count($ifAddonsAdded)) {
+                            foreach ($ifAddonsAdded as $addedAddon) {
+                                array_push($addonData, [
+                                    'name' => Addon::find($addedAddon->product_id)->name,
+                                    'amount' => $addedAddon->amount,
+                                    'description' => $addedAddon->description
+                                ]);
+                            }
+                        }
+                    }
+                }
+                return [
+                    'addon_data' => $addonData,
+                    'plan_data'  => $planData,
+                    'upgrade_downgrade_status' => true
+                ];
+            } else {
+                return [
+                    'upgrade_downgrade_status' => false
+                ];
+            }
+        }
+    }
+    
 
 }
