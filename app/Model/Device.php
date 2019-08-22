@@ -74,7 +74,7 @@ class Device extends Model implements ConstantInterface
 
     public static function getDeviceName($id)
     {
-        return self::find($id)->name;
+        return $id != 0 ? self::find($id)->name : false;
     }
 
     public static function deviceWithSubscriptionCharges($id)

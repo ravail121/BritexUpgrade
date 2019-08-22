@@ -51,7 +51,7 @@ trait InvoiceTrait
             'type'         => InvoiceItem::INVOICE_ITEM_TYPES['regulatory_fee'],
             'start_date'   => $invoice->start_date,
             'description'  => "(Regulatory Fee) - {$plan->company->regulatory_label}",
-            'amount'       => $amount,
+            'amount'       => number_format($amount, 2),
             'taxable'      => $isTaxable,
         ]);
     }
@@ -74,7 +74,7 @@ trait InvoiceTrait
                         'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                         'start_date'   => $invoice->start_date,
                         'description'  => "(Taxes)",
-                        'amount'       => $taxPercentage * sprintf("%.2f", $taxesWithSubscriptions),
+                        'amount'       => number_format($taxPercentage * $taxesWithSubscriptions, 2),
                         'taxable'      => $isTaxable,            
                     ]
                 );
@@ -104,7 +104,7 @@ trait InvoiceTrait
                         'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                         'start_date'   => $invoice->start_date,
                         'description'  => "(Taxes)",
-                        'amount'       => $taxPercentage * sprintf("%.2f", $taxesWithoutSubscriptions),
+                        'amount'       => number_format($taxPercentage * $taxesWithoutSubscriptions, 2),
                         'taxable'      => $isTaxable,            
                     ]
                 );
@@ -137,7 +137,7 @@ trait InvoiceTrait
         $taxesWithoutSubscriptions  = $invoice->invoiceItem
                                         ->where('taxable', 1)
                                         ->sum('amount');
-                                        
+
         if ($taxesWithoutSubscriptions > 0) {
             $invoice->invoiceItem()->create(
                 [
@@ -148,11 +148,11 @@ trait InvoiceTrait
                     'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                     'start_date'   => $invoice->start_date,
                     'description'  => "(Taxes)",
-                    'amount'       => $taxPercentage * sprintf("%.2f", $taxesWithoutSubscriptions),
+                    'amount'       => number_format($taxPercentage * $taxesWithoutSubscriptions, 2),
                     'taxable'      => $isTaxable,            
                 ]
             );
-        }  
+        }
     }
 
     public function generateInvoice($order)
@@ -166,9 +166,11 @@ trait InvoiceTrait
                 $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
 
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
+                    
                     $pdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
                     return $pdf->download('invoice.pdf');
                 } else {
+
                     $pdf = PDF::loadView('templates/onetime-invoice', compact('data'));
                     return $pdf->download('invoice.pdf');
                 }
@@ -186,7 +188,7 @@ trait InvoiceTrait
                 if (!count($subscriptions)) {
                     return 'Api error: missing subscription data';
                 }
-
+                
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 
@@ -241,7 +243,7 @@ trait InvoiceTrait
             $subscription = Subscription::find($subscriptionId[0]);
             if ($subscription->upgrade_downgrade_status) {
                 $addonsIds = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['feature_charges'])->pluck('product_id');
-
+                
                 $planData = [
                     'name' => Plan::find($subscription->plan_id)->name,
                     'amount' => $subscription->invoiceItemDetail

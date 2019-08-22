@@ -110,12 +110,12 @@ trait UsaEpayTransaction
     {
         $order = null;
 
-        if ($request->customer_id) {
-            $order = Order::where('customer_id', $request->customer_id)->first();
-
-        } elseif ($request->order_hash) {
+        if ($request->order_hash) {
             $order = Order::where('hash', $request->order_hash)->first();
             
+        } elseif ($request->customer_id) {
+            $order = Order::where('customer_id', $request->customer_id)->first();
+
         }
 
         return $order;
@@ -132,7 +132,6 @@ trait UsaEpayTransaction
     protected function transactionSuccessful($request, $tran, $invoice = null)
     {
         $data = ['success' => false];
-
         $order = $this->getOrder($request);
 
         if(!$order){

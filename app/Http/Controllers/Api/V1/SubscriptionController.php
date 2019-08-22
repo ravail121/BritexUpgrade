@@ -75,6 +75,8 @@ class SubscriptionController extends BaseController
             if(!$subscription) {
                 return $this->respondError(['subscription_id' => null]);
             }
+            
+            $request->headers->set('authorization', $request->api_key);
 
             if($subscription['status'] == 'for-activation'){
                 event(new SubcriptionStatusChanged($subscription['id']));

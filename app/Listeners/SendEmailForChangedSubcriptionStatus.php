@@ -44,13 +44,12 @@ class SendEmailForChangedSubcriptionStatus
     {
         $subscriptionId = $event->subscriptionId;
         
-        $subscription = Subscription::where('id', $subscriptionId)->with('customerRelation', 'plans', 'ban')->first();
+        $subscription = Subscription::where('id', $subscriptionId)->with('customerRelation', 'plans')->first();
         
         $dataRow = [
             'subscription' => $subscription,
             'customer'    => $subscription->customerRelation,
             'plan'        => $subscription->plans,
-            'ban'         => $subscription->ban,
         ];
         $addons = $subscription->namesOfSubscriptionAddonNotRemoved;
         $addonsName = $addons->implode(',');

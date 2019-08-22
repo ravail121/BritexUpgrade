@@ -430,7 +430,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $array = [
                     'product_type' => self::PLAN_TYPE,
                     'product_id'   => $subscription->plan_id,
-                    'amount'       => $amount,
+                    'amount'       => number_format($amount, 2),
                     'taxable'      => $plan->taxable,
                     'description'  => ''
                 ];
@@ -517,7 +517,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                         'product_type' => self::ADDON_TYPE,
                         'product_id'   => $addon->id,
                         'type'         => 2,
-                        'amount'       => $addonAmount,
+                        'amount'       => number_format($addonAmount, 2),
                         'taxable'      => $addon->taxable,
                         'description'  => ''
                     ];
@@ -597,7 +597,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                         'product_type'    => self::ADDON_TYPE,
                         'product_id'      => $addon->id,
                         'type'            => 2,
-                        'amount'          => $addonAmount,
+                        'amount'          => number_format($addonAmount, 2),
                         'taxable'         => $addon->taxable,
                         'subscription_id' => $subscription->id,
                         'invoice_id'      => $order->invoice_id,

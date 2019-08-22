@@ -236,8 +236,8 @@
                 </div>
                 <div class="container">
                     <h3>Page <strong> 2</strong>/
-                        @if (count($data['order']->subscriptions))
-                            {{ count($data['order']->subscriptions) + 2 }}
+                        @if (isset($subscriptions) && count($subscriptions))
+                            {{ count($subscriptions) + 2 }}
                         @else 
                            2
                         @endisset

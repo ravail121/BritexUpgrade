@@ -80,19 +80,19 @@
                             </tr>
                             <tr>
                                 @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                    @if(isset($subscription->subscriptionAddon) && count($subscription->subscriptionAddon))
+                                    @if(isset($subscription->subscriptionAddon) && count($subscription->subscriptionAddon->whereNotIn('status', 'removed')))
                                         <td>Features:</td>
-                                        <td>
-                                            @foreach ($subscription->subscriptionAddon as $item)
+                                        <td style='position: absolute; top: 360px;'>
+                                            @foreach ($subscription->subscriptionAddon->whereNotIn('status', 'removed') as $item)
                                                 <a>
                                                     @if ($subscription->getAddonData($item, $data['invoice']->id))
                                                         <div style='margin-left: 10px;'>{{$subscription->getAddonData($item, $data['invoice']->id)['name']}}</div>
                                                     @endif
                                                 </a>
                                             @endforeach
-                                        </td>                                    
+                                        </td>
                                         <td class="right">
-                                            @foreach ($subscription->subscriptionAddon as $item) 
+                                            @foreach ($subscription->subscriptionAddon->whereNotIn('status', 'removed') as $item) 
                                                 <a>
                                                     @if ($subscription->getAddonData($item, $data['invoice']->id))
                                                         <div> $ {{ number_format ($subscription->getAddonData($item, $data['invoice']->id)['amount'], 2) }} </div>
@@ -162,7 +162,9 @@
                             @if ($subscription->device_id)
                                 <tr>
                                     <td>
-                                        {{ $subscription->device->getDeviceName($subscription->device_id) }}
+                                        @if ($subscription->device->getDeviceName($subscription->device_id))
+                                            {{ $subscription->device->getDeviceName($subscription->device_id) }}
+                                        @endif
                                     </td>
                                     <td colspan='2' class='last'>
                                         $ {{ number_format ($subscription->device->deviceWithSubscriptionCharges($subscription->device_id), 2) }}
@@ -208,9 +210,9 @@
                             </tr>
                             <td colspan="2" class="last total_value">
                                 <a>
-                                    <strong>Total One-Time Charges: 
+                                    <strong>Total One-Time Charges: $
                                         @if ($subscription->invoiceItemDetail->where('type', 3)->sum('amount'))
-                                            $ {{
+                                            {{
                                                 number_format (
                                                     $subscription->invoiceItemDetail->where('type', 3)->sum('amount'), 2
                                                 )
@@ -355,12 +357,12 @@
                                     @if ($subscription['phone'] && $subscription['phone'] != 'Pending')
                                         {{$subscription['phone']}}
                                     @else 
-                                        Pending
-                                    @endisset
+                                        
+                                    @endif
                                 </td>
-                                <td colspan="3" class="right">
-                                    @isset ($subscription->invoiceItemDetail)
-                                        $ {{
+                                <td colspan="3" class="right"> $
+                                    @if (isset($subscription->invoiceItemDetail) && $subscription->invoiceItemDetail->sum('amount'))
+                                        {{
                                             number_format(
                                                 $subscription->totalSubscriptionCharges($data['invoice']->id, $subscription) - 
                                                 $subscription->totalSubscriptionDiscounts($data['invoice']->id, $subscription), 2
@@ -368,7 +370,7 @@
                                         }}
                                     @else
                                         0.00
-                                    @endisset
+                                    @endif
                                 </td>
                             </tr>
                         </table>
@@ -379,10 +381,10 @@
                         <strong> 
                             {{$index + 3}}    
                         </strong>/ 
-                        @if (count($data['order']->subscriptions))
-                            {{ count($data['order']->subscriptions) + 2 }}
-                        @else 
+                        @if (isset($subscriptions) && count($subscriptions))
                             {{ count($subscriptions) + 2 }}
+                        @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
+                            {{ count($data['order']->subscriptions) + 2 }}
                         @endisset
                     </h3>
                 </div>
