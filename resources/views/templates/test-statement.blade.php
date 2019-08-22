@@ -238,9 +238,11 @@
                     <h3>Page <strong> 2</strong>/
                         @if (isset($subscriptions) && count($subscriptions))
                             {{ count($subscriptions) + 2 }}
+                        @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
+                            {{ count($data['order']->subscriptions) + 2 }}
                         @else 
                            2
-                        @endisset
+                        @endif
                     </h3>
                 </div>
                 <div style='page-break-after:always;'>&nbsp;</div>

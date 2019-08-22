@@ -150,13 +150,15 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>One-Time Charges</h2>
-                            <table>
-                                <tr>
-                                    <td colspan="3">
-                                        <div class="sepratorline"></div>
-                                    </td>
-                                </tr>
-                            </table>
+                            @if ($subscription->invoiceItemDetail->where('type', 3)->sum('amount'))
+                                <table>
+                                    <tr>
+                                        <td colspan="3">
+                                            <div class="sepratorline"></div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            @endif
                         </div>
                         <table class="test table-padding">
                             @if ($subscription->device_id)

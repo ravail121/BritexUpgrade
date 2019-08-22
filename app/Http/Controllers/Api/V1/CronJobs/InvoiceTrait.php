@@ -170,7 +170,7 @@ trait InvoiceTrait
                     $pdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
                     return $pdf->download('invoice.pdf');
                 } else {
-
+                    
                     $pdf = PDF::loadView('templates/onetime-invoice', compact('data'));
                     return $pdf->download('invoice.pdf');
                 }
