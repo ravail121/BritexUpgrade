@@ -38,14 +38,14 @@ class CreateOrderTable extends Migration
             $table->foreign('company_id')->references('id')->on('company');
             $table->char('name');
             $table->longText('description');
-            $table->longText('notes')->nullable();;
-            $table->longText('image');
+            $table->longText('notes')->nullable();
+            $table->longText('image')->nullable();
             $table->double('amount_recurring');
             $table->tinyinteger('taxable');
             $table->tinyinteger('show');
-            $table->text('sku');
-            $table->text('soc_code');
-            $table->text('bot_code');
+            $table->text('sku')->nullable();
+            $table->text('soc_code')->nullable();
+            $table->text('bot_code')->nullable();
             $table->timestamps();
         });
 
@@ -294,18 +294,19 @@ class CreateOrderTable extends Migration
             $table->foreign('carrier_id')->references('id')->on('carrier');
             $table->integer('type');
             $table->text('name');
-            $table->text('description');
+            $table->text('description')->nullable();
+            $table->text('description_detail')->nullable();
             $table->unsignedInteger('tag_id')->nullable();
             $table->foreign('tag_id')->references('id')->on('tag');
-            $table->text('notes')->nullable();;
-            $table->text('primary_image');
+            $table->text('notes')->nullable();
+            $table->text('primary_image')->nullable();
             $table->double('amount');
             $table->double('amount_w_plan');
             $table->tinyinteger('taxable'); 
-            $table->tinyinteger('associate_with_plan');
+            $table->tinyinteger('associate_with_plan')->nullable();
             $table->tinyinteger('show');
-            $table->text('sku');
-            $table->text('os');
+            $table->text('sku')->nullable();
+            $table->text('os')->nullable();
             $table->timestamps();
 
            });

@@ -14,7 +14,7 @@ class AddSortColumnToDeviceTable extends Migration
     public function up()
     {
         Schema::table('device', function (Blueprint $table) {
-            $table->integer('sort')->after('type');
+            $table->integer('sort')->nullable()->after('type');
         });
     }
 
