@@ -37,8 +37,10 @@ class Kernel extends ConsoleKernel
         $schedule->call('App\Http\Controllers\Api\V1\CardController@autoPayInvoice')->dailyAt('00:01');
         
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->hourly();
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->hourlyAt(30);
 
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->hourlyAt(30);
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->hourlyAt(15);
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->hourlyAt(45);
     }
 
     /**

@@ -18,7 +18,7 @@ class OrderController extends BaseController
 {
     public function order()
     {
-        $orders = Order::with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
+        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
             $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
 
         })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
