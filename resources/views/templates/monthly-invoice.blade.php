@@ -58,7 +58,7 @@
                         
                         <div style='position:absolute; right:15px; margin: auto; top: 100px; box-shadow:none; border-color: transparent;' class="bill_info">
                             <h2>Your Monthly Bill As Of</h2>
-                            <h3>{{ $data['order']->invoice->start_date }}</h3>
+                            <h3>{{ $data['invoice']->dateFormatForInvoice($data['invoice']->created_at) }}</h3>
                         </div>
                         
                         <div class="info">

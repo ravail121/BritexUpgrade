@@ -107,7 +107,7 @@
                                         <td>
                                             @foreach ($ifUpgradeOrDowngradeInvoice['addon_data'] as $addon)
                                                 <a>
-                                                    <div style='margin-left: 10px;'>{{ $addon['name'].' ('.$addon['description'].')' }}</div>
+                                                    <div style='margin-left: 10px;'>{{ $addon['name']}}</div>
                                                 </a>
                                             @endforeach
                                         </td>

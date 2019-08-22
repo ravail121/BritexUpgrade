@@ -57,7 +57,7 @@
                         
                         <div style='position:absolute; right:15px; margin: auto; top: 100px; border-color: transparent; box-shadow:none;' class="bill_info">
                             <h2>Bill for</h2>
-                            <h3>{{ $data['invoice']->start_date }}</h3>
+                            <h3>{{ $data['invoice']->dateFormatForInvoice($data['invoice']->created_at) }}</h3>
                         </div>
                     
                         <div class="info">
@@ -281,9 +281,14 @@
                                                     {{ $subscription->cal_taxes }}
                                                 @endif
                                             </td>
-                                            <td>-$ 0.00</td>
+                                            <td>-$ @if($subscription->cal_taxes)
+                                                    {{ $subscription->cal_credits }}
+                                                 @endif
+                                            </td>
                                             <td>$ @if ($subscription->invoiceItemDetail->sum('amount'))
                                                     {{ number_format($subscription->invoiceItemDetail->sum('amount'), 2) }}
+                                                    @else 
+                                                    0.00
                                                 @endif
                                             </td>
                                         </tr>

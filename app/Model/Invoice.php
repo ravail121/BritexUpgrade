@@ -321,6 +321,11 @@ class Invoice extends Model implements ConstantInterface
         return 'NA';
     }
 
+    public static function dateFormatForInvoice($date)
+    {
+        return Carbon::parse($date)->toFormattedDateString();
+    }
+
     public static function standAloneTotal($id)
     {
         

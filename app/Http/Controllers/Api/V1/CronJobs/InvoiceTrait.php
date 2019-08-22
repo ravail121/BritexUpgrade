@@ -174,11 +174,19 @@ trait InvoiceTrait
                 }
 
             } else {
+                
                 $subscriptionIds = $order->invoice->invoiceItem->pluck('subscription_id')->toArray();
                 $subscriptions   = [];
-                foreach (array_unique($subscriptionIds) as $id) {   
-                    array_push($subscriptions, Subscription::find($id));
+
+                foreach (array_unique($subscriptionIds) as $id) {
+                    $subscriptionsExists = Subscription::find($id);
+                    $subscriptionsExists ? array_push($subscriptions, Subscription::find($id)) : null;
                 }
+                
+                if (!count($subscriptions)) {
+                    return 'Api error: missing subscription data';
+                }
+
                 $pdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
                 return $pdf->download('invoice.pdf');
                 
