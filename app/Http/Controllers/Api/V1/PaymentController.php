@@ -100,10 +100,8 @@ class PaymentController extends BaseController implements ConstantInterface
                     'invoice' => 'Failed to generate invoice.'
                 ]);
             }
-            
-      
         } else {
-            $msg = $this->transactionFail($order, $this->tran);
+            $msg = $this->transactionFail($order, $this->tran); 
         }
 
         return $this->respond($msg); 

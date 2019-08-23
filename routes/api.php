@@ -41,9 +41,6 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
-// Route::get('test', function(){
-// });
-
 
 Route::get('/cron-jobs-monthly-invoice', [
     'as'=>'api.cron.monthly.invoice',

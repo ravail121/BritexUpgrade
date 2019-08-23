@@ -39,10 +39,10 @@ trait UsaEpayTransaction
    */
    protected function setUsaEpayData($tran, $request, $command = null)
    {
-       $orderhash = $request->order_hash;
-       $order = Order::whereHash($orderhash)->first();
-       $couponData = $this->couponData($order, $request);
-       $this->stringReplacement($request);
+        $orderhash = $request->order_hash;
+        $order = Order::whereHash($orderhash)->first();
+        $couponData = $this->couponData($order, $request);
+        $this->stringReplacement($request);
 
         if($command){
             $tran->command = $command;
@@ -97,10 +97,8 @@ trait UsaEpayTransaction
            }
 
         }
-        
-        $customer = Customer::where('id', $request->customer_id)->with('company')->first();
 
-        $defaultData['key'] = $customer->company->usaepay_api_key;
+        $defaultData['key'] = \Request::get('company')->usaepay_api_key;
         $defaultData['usesandbox'] = self::TRAN_TRUE;
         
         return $defaultData;
