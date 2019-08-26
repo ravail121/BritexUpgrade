@@ -28,6 +28,7 @@ class OrderDataController extends BaseController
         })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
             $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
         })->with('company')->get();
+        
 
         foreach ($orders as $order) {
             $readyCloudApiKey = $order->company->readycloud_api_key;

@@ -20,7 +20,6 @@ class OrderController extends BaseController
     {
         $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
             $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
-
         })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
             $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
         })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
@@ -35,21 +34,23 @@ class OrderController extends BaseController
                 $standAloneSimRow = array();
 
                 foreach ($order->subscriptions as $key => $subscription) {
-                    $subscriptionRow[$key]['items'] = $this->subscriptions($subscription);
+                    // $subscriptionRow[$key]['items'] = $this->subscriptions($subscription);
+                    $subscriptionRow = $this->subscriptions($subscription);
                 }
 
                 foreach ($order->standAloneDevices as $key => $standAloneDevice) {
-                    $standAloneDeviceRow[$key]['items'] = $this->standAloneDevice($standAloneDevice);
+                    // $standAloneDeviceRow[$key]['items'] = $this->standAloneDevice($standAloneDevice);
+                    $standAloneDeviceRow = $this->standAloneDevice($standAloneDevice);
                 }
 
                 foreach ($order->standAloneSims as $key => $standAloneSim) {
-                    $standAloneSimRow[$key]['items'] = $this->standAloneSim($standAloneSim);
+                    // $standAloneSimRow[$key]['items'] = $this->standAloneSim($standAloneSim);
+                    $standAloneSimRow = $this->standAloneSim($standAloneSim);
                 }
-                $row = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
+                $row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
 
                     $apiData = $this->data($order, $row);
                     $response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
-
                     if($response->getStatusCode() == 201) {
                         $order->subscriptions()->update(['sent_to_readycloud' => 1]);
                         $order->standAloneDevices()->update(['processed' => 1]);

@@ -23,6 +23,8 @@ use App\Model\Subscription;
 
 Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
 
+Route::get('testb', 'Api\V1\CronJobs\OrderDataController@order');
+
 $config = [
 		'driver'   => 'smtp',
 		'host'     => 'smtp.mailgun.org',
