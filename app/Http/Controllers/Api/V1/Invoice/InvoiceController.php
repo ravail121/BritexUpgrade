@@ -109,7 +109,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         if ($request->data_to_invoice) {
             
             $invoice = $request->data_to_invoice;
-            // \Log::info('Invoice: -'.$invoice);
+
             if (isset($invoice['subscription_id'])) {
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
 
@@ -201,6 +201,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 ]
             );
         }
+        
         $fileSavePath = public_path().'/uploads/invoice-pdf/';
 
         $this->generateInvoice($order, $fileSavePath, $request);
@@ -752,7 +753,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             InvoiceItem::create(array_merge($items,$defaultValuesToInsert));
 
         }
-
+        return true;
     }
 
     /**

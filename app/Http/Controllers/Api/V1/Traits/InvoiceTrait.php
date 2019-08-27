@@ -171,7 +171,7 @@ trait InvoiceTrait
                 $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
 
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
-                    
+
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
                     $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
 
@@ -183,7 +183,7 @@ trait InvoiceTrait
                 }
 
             } else {
-                
+
                 $subscriptionIds = $order->invoice->invoiceItem->pluck('subscription_id')->toArray();
                 $subscriptions   = [];
 
@@ -230,7 +230,8 @@ trait InvoiceTrait
         $invoice = [
             'order'                         =>   $order,
             'invoice'                       =>   $order->invoice,
-            'standalone_items'              =>   $order->invoice->invoiceItem->where('subscription_id', null),
+                                                 //Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
+            'standalone_items'              =>   Invoice::find($order->invoice_id)->invoiceItem->where('subscription_id', null),
             'previous_bill'                 =>   $this->previousBill($order)
         ];
         return $invoice;
