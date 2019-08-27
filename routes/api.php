@@ -101,7 +101,11 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
   Route::get('/invoice', [
    'as'=>'api.invoice.get',
    'uses'=> 'InvoiceController@get',
+  ]);
 
+  Route::get('/invoice/download', [
+    'as' => 'api.invoice.download',
+    'uses' => 'InvoiceController@downloadInvoice'
   ]);
 
   Route::get('/sample-invoice', [

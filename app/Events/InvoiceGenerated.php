@@ -15,7 +15,7 @@ class InvoiceGenerated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $order;
+    public $order, $pdf;
 
 
     /**
@@ -23,10 +23,10 @@ class InvoiceGenerated
      *
      * @return void
      */
-    public function __construct(Order $order)
+    public function __construct(Order $order, $pdf)
     {
         $this->order = $order;
-
+        $this->pdf   = $pdf;
     }
     /**
      * Get the channels the event should broadcast on.

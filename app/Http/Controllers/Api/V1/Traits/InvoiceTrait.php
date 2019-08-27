@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\CronJobs;
+namespace App\Http\Controllers\Api\V1\Traits;
 
 use App\Model\Plan;
 use App\Model\InvoiceItem;
@@ -12,6 +12,9 @@ use Carbon\Carbon;
 use App\Model\Customer;
 use App\Model\Subscription;
 use PDF;
+use Illuminate\Http\Request;
+use Exception;
+use App\Events\InvoiceGenerated;
 
 trait InvoiceTrait
 {
@@ -155,8 +158,10 @@ trait InvoiceTrait
         }
     }
 
-    public function generateInvoice($order)
+    public function generateInvoice($order, $fileSavePath, $request = null)
     {
+        
+        $request ? $request->headers->set('authorization', $order->company->api_key) : null;
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
             
             $data = $this->dataForInvoice($order);
@@ -167,12 +172,14 @@ trait InvoiceTrait
 
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
                     
-                    $pdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
-                    return $pdf->download('invoice.pdf');
+                    $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
+                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
+
                 } else {
                     
-                    $pdf = PDF::loadView('templates/onetime-invoice', compact('data'));
-                    return $pdf->download('invoice.pdf');
+                    $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
+                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
+
                 }
 
             } else {
@@ -189,16 +196,32 @@ trait InvoiceTrait
                     return 'Api error: missing subscription data';
                 }
                 
-                $pdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
-                return $pdf->download('invoice.pdf');
+                $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
+                $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
                 
             }
+
+            $request ? event(new InvoiceGenerated($order, $generatePdf)) : null;
+
         } else {
+
             return 'Sorry, we could not find the details for your invoice';
+
         }
 
         
         return 'Sorry, something went wrong please try again later......';
+    }
+
+    public function saveInvoiceFile($order, $generatePdf, $fileSavePath)
+    {
+        try {
+            if (!file_exists($fileSavePath.$order->hash.'.pdf')) {
+                $generatePdf->save($fileSavePath.$order->hash.'.pdf');
+            }
+        } catch (Exception $e) {
+            \Log::info($e->getMessage());
+        }
     }
 
     protected function dataForInvoice($order)
@@ -241,7 +264,7 @@ trait InvoiceTrait
         $subscriptionId = array_unique($order->invoice->invoiceItem->pluck('subscription_id')->toArray());
         if (count($subscriptionId) == 1) {
             $subscription = Subscription::find($subscriptionId[0]);
-            if ($subscription->upgrade_downgrade_status) {
+            if ($subscription && $subscription->upgrade_downgrade_status) {
                 $addonsIds = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['feature_charges'])->pluck('product_id');
                 
                 $planData = [

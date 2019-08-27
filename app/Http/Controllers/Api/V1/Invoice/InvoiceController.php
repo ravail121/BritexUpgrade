@@ -27,11 +27,10 @@ use App\Model\SubscriptionAddon;
 use App\Model\SubscriptionCoupon;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
-use App\Http\Controllers\Api\V1\CronJobs\InvoiceTrait;
+use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 use App\libs\Constants\ConstantInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Events\InvoiceGenerated;
 use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
@@ -53,7 +52,6 @@ class InvoiceController extends BaseController implements ConstantInterface
     const ONETIME     = 3;
     const TAXES       = 7;
     const COUPONS     = 6;
-
     /**
      * Date-Time variable
      * 
@@ -107,7 +105,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     public function oneTimeInvoice(Request $request)
     {
         $msg = '';
-        
+
         if ($request->data_to_invoice) {
             
             $invoice = $request->data_to_invoice;
@@ -203,11 +201,9 @@ class InvoiceController extends BaseController implements ConstantInterface
                 ]
             );
         }
+        $fileSavePath = public_path().'/uploads/invoice-pdf/';
 
-        if (isset($order)) {
-            $request->headers->set('authorization', $order->company->api_key);
-            event(new InvoiceGenerated($order));
-        }
+        $this->generateInvoice($order, $fileSavePath, $request);
 
         return $this->respond($msg);
     }
@@ -305,6 +301,8 @@ class InvoiceController extends BaseController implements ConstantInterface
      */
     public function get(Request $request)
     {
+        $fileSavePath = public_path().'/uploads/invoice-pdf/';
+        
         if($request->refundInvoiceId){
             
             $invoice = Invoice::where('id', $request->refundInvoiceId)->with('customer', 'invoiceItem')->first();
@@ -320,7 +318,16 @@ class InvoiceController extends BaseController implements ConstantInterface
         }else{
             $order = Order::hash($request->order_hash)->first();
         }
-        return $this->generateInvoice($order);
+        return $this->generateInvoice($order, $fileSavePath);
+    }
+
+    public function downloadInvoice(Request $request)
+    {
+        $fileSavePath = public_path().'/uploads/invoice-pdf/';
+        if (file_exists($fileSavePath.$request->order_hash.'.pdf')) {
+            return response()->download($fileSavePath.$request->order_hash.'.pdf', 'Invoice.pdf');    
+        }
+        return 'Sorry, invoice not found.';
     }
 
     public static function formatNumber($amount)

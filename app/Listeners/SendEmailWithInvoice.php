@@ -25,7 +25,7 @@ use App\Model\Addon;
 use App\Model\Device;
 use App\Model\Sim;
 use App\Model\Customer;
-use App\Http\Controllers\Api\V1\CronJobs\InvoiceTrait;
+use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 
 class SendEmailWithInvoice
 {
@@ -73,25 +73,10 @@ class SendEmailWithInvoice
         $customerOrder = Order::find($event->order->id);
 
         $orderType     = $customerOrder->invoice->type;
-        
-        $data          = $this->dataForInvoice($customerOrder);
-        
-        if ($orderType  == Invoice::TYPES['one-time']) {
-            
-            $pdf = PDF::loadView('templates/onetime-invoice', compact('data'))->setPaper('letter', 'portrait');
 
-        } elseif ($orderType  == Invoice::TYPES['monthly']) {
-            $subscriptionIds = $customerOrder->invoice->invoiceItem->pluck('subscription_id')->toArray();
-            $subscriptions   = [];
+        $fileSavePath  = public_path().'/uploads/invoice-pdf/';
 
-            foreach (array_unique($subscriptionIds) as $id) {
-                
-                array_push($subscriptions, Subscription::find($id));
-            }
-           
-            $pdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');
-
-        }
+        $pdf           = $event->pdf;
         
         $configurationSet = $this->setMailConfiguration($customerOrder);
         

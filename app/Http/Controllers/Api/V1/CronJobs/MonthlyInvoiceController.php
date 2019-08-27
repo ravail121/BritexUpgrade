@@ -26,6 +26,7 @@ use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use Carbon\Carbon;
 use App\Events\InvoiceGenerated;
+use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {
@@ -142,10 +143,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $order       = Order::where('invoice_id', $invoice->id)->first();
 
                 $request->headers->set('authorization', $order->company->api_key);
+                
+                $fileSavePath = public_path().'/uploads/invoice-pdf/';
 
-                if(isset($order)) {
-                    event(new InvoiceGenerated($order));
-                }
+                $this->generateInvoice($order, $fileSavePath, $request);
                 
                 /*foreach ($customer->billableSubscriptions as $billableSubscription) {
                     $this->response = $this->triggerEvent($customer);

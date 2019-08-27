@@ -94,8 +94,11 @@ class OrderGroupController extends Controller
 
     public function taxrate(Request $request)
     {
-       
-        $rate = Tax::where('state', $request->id)->pluck('rate')->first();
+        $company = \Request::get('company');
+        $rate = Tax::where('state', $request->id)
+                   ->where('company_id', $company->id)
+                   ->pluck('rate')
+                   ->first();
         return $rate;
     }
 
