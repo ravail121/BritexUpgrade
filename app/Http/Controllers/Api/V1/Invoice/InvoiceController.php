@@ -326,7 +326,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     {
         $fileSavePath = public_path().'/uploads/invoice-pdf/';
         if (file_exists($fileSavePath.$request->order_hash.'.pdf')) {
-            return response()->download($fileSavePath.$request->order_hash.'.pdf', 'Invoice.pdf');    
+            return response()->download($fileSavePath.$request->order_hash.'.pdf', 'Invoice.pdf');
         }
         return 'Sorry, invoice not found.';
     }

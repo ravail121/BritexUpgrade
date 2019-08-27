@@ -176,7 +176,7 @@ trait InvoiceTrait
                     $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
 
                 } else {
-                    
+
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
                     $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
 
@@ -200,9 +200,9 @@ trait InvoiceTrait
                 $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
                 
             }
-
+            
             $request ? event(new InvoiceGenerated($order, $generatePdf)) : null;
-
+            return $generatePdf->download('Invoice.pdf');
         } else {
 
             return 'Sorry, we could not find the details for your invoice';
