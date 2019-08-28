@@ -24,9 +24,7 @@ class ProcessController extends BaseController
 
     public function processSuspensions($request)
     {
-        // $pendingMonthlyInvoices = Invoice::monthly()->pendingPayment()->overDue()->with('customer')->get();
-        
-        $pendingMonthlyInvoices = Invoice::where('id', '1007')->get();
+        $pendingMonthlyInvoices = Invoice::monthly()->pendingPayment()->overDue()->with('customer')->get();
 
         foreach($pendingMonthlyInvoices as $pendingMonthlyInvoice){
             $customer = $pendingMonthlyInvoice->customer;
@@ -37,13 +35,12 @@ class ProcessController extends BaseController
 
             $subscriptions = $customer->nonClosedSubscriptions->load('plan', 'subscriptionAddonNotRemoved', 'ban');
 
-            // foreach($subscriptions as $subscription){
-            //     // $subscription->update([
-            //     //     'sub_status'            => Subscription::SUB_STATUSES['account-past-due'],
-            //     //     'account_past_due_date' => Carbon::today()
-            //     // ]);
-            //     // 
-            // }
+            foreach($subscriptions as $subscription){
+                $subscription->update([
+                    'sub_status'            => Subscription::SUB_STATUSES['account-past-due'],
+                    'account_past_due_date' => Carbon::today()
+                ]);   
+            }
             $request->headers->set('authorization', $customer->company->api_key);
             event(new AccountSuspended($customer, $subscriptions, $pendingMonthlyInvoice->subtotal));
         }

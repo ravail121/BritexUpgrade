@@ -67,12 +67,15 @@ class SendAccountPastDueMail
                 $ban = "NA";
             }
 
-            if($subscription->subscriptionAddonNotRemoved){
+            if(isset($subscription->subscriptionAddonNotRemoved['0'])){
                 $addons = $subscription->subscriptionAddonNotRemoved->pluck('addons')->pluck('name')->toArray();
-                $addon = implode(", ",$addons);
+                if(isset($addons['0'])){
+                    $addon = implode(", ",$addons);
+                }
             }else{
                 $addon = "NA";
             }
+
             $subscriptionList .='<tr>
                                     <td>'.$subscription->phone_number.'</td>
                                     <td>'.$subscription->plan->name.'</td>
@@ -80,7 +83,7 @@ class SendAccountPastDueMail
                                     <td>'.$addon.'</td>
                                 </tr>';
         }
-
+        
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
