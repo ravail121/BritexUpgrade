@@ -16,16 +16,17 @@ class AccountSuspended
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $customer;
-
+    public $subscriptions;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct(Customer $customer)
+    public function __construct(Customer $customer, $subscriptions, $amount)
     {
         $this->customer = $customer;
-
+        $this->subscriptions = $subscriptions;
+        $this->amount = $amount;
     }
 }

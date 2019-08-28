@@ -27,7 +27,7 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         'App\Events\AccountSuspended' => [
-            'App\Listeners\AccountSuspended\SendEmailToCustomerAndAdmin',
+            'App\Listeners\SendAccountPastDueMail',
         ],
 
         'App\Events\ForgotPassword' => [

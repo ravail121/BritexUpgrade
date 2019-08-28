@@ -149,6 +149,11 @@ class Subscription extends Model
       return $this->hasMany(PendingCharge::class, 'subscription_id', 'id');
     }
 
+    public function ban()
+    {
+        return $this->belongsTo('App\Model\Ban', 'ban_id');
+    }
+
 
     public function plan()
     {
@@ -218,6 +223,11 @@ class Subscription extends Model
                 ->whereNotIn('phone_number', ['', 'null'])
                 ->notSuspendedOrClosed()
                 ->notScheduledForSuspensionOrClosure();
+    }
+
+    public function scopeNotClosed($query)
+    {
+        return $query->where('status', '!=', 'closed');
     }
 
     public function scopeShipping($query)

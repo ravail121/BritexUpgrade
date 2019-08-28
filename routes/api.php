@@ -21,9 +21,11 @@ use App\Model\Subscription;
 //     return $request->user();
 // });
 
-Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
+// Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
 
-Route::get('testb', 'Api\V1\CronJobs\OrderDataController@order');
+Route::get('tests', 'Api\V1\CronJobs\ProcessController@processSubscriptions');
+
+// Route::get('testb', 'Api\V1\CronJobs\OrderDataController@order');
 
 $config = [
 		'driver'   => 'smtp',

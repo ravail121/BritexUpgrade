@@ -83,6 +83,11 @@ class Customer extends Authenticatable
         return $this->subscription()->billabe();
     }
 
+    public function nonClosedSubscriptions()
+    {
+        return $this->subscription()->notClosed();
+    }
+
     public function pending_charge()
     {
         return $this->hasMany('App\Model\PendingCharge', 'customer_id', 'id');
