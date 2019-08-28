@@ -17,6 +17,7 @@ class SignOnController extends BaseController
             'identifier' => 'required',
             'password'   => 'required',
         ]);
+        $companyId = \Request::get('company')->id;
 
         if ($this->isNumeric($data['identifier'])) {
             $customer = Customer::find($data['identifier']);
@@ -28,23 +29,22 @@ class SignOnController extends BaseController
             $data['email'] = $customer->email;
         }else {
             $data['email'] = $data['identifier'];
-            $customer = Customer::whereEmail($data['email'])->first();
+            $customer = Customer::where('company_id', $companyId)->whereEmail($data['email'])->first();
         }
-
-        $companyId = \Request::get('company')->id;
 
         if($customer->company_id != $companyId){
             return $this->respondError("Invalid Company ID");
         }
 
         unset($data['identifier']);
-          
+
         if(Auth::validate($data))
         {
-            $user = Customer::whereEmail($data['email'])->get(['id','hash']);
+            $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id','hash']);
             return $this->respond($user[0]);
         }
         else{
+            
             return $this->respondError("Invalid Email or Password");
         }
     }

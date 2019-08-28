@@ -32,9 +32,9 @@ class InvoiceTests extends TestCase
         $customer       = Customer::find(137);
         $order          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
 
-        $tax            = isset($customer->stateTax) && $randomDevice['taxable'] ? ($randomDevice['amount'] * $customer->stateTax->rate) / 100 : 1;
-        $shipping       = $randomDevice->shipping_fee;
-        $totalInvoice   = $randomDevice->amount + $shipping + $tax;
+        $tax            = isset($customer->stateTax) && $randomDevice['taxable'] ? ($randomDevice['amount'] * $customer->stateTax->rate) / 100 : 0;
+        $shipping       = $randomDevice['shipping_fee'];
+        $totalInvoice   = $randomDevice['amount'] + $shipping + $tax;
         
         $customerStandaloneDevice = $this->withHeaders(self::HEADER_DATA)->post('api/create-device-record?'.http_build_query([
             'api_key'       => self::HEADER_DATA['Authorization'],
@@ -65,8 +65,8 @@ class InvoiceTests extends TestCase
             'customer_id'       => $updatedOrder['customer_id'],
             'order_hash'        => $updatedOrder['hash'],
         ]));
-        
-        $invoiceItems = $this->withHeaders(self::HEADER_DATA)->post('api/generate-one-time-invoice', 
+       
+        $invoiceItems = $this->withHeaders(self::HEADER_DATA)->post('api/generate-one-time-invoice?'.http_build_query(
         [
             'data_to_invoice'   => ['customer_standalone_device_id' => 
             [
@@ -77,9 +77,16 @@ class InvoiceTests extends TestCase
             'couponAmount'      => 0,
             'couponCode'        => NULL,
             'order_id'          => $updatedOrder['id']
-        ]);
- 
-        return $invoiceItems->assertStatus(200);
+        ]));
+        
+        return  $customerStandaloneDevice->assertJson(['device_id' => $updatedOrder->standAloneDevices->first()['id']]) &&
+                $saveInvoice->assertJson(['success' => true]) &&
+                $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(
+                    [
+                        'invoice_items_total' => $totalInvoice
+                    ]
+                );
+
     }
 
     public function test_sim_only()
@@ -88,9 +95,9 @@ class InvoiceTests extends TestCase
         $customer       = Customer::find(137);
         $order          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
 
-        $tax            = isset($customer->stateTax) && $randomsim['taxable'] ? ($randomsim['amount'] * $customer->stateTax->rate) / 100 : 1;
-        $shipping       = $randomsim->shipping_fee ?: 0;
-        $totalInvoice   = $randomsim->amount_alone + $shipping + $tax;
+        $tax            = isset($customer->stateTax) && $randomsim['taxable'] ? ($randomsim['amount_alone'] * $customer->stateTax->rate) / 100 : 1;
+        $shipping       = $randomsim['shipping_fee'] ?: 0;
+        $totalInvoice   = $randomsim['amount_alone'] + $shipping + $tax;
         
         $customerStandalonesim = $this->withHeaders(self::HEADER_DATA)->post('api/create-sim-record?'.http_build_query([
             'api_key'       => self::HEADER_DATA['Authorization'],
@@ -98,7 +105,7 @@ class InvoiceTests extends TestCase
             'sim_id'        => $randomsim['id'],
             'customer_id'   => $customer['id']
         ]));
-            
+        
         //Need to upate order manually to add customer_id because it gets added from frontend.
         $updatedOrder = Order::find($order->json()['id']);
         $updatedOrder->update(['customer_id' => $customer['id']]);
@@ -122,7 +129,7 @@ class InvoiceTests extends TestCase
             'customer_id'       => $updatedOrder['customer_id'],
             'order_hash'        => $updatedOrder['hash'],
         ]));
-
+     
         $generateInvoice = $this->withHeaders(self::HEADER_DATA)->post('api/generate-one-time-invoice', [
             'data_to_invoice'   => ['customer_standalone_sim_id' => [$customerStandalonesim->json()['sim_id']]],
             'customer_id'       => $updatedOrder['customer_id'],
@@ -131,8 +138,14 @@ class InvoiceTests extends TestCase
             'couponCode'        => NULL,
             'order_id'          => $updatedOrder['id']
         ]);
- 
-        return $generateInvoice->assertStatus(200);
+        
+        return  $customerStandalonesim->assertJson(['sim_id' => $updatedOrder->standAloneSims->first()['id']]) &&
+                $saveInvoice->assertJson(['success' => true]) &&
+                $generateInvoice->assertSeeText('Invoice item generated successfully')->assertJson(
+                    [
+                        'invoice_items_total' => $totalInvoice
+                    ]
+                );
 
     }
 
@@ -140,21 +153,21 @@ class InvoiceTests extends TestCase
     {
         $customer           = Customer::find(137);
         $randomPlan         = Plan::inRandomOrder()->limit(1)->first();
-
+        $hash               = sha1(time());
         $storeOrder         = $this->withHeaders(self::HEADER_DATA)->post('api/order?'.http_build_query([
-            'hash' => sha1(time()),
+            'hash' => $hash,
             'company_id' => $customer->company_id
         ]));
-
+        
         //Need to upate order manually to add customer_id because it gets added from frontend.
         $order = Order::find($storeOrder->json()['id']);
         $order->update(['customer_id' => $customer['id']]);
 
         $planAmount         = $order->planProRate($randomPlan['id']);
-        $tax                = isset($customer->stateTax) && $randomPlan['taxable'] ? ($planAmount * $customer->stateTax->rate) / 100 : 1;
-        $regulatory         = $randomPlan['regulatory_fee_type'] == 1 ? $randomPlan['regulatory'] : $planAmount * $randomPlan['regulatory_fee_amount'] / 100;
-        
-        $totalInvoice       = $planAmount + $tax + $regulatory;
+        $tax                = isset($customer->stateTax) && $randomPlan['taxable'] ? ($planAmount * $customer->stateTax->rate) / 100 : 0;
+        $regulatory         = $randomPlan['regulatory_fee_type'] == 1 ? $randomPlan['regulatory_fee_amount'] : $planAmount * $randomPlan['regulatory_fee_amount'] / 100;
+   
+        $totalInvoice       = $planAmount + $tax + $regulatory + $randomPlan['amount_onetime'];
 
         $subscription = $this->withHeaders(self::HEADER_DATA)->post('api/create-subscription?'.http_build_query([
             'api_key'          => self::HEADER_DATA['Authorization'],
@@ -194,10 +207,15 @@ class InvoiceTests extends TestCase
                 'order_id'          => $order['id']
             ]);
         
-        return $subscription->assertJson([
-            'success' => true,
-            'subscription_id' => $order->subscriptions->first()['id']
-        ]) && $invoiceItems->assertStatus(200);
+        return  $storeOrder->assertJson(['order_hash' => $hash]) &&
+                $subscription->assertJson([
+                    'success' => true,
+                    'subscription_id' => $order->subscriptions->first()['id']]) && 
+                $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(
+                                    [
+                                        'invoice_items_total' => number_format($totalInvoice, 2)
+                                    ]
+                                );
     }
 
     public function test_complete_subscription()
@@ -207,31 +225,32 @@ class InvoiceTests extends TestCase
         $randomSim          = Sim::inRandomOrder()->limit(1)->first();
         $randomDevice       = Device::inRandomOrder()->limit(1)->first();
         $randomAddon        = Addon::inRandomOrder()->limit(1)->first();
-
+        $hash               = sha1(time());
         $storeOrder         = $this->withHeaders(self::HEADER_DATA)->post('api/order?'.http_build_query([
-            'hash' => sha1(time()),
+            'hash' => $hash,
             'company_id' => $customer->company_id
         ]));
 
         $order = Order::find($storeOrder->json()['id']);
         $order->update(['customer_id' => $customer['id']]);
 
-        $planAmount         = $order->planProRate($randomPlan['id']);
-        $addonAmount        = $order->addonProRate($randomAddon['id']);
-        $tax                = isset($customer->stateTax) && $randomPlan['taxable'] ? ($customer->stateTax->rate / 100) : 1;
+        $planAmount         = number_format($order->planProRate($randomPlan['id']), 2);
+        $addonAmount        = number_format($order->addonProRate($randomAddon['id']), 2);
+        $tax                = isset($customer->stateTax) ? ($customer->stateTax->rate) : 0;
         $taxableAmount      = [
-            $randomPlan['taxable'] ? $planAmount : 0,
-            $randomDevice['taxable'] ? $randomDevice['amount_w_plan'] : 0,
-            $randomSim['taxable'] ? $randomSim['amount_w_plan'] : 0,
-            $randomAddon['taxable'] ? $randomAddon['amount_recurring'] : 0
+            $randomPlan['taxable'] ? $planAmount * $tax / 100 : 0,
+            $randomDevice['taxable'] ? $randomDevice['amount_w_plan'] * $tax / 100 : 0,
+            $randomSim['taxable'] ? $randomSim['amount_w_plan'] * $tax / 100 : 0,
+            $randomAddon['taxable'] ? $addonAmount * $tax / 100 : 0
         ];
+
         $totalShipping      = [
             $randomDevice['shipping_fee'] ?: 0, $randomSim['shipping_fee'] ?: 0
         ];
-        $regulatory         = $randomPlan['regulatory_fee_type'] == 1 ? $randomPlan['regulatory_fee_amount'] : $planAmount * $randomPlan['regulatory_fee_amount'] / 100;
+        $regulatory         = $randomPlan['regulatory_fee_type'] == 1 ? $randomPlan['regulatory_fee_amount'] : number_format($planAmount * $randomPlan['regulatory_fee_amount'] / 100, 2);
         $device             = $randomDevice['amount_w_plan'];
         $sim                = $randomSim['amount_w_plan'];
-        $total              = ($device + $sim + $planAmount + $regulatory + $addonAmount + array_sum($totalShipping)) + (array_sum($taxableAmount) * $tax);
+        $total              = ($device + $sim + $planAmount + $regulatory + $addonAmount + array_sum($totalShipping) + $randomPlan['amount_onetime']) + number_format(array_sum($taxableAmount), 2);
         
         $subscription = $this->withHeaders(self::HEADER_DATA)->post('api/create-subscription?'.http_build_query([
             'api_key'   => self::HEADER_DATA['Authorization'],
@@ -240,7 +259,14 @@ class InvoiceTests extends TestCase
             'plan_id'   => $randomPlan['id'],
             'sim_id'    => $randomSim['id'],
         ]));
-        
+
+        $subscriptionAddon = $this->withHeaders(self::HEADER_DATA)->post('api/create-subscription-addon?'.http_build_query([
+            'api_key' => self::HEADER_DATA['Authorization'],
+            'order_id' => $order['id'],
+            'subscription_id' => $subscription->json()['subscription_id'],
+            'addon_id' => $randomAddon['id'],
+            'plan_id' => $randomPlan['id'],
+        ]));
 
         $saveInvoice  = $this->withHeaders(self::HEADER_DATA)->post('api/charge-new-card?'.http_build_query([
             'billing_fname'     => $customer['billing_fname'],
@@ -257,7 +283,7 @@ class InvoiceTests extends TestCase
             'payment_card_holder' => $customer->customerCreditCards->first()['cardholder'],
             'expires_mmyy'      => $customer->customerCreditCards->first()['expiration'],
             'payment_cvc'       => $customer->customerCreditCards->first()['cvc'],
-            'amount'            => $total,
+            'amount'            => number_format($total, 2),
             'customer_id'       => $order['customer_id'],
             'order_hash'        => $order['hash'],
         ]));
@@ -274,10 +300,14 @@ class InvoiceTests extends TestCase
             'couponCode'        => NULL,
             'order_id'          => $order['id']
         ]);
-        return $subscription->assertJson([
-            'success' => true,
-            'subscription_id' => $order->subscriptions->first()['id']
-        ]) && $invoiceItems->assertStatus(200);
+
+        return  $storeOrder->assertJson(['order_hash' => $hash]) &&
+                $subscription->assertJson([
+                    'success' => true,
+                    'subscription_id' => $order->subscriptions->first()['id']]) && 
+                $subscriptionAddon->assertJson(['subscription_addon_id' => $order->subscriptions->first()->subscriptionAddon->first()['id']]) &&
+                $saveInvoice->assertJson(['success' => true]) &&
+                $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(['invoice_items_total' => number_format($total, 2)]);
     }
 
 }

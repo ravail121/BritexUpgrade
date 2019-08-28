@@ -105,6 +105,8 @@ class InvoiceController extends BaseController implements ConstantInterface
     public function oneTimeInvoice(Request $request)
     {
         $msg = '';
+        
+        $order = Order::where('hash', $request->hash)->first();
 
         if ($request->data_to_invoice) {
             
@@ -113,15 +115,11 @@ class InvoiceController extends BaseController implements ConstantInterface
             if (isset($invoice['subscription_id'])) {
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
 
-                $order       = $this->updateCustomerDates($subscription);
+                $updateCustomerDates = $this->updateCustomerDates($subscription);
 
                 $invoiceItem  = $this->subscriptionInvoiceItem($invoice['subscription_id']);
 
                 $msg = (!$invoiceItem) ? 'Subscription Invoice item was not generated' : 'Invoice item generated successfully.'; 
-
-                $order = Order::where('hash', $request->hash)->first();
-
-                $currentInvoice =  $order->invoice;
                 
             }
             if(isset($invoice['same_subscription_id'])){
@@ -129,84 +127,76 @@ class InvoiceController extends BaseController implements ConstantInterface
             }
             if (isset($invoice['customer_standalone_device_id'])) {
                
-                $orderId = CustomerStandaloneDevice::find($invoice['customer_standalone_device_id'])->first()->order_id;
-
                 $deviceId = is_array($invoice['customer_standalone_device_id']) ? $invoice['customer_standalone_device_id'][0] : $invoice['customer_standalone_device_id'];
 
                 $standaloneDevice = CustomerStandaloneDevice::find($deviceId);
                 
-                $order = $this->updateCustomerDates($standaloneDevice);
+                $updateCustomerDates = $this->updateCustomerDates($standaloneDevice);
                
                 $invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
                
-                $taxes = $this->addTaxesToStandalone(Order::find($orderId)->invoice, self::TAX_FALSE, self::DEVICE_TYPE);
+                $taxes = $this->addTaxesToStandalone($order->invoice, self::TAX_FALSE, self::DEVICE_TYPE);
                
                 $msg = (!$invoiceItem) ? 'Standalone Device Invoice item was not generated' : 'Invoice item generated successfully.' ;
             }
             if (isset($invoice['customer_standalone_sim_id'])) {
 
-                $orderId = CustomerStandaloneSim::find($invoice['customer_standalone_sim_id'])->first()->order_id;
-
                 $standaloneSim = CustomerStandaloneSim::find($invoice['customer_standalone_sim_id'][0]);
 
-                $order = $this->updateCustomerDates($standaloneSim);
+                $updateCustomerDates = $this->updateCustomerDates($standaloneSim);
                         
                 $invoiceItem = $this->standaloneSimInvoiceItem($invoice['customer_standalone_sim_id']);
 
-                $taxes = $this->addTaxesToStandalone(Order::find($orderId)->invoice, self::TAX_FALSE, self::SIM_TYPE);
+                $taxes = $this->addTaxesToStandalone($order->invoice, self::TAX_FALSE, self::SIM_TYPE);
 
                 $msg = (!$invoiceItem) ? 'Standalone Sim Invoice item was not generated' : 'Invoice item generated successfully.';
 
             }
 
-            $order = Order::where('hash', $request->hash)->first();
+            $this->addShippingCharges($order);
+    
+            $this->storeCoupon($request->couponAmount, $request->couponCode, $order->invoice);
+
+            if ($request->customer_id) {
+                $this->availableCreditsAmount($request->customer_id);
+            }
+    
+            $this->ifTotalDue($order);
+    
+            if ($order->invoice->status === 2){
+                $startDate = $order->invoice->start_date;
+                $order->invoice->update(
+                    [
+                        'due_date' => $startDate
+                    ]
+                );
+            }
+    
+            $updateDevicesWithNoId =  $order->invoice->invoiceItem->where('product_type', 'device')->where('product_id', 0);
+    
+            foreach ($updateDevicesWithNoId as $item) {
+                $item->update(
+                    [
+                    'description' => '',
+                    'type'  => 3,
+                    'taxable' => 0
+                    ]
+                );
+            }
             
-            $currentInvoice =  $order->invoice;
+            $fileSavePath = public_path().'/uploads/invoice-pdf/';
+    
+            $this->generateInvoice($order, $fileSavePath, $request);
 
-            $this->storeCoupon($request->couponAmount, $request->couponCode, $currentInvoice);
-
-        }else if($request->status == 'Without Payment'){
+        } else if ($request->status == 'Without Payment') {
             $this->createInvoice($request);
             return $this->respond($msg);
         }
 
-
-        $order = Order::where('hash', $request->hash)->first();
-
-        $this->addShippingCharges($order);
-    
-        if ($request->customer_id) {
-            $this->availableCreditsAmount($request->customer_id);
-        }
-
-        $this->ifTotalDue($order);
-
-        if ($order->invoice->status === 2){
-            $startDate = $order->invoice->start_date;
-            $order->invoice->update(
-                [
-                    'due_date' => $startDate
-                ]
-            );
-        }
-
-        $updateDevicesWithNoId =  $order->invoice->invoiceItem->where('product_type', 'device')->where('product_id', 0);
-
-        foreach ($updateDevicesWithNoId as $item) {
-            $item->update(
-                [
-                'description' => '',
-                'type'  => 3,
-                'taxable' => 0
-                ]
-            );
-        }
-        
-        $fileSavePath = public_path().'/uploads/invoice-pdf/';
-
-        $this->generateInvoice($order, $fileSavePath, $request);
-
-        return $this->respond($msg);
+        return [
+            'status' => $this->respond($msg), 
+            'invoice_items_total' => number_format(InvoiceItem::where('invoice_id', $order->invoice->id)->sum('amount'), 2)
+        ];
     }
 
     public function getTax(Request $request)
@@ -703,6 +693,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             }
         }
     }
+
 
 
     public function addShippingCharges($order)

@@ -57,7 +57,7 @@ class CouponController extends Controller
     {
         $coupon = Coupon::where('code', $request->code)->first();
         $order  = Order::find($request->order_id);
-        
+
         isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
         
         if (!$coupon) { return ['error' => 'Invalid coupon code']; }
@@ -234,7 +234,7 @@ class CouponController extends Controller
             $this->failedResponse = 'Coupon expired on '.$couponExpiryDate;
             return false;
 
-        } 
+        }
 
         return $this->couponNotReachedMaxLimit($coupon);
 
