@@ -175,15 +175,15 @@ trait InvoiceTrait
 
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
 
-                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath.$order->hash);
+                    $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                     event(new UpgradeDowngradeInvoice($order, $generatePdf));
 
                     return $generatePdf->download('Invoice.pdf');
 
                 } else {
-
+                    
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
-                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath.$order->hash);
+                    $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
 
                 }
 
