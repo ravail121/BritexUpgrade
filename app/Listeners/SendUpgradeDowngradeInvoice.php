@@ -75,7 +75,7 @@ class SendUpgradeDowngradeInvoice
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
             $row['body'] = $this->addFieldsToBody('[subscriptions_changed]', $subscriptionsChanged, $row['body']);
-dd($row['body']);
+            
             Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
         }
     }
