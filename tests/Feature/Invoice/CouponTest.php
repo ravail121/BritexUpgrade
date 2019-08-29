@@ -27,35 +27,35 @@ class CouponTest extends TestCase
      */
     public function test_class_1()
     {
-        $randomClassOneCoupon   = Coupon::inRandomOrder()->where('class', 1)->where('fixed_or_perc', 1)->limit(1)->first();
+        $testClassOneCoupon   = Coupon::find(31);
         $insertOrder            = $this->withHeaders(self::HEADER_DATA)->post('api/order');
         $order                  = Order::find($insertOrder->json()['id']);
-        $randomDevice           = Device::inRandomOrder()->limit(1)->first();
-        $customer               = Customer::find(137);
+        $testDevice           = Device::inRandomOrder()->limit(1)->first();
+        $customer               = Customer::find(210);
         $orderGroup             = OrderGroup::create([
             'order_id' => $order['id'],
-            'device_id' => $randomDevice['id']
+            'device_id' => $testDevice['id']
         ]);
-        $randomDevice['order_group_id'] = $orderGroup['id'];
+        $testDevice['order_group_id'] = $orderGroup['id'];
         $applyCoupon            = $this->withHeaders(self::HEADER_DATA)->post('api/coupon/add-coupon?'.http_build_query(
             [
-                'code'      => $randomClassOneCoupon['code'],
+                'code'      => $testClassOneCoupon['code'],
                 'order_id'  => $order['id'],
                 'hash'      => $customer['hash'],
                 'orderGroupsCart' => [
                     'devices' => [
-                        'items' => [ $randomDevice ]
+                        'items' => [ $testDevice ]
                     ]
                 ]
             ]
         ));
         return ($applyCoupon->assertJson([
-            'total'=>$randomClassOneCoupon['amount'],
-            'code'  => $randomClassOneCoupon['code'],
+            'total'=>$testClassOneCoupon['amount'],
+            'code'  => $testClassOneCoupon['code'],
             'applied_to' => [
-                'applied_to_all' => false,
+                'applied_to_all' => true,
                 'applied_to_types' => false,
-                'applied_to_products' => true
+                'applied_to_products' => false
             ]
         ]));
     }
@@ -63,15 +63,15 @@ class CouponTest extends TestCase
     public function test_class_2()
     {
         
-        $randomClassTwoCoupon   = Coupon::find(4);
-        $couponProductTypes     = $randomClassTwoCoupon->couponProductTypes->first();
+        $testClassTwoCoupon     = Coupon::find(4);
+        $couponProductTypes     = $testClassTwoCoupon->couponProductTypes->first();
         $insertOrder            = $this->withHeaders(self::HEADER_DATA)->post('api/order');
         $order                  = Order::find($insertOrder->json()['id']);
-        $randomPlan             = Plan::inRandomOrder()->where('type', 1)->limit(1)->first();
-        $customer               = Customer::find(137);
+        $testPlan               = Plan::inRandomOrder()->where('type', 1)->limit(1)->first();
+        $customer               = Customer::find(210);
         $orderGroup             = OrderGroup::create([
             'order_id' => $order['id'], 
-            'plan_id' => $randomPlan['id'],
+            'plan_id' => $testPlan['id'],
         ]);
 
         $order->update([
@@ -80,12 +80,12 @@ class CouponTest extends TestCase
 
         $applyCoupon            = $this->withHeaders(self::HEADER_DATA)->post('api/coupon/add-coupon?'.http_build_query(
             [
-                'code'      => $randomClassTwoCoupon['code'],
+                'code'      => $testClassTwoCoupon['code'],
                 'order_id'  => $order['id'],
                 'hash'      => $customer['hash'],
                 'orderGroupsCart' => [
                     'plans' =>[ 
-                        'items' => [$randomPlan->toArray()]
+                        'items' => [$testPlan->toArray()]
                     ]
                 ]
             ]
@@ -93,7 +93,7 @@ class CouponTest extends TestCase
 
         return ($applyCoupon->assertJson([
             'total' => $couponProductTypes['amount'],
-            'code'  => $randomClassTwoCoupon['code'],
+            'code'  => $testClassTwoCoupon['code'],
             'applied_to' => [
                 'applied_to_all' => false,
                 'applied_to_types' => true,
@@ -106,12 +106,12 @@ class CouponTest extends TestCase
     public function test_class_3()
     {
         
-        $randomClassThreeCoupon = Coupon::find(17);
-        $couponProducts         = $randomClassThreeCoupon->couponProducts->first();
+        $testClassThreeCoupon = Coupon::find(17);
+        $couponProducts         = $testClassThreeCoupon->couponProducts->first();
         $insertOrder            = $this->withHeaders(self::HEADER_DATA)->post('api/order');
         $order                  = Order::find($insertOrder->json()['id']);
         $addon                  = Addon::find(3);
-        $customer               = Customer::find(137);
+        $customer               = Customer::find(210);
         $orderGroup             = OrderGroup::create([
             'order_id' => $order['id'], 
             'plan_id' => Plan::find(1)['id'],
@@ -127,7 +127,7 @@ class CouponTest extends TestCase
         $addon['order_group_id'] = $orderGroupId;
         $applyCoupon            = $this->withHeaders(self::HEADER_DATA)->post('api/coupon/add-coupon?'.http_build_query(
             [
-                'code'      => $randomClassThreeCoupon['code'],
+                'code'      => $testClassThreeCoupon['code'],
                 'order_id'  => $order['id'],
                 'hash'      => $customer['hash'],
                 'orderGroupsCart' => [
@@ -142,4 +142,43 @@ class CouponTest extends TestCase
             'total' => $couponProducts['amount']
         ]));
     }
+
+    public function test_class_1_percentage_multiline_restrict()
+    {
+        $testClassOneCoupon     = Coupon::find(32);
+        $insertOrder            = $this->withHeaders(self::HEADER_DATA)->post('api/order');
+        $order                  = Order::find($insertOrder->json()['id']);
+        $testPlan               = Plan::inRandomOrder()->where('type', 2)->limit(1)->first();
+        $customer               = Customer::find(210);
+        $orderGroup             = OrderGroup::create([
+            'order_id' => $order['id'],
+            'plan_id' => $testPlan['id']
+        ]);
+        $order->update([
+            'customer_id' => $customer['id']
+        ]);
+        
+        $applyCoupon        = $this->withHeaders(self::HEADER_DATA)->post('api/coupon/add-coupon?'.http_build_query(
+            [
+                'code'      => $testClassOneCoupon['code'],
+                'order_id'  => $order['id'],
+                'hash'      => $customer['hash'],
+                'orderGroupsCart' => [
+                    'plans' =>[ 
+                        'items' => [$testPlan->toArray()]
+                    ]
+                ]
+            ]
+        ));
+        return ($applyCoupon->assertJson([
+            'total' => $testClassOneCoupon['amount'] * $testPlan['amount_recurring'] / 100,
+            'code'  => $testClassOneCoupon['code'],
+            'applied_to' => [
+                'applied_to_all' => true,
+                'applied_to_types' => false,
+                'applied_to_products' => false
+            ]
+        ]));
+    }
+
 }

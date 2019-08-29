@@ -142,6 +142,10 @@ class CouponController extends Controller
 
     protected function couponIsValid($coupon) 
     {
+        if ($coupon['company_id'] != \Request::get('company')->id) {
+            $this->failedResponse = 'Coupon is Invalid';
+            return false;
+        }
         if ($coupon['active']) {
             if ($coupon['multiline_restrict_plans'] && !count($coupon->multilinePlanTypes)) {
                 $this->failedResponse = 'Multiline plan data missing';
