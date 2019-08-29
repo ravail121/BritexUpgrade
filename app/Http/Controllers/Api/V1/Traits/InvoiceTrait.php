@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
-use App\Model\Plan;
-use App\Model\InvoiceItem;
-use App\Model\Invoice;
-use App\Model\Device;
-use App\Model\Sim;
-use App\Model\Addon;
-use Carbon\Carbon;
-use App\Model\Customer;
-use App\Model\Subscription;
 use PDF;
-use Illuminate\Http\Request;
 use Exception;
+use Carbon\Carbon;
+use App\Model\Sim;
+use App\Model\Plan;
+use App\Model\Addon;
+use App\Model\Device;
+use App\Model\Invoice;
+use App\Model\Customer;
+use App\Model\InvoiceItem;
+use App\Model\Subscription;
+use Illuminate\Http\Request;
 use App\Events\InvoiceGenerated;
+use App\Events\UpgradeDowngradeInvoice;
 
 trait InvoiceTrait
 {
@@ -173,12 +174,16 @@ trait InvoiceTrait
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
 
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
-                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
+
+                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath.$order->hash);
+                    event(new UpgradeDowngradeInvoice($order, $generatePdf));
+
+                    return $generatePdf->download('Invoice.pdf');
 
                 } else {
 
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
-                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
+                    $this->saveInvoiceFile($order, $generatePdf, $fileSavePath.$order->hash);
 
                 }
 

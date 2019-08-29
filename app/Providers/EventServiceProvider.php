@@ -68,6 +68,10 @@ class EventServiceProvider extends ServiceProvider
 
         'App\Events\PortPending' => [
             'App\Listeners\SendPortStatusMail'
+        ],
+
+        'App\Events\UpgradeDowngradeInvoice' => [
+            'App\Listeners\SendUpgradeDowngradeInvoice'
         ]
     ];
 

@@ -71,11 +71,6 @@ class SendEmailWithInvoice
     {
 
         $customerOrder = Order::find($event->order->id);
-
-        $orderType     = $customerOrder->invoice->type;
-
-        $fileSavePath  = public_path().'/uploads/invoice-pdf/';
-
         $pdf           = $event->pdf;
         
         $configurationSet = $this->setMailConfiguration($customerOrder);

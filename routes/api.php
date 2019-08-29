@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Events\ShippingNumber;
+use App\Events\UpgradeDowngradeInvoice;
 use App\Model\CustomerStandaloneDevice;
 use App\Model\CustomerStandaloneSim;
-use App\Model\Subscription;
+use App\Model\Order;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +23,10 @@ use App\Model\Subscription;
 
 // Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
 
-Route::get('tests', 'Api\V1\CronJobs\ProcessController@processSubscriptions');
+Route::get('test', function(){
+  $order = Order::find('9867');
+  event(new UpgradeDowngradeInvoice($order, 'generatePdf'));
+});
 
 // Route::get('testb', 'Api\V1\CronJobs\OrderDataController@order');
 
