@@ -197,7 +197,7 @@ trait InvoiceTrait
                 }
                 
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
-                $this->saveInvoiceFile($order, $generatePdf, $fileSavePath);
+                $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                 
             }
             
@@ -213,11 +213,11 @@ trait InvoiceTrait
         return 'Sorry, something went wrong please try again later......';
     }
 
-    public function saveInvoiceFile($order, $generatePdf, $fileSavePath)
+    public function saveInvoiceFile($generatePdf, $fileSavePath)
     {
         try {
-            if (!file_exists($fileSavePath.$order->hash.'.pdf')) {
-                $generatePdf->save($fileSavePath.$order->hash.'.pdf');
+            if (!file_exists($fileSavePath.'.pdf')) {
+                $generatePdf->save($fileSavePath.'.pdf');
             }
         } catch (Exception $e) {
             \Log::info($e->getMessage());

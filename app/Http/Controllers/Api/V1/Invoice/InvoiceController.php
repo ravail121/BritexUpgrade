@@ -52,6 +52,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     const ONETIME     = 3;
     const TAXES       = 7;
     const COUPONS     = 6;
+    
     /**
      * Date-Time variable
      * 
