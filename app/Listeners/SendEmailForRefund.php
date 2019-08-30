@@ -38,7 +38,7 @@ class SendEmailForRefund
         $amount = $event->amount;
         $customer = Customer::find($paymentLog->customer_id);
         $pdf = $event->pdf;
-        $note = 'Invoice Link- '.route('api.invoice.download', $customerOrder->company_id).'?invoice_hash='.md5($paymentLog->invoice_id);
+        $note = 'Invoice Link- '.route('api.invoice.download', $customer->company_id).'?invoice_hash='.md5($paymentLog->invoice_id);
 
         $dataRow = [
             'payment_log' => $paymentLog,
