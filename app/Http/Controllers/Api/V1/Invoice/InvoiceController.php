@@ -23,12 +23,12 @@ use App\Model\CustomerCoupon;
 use App\Model\CreditToInvoice;
 use App\Model\OrderGroupAddon;
 use App\Model\PaymentRefundLog;
+use App\Model\SystemGlobalSetting;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
-use App\Model\SystemGlobalSetting;
 
 class InvoiceController extends BaseController implements ConstantInterface
 {
@@ -315,12 +315,13 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     public function downloadInvoice($companyId, Request $request)
     {
-        $fileSavePath = public_path().'/uploads/'.$companyId;
+        $path = SystemGlobalSetting::first()->upload_path;
+        $fileSavePath = $path.'/uploads/'.$companyId;
 
         if($request->order_hash){
             $fileSavePath = $fileSavePath.'/invoice-pdf/'.$request->order_hash.'.pdf';
         }elseif($request->invoice_hash){
-            $fileSavePath = public_path().'/uploads/invoice-pdf/'.$request->invoice_hash.'.pdf';
+            $fileSavePath = $fileSavePath.'/invoice-pdf/'.$request->invoice_hash.'.pdf';
         }
 
         if (file_exists($fileSavePath)) {

@@ -25,8 +25,8 @@ class SaveInvoiceController extends BaseController
             'invoiceType'  => 'required',
         ]);
 
-
-        $fileSavePath = public_path().'/uploads/non-order-invoice-pdf/'.md5($request->invoiceId);
+        $path = SystemGlobalSetting::first()->upload_path;
+        $fileSavePath = $path.'/uploads/non-order-invoice-pdf/'.md5($request->invoiceId);
 
         $invoice = Invoice::where('id', $data['invoiceId'])->with('customer', 'invoiceItem')->first();
 

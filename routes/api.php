@@ -92,10 +92,6 @@ Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], f
 	]);
 });
 
-
-
-
-
 Route::get('/', function (Request $request) {
   return  response()->json([
     'message' => 'BriteX Backend !!'
