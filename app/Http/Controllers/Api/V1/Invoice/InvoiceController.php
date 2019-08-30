@@ -314,7 +314,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
 
         if (file_exists($fileSavePath)) {
-            return response()->download($fileSavePath);
+            return response()->download($fileSavePath, 'Invoice.pdf');
         }
         return 'Sorry, invoice not found.';
     }

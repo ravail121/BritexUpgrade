@@ -13,6 +13,13 @@ class CouponProduct extends Model
         'addon'  => 4
     ];
 
+    protected $fillable = [
+        'coupon_id',
+        'amount',
+        'product_id',
+        'product_type'
+    ];
+
     protected $table = 'coupon_product';
 
     public function coupon()

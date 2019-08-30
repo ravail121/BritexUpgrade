@@ -15,17 +15,17 @@ class SendRefundInvoice
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $paymentLog;
-    public $amount;
+    public $invoice;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($paymentLog, $amount, $pdf)
+    public function __construct($paymentLog, $invoice, $pdf)
     {
         $this->paymentLog = $paymentLog;
-        $this->amount = $amount;
+        $this->invoice = $invoice;
         $this->pdf = $pdf;
     }
 

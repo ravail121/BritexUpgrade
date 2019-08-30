@@ -53,7 +53,7 @@ class EmailWithAttachment extends Notification
      */
     public function toMail($notifiable)
     {
-        $mailMessage = $this->getEmailWithAttachment($this->emailTemplate, $this->order, $this->bizVerificationId, $this->body, $this->email, $this->pdf->output(), 'invoice.pdf', ['mime' => 'application/pdf',], $this->note);
+        $mailMessage = $this->getEmailWithAttachment($this->emailTemplate, $this->order, $this->bizVerificationId, $this->body, $this->email, $this->pdf->output(), 'Invoice.pdf', ['mime' => 'application/pdf',], $this->note);
 
         return $mailMessage;
     }
