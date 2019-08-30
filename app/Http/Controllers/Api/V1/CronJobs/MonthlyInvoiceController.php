@@ -143,8 +143,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $order       = Order::where('invoice_id', $invoice->id)->first();
 
                 $request->headers->set('authorization', $order->company->api_key);
+
+                $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
                 
-                $fileSavePath = public_path().'/uploads/invoice-pdf/';
+                $fileSavePath = $invoiceSavePath.'/uploads/invoice-pdf/';
 
                 $this->generateInvoice($order, $fileSavePath, $request);
                 

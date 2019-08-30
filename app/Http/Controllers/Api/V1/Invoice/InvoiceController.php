@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Invoice;
 
 use PDF;
-use Validator;
 use Carbon\Carbon;
 use App\Model\Tax;
 use App\Model\Sim;
@@ -13,29 +12,23 @@ use App\Model\Addon;
 use App\Model\Device;
 use App\Model\Coupon;
 use App\Model\Credit;
-use App\Model\Company;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
-use App\Model\PendingCharge;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Model\CustomerCoupon;
 use App\Model\CreditToInvoice;
 use App\Model\OrderGroupAddon;
 use App\Model\PaymentRefundLog;
-use App\Model\SubscriptionAddon;
-use App\Model\SubscriptionCoupon;
-use Illuminate\Support\Collection;
 use App\Model\CustomerStandaloneSim;
-use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
-use App\Classes\GenerateMonthlyInvoiceClass;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
+use App\Model\SystemGlobalSetting;
 
 class InvoiceController extends BaseController implements ConstantInterface
 {
@@ -107,9 +100,13 @@ class InvoiceController extends BaseController implements ConstantInterface
     {
         $msg = '';
         
-        $order = Order::where('hash', $request->hash)->first();
+        $order = Order::where('hash', $request->hash ?: $request->order_hash)->first();
+      
+        $path = SystemGlobalSetting::first()->upload_path;
+        
+        $fileSavePath = $path.'/uploads/'.$order->company_id.'/invoice-pdf/';
 
-        if ($request->data_to_invoice) {
+        if ($request->data_to_invoice && !$request->status == 'Without Payment') {
             
             $invoice = $request->data_to_invoice;
 
@@ -185,14 +182,16 @@ class InvoiceController extends BaseController implements ConstantInterface
                 );
             }
             
-            $fileSavePath = public_path().'/uploads/invoice-pdf/';
+            
     
-            $this->generateInvoice($order, $fileSavePath, $request);
-
         } else if ($request->status == 'Without Payment') {
+            
             $this->createInvoice($request);
+            $this->generateInvoice($order, $fileSavePath, $request);
             return $this->respond($msg);
         }
+
+        $this->generateInvoice($order, $fileSavePath, $request);
 
         return [
             'status' => $this->respond($msg), 
@@ -293,7 +292,8 @@ class InvoiceController extends BaseController implements ConstantInterface
      */
     public function get(Request $request)
     {
-        $fileSavePath = public_path().'/uploads/invoice-pdf/';
+        $path = SystemGlobalSetting::first()->upload_path;
+        $fileSavePath = $path.'/uploads/invoice-pdf/';
         
         if($request->refundInvoiceId){
             
@@ -313,11 +313,18 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $this->generateInvoice($order, $fileSavePath);
     }
 
-    public function downloadInvoice(Request $request)
+    public function downloadInvoice($companyId, Request $request)
     {
-        $fileSavePath = public_path().'/uploads/invoice-pdf/';
-        if (file_exists($fileSavePath.$request->order_hash.'.pdf')) {
-            return response()->download($fileSavePath.$request->order_hash.'.pdf', 'Invoice.pdf');
+        $fileSavePath = public_path().'/uploads/'.$companyId;
+
+        if($request->order_hash){
+            $fileSavePath = $fileSavePath.'/invoice-pdf/'.$request->order_hash.'.pdf';
+        }elseif($request->invoice_hash){
+            $fileSavePath = public_path().'/uploads/invoice-pdf/'.$request->invoice_hash.'.pdf';
+        }
+
+        if (file_exists($fileSavePath)) {
+            return response()->download($fileSavePath);
         }
         return 'Sorry, invoice not found.';
     }
@@ -1136,7 +1143,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             if($subscription->upgrade_downgrade_date_submitted == "for-upgrade"){
                 $description = 'Upgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'];
             }else{
-                $description = 'Downgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'];
+                $description = 'Downgrade from '.$subscription['plan_id'].' to '.$subscription['new_plan_id'];
             }
             $data = [
                 'invoice_id'      => $invoice->id,

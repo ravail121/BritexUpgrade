@@ -108,7 +108,7 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
    'uses'=> 'InvoiceController@get',
   ]);
 
-  Route::get('/invoice/download', [
+  Route::get('/invoice/download/{companyId}', [
     'as' => 'api.invoice.download',
     'uses' => 'InvoiceController@downloadInvoice'
   ]);

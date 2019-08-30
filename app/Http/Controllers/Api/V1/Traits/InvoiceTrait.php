@@ -4,16 +4,12 @@ namespace App\Http\Controllers\Api\V1\Traits;
 
 use PDF;
 use Exception;
-use Carbon\Carbon;
-use App\Model\Sim;
+use App\Model\Order;
 use App\Model\Plan;
 use App\Model\Addon;
-use App\Model\Device;
 use App\Model\Invoice;
-use App\Model\Customer;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
-use Illuminate\Http\Request;
 use App\Events\InvoiceGenerated;
 use App\Events\UpgradeDowngradeInvoice;
 
@@ -109,7 +105,7 @@ trait InvoiceTrait
                         'start_date'   => $invoice->start_date,
                         'description'  => "(Taxes)",
                         'amount'       => number_format($taxPercentage * $taxesWithoutSubscriptions, 2),
-                        'taxable'      => $isTaxable,            
+                        'taxable'      => $isTaxable,    
                     ]
                 );
             }  
@@ -161,29 +157,25 @@ trait InvoiceTrait
 
     public function generateInvoice($order, $fileSavePath, $request = null)
     {
-        
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
+        $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
             
             $data = $this->dataForInvoice($order);
             
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-
+             
                 $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
 
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
-
+                    
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
 
-                    $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                     event(new UpgradeDowngradeInvoice($order, $generatePdf));
-
-                    return $generatePdf->download('Invoice.pdf');
 
                 } else {
                     
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
-                    $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
 
                 }
 
@@ -198,16 +190,21 @@ trait InvoiceTrait
                 }
                 
                 if (!count($subscriptions)) {
+
                     return 'Api error: missing subscription data';
+
                 }
                 
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
-                $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                 
             }
-            
-            $request ? event(new InvoiceGenerated($order, $generatePdf)) : null;
-            return $generatePdf->download('Invoice.pdf');
+
+            $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash); // To save the generate pdf
+
+            $request && !$ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status'] ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
+
+            return $generatePdf->download('Invoice.pdf'); //To trigger the old generate and download logic
+
         } else {
 
             return 'Sorry, we could not find the details for your invoice';
@@ -225,7 +222,7 @@ trait InvoiceTrait
                 $generatePdf->save($fileSavePath.'.pdf');
             }
         } catch (Exception $e) {
-            \Log::info($e->getMessage());
+            \Log::info('Pdf Save Error: '.$e->getMessage());
         }
     }
 
