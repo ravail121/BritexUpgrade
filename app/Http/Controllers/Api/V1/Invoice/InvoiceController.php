@@ -296,17 +296,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         $fileSavePath = $path.'/uploads/invoice-pdf/';
         
         if($request->refundInvoiceId){
-            
-            $invoice = Invoice::where('id', $request->refundInvoiceId)->with('customer', 'invoiceItem')->first();
-
-            $paymentRefundLog = PaymentRefundLog::where('invoice_id', $invoice->id)->with('paymentLog')->first();
-
-            if($paymentRefundLog){
-                $pdf = PDF::loadView('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
-                return $pdf->download('invoice.pdf');
-            }else{
-                 return 'Sorry, we could not find any refund Invoice';
-            }
         }else{
             $order = Order::hash($request->order_hash)->first();
         }
@@ -321,7 +310,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         if($request->order_hash){
             $fileSavePath = $fileSavePath.'/invoice-pdf/'.$request->order_hash.'.pdf';
         }elseif($request->invoice_hash){
-            $fileSavePath = $fileSavePath.'/invoice-pdf/'.$request->invoice_hash.'.pdf';
+            $fileSavePath = $fileSavePath.'/non-order-invoice-pdf/'.$request->invoice_hash.'.pdf';
         }
 
         if (file_exists($fileSavePath)) {

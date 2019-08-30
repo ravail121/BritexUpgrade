@@ -22,10 +22,11 @@ class SendRefundInvoice
      *
      * @return void
      */
-    public function __construct($paymentLog, $amount)
+    public function __construct($paymentLog, $amount, $pdf)
     {
         $this->paymentLog = $paymentLog;
         $this->amount = $amount;
+        $this->pdf = $pdf;
     }
 
     /**

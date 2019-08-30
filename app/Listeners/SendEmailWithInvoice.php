@@ -2,29 +2,15 @@
 
 namespace App\Listeners;
 
-use PDF;
-use Mail;
 use Config;
 use Notification;
 use Carbon\Carbon;
 use App\Model\Order;
-use App\Model\Invoice;
 use App\Model\Company;
 use App\Model\EmailTemplate;
 use App\Events\InvoiceGenerated;
-use App\Model\BusinessVerification;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\EmailWithAttachment;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Model\SystemEmailTemplateDynamicField;
-use App\Model\Subscription;
-use App\Model\InvoiceItem;
-use App\Model\Plan;
-use App\Model\Addon;
-use App\Model\Device;
-use App\Model\Sim;
-use App\Model\Customer;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 
 class SendEmailWithInvoice
@@ -92,7 +78,7 @@ class SendEmailWithInvoice
             $emailTemplates      = EmailTemplate::where('company_id', $customerOrder->company_id)->where('code', 'monthly-invoice')->get();
 
         }
-        $note = 'Invoice Link- '.route('api.invoice.get').'?order_hash='.$customerOrder->hash;
+        $note = 'Invoice Link- '.route('api.invoice.download', $customerOrder->company_id).'?order_hash='.$customerOrder->hash;
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){

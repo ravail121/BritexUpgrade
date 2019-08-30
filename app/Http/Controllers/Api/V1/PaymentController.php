@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use PDF;
 use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Credit;
@@ -16,12 +17,15 @@ use App\Model\PaymentRefundLog;
 use App\Events\SendRefundInvoice;
 use App\Services\Payment\UsaEpay;
 use App\Model\CustomerCreditCard;
+use App\Model\SystemGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
+use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 
 class PaymentController extends BaseController implements ConstantInterface
 {
+    use InvoiceTrait;
 
     const DEFAULT_VALUE = 2;
     const DEFAULT_DUE   = '0.00';
@@ -234,7 +238,7 @@ class PaymentController extends BaseController implements ConstantInterface
                 $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
             }
             $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice->id);
-            event(new SendRefundInvoice($paymentLog, $this->tran->amount));
+            $this->generateRefundInvoice($invoice, $this->tran, $paymentLog);
         }else {
             
             $status = PaymentRefundLog::STATUS['fail'];
@@ -247,6 +251,25 @@ class PaymentController extends BaseController implements ConstantInterface
             'paymentRefundLog'=> $paymentRefundLog,
             'message' => $msg
         ]); 
+    }
+
+    public function generateRefundInvoice($invoice, $tran, $paymentLog)
+    {
+        $invoice = Invoice::where('id', $invoice->id)->with('customer', 'invoiceItem')->first();
+
+        $paymentRefundLog = PaymentRefundLog::where('invoice_id', $invoice->id)->with('paymentLog')->first();
+
+        if($paymentRefundLog){
+            $pdf = PDF::loadView('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
+            $company = \Request::get('company')->id;
+            $systemGlobalSetting = SystemGlobalSetting::first();
+            $invoivePath = '/uploads/'.$company.'/non-order-invoice-pdf/'.md5($invoice->id);
+            $fileSavePath = $systemGlobalSetting->upload_path.$invoivePath;
+            $this->saveInvoiceFile($pdf, $fileSavePath);
+            event(new SendRefundInvoice($paymentLog, $tran->amount, $pdf));
+        }else{
+             return 'Sorry, we could not find any refund Invoice';
+        }
     }
 
     protected function createPaymentRefundLog($paymentLog, $status, $invoiceId = null)

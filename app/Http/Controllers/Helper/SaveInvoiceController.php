@@ -24,16 +24,13 @@ class SaveInvoiceController extends BaseController
             'invoiceId'    => 'required|exists:invoice,id',
             'invoiceType'  => 'required',
         ]);
-
+        $company = \Request::get('company')->id;
         $path = SystemGlobalSetting::first()->upload_path;
-        $fileSavePath = $path.'/uploads/non-order-invoice-pdf/'.md5($request->invoiceId);
+        $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.md5($request->invoiceId);
 
         $invoice = Invoice::where('id', $data['invoiceId'])->with('customer', 'invoiceItem')->first();
-
-
         $pdf = PDF::loadView('templates/'.self::INVOICE_TEMPLATE[$data['invoiceType']], compact('invoice'));
-
-        $url = $this->saveInvoiceFile($pdf, $fileSavePath);
+        $this->saveInvoiceFile($pdf, $fileSavePath);
 
         return $this->respond($fileSavePath.'.pdf');
     }

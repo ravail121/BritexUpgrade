@@ -17,16 +17,17 @@ use App\Model\Order;
 |
 */
 
+Route::get('test', function(){
+  dd(route('api.invoice.download', '1'));
+  $order = Order::find('9867');
+  event(new UpgradeDowngradeInvoice($order, 'generatePdf'));
+});
+
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
 
 // Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
-
-Route::get('test', function(){
-  $order = Order::find('9867');
-  event(new UpgradeDowngradeInvoice($order, 'generatePdf'));
-});
 
 // Route::get('testb', 'Api\V1\CronJobs\OrderDataController@order');
 
