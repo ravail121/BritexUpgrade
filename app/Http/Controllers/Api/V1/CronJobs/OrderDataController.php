@@ -19,17 +19,15 @@ class OrderDataController extends BaseController
 {
     public function order() {
         
-        // $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
-        //     $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
+        $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
+            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
 
-        // })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
-        //     $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
+        })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
+            $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
             
-        // })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
-        //     $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
-        // })->with('company')->get();
-        // 
-        $orders = Order::where('id', '5262')->get();
+        })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
+            $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
+        })->with('company')->get();
         
 
         foreach ($orders as $order) {

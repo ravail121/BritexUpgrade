@@ -18,15 +18,13 @@ class OrderController extends BaseController
 {
     public function order()
     {
-        // $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
-        //     $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
-        // })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
-        //     $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
-        // })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
-        //     $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
-        // })->with('company')->get();
-
-        $orders = Order::where('id', '5262')->get();
+        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
+            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
+        })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
+            $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
+        })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
+            $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
+        })->with('company')->get();
 
         try {
             foreach ($orders as $orderKey => $order) {
@@ -124,7 +122,7 @@ class OrderController extends BaseController
         return [
             'description' => $standAloneDevice->device['name'],
             'part_number' => 'DEV-'.$standAloneDevice->id,
-            'unit_amount' => $standAloneDevice->device['amoidunt'],
+            'unit_amount' => $standAloneDevice->device['amount'],
             'quantity'    =>   '1',];
     }
 
