@@ -78,7 +78,7 @@ class UpdateController extends BaseController
                 if ($customer) {
                     $this->updateSubscriptions($customer->id);
                     $request->headers->set('authorization', $customer->company->api_key);
-                    event(new AccountSuspended(Customer::find($customer->id)));
+                    // event(new AccountSuspended(Customer::find($customer->id)));
                 }
 
             }

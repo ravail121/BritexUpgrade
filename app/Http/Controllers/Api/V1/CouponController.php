@@ -13,7 +13,6 @@ use App\Model\Order;
 use App\Model\Device;
 use App\Model\Sim;
 use App\Model\Addon;
-use App\Model\OrderCouponProduct;
 use Carbon\Carbon;
 use App\Model\CustomerCoupon;
 
@@ -156,7 +155,7 @@ class CouponController extends Controller
                 return false;
             }
             if ($coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] && !count($coupon->couponProducts)) {
-                $this->failedResponse = 'Coupon product type data missing';
+                $this->failedResponse = 'Coupon products data missing';
                 return false;
             }
             return true;
@@ -366,7 +365,7 @@ class CouponController extends Controller
             }
 
             foreach ($addonIds as $id) {
-
+                
                 $addon = Addon::find($id);
 
                 $addonAmount[] = $order->addonProRate($id) > 0 ? $order->addonProRate($id) : $addon->amount_recurring;

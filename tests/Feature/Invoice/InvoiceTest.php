@@ -29,7 +29,9 @@ class InvoiceTests extends TestCase
     public function test_device_only()
     {
         $randomDevice   = Device::inRandomOrder()->limit(1)->first();
-        $customers      = Customer::inRandomOrder()->whereNotNull('billing_fname')->get();
+        $customers      = Customer::inRandomOrder()
+                            ->whereNotNull('billing_fname')
+                            ->whereNotNull('shipping_fname')->get();
         $order          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
 
         foreach ($customers as $customer) {
@@ -82,7 +84,7 @@ class InvoiceTests extends TestCase
                     'couponCode'        => NULL,
                     'order_id'          => $updatedOrder['id']
                 ]));
-                
+
                 return  $customerStandaloneDevice->assertJson(['device_id' => $updatedOrder->standAloneDevices->first()['id']]) &&
                         $saveInvoice->assertJson(['success' => true]) &&
                         $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(
@@ -99,14 +101,16 @@ class InvoiceTests extends TestCase
     public function test_sim_only()
     {
         $randomsim      = Sim::inRandomOrder()->limit(1)->first();
-        $customers      = Customer::inRandomOrder()->whereNotNull('billing_fname')->get();
+        $customers      = Customer::inRandomOrder()
+                            ->whereNotNull('billing_fname')
+                            ->whereNotNull('shipping_fname')->get();
         $order          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
 
         foreach ($customers as $customer) {
             
             if (count($customer->customerCreditCards)) {
 
-                $tax            = isset($customer->stateTax) && $randomsim['taxable'] ? ($randomsim['amount_alone'] * $customer->stateTax->rate) / 100 : 1;
+                $tax            = isset($customer->stateTax) && $randomsim['taxable'] ? ($randomsim['amount_alone'] * $customer->stateTax->rate) / 100 : 0;
                 $shipping       = $randomsim['shipping_fee'] ?: 0;
                 $totalInvoice   = $randomsim['amount_alone'] + $shipping + $tax;
                 
@@ -162,12 +166,13 @@ class InvoiceTests extends TestCase
 
         }
 
-
     }
 
     public function test_plan_only()
     {
-        $customers          = Customer::inRandomOrder()->whereNotNull('billing_fname')->get();
+        $customers      = Customer::inRandomOrder()
+                            ->whereNotNull('billing_fname')
+                            ->whereNotNull('shipping_fname')->get();
         $randomPlan         = Plan::inRandomOrder()->limit(1)->first();
         $hash               = sha1(time());
 
@@ -244,7 +249,9 @@ class InvoiceTests extends TestCase
 
     public function test_complete_subscription()
     {
-        $customers          = Customer::inRandomOrder()->whereNotNull('billing_fname')->get();
+        $customers      = Customer::inRandomOrder()
+                            ->whereNotNull('billing_fname')
+                            ->whereNotNull('shipping_fname')->get();
         $randomPlan         = Plan::inRandomOrder()->limit(1)->first();
         $randomSim          = Sim::inRandomOrder()->limit(1)->first();
         $randomDevice       = Device::inRandomOrder()->limit(1)->first();

@@ -201,7 +201,7 @@ trait InvoiceTrait
 
             $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash); // To save the generated pdf
 
-            $request && !$ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status'] ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
+            $request && !isset($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
 
             return $generatePdf->download('Invoice.pdf'); //To trigger the old generate and download logic
 
