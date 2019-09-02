@@ -46,10 +46,10 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 
 // All Cron URL need to be removed 
 // 
-// Route::get('/cron-jobs-monthly-invoice', [
-//     'as'=>'api.cron.monthly.invoice',
-//     'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
-// ]);
+Route::get('/cron-jobs-monthly-invoice', [
+    'as'=>'api.cron.monthly.invoice',
+    'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
+]);
 
 // Route::get('/cron-jobs-regenerate-invoice', [
 //   'as'=>'api.cron.regenerate.invoice',

@@ -6,6 +6,7 @@ use PDF;
 use Validator;
 use App\Model\Invoice;
 use Illuminate\Http\Request;
+use App\Model\SystemGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
