@@ -696,6 +696,8 @@ class InvoiceController extends BaseController implements ConstantInterface
     public function addShippingCharges($order)
     {
 
+        $order = Order::find($order->id);
+
         $items = $order->invoice->invoiceItem;
 
         $itemWithShippingCharges  = [];
