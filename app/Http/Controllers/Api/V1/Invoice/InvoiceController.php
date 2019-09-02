@@ -22,7 +22,6 @@ use Illuminate\Http\Response;
 use App\Model\CustomerCoupon;
 use App\Model\CreditToInvoice;
 use App\Model\OrderGroupAddon;
-use App\Model\PaymentRefundLog;
 use App\Model\SystemGlobalSetting;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
@@ -819,26 +818,26 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 
 
-    protected function add_regulatory_fee($params, $plan)
-    {
+    // protected function add_regulatory_fee($params, $plan)
+    // {
 
-        $params['product_type'] = '';
-        $params['product_id'] = null;
-        $params['type'] = 5;
-        $params['taxable'] = 0;
+    //     $params['product_type'] = '';
+    //     $params['product_id'] = null;
+    //     $params['type'] = 5;
+    //     $params['taxable'] = 0;
 
-        $fee_type = $plan->regulatory_fee_type;
-        $amount = $plan->regulatory_fee_amount;
+    //     $fee_type = $plan->regulatory_fee_type;
+    //     $amount = $plan->regulatory_fee_amount;
 
-        if($fee_type ==  2){
-          $amount = $amount * $params['amount'];
-        }
-        $params['amount'] = $amount;
-        $invoice_item = InvoiceItem::create($params);
+    //     if($fee_type ==  2){
+    //       $amount = $amount * $params['amount'];
+    //     }
+    //     $params['amount'] = $amount;
+    //     $invoice_item = InvoiceItem::create($params);
 
-        return $amount;
+    //     return $amount;
 
-    }
+    // }
 
     public function addTaxesToSubtotal($invoice)
     {
@@ -882,196 +881,196 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $dues;
     }
 
-    protected function generate_customer_invoice($invoice, $customer)
-    {
+    // protected function generate_customer_invoice($invoice, $customer)
+    // {
        
-        $debt_amount = 0;
-        $taxes = 0;
-        $discounts = 0;
-        $invoice_items = [];
+    //     $debt_amount = 0;
+    //     $taxes = 0;
+    //     $discounts = 0;
+    //     $invoice_items = [];
 
-        $tax_rate = 0;
-        $tax = Tax::where('state', $customer->billing_state_id)->where('company_id', $customer->company_id)->first();
-        if($tax){
-          $tax_rate = ($tax->rate)/100;
-        }
-
-
-        $subscriptions = $customer->subscription;
-        foreach($subscriptions as $subscription){
-
-            $plan = [];
-
-            if ( ($subscription->status == 'shipping' || $subscription->status == 'for-activation') ||  ($subscription->status == 'active' || $subscription->upgrade_downgrade_status == 'downgrade-scheduled')  ) {
-
-                $plan = $subscription->plan;
-
-            } else if ($subscription->status == 'active' || $subscription->upgrade_downgrade_status = 'downgrade-scheduled') {
-                $plan = $subscription->new_plan;
-
-            } else {
-                continue;
-            }
-
-            $params['product_id'] = $plan['id'];
-            $params['description'] = $plan['description'];
-            $params['amount'] = $plan['amount_recurring'];
-
-            $params['taxable'] = $plan['taxable'];
-
-            $taxes += $this->addTax($tax_rate, $params);
-            $debt_amount += $params['amount'];
-
-            $invoice_item = InvoiceItem::create($params);
-            array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
-
-            $debt_amount += $this->add_regulatory_fee($params, $plan);
-
-            $subscription_addons = $subscription->subscription_addon;
-            $addon = [];
-            foreach($subscription_addons as $s_addon){
-
-                if($s_addon['status'] == 'removal-scheduled' || $s_addon['status'] == 'for-removal'){
-                    continue;
-                }
-                $addon = $s_addon->addon;
-                $params = [
-                    'invoice_id' => $invoice->id,
-                    'subscription_id' => $s_addon['subscription_id'],
-                    'product_type' => 'addon',
-                    'product_id' => $addon['id'],
-                    'type' => 2,
-                    'description' => $addon['description'],
-                    'amount' => $addon['amount_recurring'],
-                    'start_date' => $invoice->start_date,
-                    'taxable' => $s_addon->subscription->plan['taxable'] // Replace this with this subscription->plan->taxable
-                ];
-
-                $taxes += $this->addTax($tax_rate, $params);
-                $debt_amount += $params['amount'];
-
-                $invoice_item = InvoiceItem::create($params);
-                array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
-
-            }
-
-        }
+    //     $tax_rate = 0;
+    //     $tax = Tax::where('state', $customer->billing_state_id)->where('company_id', $customer->company_id)->first();
+    //     if($tax){
+    //       $tax_rate = ($tax->rate)/100;
+    //     }
 
 
-        foreach($customer->pending_charge as $pending_charg){
-            if($pending_charg->invoice_id == 0){
-                $params = [
-                    'type'=>$pending_charg['type'],
-                    'amount'=>$pending_charg['amount'],
-                    'description'=>$pending_charg['description']
-                ];
+    //     $subscriptions = $customer->subscription;
+    //     foreach($subscriptions as $subscription){
 
-                $taxes += $this->addTax($tax_rate, $params);
-                $debt_amount += $params['amount'];
-                $invoice_item = InvoiceItem::create($params);
-                array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
+    //         $plan = [];
+
+    //         if ( ($subscription->status == 'shipping' || $subscription->status == 'for-activation') ||  ($subscription->status == 'active' || $subscription->upgrade_downgrade_status == 'downgrade-scheduled')  ) {
+
+    //             $plan = $subscription->plan;
+
+    //         } else if ($subscription->status == 'active' || $subscription->upgrade_downgrade_status = 'downgrade-scheduled') {
+    //             $plan = $subscription->new_plan;
+
+    //         } else {
+    //             continue;
+    //         }
+
+    //         $params['product_id'] = $plan['id'];
+    //         $params['description'] = $plan['description'];
+    //         $params['amount'] = $plan['amount_recurring'];
+
+    //         $params['taxable'] = $plan['taxable'];
+
+    //         $taxes += $this->addTax($tax_rate, $params);
+    //         $debt_amount += $params['amount'];
+
+    //         $invoice_item = InvoiceItem::create($params);
+    //         array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
+
+    //         $debt_amount += $this->add_regulatory_fee($params, $plan);
+
+    //         $subscription_addons = $subscription->subscription_addon;
+    //         $addon = [];
+    //         foreach($subscription_addons as $s_addon){
+
+    //             if($s_addon['status'] == 'removal-scheduled' || $s_addon['status'] == 'for-removal'){
+    //                 continue;
+    //             }
+    //             $addon = $s_addon->addon;
+    //             $params = [
+    //                 'invoice_id' => $invoice->id,
+    //                 'subscription_id' => $s_addon['subscription_id'],
+    //                 'product_type' => 'addon',
+    //                 'product_id' => $addon['id'],
+    //                 'type' => 2,
+    //                 'description' => $addon['description'],
+    //                 'amount' => $addon['amount_recurring'],
+    //                 'start_date' => $invoice->start_date,
+    //                 'taxable' => $s_addon->subscription->plan['taxable'] // Replace this with this subscription->plan->taxable
+    //             ];
+
+    //             $taxes += $this->addTax($tax_rate, $params);
+    //             $debt_amount += $params['amount'];
+
+    //             $invoice_item = InvoiceItem::create($params);
+    //             array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
+
+    //         }
+
+    //     }
+
+
+    //     foreach($customer->pending_charge as $pending_charg){
+    //         if($pending_charg->invoice_id == 0){
+    //             $params = [
+    //                 'type'=>$pending_charg['type'],
+    //                 'amount'=>$pending_charg['amount'],
+    //                 'description'=>$pending_charg['description']
+    //             ];
+
+    //             $taxes += $this->addTax($tax_rate, $params);
+    //             $debt_amount += $params['amount'];
+    //             $invoice_item = InvoiceItem::create($params);
+    //             array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
            
-            }
+    //         }
         
-            //update pending charge
-            $pendingcharge = $pending_charg->update(['invoice_id'=>$invoice->id]);
-        }
+    //         //update pending charge
+    //         $pendingcharge = $pending_charg->update(['invoice_id'=>$invoice->id]);
+    //     }
 
 
-        //lookup coupons
+    //     //lookup coupons
 
-        $coupon_discounts = 0;
-        // $customer_coupon = CustomerCoupon::where('customer_id', $customer->id)->where('cycles_remaining','>' ,0)->get();
+    //     $coupon_discounts = 0;
+    //     // $customer_coupon = CustomerCoupon::where('customer_id', $customer->id)->where('cycles_remaining','>' ,0)->get();
 
-        // for($customer_coupon as $cc){
+    //     // for($customer_coupon as $cc){
 
-        // }
+    //     // }
      
 
-        //add tax
-        $params = [
-            'invoice_id' => $invoice->id,
-            'product_type' => 'taxes',
-            'type' => 7,
-            'amount' => $taxes,
-            'description' => 'all taxes'
-        ];
+    //     //add tax
+    //     $params = [
+    //         'invoice_id' => $invoice->id,
+    //         'product_type' => 'taxes',
+    //         'type' => 7,
+    //         'amount' => $taxes,
+    //         'description' => 'all taxes'
+    //     ];
 
-        $invoice_item = InvoiceItem::create($params);
+    //     $invoice_item = InvoiceItem::create($params);
    
-        $subtotal = $debt_amount - $coupon_discounts + $taxes;
+    //     $subtotal = $debt_amount - $coupon_discounts + $taxes;
 
-        $dues = $this->getCustomerDue($customer->id);
+    //     $dues = $this->getCustomerDue($customer->id);
 
-        $invoice->update([
-            'total_due'=>$dues,
-            'subtotal'=>$subtotal
-        ]);
+    //     $invoice->update([
+    //         'total_due'=>$dues,
+    //         'subtotal'=>$subtotal
+    //     ]);
 
 
-        $billing_date = strtotime($invoice->start_date);
+    //     $billing_date = strtotime($invoice->start_date);
    
-        $invoice = [
-            'billing_date' => [ 
-                'year' => date("y", $billing_date),
-                'month' => date("m", $billing_date),
-                'day' => date("d", $billing_date),
-            ],
-            'company' => $customer->company,
-            'number' => $invoice->id,
-            'period_beginning' => $invoice->start_date,
-            'period_ending' => $invoice->end_date,
-            'due_date' => $invoice->due_date,
-            'subtotal' => $subtotal,
-            'total_due' => $dues,
-            'items' => $invoice_items
-        ];
+    //     $invoice = [
+    //         'billing_date' => [ 
+    //             'year' => date("y", $billing_date),
+    //             'month' => date("m", $billing_date),
+    //             'day' => date("d", $billing_date),
+    //         ],
+    //         'company' => $customer->company,
+    //         'number' => $invoice->id,
+    //         'period_beginning' => $invoice->start_date,
+    //         'period_ending' => $invoice->end_date,
+    //         'due_date' => $invoice->due_date,
+    //         'subtotal' => $subtotal,
+    //         'total_due' => $dues,
+    //         'items' => $invoice_items
+    //     ];
        
-        //add activation charges
+    //     //add activation charges
 
-        $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
-        $pdf->save('invoice/invoice.pdf');
+    //     $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
+    //     $pdf->save('invoice/invoice.pdf');
 
-    }
+    // }
 
-    protected function generate_new_invoice($customers){
+    // protected function generate_new_invoice($customers){
         
-        foreach ($customers as $customer) {
+    //     foreach ($customers as $customer) {
 
-            // check invoice type and start_date
-            $invoice_type_1 = false;
+    //         // check invoice type and start_date
+    //         $invoice_type_1 = false;
 
-            if(count($customer->invoice)){
-                foreach($customer->invoice as $invoice){
-                    if($invoice->type == 1 && $invoice->start_date > $customer->billing_end){
-                        $invoice_type_1 = true;
-                        break;
-                    }
-                }   
-            }
+    //         if(count($customer->invoice)){
+    //             foreach($customer->invoice as $invoice){
+    //                 if($invoice->type == 1 && $invoice->start_date > $customer->billing_end){
+    //                     $invoice_type_1 = true;
+    //                     break;
+    //                 }
+    //             }   
+    //         }
 
-            if($invoice_type_1){ continue; }
+    //         if($invoice_type_1){ continue; }
 
-            // Add row to invoice
-            $_enddate = $customer->end_date;
-            $start_date = date ("Y-m-d", strtotime ($_enddate ."+1 days"));
-            $end_date = date ("Y-m-d", strtotime ( $start_date ."+1 months"));
-            $due_date = $customer->billing_end;
-            $invoice = Invoice::create([
-                'customer_id'  => $customer->id,
-                'end_date'     => $start_date,
-                'start_date'   => $end_date,
-                'due_date'     => $due_date,
-                'type'         => 1,
-                'status'       => 1,
-                'subtotal'     => 0,
-                'total_due'    => 0,
-                'prev_balance' => 0
-            ]);
-            $this->generate_customer_invoice($invoice, $customer);
+    //         // Add row to invoice
+    //         $_enddate = $customer->end_date;
+    //         $start_date = date ("Y-m-d", strtotime ($_enddate ."+1 days"));
+    //         $end_date = date ("Y-m-d", strtotime ( $start_date ."+1 months"));
+    //         $due_date = $customer->billing_end;
+    //         $invoice = Invoice::create([
+    //             'customer_id'  => $customer->id,
+    //             'end_date'     => $start_date,
+    //             'start_date'   => $end_date,
+    //             'due_date'     => $due_date,
+    //             'type'         => 1,
+    //             'status'       => 1,
+    //             'subtotal'     => 0,
+    //             'total_due'    => 0,
+    //             'prev_balance' => 0
+    //         ]);
+    //         $this->generate_customer_invoice($invoice, $customer);
             
-        }
-    }
+    //     }
+    // }
 
     public function createInvoice(Request $request)
     {

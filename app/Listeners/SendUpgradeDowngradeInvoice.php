@@ -52,7 +52,7 @@ class SendUpgradeDowngradeInvoice
         ])->with('oldPlan', 'newPlanDetail', 'plans')->first();
 
         $dataRow = [
-            'customer'     => $order->customer,
+            'customer'     => $customer,
             'order'        => $order,
             'invoice'      => $order->invoice,
             'subscription' => $subscription,
@@ -62,12 +62,12 @@ class SendUpgradeDowngradeInvoice
         ->where('code', 'subscription-change')
         ->get();
 
-        $note = 'Invoice Link';
+        $note = 'Invoice Link- '.route('api.invoice.download', $customer->company_id).'?order_hash='.$order->hash;
 
-        if($subscription->upgrade_downgrade_status =="for-upgrade"){
-            $subscriptionsChanged = '<p>'.$subscription->phone_number.' Upgraded from  '.$subscription->plans->name.' to '.$subscription->oldPlan->name.' plan</p>';
+        if($subscription->upgrade_downgrade_status == "for-upgrade"){
+            $subscriptionsChanged = '<p>'.$subscription->phone_number.' Upgraded from  <b>'.$subscription->plans->name.'</b> to <b>'.$subscription->oldPlan->name.'</b> plan</p>';
         }else{
-            $subscriptionsChanged = '<p>'.$subscription->phone_number.' Downgrade from  '.$subscription->plans->name.' to '.$subscription->newPlanDetail->name.'  plan</p>';
+            $subscriptionsChanged = '<p>'.$subscription->phone_number.' Downgrade from  <b>'.$subscription->plans->name.'</b> to <b>'.$subscription->newPlanDetail->name.'</b>  plan</p>';
         }
 
 

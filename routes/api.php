@@ -2,8 +2,6 @@
 
 use Illuminate\Http\Request;
 use App\Events\UpgradeDowngradeInvoice;
-use App\Model\CustomerStandaloneDevice;
-use App\Model\CustomerStandaloneSim;
 use App\Model\Order;
 
 /*
@@ -17,19 +15,16 @@ use App\Model\Order;
 |
 */
 
-Route::get('test', function(){
-  dd(route('api.invoice.download', '1'));
-  $order = Order::find('9867');
-  event(new UpgradeDowngradeInvoice($order, 'generatePdf'));
-});
+// Route::get('test', function(){
+// });
+
+Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
+Route::get('test', 'Api\V1\CronJobs\OrderDataController@order');
 
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
 
-// Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
-
-// Route::get('testb', 'Api\V1\CronJobs\OrderDataController@order');
 
 $config = [
 		'driver'   => 'smtp',
@@ -49,31 +44,32 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 	}));
 });
 
+// All Cron URL need to be removed 
+// 
+// Route::get('/cron-jobs-monthly-invoice', [
+//     'as'=>'api.cron.monthly.invoice',
+//     'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
+// ]);
 
-Route::get('/cron-jobs-monthly-invoice', [
-    'as'=>'api.cron.monthly.invoice',
-    'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
-]);
+// Route::get('/cron-jobs-regenerate-invoice', [
+//   'as'=>'api.cron.regenerate.invoice',
+//   'uses'=> 'Api\V1\CronJobs\RegenerateInvoiceController@regenerateInvoice',
+// ]);
 
-Route::get('/cron-jobs-regenerate-invoice', [
-  'as'=>'api.cron.regenerate.invoice',
-  'uses'=> 'Api\V1\CronJobs\RegenerateInvoiceController@regenerateInvoice',
-]);
+// Route::get('/cron-jobs-orders', [
+//     'as'=>'api.cron.orders',
+//     'uses'=> 'Api\V1\CronJobs\OrderController@order',
+// ]);
 
-Route::get('/cron-jobs-orders', [
-    'as'=>'api.cron.orders',
-    'uses'=> 'Api\V1\CronJobs\OrderController@order',
-]);
+// Route::get('/cron-jobs-orders-data', [
+//     'as'=>'api.cron.orders.data',
+//     'uses'=> 'Api\V1\CronJobs\OrderDataController@order',
+// ]);
 
-Route::get('/cron-jobs-orders-data', [
-    'as'=>'api.cron.orders.data',
-    'uses'=> 'Api\V1\CronJobs\OrderDataController@order',
-]);
-
-Route::get('/update-cron', [
-  'as'=>'api.cron.update',
-  'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
-]);
+// Route::get('/update-cron', [
+//   'as'=>'api.cron.update',
+//   'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
+// ]);
 
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
@@ -629,8 +625,8 @@ Route::middleware('APIToken')->group(function () {
         });
       }); 
 
-    //HELPER FUNCTIONS
 
+    //HELPER FUNCTIONS
     Route::post('/save-invoice', [
        'as'=>'api.invoice.save',
        'uses'=> 'Helper\SaveInvoiceController@saveInvoice',

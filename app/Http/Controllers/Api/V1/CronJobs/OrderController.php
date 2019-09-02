@@ -18,13 +18,15 @@ class OrderController extends BaseController
 {
     public function order()
     {
-        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
-            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
-        })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
-            $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
-        })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
-            $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
-        })->with('company')->get();
+        // $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
+        //     $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
+        // })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
+        //     $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
+        // })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
+        //     $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
+        // })->with('company')->get();
+
+        $orders = Order::where('id', '5262')->get();
 
         try {
             foreach ($orders as $orderKey => $order) {
@@ -35,17 +37,17 @@ class OrderController extends BaseController
 
                 foreach ($order->subscriptions as $key => $subscription) {
                     // $subscriptionRow[$key]['items'] = $this->subscriptions($subscription);
-                    $subscriptionRow = $this->subscriptions($subscription);
+                    $subscriptionRow[$key] = $this->subscriptions($subscription);
                 }
 
                 foreach ($order->standAloneDevices as $key => $standAloneDevice) {
                     // $standAloneDeviceRow[$key]['items'] = $this->standAloneDevice($standAloneDevice);
-                    $standAloneDeviceRow = $this->standAloneDevice($standAloneDevice);
+                    $standAloneDeviceRow[$key] = $this->standAloneDevice($standAloneDevice);
                 }
 
                 foreach ($order->standAloneSims as $key => $standAloneSim) {
                     // $standAloneSimRow[$key]['items'] = $this->standAloneSim($standAloneSim);
-                    $standAloneSimRow = $this->standAloneSim($standAloneSim);
+                    $standAloneSimRow[$key] = $this->standAloneSim($standAloneSim);
                 }
                 $row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
 
@@ -69,15 +71,15 @@ class OrderController extends BaseController
     public function subscriptions($subscription) 
     {
         if(($subscription->sim_id != 0) && ($subscription->device_id == 0)) { 
-            return  [ 0 => $this->subscriptionWithSim($subscription)];
+            return  $this->subscriptionWithSim($subscription);
         }
 
         if(($subscription->device_id != 0) && ($subscription->sim_id == 0)) {
-            return  [ 0 => $this->subscriptionWithDevice($subscription)];
+            return  $this->subscriptionWithDevice($subscription);
         }
 
         if(($subscription->sim_id != 0) && ($subscription->device_id != 0)) {
-            return [ 0 => $this->subscriptionWithSimAndDevice($subscription)];
+            return $this->subscriptionWithSimAndDevice($subscription);
             // $simData = $this->subscriptionWithSim($subscription);
             // $deviceData = $this->subscriptionWithDevice($subscription);
             // return [$simData, $deviceData];
@@ -119,22 +121,21 @@ class OrderController extends BaseController
 
     public function standAloneDevice($standAloneDevice)
     {
-        return [[
+        return [
             'description' => $standAloneDevice->device['name'],
-            'part_number' => 'DEV-'.$standAloneDevice->device['id'],
-            'unit_amount' => $standAloneDevice->device['amount'],
-            'quantity'    =>   '1',
-        ]];
+            'part_number' => 'DEV-'.$standAloneDevice->id,
+            'unit_amount' => $standAloneDevice->device['amoidunt'],
+            'quantity'    =>   '1',];
     }
 
     public function standAloneSim($standAloneSim)
     {
-        return [[
+        return [
             'description' => $standAloneSim->sim['name'],
-            'part_number' => 'SIM‌-'.$standAloneSim->sim['id'],
+            'part_number' => 'SIM‌-'.$standAloneSim->id,
             'unit_amount' => $standAloneSim->sim['amount_alone'],
             'quantity'    =>   '1',
-        ]];
+        ];
     }
 
     public function data($order, $row)

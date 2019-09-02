@@ -19,15 +19,17 @@ class OrderDataController extends BaseController
 {
     public function order() {
         
-        $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
-            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
+        // $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
+        //     $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
 
-        })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
-            $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
+        // })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
+        //     $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
             
-        })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
-            $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
-        })->with('company')->get();
+        // })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
+        //     $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
+        // })->with('company')->get();
+        // 
+        $orders = Order::where('id', '5262')->get();
         
 
         foreach ($orders as $order) {
@@ -42,12 +44,13 @@ class OrderDataController extends BaseController
                     if(!$boxes){
                          continue;
                     }
-                    $boxdetail = $this->getOrderBoxesOrItemsData($boxes['items'][0]['url'], $readyCloudApiKey);
-                    if(!$boxdetail){
-                        continue;
+                    foreach ($boxes['items'] as $key => $box) {
+                        $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
+                        if(!$boxdetail){
+                            continue;
+                        }
+                        $this->updateOrderDetails($boxdetail, $boxes);
                     }
-
-                    $this->updateOrderDetails($boxdetail, $boxes);
                 }
             }
         }
