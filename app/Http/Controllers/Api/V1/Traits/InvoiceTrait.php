@@ -7,11 +7,14 @@ use Exception;
 use App\Model\Order;
 use App\Model\Plan;
 use App\Model\Addon;
+use App\Model\Device;
+use App\Model\Sim;
 use App\Model\Invoice;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use App\Events\InvoiceGenerated;
 use App\Events\UpgradeDowngradeInvoice;
+use Carbon\Carbon;
 
 trait InvoiceTrait
 {
@@ -82,9 +85,9 @@ trait InvoiceTrait
         }
     }
 
-    public function addTaxesToStandalone($invoice, $isTaxable, $item)
+    public function addTaxesToStandalone($orderId, $isTaxable, $item)
     {
-        
+        $invoice = Order::find($orderId)->invoice;
         $taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
         
         if ($taxPercentage > 0) {
@@ -226,7 +229,7 @@ trait InvoiceTrait
         }
     }
 
-    protected function dataForInvoice($order)
+    public function dataForInvoice($order)
     {                                    
 
         $invoice = [
@@ -240,7 +243,7 @@ trait InvoiceTrait
     }
 
 
-    protected function previousBill($order)
+    public function previousBill($order)
     {
         $lastInvoiceId  = $order->customer->invoice
                                 ->where('type', Invoice::TYPES['monthly'])
@@ -262,7 +265,7 @@ trait InvoiceTrait
         }
     }
 
-    protected function ifUpgradeOrDowngradeInvoice($order)
+    public function ifUpgradeOrDowngradeInvoice($order)
     {
         $subscriptionId = array_unique($order->invoice->invoiceItem->pluck('subscription_id')->toArray());
         if (count($subscriptionId) == 1) {
@@ -307,6 +310,73 @@ trait InvoiceTrait
                 ];
             }
         }
+    }
+
+    public function ifTotalDue($order)
+    {
+        $totalAmount    = $order->invoice->subtotal;
+        $paidAmount     = $order->invoice->creditsToInvoice->sum('amount');
+        $totalDue       = $totalAmount > $paidAmount ? $totalAmount - $paidAmount : 0;
+       
+        $order->invoice->update(
+            [
+                'total_due'     => $totalDue
+            ]
+        );
+    }
+
+    public function addShippingCharges($orderId)
+    {
+
+        $order = Order::find($orderId);
+        
+        $items = $order->invoice->invoiceItem;
+
+        $itemWithShippingCharges  = [];
+
+        foreach ($items as $item) {
+
+            if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device'] && $item->product_id) {
+
+                $shippingFee        = Device::find($item->product_id)->shipping_fee;
+
+                if ($shippingFee) { $itemWithShippingCharges[] = [
+                    'amount'            => $shippingFee, 
+                    'subscription_id'   => $item->subscription_id, 
+                    'taxable'           => 0,
+                    'invoice_id'        => $item->invoice_id,
+                    'start_date'        => Carbon::today()
+                ]; }
+
+            } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['sim']) {
+
+                $shippingFee        = Sim::find($item->product_id)->shipping_fee;
+
+                if ($shippingFee) { $itemWithShippingCharges[] = [
+                    'amount'            => $shippingFee, 
+                    'subscription_id'   => $item->subscription_id, 
+                    'taxable'           => 0, 
+                    'invoice_id'        => $item->invoice_id,
+                    'start_date'        => Carbon::today()
+                ]; }
+
+            }
+
+        }
+
+        $defaultValuesToInsert = [
+            'product_type' => '',
+            'type'         => InvoiceItem::TYPES['one_time_charges'],
+            'description'  => 'Shipping Fee',
+        ];
+
+        foreach ($itemWithShippingCharges as $items) {
+            
+            InvoiceItem::create(array_merge($items,$defaultValuesToInsert));
+
+        }
+        
+        return true;
     }
     
 

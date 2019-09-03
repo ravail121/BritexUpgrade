@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\Invoice;
 
-use PDF;
 use Carbon\Carbon;
-use App\Model\Tax;
 use App\Model\Sim;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Model\Addon;
 use App\Model\Device;
-use App\Model\Coupon;
 use App\Model\Credit;
 use App\Model\Invoice;
 use App\Model\Customer;
@@ -19,7 +16,6 @@ use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Model\CustomerCoupon;
 use App\Model\CreditToInvoice;
 use App\Model\OrderGroupAddon;
 use App\Model\SystemGlobalSetting;
@@ -28,10 +24,11 @@ use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
+use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
 class InvoiceController extends BaseController implements ConstantInterface
 {
-    use InvoiceTrait;
+    use InvoiceTrait, InvoiceCouponTrait;
 
     const DEFAULT_INT = 1;
     const DEFAULT_ID  = 0;
@@ -98,7 +95,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     public function oneTimeInvoice(Request $request)
     {
         $msg = '';
-        
+
         $order = Order::where('hash', $request->hash ?: $request->order_hash)->first();
       
         $path = SystemGlobalSetting::first()->upload_path;
@@ -132,7 +129,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                
                 $invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
                
-                $taxes = $this->addTaxesToStandalone($order->invoice, self::TAX_FALSE, self::DEVICE_TYPE);
+                $taxes = $this->addTaxesToStandalone($order->id, self::TAX_FALSE, self::DEVICE_TYPE);
                
                 $msg = (!$invoiceItem) ? 'Standalone Device Invoice item was not generated' : 'Invoice item generated successfully.' ;
             }
@@ -144,13 +141,13 @@ class InvoiceController extends BaseController implements ConstantInterface
                         
                 $invoiceItem = $this->standaloneSimInvoiceItem($invoice['customer_standalone_sim_id']);
 
-                $taxes = $this->addTaxesToStandalone($order->invoice, self::TAX_FALSE, self::SIM_TYPE);
+                $taxes = $this->addTaxesToStandalone($order->id, self::TAX_FALSE, self::SIM_TYPE);
 
                 $msg = (!$invoiceItem) ? 'Standalone Sim Invoice item was not generated' : 'Invoice item generated successfully.';
 
             }
 
-            $this->addShippingCharges($order);
+            $this->addShippingCharges($order->id); // giving order directly excludes shipping fee in some cases.
     
             $this->storeCoupon($request->couponAmount, $request->couponCode, $order->invoice);
 
@@ -211,77 +208,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         $coupons = Order::where('hash', $request->hash)->first()->invoice->invoiceItem->where('type', self::COUPONS)->sum('amount');
         return ['coupons' => $coupons];
     }
-   
-    public function storeCoupon($couponAmount, $couponCode, $invoice)
-    {
-        if ($couponCode) {
-            //store coupon in invoice_items.
-            if ($couponAmount) {
-                $invoice->invoiceItem()->create(
-                    [
-                        'subscription_id' => null,
-                        'product_type'    => '',
-                        'product_id'      => null,
-                        'type'            => InvoiceItem::TYPES['coupon'],
-                        'description'     => "(Coupon) ".$couponCode,
-                        'amount'          => $couponAmount,
-                        'start_date'      => $invoice->start_date,
-                        'taxable'         => self::TAX_FALSE,
-                    ]
-                );
-            }
-
-            $couponToProcess   = Coupon::where('code', $couponCode);
-            $numUses           = $couponToProcess->pluck('num_uses')->first();
-
-            $couponToProcess->update([
-                'num_uses' => $numUses + 1
-            ]);
-
-            //store coupon in customer_coupon table if eligible
-            $couponCycles   = $couponToProcess->first()->num_cycles;
-            $couponId       = $couponToProcess->first()->id;
-
-            $customerCoupon = [
-                'customer_id'       => $invoice->customer_id,
-                'coupon_id'         => $couponId,
-                
-            ];
-
-            $customerCouponInfinite = [
-                'cycles_remaining'  => -1
-            ];
-
-            $customerCouponFinite = [
-                'cycles_remaining'  => $couponCycles - 1
-            ];
-
-            if ($couponCycles > 0) {
-
-                $data = array_merge($customerCoupon, $customerCouponFinite);
-                CustomerCoupon::create($data);
-
-            } elseif ($couponCycles == 0) {
-                
-                $data = array_merge($customerCoupon, $customerCouponInfinite);
-                CustomerCoupon::create($data);
-
-            }
-        }
-    }
-
-    protected function ifTotalDue($order)
-    {
-        $totalAmount    = $order->invoice->subtotal;
-        $paidAmount     = $order->invoice->creditsToInvoice->sum('amount');
-        $totalDue       = $totalAmount > $paidAmount ? $totalAmount - $paidAmount : 0;
-       
-        $order->invoice->update(
-            [
-                'total_due'     => $totalDue
-            ]
-        );
-    }
 
     /**
      * Generates the Invoice template and downloads the invoice.pdf file
@@ -318,12 +244,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         return 'Sorry, invoice not found.';
     }
 
-    public static function formatNumber($amount)
-    {
-        return number_format($amount, 2);
-    }
-
-
     /**
      * Updates the customer subscription_date, baddRegulatorFeesToSubscriptiontart and billing_end if null
      * 
@@ -343,7 +263,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
             ]);
         }
-       
+
         $this->input = [
             'invoice_id'  => $order->invoice_id, 
             'type'        => self::DEFAULT_INT, 
@@ -692,60 +612,6 @@ class InvoiceController extends BaseController implements ConstantInterface
     }
 
 
-
-    public function addShippingCharges($order)
-    {
-
-        $order = Order::find($order->id);
-
-        $items = $order->invoice->invoiceItem;
-
-        $itemWithShippingCharges  = [];
-
-        foreach ($items as $item) {
-
-            if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device'] && $item->product_id) {
-
-                $shippingFee        = Device::find($item->product_id)->shipping_fee;
-
-                if ($shippingFee) { $itemWithShippingCharges[] = [
-                    'amount'            => $shippingFee, 
-                    'subscription_id'   => $item->subscription_id, 
-                    'taxable'           => 0,
-                    'invoice_id'        => $item->invoice_id,
-                    'start_date'        => Carbon::today()
-                ]; }
-
-            } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['sim']) {
-
-                $shippingFee        = Sim::find($item->product_id)->shipping_fee;
-
-                if ($shippingFee) { $itemWithShippingCharges[] = [
-                    'amount'            => $shippingFee, 
-                    'subscription_id'   => $item->subscription_id, 
-                    'taxable'           => 0, 
-                    'invoice_id'        => $item->invoice_id,
-                    'start_date'        => Carbon::today()
-                ]; }
-
-            }
-
-        }
-
-        $defaultValuesToInsert = [
-            'product_type' => '',
-            'type'         => InvoiceItem::TYPES['one_time_charges'],
-            'description'  => 'Shipping Fee',
-        ];
-
-        foreach ($itemWithShippingCharges as $items) {
-            
-            InvoiceItem::create(array_merge($items,$defaultValuesToInsert));
-
-        }
-        return true;
-    }
-
     /**
      * Creates inovice_item for customer_standalone_device
      * 
@@ -778,10 +644,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 
         return $invoiceItem;   
     }
-
-
-
-
 
     /**
      * Creates inovice_item for customer_standalone_sim
@@ -817,30 +679,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $invoiceItem;   
     }
 
-
-
-
-    // protected function add_regulatory_fee($params, $plan)
-    // {
-
-    //     $params['product_type'] = '';
-    //     $params['product_id'] = null;
-    //     $params['type'] = 5;
-    //     $params['taxable'] = 0;
-
-    //     $fee_type = $plan->regulatory_fee_type;
-    //     $amount = $plan->regulatory_fee_amount;
-
-    //     if($fee_type ==  2){
-    //       $amount = $amount * $params['amount'];
-    //     }
-    //     $params['amount'] = $amount;
-    //     $invoice_item = InvoiceItem::create($params);
-
-    //     return $amount;
-
-    // }
-
     public function addTaxesToSubtotal($invoice)
     {
         
@@ -858,22 +696,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 
     }
 
-
-
-    protected function addTax($tax_rate, $params)
-    {
-        $taxes = 0;
-        //echo 'Rate :: ' . $tax_rate;
-        //print_r($params);
-        if($tax_rate && $params['taxable'] && in_array($params['type'], [2,3,4])){
-            //echo ' Amount :: ' . $params['amount'];
-            $taxes =  $tax_rate * $params['amount'];
-        }
-        //echo ' Taxes :: '. $taxes;
-        return $taxes;
-            
-    }
-
     protected function getCustomerDue($customer_id){
         $dues = 0;
         $invoices = Invoice::where('customer_id', $customer_id)->where('status', 1);
@@ -883,196 +705,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $dues;
     }
 
-    // protected function generate_customer_invoice($invoice, $customer)
-    // {
-       
-    //     $debt_amount = 0;
-    //     $taxes = 0;
-    //     $discounts = 0;
-    //     $invoice_items = [];
-
-    //     $tax_rate = 0;
-    //     $tax = Tax::where('state', $customer->billing_state_id)->where('company_id', $customer->company_id)->first();
-    //     if($tax){
-    //       $tax_rate = ($tax->rate)/100;
-    //     }
-
-
-    //     $subscriptions = $customer->subscription;
-    //     foreach($subscriptions as $subscription){
-
-    //         $plan = [];
-
-    //         if ( ($subscription->status == 'shipping' || $subscription->status == 'for-activation') ||  ($subscription->status == 'active' || $subscription->upgrade_downgrade_status == 'downgrade-scheduled')  ) {
-
-    //             $plan = $subscription->plan;
-
-    //         } else if ($subscription->status == 'active' || $subscription->upgrade_downgrade_status = 'downgrade-scheduled') {
-    //             $plan = $subscription->new_plan;
-
-    //         } else {
-    //             continue;
-    //         }
-
-    //         $params['product_id'] = $plan['id'];
-    //         $params['description'] = $plan['description'];
-    //         $params['amount'] = $plan['amount_recurring'];
-
-    //         $params['taxable'] = $plan['taxable'];
-
-    //         $taxes += $this->addTax($tax_rate, $params);
-    //         $debt_amount += $params['amount'];
-
-    //         $invoice_item = InvoiceItem::create($params);
-    //         array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
-
-    //         $debt_amount += $this->add_regulatory_fee($params, $plan);
-
-    //         $subscription_addons = $subscription->subscription_addon;
-    //         $addon = [];
-    //         foreach($subscription_addons as $s_addon){
-
-    //             if($s_addon['status'] == 'removal-scheduled' || $s_addon['status'] == 'for-removal'){
-    //                 continue;
-    //             }
-    //             $addon = $s_addon->addon;
-    //             $params = [
-    //                 'invoice_id' => $invoice->id,
-    //                 'subscription_id' => $s_addon['subscription_id'],
-    //                 'product_type' => 'addon',
-    //                 'product_id' => $addon['id'],
-    //                 'type' => 2,
-    //                 'description' => $addon['description'],
-    //                 'amount' => $addon['amount_recurring'],
-    //                 'start_date' => $invoice->start_date,
-    //                 'taxable' => $s_addon->subscription->plan['taxable'] // Replace this with this subscription->plan->taxable
-    //             ];
-
-    //             $taxes += $this->addTax($tax_rate, $params);
-    //             $debt_amount += $params['amount'];
-
-    //             $invoice_item = InvoiceItem::create($params);
-    //             array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
-
-    //         }
-
-    //     }
-
-
-    //     foreach($customer->pending_charge as $pending_charg){
-    //         if($pending_charg->invoice_id == 0){
-    //             $params = [
-    //                 'type'=>$pending_charg['type'],
-    //                 'amount'=>$pending_charg['amount'],
-    //                 'description'=>$pending_charg['description']
-    //             ];
-
-    //             $taxes += $this->addTax($tax_rate, $params);
-    //             $debt_amount += $params['amount'];
-    //             $invoice_item = InvoiceItem::create($params);
-    //             array_push($invoice_items, ['item' => $invoice_item, 'taxes'=>$tax_rate ] );
-           
-    //         }
-        
-    //         //update pending charge
-    //         $pendingcharge = $pending_charg->update(['invoice_id'=>$invoice->id]);
-    //     }
-
-
-    //     //lookup coupons
-
-    //     $coupon_discounts = 0;
-    //     // $customer_coupon = CustomerCoupon::where('customer_id', $customer->id)->where('cycles_remaining','>' ,0)->get();
-
-    //     // for($customer_coupon as $cc){
-
-    //     // }
-     
-
-    //     //add tax
-    //     $params = [
-    //         'invoice_id' => $invoice->id,
-    //         'product_type' => 'taxes',
-    //         'type' => 7,
-    //         'amount' => $taxes,
-    //         'description' => 'all taxes'
-    //     ];
-
-    //     $invoice_item = InvoiceItem::create($params);
-   
-    //     $subtotal = $debt_amount - $coupon_discounts + $taxes;
-
-    //     $dues = $this->getCustomerDue($customer->id);
-
-    //     $invoice->update([
-    //         'total_due'=>$dues,
-    //         'subtotal'=>$subtotal
-    //     ]);
-
-
-    //     $billing_date = strtotime($invoice->start_date);
-   
-    //     $invoice = [
-    //         'billing_date' => [ 
-    //             'year' => date("y", $billing_date),
-    //             'month' => date("m", $billing_date),
-    //             'day' => date("d", $billing_date),
-    //         ],
-    //         'company' => $customer->company,
-    //         'number' => $invoice->id,
-    //         'period_beginning' => $invoice->start_date,
-    //         'period_ending' => $invoice->end_date,
-    //         'due_date' => $invoice->due_date,
-    //         'subtotal' => $subtotal,
-    //         'total_due' => $dues,
-    //         'items' => $invoice_items
-    //     ];
-       
-    //     //add activation charges
-
-    //     $pdf = PDF::loadView('templates/invoice', compact('invoice'))->setPaper('a4', 'landscape');
-    //     $pdf->save('invoice/invoice.pdf');
-
-    // }
-
-    // protected function generate_new_invoice($customers){
-        
-    //     foreach ($customers as $customer) {
-
-    //         // check invoice type and start_date
-    //         $invoice_type_1 = false;
-
-    //         if(count($customer->invoice)){
-    //             foreach($customer->invoice as $invoice){
-    //                 if($invoice->type == 1 && $invoice->start_date > $customer->billing_end){
-    //                     $invoice_type_1 = true;
-    //                     break;
-    //                 }
-    //             }   
-    //         }
-
-    //         if($invoice_type_1){ continue; }
-
-    //         // Add row to invoice
-    //         $_enddate = $customer->end_date;
-    //         $start_date = date ("Y-m-d", strtotime ($_enddate ."+1 days"));
-    //         $end_date = date ("Y-m-d", strtotime ( $start_date ."+1 months"));
-    //         $due_date = $customer->billing_end;
-    //         $invoice = Invoice::create([
-    //             'customer_id'  => $customer->id,
-    //             'end_date'     => $start_date,
-    //             'start_date'   => $end_date,
-    //             'due_date'     => $due_date,
-    //             'type'         => 1,
-    //             'status'       => 1,
-    //             'subtotal'     => 0,
-    //             'total_due'    => 0,
-    //             'prev_balance' => 0
-    //         ]);
-    //         $this->generate_customer_invoice($invoice, $customer);
-            
-    //     }
-    // }
 
     public function createInvoice(Request $request)
     {
