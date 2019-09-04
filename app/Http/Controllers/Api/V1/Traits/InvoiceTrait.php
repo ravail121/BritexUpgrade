@@ -15,6 +15,7 @@ use App\Model\Subscription;
 use App\Events\InvoiceGenerated;
 use App\Events\UpgradeDowngradeInvoice;
 use Carbon\Carbon;
+use App\Model\SystemGlobalSetting;
 
 trait InvoiceTrait
 {
@@ -377,6 +378,20 @@ trait InvoiceTrait
         }
         
         return true;
+    }
+
+    public function regenerateRefundInvoice($encryptedId)
+    {
+        $decryptedId = pack("H*",$encryptedId);
+        $invoiceId   = substr($decryptedId, strpos($decryptedId, "=") + 1);
+        $invoice = Invoice::where('id', $invoiceId)->with('customer', 'invoiceItem')->first();
+
+        $company = $invoice->customer->company_id;
+        $path = SystemGlobalSetting::first()->upload_path;
+        $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.$encryptedId;
+        \Log::info($invoice->customer->company->logo);
+        $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
+        $this->saveInvoiceFile($pdf, $fileSavePath);
     }
     
 

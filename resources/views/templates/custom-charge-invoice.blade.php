@@ -15,7 +15,7 @@
                 <div class="head" style="padding: 0px 0px 0px;">
                     <div class="containerin">
                         <div class="logo" style="width: 100%; text-align: center;">
-                            <img src="{{ isset($invoice['company_logo']) ? $invoice['company_logo'] : '' }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
+                            <img src="{{ isset($invoice->customer->company->logo) ? $invoice->customer->company->logo : '' }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
                         </div>
                         <div style='margin-top:20px' class="invoice">
                             <h2>INVOICE</h2>

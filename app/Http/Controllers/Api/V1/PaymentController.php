@@ -258,17 +258,17 @@ class PaymentController extends BaseController implements ConstantInterface
         $invoice = Invoice::where('id', $invoice->id)->with('customer', 'invoiceItem')->first();
 
         $paymentRefundLog = PaymentRefundLog::where('invoice_id', $invoice->id)->with('paymentLog')->first();
-
+        
         if($paymentRefundLog){
             $pdf = PDF::loadView('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
             $companyId = \Request::get('company')->id;
             $systemGlobalSetting = SystemGlobalSetting::first();
-            $invoivePath = '/uploads/'.$companyId.'/non-order-invoice-pdf/'.md5($invoice->id);
+            $invoivePath = '/uploads/'.$companyId.'/non-order-invoice-pdf/'.bin2hex('invoice='.$invoice->id);
             $fileSavePath = $systemGlobalSetting->upload_path.$invoivePath;
             $this->saveInvoiceFile($pdf, $fileSavePath);
             event(new SendRefundInvoice($paymentLog, $invoice, $pdf));
         }else{
-             return 'Sorry, we could not find any refund Invoice';
+            return 'Sorry, we could not find any refund Invoice';
         }
     }
 
