@@ -54,6 +54,7 @@ class DeviceController extends Controller
 				'name'        => $sim->name,
 				'description' => $sim->description,
 				'image'       => $sim->image,
+				'show'		  => $sim->show,
 			));
 		}
 
