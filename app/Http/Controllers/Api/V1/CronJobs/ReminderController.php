@@ -22,11 +22,11 @@ class ReminderController extends Controller
             $query->where([['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]]);
         })
         ->get();
-        // $request = new Request;
 
         foreach ($customers as $key => $customer) {
+            $invoice = Invoice::where([['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
             $request->headers->set('authorization', $customer->company->api_key);
-            event(new AutoPayReminder($customer));
+            event(new AutoPayReminder($customer, $invoice));
         }
     }
 }

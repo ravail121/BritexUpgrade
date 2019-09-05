@@ -16,8 +16,8 @@ class ProcessController extends BaseController
     public function processSubscriptions(Request $request)
     {
     	$this->processSuspensions($request);
-        // $this->processDowngrades();
-        // $this->processAddonRemovals();
+        $this->processDowngrades();
+        $this->processAddonRemovals();
 
     	return $this->respond(['message' => 'Processed Successfully']);
     }

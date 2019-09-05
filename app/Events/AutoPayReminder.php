@@ -15,17 +15,17 @@ class AutoPayReminder
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $customer;
+    public $customer, $invoice;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct(Customer $customer)
+    public function __construct(Customer $customer, $invoice)
     {
         $this->customer = $customer;
-
+        $this->invoice = $invoice;
     }
 
     /**

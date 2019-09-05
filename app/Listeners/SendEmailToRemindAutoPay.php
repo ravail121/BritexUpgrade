@@ -35,7 +35,7 @@ class SendEmailToRemindAutoPay
     public function handle(AutoPayReminder $event)
     {
         $customer = $event->customer;
-
+        $invoice = $event->invoice;
         $configurationSet = $this->setMailConfiguration($customer);
 
         if ($configurationSet) {
@@ -53,7 +53,7 @@ class SendEmailToRemindAutoPay
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            $row['body'] = $this->addFieldsToBody('[total_amount_due]', $customer->invoice[0]['subtotal'], $row['body']);
+            $row['body'] = $this->addFieldsToBody('[total_amount_due]', $invoice->subtotal, $row['body']);
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

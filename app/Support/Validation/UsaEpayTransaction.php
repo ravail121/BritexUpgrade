@@ -98,7 +98,7 @@ trait UsaEpayTransaction
 
         }
 
-        $defaultData['key'] = \Request::get('company')->usaepay_api_key;
+        $defaultData['key'] = \Request::get('company') ?\Request::get('company')->usaepay_api_key : $order->company_id;
         $defaultData['usesandbox'] = self::TRAN_TRUE;
         
         return $defaultData;
