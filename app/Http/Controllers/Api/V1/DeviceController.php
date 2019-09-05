@@ -2,16 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Model\Sim;
 use App\Model\Plan;
 use App\Model\Device;
 use App\Model\DefaultImei;
-use App\Model\DeviceToSim;
-use App\Model\DeviceToType;
-use App\Model\DeviceToImage;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Request as RequestFacade;
 
@@ -34,14 +28,15 @@ class DeviceController extends Controller
 
 		if ($request->plan_id) {
 			$plan      = Plan::find($request->plan_id);
-			$deviceIds = $plan->devices()->pluck('device_id')->toArray();
-			$visibleDevices = $visibleDevices->whereIn('id', $deviceIds);
+			if($carrierId = $request->input('carrier_id')){
+				if ($carrierId != 0) {
+					$visibleDevices = $visibleDevices->whereIn('carrier_id', [$carrierId, '0']);
+				}
+			}
+			$visibleDevices = $visibleDevices->where('type', $plan->type);
 			$visibleSims    = [];
 		}
-		
-		if($carrierId = $request->input('carrier_id')){
-			$visibleDevices = $visibleDevices->where('carrier_id', $carrierId);
-		}
+
 
 		$sims = array();
 

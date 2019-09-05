@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 use Validator;
-use App\Model\Sim;
 use Carbon\Carbon;
 use App\Model\Plan;
-use App\Model\Addon;
 use App\Model\Order;
 use App\Model\Device;
 use App\Model\Invoice;
@@ -13,13 +11,9 @@ use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use App\Model\Subscription;
-use App\Model\DeviceToPlan;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
-use Illuminate\Support\Collection;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
 /**
