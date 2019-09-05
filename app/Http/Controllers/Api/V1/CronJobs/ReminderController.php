@@ -24,7 +24,7 @@ class ReminderController extends Controller
         ->get();
 
         foreach ($customers as $key => $customer) {
-            $invoice = Invoice::where([['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
+            $invoice = Invoice::where([['customer_id', $customer->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
             $request->headers->set('authorization', $customer->company->api_key);
             event(new AutoPayReminder($customer, $invoice));
         }

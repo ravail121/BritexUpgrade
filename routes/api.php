@@ -18,8 +18,7 @@ use App\Model\Order;
 // Route::get('test', function(){
 // });
 
-Route::get('testa', 'Api\V1\CronJobs\OrderController@order');
-Route::get('test', 'Api\V1\CronJobs\OrderDataController@order');
+Route::get('test', 'Api\V1\CronJobs\OrderController@order');
 
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
