@@ -35,7 +35,10 @@ class OrderController extends BaseController
 
                 foreach ($order->subscriptions as $key => $subscription) {
                     // $subscriptionRow[$key]['items'] = $this->subscriptions($subscription);
-                    $subscriptionRow[$key] = $this->subscriptions($subscription);
+                    $responseData = $this->subscriptions($subscription);
+                    if($responseData){
+                        $subscriptionRow[$key] = $responseData;
+                    }
                 }
 
                 foreach ($order->standAloneDevices as $key => $standAloneDevice) {
@@ -48,8 +51,8 @@ class OrderController extends BaseController
                     $standAloneSimRow[$key] = $this->standAloneSim($standAloneSim);
                 }
                 $row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
-
                     $apiData = $this->data($order, $row);
+
                     $response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
                     if($response->getStatusCode() == 201) {
                         $order->subscriptions()->update(['sent_to_readycloud' => 1]);
@@ -82,8 +85,6 @@ class OrderController extends BaseController
             // $deviceData = $this->subscriptionWithDevice($subscription);
             // return [$simData, $deviceData];
         }
-
-        return [];
 
     }
 
