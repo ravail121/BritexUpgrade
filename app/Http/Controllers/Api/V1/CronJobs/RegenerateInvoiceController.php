@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use PDF;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Model\Addon;
@@ -13,11 +14,16 @@ use App\Model\Invoice;
 use App\Model\InvoiceItem;
 use App\Model\CustomerCoupon;
 use App\Model\SubscriptionCoupon;
-use App\Events\InvoiceGenerated;
+use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 use Illuminate\Http\Request;
+use App\Model\SystemGlobalSetting;
+use App\Events\InvoiceGenerated;
 
 class RegenerateInvoiceController extends Controller
 {
+
+    use InvoiceTrait;
+
     const TYPES = [
         'monthly'   => 1,
         'order'     => 2
@@ -150,15 +156,36 @@ class RegenerateInvoiceController extends Controller
                 $invoice            = Invoice::find($id);
                 $updateInvoice      = $this->updateInvoice($invoice);
                 $order              = $invoice ? Order::where('invoice_id', $invoice->id)->first() : null;
-                echo '<li>Invoice with id: '.$id.' has been regenerated.</li>';
+                \Log::info('<li>Invoice with id: '.$id.' has been regenerated.</li>');
                 if(isset($order)) {
-                    event(new InvoiceGenerated($order));
+                    $this->saveAndSendInvoice($order);
                 }
 
             }
 
         }
 
+    }
+
+    protected function saveAndSendInvoice($order)
+    {
+        $path = SystemGlobalSetting::first()->upload_path;
+        $fileSavePath   = $path.'/uploads/'.$order->company_id.'/invoice-pdf/';
+        $subscriptions  = $this->subscriptionData($order);
+        $data           = $this->dataForInvoice($order);
+        if (!$subscriptions) {
+            return 'Api error: missing subscriptions data';
+        }
+        $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');
+        try {
+            if (file_exists($fileSavePath.$order->hash.'.pdf')) {
+                @unlink($fileSavePath.$order->hash.'.pdf');
+            }
+            $generatePdf->save($fileSavePath.$order->hash.'.pdf');
+            event(new InvoiceGenerated($order, $generatePdf));
+        } catch (Exception $e) {
+            \Log::info('Pdf Save Error: '.$e->getMessage());
+        }
     }
 
     protected function updateInvoice($invoice)

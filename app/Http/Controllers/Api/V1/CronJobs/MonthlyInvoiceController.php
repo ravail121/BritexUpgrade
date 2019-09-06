@@ -118,7 +118,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                 //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
                 
-                $subtotal = $monthlyCharges + $totalPendingCharges - $couponDiscountTotal;
+                $subtotal = number_format($monthlyCharges + $totalPendingCharges - $couponDiscountTotal, 2);
 
                 $invoiceUpdate = $invoice->update(compact('subtotal'));
 
@@ -138,7 +138,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                 $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
                 
-                $fileSavePath = $invoiceSavePath.'/uploads/invoice-pdf/';
+                $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
 
                 $this->generateInvoice($order, $fileSavePath, $request);
                 

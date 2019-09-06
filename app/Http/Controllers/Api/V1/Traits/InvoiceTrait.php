@@ -184,21 +184,11 @@ trait InvoiceTrait
                 }
 
             } else {
-
-                $subscriptionIds = $order->invoice->invoiceItem->pluck('subscription_id')->toArray();
-                $subscriptions   = [];
-
-                foreach (array_unique($subscriptionIds) as $id) {
-                    $subscriptionsExists = Subscription::find($id);
-                    $subscriptionsExists ? array_push($subscriptions, Subscription::find($id)) : null;
-                }
                 
-                if (!count($subscriptions)) {
-
-                    return 'Api error: missing subscription data';
-
+                $subscriptions = $this->subscriptionData($order);
+                if (!$subscriptions) {
+                    return 'Api error: missing subscriptions data';
                 }
-                
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
                 
             }
@@ -221,8 +211,10 @@ trait InvoiceTrait
 
     public function saveInvoiceFile($generatePdf, $fileSavePath)
     {
+        
         try {
             if (!file_exists($fileSavePath.'.pdf')) {
+                
                 $generatePdf->save($fileSavePath.'.pdf');
             }
         } catch (Exception $e) {
@@ -241,6 +233,25 @@ trait InvoiceTrait
             'previous_bill'                 =>   $this->previousBill($order)
         ];
         return $invoice;
+    }
+
+    public function subscriptionData($order)
+    {
+        $subscriptionIds = $order->invoice->invoiceItem->pluck('subscription_id')->toArray();
+        $subscriptions   = [];
+
+        foreach (array_unique($subscriptionIds) as $id) {
+            $subscriptionsExists = Subscription::find($id);
+            $subscriptionsExists ? array_push($subscriptions, Subscription::find($id)) : null;
+        }
+        
+        if (!count($subscriptions)) {
+
+            return false;
+
+        }
+
+        return $subscriptions;
     }
 
 
@@ -389,7 +400,6 @@ trait InvoiceTrait
         $company = $invoice->customer->company_id;
         $path = SystemGlobalSetting::first()->upload_path;
         $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.$encryptedId;
-        \Log::info($invoice->customer->company->logo);
         $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
         $this->saveInvoiceFile($pdf, $fileSavePath);
     }
