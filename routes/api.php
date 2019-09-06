@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Events\UpgradeDowngradeInvoice;
-use App\Model\Order;
 
 /*
 |--------------------------------------------------------------------------

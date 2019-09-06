@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\Request;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -16,3 +18,9 @@
 // });
 
 Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
+
+Route::get('/', function (Request $request) {
+    return  response()->json([
+      'message' => 'BriteX Backend !!'
+    ], 200);
+});   
