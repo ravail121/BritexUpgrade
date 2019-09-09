@@ -13,7 +13,7 @@ trait InvoiceCouponTrait
    
     public function storeCoupon($couponData, $order)
     {
-        if ($couponData['code']) {
+        if (isset($couponData['code'])) {
             //store coupon in invoice_items.
             if ($couponData['amount']) {
                 $order->invoice->invoiceItem()->create(
