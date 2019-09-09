@@ -5,34 +5,36 @@ namespace App\Http\Controllers\Api\V1\Traits;
 use App\Model\Coupon;
 use App\Model\CustomerCoupon;
 use App\Model\InvoiceItem;
+use App\Model\OrderCoupon;
+use App\Model\OrderCouponProduct;
 
 trait InvoiceCouponTrait
 {
    
-    public function storeCoupon($couponAmount, $couponCode, $invoice)
+    public function storeCoupon($couponData, $order)
     {
-        if ($couponCode) {
+        if ($couponData['code']) {
             //store coupon in invoice_items.
-            if ($couponAmount) {
-                $invoice->invoiceItem()->create(
+            if ($couponData['amount']) {
+                $order->invoice->invoiceItem()->create(
                     [
                         'subscription_id' => null,
                         'product_type'    => '',
                         'product_id'      => null,
                         'type'            => InvoiceItem::TYPES['coupon'],
-                        'description'     => "(Coupon) ".$couponCode,
-                        'amount'          => $couponAmount,
-                        'start_date'      => $invoice->start_date,
+                        'description'     => "(Coupon) ".$couponData['code'],
+                        'amount'          => $couponData['amount'],
+                        'start_date'      => $order->invoice->start_date,
                         'taxable'         => self::TAX_FALSE,
                     ]
                 );
             }
 
-            $couponToProcess   = Coupon::where('code', $couponCode);
+            $couponToProcess   = Coupon::where('code', $couponData['code']);
             $numUses           = $couponToProcess->pluck('num_uses')->first();
 
             $couponToProcess->update([
-                'num_uses' => $numUses + 1
+                'num_uses' => $numUses + $order->orderCoupon->orderCouponProduct->count()
             ]);
 
             //store coupon in customer_coupon table if eligible
@@ -40,9 +42,8 @@ trait InvoiceCouponTrait
             $couponId       = $couponToProcess->first()->id;
 
             $customerCoupon = [
-                'customer_id'       => $invoice->customer_id,
+                'customer_id'       => $order->invoice->customer_id,
                 'coupon_id'         => $couponId,
-                
             ];
 
             $customerCouponInfinite = [
@@ -56,14 +57,13 @@ trait InvoiceCouponTrait
             if ($couponCycles > 0) {
 
                 $data = array_merge($customerCoupon, $customerCouponFinite);
-                CustomerCoupon::create($data);
 
             } elseif ($couponCycles == 0) {
                 
                 $data = array_merge($customerCoupon, $customerCouponInfinite);
-                CustomerCoupon::create($data);
 
             }
+            CustomerCoupon::create($data);
         }
     }
 }

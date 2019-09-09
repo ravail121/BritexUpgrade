@@ -8,7 +8,6 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\AccountSuspended;
 use App\Model\SubscriptionAddon;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
 class ProcessController extends BaseController

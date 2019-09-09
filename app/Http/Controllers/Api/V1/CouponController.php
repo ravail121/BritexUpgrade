@@ -56,8 +56,6 @@ class CouponController extends Controller
     {
         $coupon = Coupon::where('code', $request->code)->first();
         $order  = Order::find($request->order_id);
-
-        isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
         
         if (!$coupon) { return ['error' => 'Invalid coupon code']; }
 
@@ -736,6 +734,8 @@ class CouponController extends Controller
                 if (isset($product['order']['id'])) {
     
                     $order = Order::find($product['order']['id']);
+
+                    isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
         
                     $order->orderCoupon->orderCouponProduct()->create([
                         'order_product_type'    => $product['order_product_type'],
@@ -756,6 +756,8 @@ class CouponController extends Controller
                 if (isset($product['order']['id'])) {
 
                     $order = Order::find($product['order']['id']);
+
+                    isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
         
                     $order->orderCoupon->orderCouponProduct()->create([
                         'order_product_type'    => $product['order_product_type'],
@@ -774,6 +776,8 @@ class CouponController extends Controller
                 if (isset($product['order']['id'])) {
 
                     $order = Order::find($product['order']['id']);
+
+                    isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
         
                     $order->orderCoupon->orderCouponProduct()->create([
                         'order_product_type'    => $product['order_product_type'],

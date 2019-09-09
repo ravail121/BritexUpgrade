@@ -153,7 +153,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
             $this->addShippingCharges($order->id); // giving order directly excludes shipping fee in some cases.
     
-            $this->storeCoupon($request->couponAmount, $request->couponCode, $order->invoice);
+            $this->storeCoupon($request->couponData, $order);
 
             if ($request->customer_id) {
                 $this->availableCreditsAmount($request->customer_id);

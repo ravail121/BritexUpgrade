@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 use App\Events\InvoiceAutoPaid;
 use App\Model\CustomerCreditCard;
 use App\Services\Payment\UsaEpay;
-use App\Http\Controllers\Controller;
 use App\Events\FailToAutoPaidInvoice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
@@ -279,7 +278,8 @@ class CardController extends BaseController implements ConstantInterface
                     $response = $this->chargeCard($request);
                     if(isset($response->getData()->success) && $response->getData()->success =="true") {
                         $invoice->update([
-                            'status' => Invoice::INVOICESTATUS['closed']
+                            'status' => Invoice::INVOICESTATUS['closed'],
+                            'total_due' => 0
                         ]);
                         $request->headers->set('authorization', $invoice->order->company->api_key);
                         event(new InvoiceAutoPaid($customer));

@@ -64,27 +64,27 @@ class UpdateController extends BaseController
      *  
      * @return boolean
      */
-    protected function updateInvoiceStatus($request)
-    {
-        $invoices = Invoice::where('type', 1)->where('status', 1)->get();
+    // protected function updateInvoiceStatus($request)
+    // {
+    //     $invoices = Invoice::where('type', 1)->where('status', 1)->get();
 
-        foreach ($invoices as $invoice) {
-            if ($invoice->today_greater_than_due_date) {
-                $invoice->update([
-                    'status' => 0,
-                ]);
+    //     foreach ($invoices as $invoice) {
+    //         if ($invoice->today_greater_than_due_date) {
+    //             $invoice->update([
+    //                 'status' => 0,
+    //             ]);
 
-                $customer = $this->updateAccountSuspended($invoice->customer_id);
-                if ($customer) {
-                    $this->updateSubscriptions($customer->id);
-                    $request->headers->set('authorization', $customer->company->api_key);
-                    // event(new AccountSuspended(Customer::find($customer->id)));
-                }
+    //             $customer = $this->updateAccountSuspended($invoice->customer_id);
+    //             if ($customer) {
+    //                 $this->updateSubscriptions($customer->id);
+    //                 $request->headers->set('authorization', $customer->company->api_key);
+    //                 // event(new AccountSuspended(Customer::find($customer->id)));
+    //             }
 
-            }
-        }
-        return true;
-    }
+    //         }
+    //     }
+    //     return true;
+    // }
 
 
     /**
