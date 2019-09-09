@@ -467,7 +467,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
     protected function insertOrder($invoice)
     {
-        $hash = md5(time());
+        $hash = md5(time().rand());
     
         if ($invoice->type === Invoice::TYPES['monthly']) {
             $count = Order::where('company_id', Company::Id['britex'])->max('order_num');

@@ -13,13 +13,8 @@ use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Model\OrderGroupAddon;
-use App\Model\SubscriptionAddon;
-use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
-use App\Http\Controllers\Controller;
-//use Illuminate\Support\Facades\Auth;
 
 class OrderController extends BaseController
 {
@@ -39,7 +34,15 @@ class OrderController extends BaseController
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                         $query->where('hash', $hash);})->get();
 
-            //print_r($order_groups);
+            if(isset($order_groups[0]) && $order_groups['0']->order->customer_id){
+                $date = Carbon::today()->addDays(6)->endOfDay();
+                $paidMonthlyInvoice = Invoice::where([
+                    ['customer_id', $order_groups['0']->order->customer_id],
+                    ['status', Invoice::INVOICESTATUS['closed&paid'] ],
+                    ['type', Invoice::TYPES['monthly']]
+                ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+                $newPlan = [];
+            }
             
             foreach($order_groups as $key => $og){
 
@@ -77,6 +80,17 @@ class OrderController extends BaseController
                         'plan_prorated_amt' => $og->plan_prorated_amt,
                         'subscription'      => $og->subscription,
                     );
+
+                if(isset($paidMonthlyInvoice)){
+                    if(in_array($og->plan_id, $newPlan)){
+                        $tmp['plan']['amount_onetime'] = 0;
+                        $tmp['plan']['auto_generated_plans'] = 1;
+                        $order['paid_invoice'] = 1;
+                        $newPlan[array_search($og->plan_id, $newPlan)] = null;
+                    }else{
+                        $newPlan[$key] = $og->plan_id;
+                    }
+                }
 
                 if(isset($tmp['subscription'])){
                     $tmp['plan']['amount_onetime'] = 0;
@@ -149,7 +163,7 @@ class OrderController extends BaseController
                 'sim_id'           => 'numeric',
                 'sim_num'          => 'numeric',
                 'sim_type'         => 'string',
-                'addon_id'         => 'numeric',
+                // 'addon_id'         => 'numeric',
                 'subscription_id'  => 'numeric',
                 'porting_number'   => 'string',
                 'area_code'        => 'string',
@@ -170,7 +184,7 @@ class OrderController extends BaseController
         if(!isset($data['order_hash'])){
             //Create new row in order table
             $order = Order::create([
-                'hash'       => sha1(time()),
+                'hash'       => sha1(time().rand()),
                 'company_id' => \Request::get('company')->id,
             ]);
         }else{
@@ -185,6 +199,12 @@ class OrderController extends BaseController
             $customer = Customer::hash($data['customer_hash']);
             if ($customer) {
                 $order->update(['customer_id' => $customer->id]);
+                $date = Carbon::today()->addDays(6)->endOfDay();
+                $invoice = Invoice::where([
+                    ['customer_id', $customer->id],
+                    ['status', Invoice::INVOICESTATUS['closed&paid'] ],
+                    ['type', Invoice::TYPES['monthly']]
+                ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
             }
         }
 
@@ -199,23 +219,32 @@ class OrderController extends BaseController
             $order->update([
                 'active_group_id' => $order_group->id,
             ]);
-
         }else{
             $order_group = OrderGroup::find($order->active_group_id);
         }
 
+        $this->insertOrderGroup($data, $order, $order_group);
 
-        $og_params = [];
-
-
-        if(isset($data['device_id'])){
-            $og_params['device_id'] = $data['device_id'];
+        if(isset($invoice) && isset($data['plan_id'])){
+            $monthly_order_group = OrderGroup::create([
+                'order_id' => $order->id
+            ]);
+            $this->insertOrderGroup($data, $order, $monthly_order_group, 1);
         }
 
+        return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);    
+    }
+
+    private function insertOrderGroup($data, $order, $order_group, $paidMonthlyInvoice = 0)
+    {
+        $og_params = [];
+        if(isset($data['device_id']) && $paidMonthlyInvoice == 0){
+            $og_params['device_id'] = $data['device_id'];
+        }
         if(isset($data['plan_id'])){
             $og_params['plan_id'] = $data['plan_id'];
 
-            if ($order->customer && $order->compare_dates) {
+            if ($order->customer && $order->compare_dates && $paidMonthlyInvoice == 0) {
                 $og_params['plan_prorated_amt'] = $order->planProRate($data['plan_id']);
             }
             // delete all rows in order_group_addon table associated with this order
@@ -231,72 +260,68 @@ class OrderController extends BaseController
                 array_push($addon_ids, $addon->addon_id);
             }
 
-
             foreach($_oga as $__oga){
                 if (!in_array($__oga->addon_id, $addon_ids)) {
                     $__oga->delete();
                 }
             }
-            
         }
 
-        if(isset($data['sim_id'])){
-            $sim_id = $data['sim_id'];
-            if($sim_id == 0){
-                $sim_id = null;
+        if($paidMonthlyInvoice == 0){
+            if(isset($data['sim_id'])){
+                $sim_id = $data['sim_id'];
+                if($sim_id == 0){
+                    $sim_id = null;
+                }
+                $og_params['sim_id'] = $sim_id;
             }
-            $og_params['sim_id'] = $sim_id;
-        }
 
-        if(isset($data['sim_num'])){
-            $og_params['sim_num'] = $data['sim_num'];
-        }
+            if(isset($data['sim_num'])){
+                $og_params['sim_num'] = $data['sim_num'];
+            }
 
-        // if(isset($data['subscription_id'])){
-        //     $og_params['subscription_id'] = $data['subscription_id'];
-        // }
+            // if(isset($data['subscription_id'])){
+            //     $og_params['subscription_id'] = $data['subscription_id'];
+            // }
 
-        if(isset($data['sim_type'])){
-            $og_params['sim_type'] = $data['sim_type'];
-        }
+            if(isset($data['sim_type'])){
+                $og_params['sim_type'] = $data['sim_type'];
+            }
 
-        if(isset($data['porting_number'])){
-            $og_params['porting_number'] = $data['porting_number'];
-        }
+            if(isset($data['porting_number'])){
+                $og_params['porting_number'] = $data['porting_number'];
+            }
 
-        if(isset($data['area_code'])){
-            $og_params['area_code'] = $data['area_code'];
-        }
+            if(isset($data['area_code'])){
+                $og_params['area_code'] = $data['area_code'];
+            }
 
-        if(isset($data['operating_system'])){
-            $og_params['operating_system'] = $data['operating_system'];
-        }
+            if(isset($data['operating_system'])){
+                $og_params['operating_system'] = $data['operating_system'];
+            }
 
-        if(isset($data['imei_number'])){
-            $og_params['imei_number'] = $data['imei_number'];
+            if(isset($data['imei_number'])){
+                $og_params['imei_number'] = $data['imei_number'];
+            }
         }
 
         $order_group->update($og_params);
 
-        if(isset($data['addon_id'])){
-            $ogData = [
-                'addon_id'       => $data['addon_id'],
-                'order_group_id' => $order_group->id
-            ];
+        if(isset($data['addon_id'][0])){
+            foreach ($data['addon_id'] as $key => $addon) {
+                $ogData = [
+                    'addon_id'       => $addon,
+                    'order_group_id' => $order_group->id
+                ];
 
-            if ($order->customer && $order->compare_dates) {
-                $amt = $order->addonProRate($data['addon_id']);
-                $oga = OrderGroupAddon::create(array_merge($ogData, ['prorated_amt' => $amt]));
-            } else {
-                $oga = OrderGroupAddon::create($ogData);
-
+                if ($order->customer && $order->compare_dates && $paidMonthlyInvoice== 0) {
+                    $amt = $order->addonProRate($addon);
+                    $oga = OrderGroupAddon::create(array_merge($ogData, ['prorated_amt' => $amt]));
+                } else {
+                    $oga = OrderGroupAddon::create($ogData);
+                }
             }
-
         }
-
-        return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);
-        
-        
     }
 
     public function remove_from_order(Request $request)
@@ -322,15 +347,19 @@ class OrderController extends BaseController
         if(!$og){
             return $this->respondError('Invalid order_group_id', 400);
         }
-
-
         //check if this ordergroup is associated with given order_hash
         if($og->order_id != $order->id){
             return $this->respondError('Given order_group_id is not associated with provided order hash', 400);
         }
 
-
-        $og->delete();
+        if($data['paid_monthly_invoice'] == 1 && $og->plan_id != null){
+            $ogIds = OrderGroup::where([
+                ['order_id', $og->order_id],
+                ['plan_id', $og->plan_id],
+            ])->delete();
+        }else{
+            $og->delete();
+        }
         $order->update(['active_group_id' => 0]);
         return $this->respond(['details'=>'Deleted successfully'], 204);
     }

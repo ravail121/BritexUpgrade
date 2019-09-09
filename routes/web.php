@@ -23,4 +23,4 @@ Route::get('/', function (Request $request) {
     return  response()->json([
       'message' => 'BriteX Backend !!'
     ], 200);
-});   
+});

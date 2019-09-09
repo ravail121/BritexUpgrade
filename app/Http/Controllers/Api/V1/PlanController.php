@@ -233,7 +233,7 @@ class PlanController extends BaseController
         $orderData = $subscription->order->toArray();
         $orderData['invoice_id'] = null;
         $orderData['status'] = 0;
-        $orderData['hash'] = md5(time());
+        $orderData['hash'] = md5(time().rand());
         $orderData['order_num'] = null;
         $order = Order::create($orderData);
 

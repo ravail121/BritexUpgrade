@@ -16,7 +16,8 @@ class Invoice extends Model implements ConstantInterface
 
     const INVOICESTATUS = [
         'open'          => 1,
-        'closed'        => 2
+        'closed'        => 2,
+        'closed&paid'   => 2,
     ];
 
     const InvoiceItemTypes = [
