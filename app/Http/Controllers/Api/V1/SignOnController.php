@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Auth;
+use Carbon\Carbon;
+use App\Model\Invoice;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -41,10 +43,18 @@ class SignOnController extends BaseController
         if(Auth::validate($data))
         {
             $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id','hash']);
+
+            $date = Carbon::today()->addDays(6)->endOfDay();
+            $invoice = Invoice::where([
+                ['customer_id', $user[0]->id],
+                ['status', Invoice::INVOICESTATUS['closed&paid'] ],
+                ['type', Invoice::TYPES['monthly']]
+            ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+            $user[0]['paid_monthly_invoice'] = $invoice ? 1: null;
+            
             return $this->respond($user[0]);
         }
         else{
-            
             return $this->respondError("Invalid Email or Password");
         }
     }

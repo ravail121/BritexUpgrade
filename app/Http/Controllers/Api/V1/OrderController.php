@@ -25,7 +25,7 @@ class OrderController extends BaseController
 
 
         $hash = $request->input('order_hash');
-        //$order = array(); //'order'=>array(), 'order_groups'=>array());
+        $paidMonthlyInvoice = $request->input('paid_monthly_invoice');
 
         $order = [];
         $ordergroups = [];
@@ -34,13 +34,7 @@ class OrderController extends BaseController
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                         $query->where('hash', $hash);})->get();
 
-            if(isset($order_groups[0]) && $order_groups['0']->order->customer_id){
-                $date = Carbon::today()->addDays(6)->endOfDay();
-                $paidMonthlyInvoice = Invoice::where([
-                    ['customer_id', $order_groups['0']->order->customer_id],
-                    ['status', Invoice::INVOICESTATUS['closed&paid'] ],
-                    ['type', Invoice::TYPES['monthly']]
-                ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+            if(isset($paidMonthlyInvoice)){
                 $newPlan = [];
             }
             
@@ -199,15 +193,9 @@ class OrderController extends BaseController
             $customer = Customer::hash($data['customer_hash']);
             if ($customer) {
                 $order->update(['customer_id' => $customer->id]);
-                $date = Carbon::today()->addDays(6)->endOfDay();
-                $invoice = Invoice::where([
-                    ['customer_id', $customer->id],
-                    ['status', Invoice::INVOICESTATUS['closed&paid'] ],
-                    ['type', Invoice::TYPES['monthly']]
-                ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+                $paidMonthlyInvoice = isset($data['paid_monthly_invoice'])? $data['paid_monthly_invoice'] : null;
             }
         }
-
 
         // check active_group_id
         if(!$order->active_group_id){
@@ -225,7 +213,7 @@ class OrderController extends BaseController
 
         $this->insertOrderGroup($data, $order, $order_group);
 
-        if(isset($invoice) && isset($data['plan_id'])){
+        if(isset($paidMonthlyInvoice) && isset($data['plan_id'])){
             $monthly_order_group = OrderGroup::create([
                 'order_id' => $order->id
             ]);

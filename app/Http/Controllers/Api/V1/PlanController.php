@@ -244,13 +244,7 @@ class PlanController extends BaseController
             'order_id'                     => $order->id,
         ];
 
-        $date = Carbon::today()->addDays(6)->endOfDay();
-        $invoice = Invoice::where([['customer_id', $subscription->customerRelation->id],['type', '1'],['status','2']])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
-
-        $paidInvoice = '0';
-        if(isset($invoice)){
-            $paidInvoice = '1';
-        }
+        $paidInvoice = $request->paid_monthly_invoice ?: '0';
         
         $newPlan = Plan::find($data['plan']);
         $activePlan = Plan::find($data['active_plans']);
