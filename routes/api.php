@@ -219,11 +219,6 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'CouponController@removeCoupon'
         ]);
 
-        Route::post('/order-coupon', [
-          'as' => 'api.remove.orderCoupon',
-          'uses' => 'CouponController@orderCoupon'
-        ]);
-
       });
       Route::group(['prefix' => 'devices', 'namespace' => 'Api\V1'], function()
       {

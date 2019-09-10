@@ -230,7 +230,7 @@ class CouponController extends Controller
             $this->failedResponse = 'Coupon is valid from '.$couponStartDate;
             return false;
 
-        } elseif ($couponExpiryDate && ($today > $couponExpiryDate)) {
+        } elseif ($couponExpiryDate && ($today >= $couponExpiryDate)) {
 
             $this->failedResponse = 'Coupon expired on '.$couponExpiryDate;
             return false;
@@ -385,7 +385,8 @@ class CouponController extends Controller
         $itemsAmount = array_sum($planAmount) + array_sum($deviceAmount) + array_sum($simAmount) + array_sum($addonAmount);
 
         $total       = $isPercentage ? $itemsAmount * $coupon['amount'] / 100 : $coupon['amount'] * count($countItems);
-
+        
+        $this->orderCoupon($orderCouponProduct, $order);
         return (['total' => $total, 'applied_to' => $orderCouponProduct, 'order' => $order]);
 
     }
@@ -564,7 +565,7 @@ class CouponController extends Controller
             }
 
         }
-        
+        $this->orderCoupon($orderCouponProduct, $order);
         return (['total' => array_sum($couponAmount), 'applied_to' => $orderCouponProduct, 'order' => $order]);
 
     }
@@ -712,7 +713,7 @@ class CouponController extends Controller
             }
 
         }
-        
+        $this->orderCoupon($orderCouponProduct, $order);
         return (['total' => array_sum($couponAmount), 'applied_to' => $orderCouponProduct, 'order' => $order]);
     }
 
@@ -724,61 +725,16 @@ class CouponController extends Controller
 
     }
 
-    protected function orderCoupon(Request $request)
+    protected function orderCoupon($data, $order)
     {
-        
-        if ($request['applied_to_all']) {
+        $order->orderCoupon->orderCouponProduct()->delete();
+
+        if ($data) {
                 
-            foreach ($request['applied_to_all'] as $product) {
-
-                if (isset($product['order']['id'])) {
-    
-                    $order = Order::find($product['order']['id']);
-
-                    isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
-        
-                    $order->orderCoupon->orderCouponProduct()->create([
-                        'order_product_type'    => $product['order_product_type'],
-                        'order_product_id'      => $product['order_product_id'],
-                        'amount'                => $product['amount']
-                    ]);
-
-                }
-
-            }
-
-        }
-
-        if ($request['applied_to_types']) {
-            
-            foreach ($request['applied_to_types'] as $product) {
-
-                if (isset($product['order']['id'])) {
-
-                    $order = Order::find($product['order']['id']);
-
-                    isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
-        
-                    $order->orderCoupon->orderCouponProduct()->create([
-                        'order_product_type'    => $product['order_product_type'],
-                        'order_product_id'      => $product['order_product_id'],
-                        'amount'                => $product['amount']
-                    ]);
-
-                }
-            }
-        }
-
-        if ($request['applied_to_products']) {
-            
-            foreach ($request['applied_to_products'] as $product) {
+            foreach ($data as $product) {
                 
                 if (isset($product['order']['id'])) {
-
-                    $order = Order::find($product['order']['id']);
-
-                    isset($order->orderCoupon) ? $order->orderCoupon->orderCouponProduct()->delete() : null;
-        
+                   
                     $order->orderCoupon->orderCouponProduct()->create([
                         'order_product_type'    => $product['order_product_type'],
                         'order_product_id'      => $product['order_product_id'],
@@ -786,7 +742,9 @@ class CouponController extends Controller
                     ]);
 
                 }
+
             }
+
         }
 
     }

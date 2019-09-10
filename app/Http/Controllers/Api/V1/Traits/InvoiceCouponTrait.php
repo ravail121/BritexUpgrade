@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Api\V1\Traits;
 use App\Model\Coupon;
 use App\Model\CustomerCoupon;
 use App\Model\InvoiceItem;
-use App\Model\OrderCoupon;
-use App\Model\OrderCouponProduct;
 
 trait InvoiceCouponTrait
 {
@@ -32,7 +30,7 @@ trait InvoiceCouponTrait
 
             $couponToProcess   = Coupon::where('code', $couponData['code']);
             $numUses           = $couponToProcess->pluck('num_uses')->first();
-
+            
             $couponToProcess->update([
                 'num_uses' => $numUses + $order->orderCoupon->orderCouponProduct->count()
             ]);

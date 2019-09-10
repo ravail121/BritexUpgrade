@@ -16,6 +16,7 @@ use App\Events\InvoiceGenerated;
 use App\Events\UpgradeDowngradeInvoice;
 use Carbon\Carbon;
 use App\Model\SystemGlobalSetting;
+use App\Model\PendingCharge;
 
 trait InvoiceTrait
 {
@@ -337,6 +338,16 @@ trait InvoiceTrait
                 'total_due'     => $totalDue
             ]
         );
+        if ($totalDue) {
+            PendingCharge::create([
+                'customer_id' => $order->customer_id,
+                'subscription_id' => 0,
+                'invoice_id' => $order->invoice_id,
+                'type'  => 3,
+                'amount' => $totalDue,
+                'description' => 'Pending one time payment'
+            ]);
+        }
     }
 
     public function addShippingCharges($orderId)
