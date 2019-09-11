@@ -52,8 +52,8 @@ class OrderController extends BaseController
                         "customer_id"            => $og->order->customer_id,
                         'order_groups'           => [],
                         'business_verification'  => null,
-                        'operating_system'       => null,
-                        'imei_number'            => null,
+                        'operating_system'       => $og->operating_system,
+                        'imei_number'            => $og->imei_number,
                         'company'                => $og->order->company,
                         'customer'               => $og->customer,
                     ];

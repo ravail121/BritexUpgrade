@@ -46,17 +46,14 @@ class SubscriptionController extends BaseController
         }
         if($request->subscription){
             $subscription = Subscription::find($request->subscription['id']);
-            // $data = $request->validate([
-            //     'order_id'  => 'required',
-            // ]);
 
             if($request->status == "Upgrade"){
                 $data['old_plan_id'] = $subscription->plan_id;
                 $data['upgrade_downgrade_date_submitted'] = Carbon::now();
                 $data['plan_id'] = $request->plan_id;
                 $data['upgrade_downgrade_status'] = 'for-upgrade';
-                // $data['order_num'] = $order->order_num;
                 $updateSubcription = $subscription->update($data);
+
                 return $this->respond(['subscription_id' => $subscription->id]);
             }
             return $this->respond(['same_subscription_id' => $subscription->id]);
@@ -70,7 +67,6 @@ class SubscriptionController extends BaseController
             $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
            
             $insertData = $this->generateSubscriptionData($request, $order);
-            
             $subscription = Subscription::create($insertData);
 
             if(!$subscription) {
@@ -100,9 +96,6 @@ class SubscriptionController extends BaseController
             'id'  => 'required',
             'upgrade_downgrade_status'  => 'required',
         ]);
-        // $order = Order::whereHash($request->order_hash)->first();
-        // $data['order_id'] = $order->id;
-        // $data['order_num'] = $order->order_num;
         $subscription = Subscription::find($data['id']);
 
         
