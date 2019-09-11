@@ -290,10 +290,14 @@ class OrderController extends BaseController
             if(isset($data['imei_number'])){
                 $og_params['imei_number'] = $data['imei_number'];
             }
+
+            if (isset($data['require_device'])) {
+                $og_params['require_device'] = $data['require_device'];
+            }
         }
-
+        
         $order_group->update($og_params);
-
+        
         if(isset($data['addon_id'][0])){
             foreach ($data['addon_id'] as $key => $addon) {
                 $ogData = [
