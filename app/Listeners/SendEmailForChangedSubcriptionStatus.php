@@ -22,6 +22,7 @@ class SendEmailForChangedSubcriptionStatus
         'for-activation'   => 'for-activation',
         'active'           => 'activation-complete',
         'closed'           => 'closed',
+        'suspended'        => 'suspended'
     ];
 
     /**

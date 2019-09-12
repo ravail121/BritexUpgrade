@@ -30,7 +30,7 @@ class UpdateController extends BaseController
         // $this->updateInvoiceStatus($request);
         $this->moveSubscriptionSuspendToClose($request);
         $this->updateProratedAmounts();
-        $this->scheduledSupensions();
+        $this->scheduledSupensions($request);
         $this->scheduledClosings($request);
         
         return $this->respond(['message' => 'Updated Successfully']);
@@ -186,7 +186,7 @@ class UpdateController extends BaseController
 		return $subscriptions;
     }
 
-    protected function scheduledSupensions()
+    protected function scheduledSupensions($request)
     {
         $scheduledSuspensions = Subscription::where('scheduled_suspend_date', '<=' ,Carbon::today())->get();
         foreach ($scheduledSuspensions as $sub) {
@@ -196,6 +196,9 @@ class UpdateController extends BaseController
                 'scheduled_suspend_date'=> null,
                 'suspended_date'        => Carbon::today()
             ]);
+            $request->headers->set('authorization', $sub->customerRelation->company->api_key);
+            
+            event(new SubcriptionStatusChanged($sub->id));
         }
     }
 
