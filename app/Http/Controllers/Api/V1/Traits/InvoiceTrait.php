@@ -165,15 +165,17 @@ trait InvoiceTrait
     public function generateInvoice($order, $fileSavePath, $request = null)
     {
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
+
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
             $data = $this->dataForInvoice($order);
+            
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
                     event(new UpgradeDowngradeInvoice($order, $generatePdf));
-
+                    $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                     return $generatePdf->download('Invoice.pdf');
                 } else {    
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
