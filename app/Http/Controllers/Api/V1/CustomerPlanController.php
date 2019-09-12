@@ -29,8 +29,7 @@ class CustomerPlanController extends BaseController
 
     public function getSubscriptions($customerId){
 
-    	$subscriptions = Subscription::with('plan', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customerId)
-            ->get();
+    	$subscriptions = Subscription::with('plan', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customerId)->orderBy('id', 'desc')->get();
     	
     	return $subscriptions;
     }

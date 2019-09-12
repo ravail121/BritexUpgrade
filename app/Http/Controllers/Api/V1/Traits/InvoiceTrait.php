@@ -167,38 +167,28 @@ trait InvoiceTrait
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
-            
             $data = $this->dataForInvoice($order);
-            
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
-             
                 $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
-
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
-                    
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
-
                     event(new UpgradeDowngradeInvoice($order, $generatePdf));
 
-                } else {
-                    
+                    return $generatePdf->download('Invoice.pdf');
+                } else {    
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
-
                 }
-
-            } else {
-                
+            } else {   
                 $subscriptions = $this->subscriptionData($order);
                 if (!$subscriptions) {
                     return 'Api error: missing subscriptions data';
                 }
-                $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                    
-                
+                $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                        
             }
 
             $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash); // To save the generated pdf
 
-            $request && !isset($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
+            $request ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
 
             return $generatePdf->download('Invoice.pdf'); //To trigger the old generate and download logic
 

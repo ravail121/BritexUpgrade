@@ -236,6 +236,7 @@ class CreateOrderTable extends Migration
             $table->text('billing_address1')->nullable();
             $table->text('billing_address2')->nullable(); 
             $table->text('billing_city')->nullable();
+            $table->string('billing_zip')->nullable();
             $table->char('billing_state_id', 2)->nullable();
             $table->text('shipping_address1');
             $table->text('shipping_address2')->nullable();

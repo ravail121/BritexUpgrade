@@ -21,7 +21,7 @@ class CreateCustomerCreditCardsTable extends Migration
             $table->integer('expiration');
             $table->integer('cvc');
             $table->text('billing_address1');
-            $table->integer('billing_zip');
+            $table->string('billing_zip');
             $table->timestamps();
 
             $table->foreign('customer_id')

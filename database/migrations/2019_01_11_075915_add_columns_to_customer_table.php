@@ -23,7 +23,7 @@ class AddColumnsToCustomerTable extends Migration
             $table->bigInteger('phone')->after('password');
             $table->bigInteger('alternate_phone')->nullable()->after('phone');
             $table->string('pin')->after('alternate_phone');
-            $table->integer('shipping_zip')->after('shipping_state_id');
+            $table->string('shipping_zip')->after('shipping_state_id');
         });
     }
 

@@ -152,9 +152,13 @@ class PlanController extends BaseController
         if (!$subscription) {
             return $this->respond('Invalid Subcription ID');
         }
-        if ($subscription->upgrade_downgrade_status == "downgrade-scheduled") {
-            return $this->respond('Downgrade Already Scheduled');
-        } 
+        if ($subscription->upgrade_downgrade_status) {
+            return $this->respond('Upgrade/Downgrade Already Scheduled');
+        }
+
+        if ($subscription->status != 'active') {
+            return $this->respond('Can Upgrade/Downgrade only Active Subscriptions');
+        }
 
         $condition = [
             ['carrier_id', '=', $subscription->plan->carrier_id],

@@ -51,7 +51,7 @@ class Subscription extends Model
     ];
 
     protected $appends = [
-        'phone_number_formatted'
+        'phone_number_formatted', 'status_formated'
     ];
 
     const SUB_STATUSES = [
@@ -66,9 +66,18 @@ class Subscription extends Model
     ];
 
     const STATUS = [
-        'suspended'         => 'suspended',
-        'closed'            => 'closed',
-        'active'            => 'active',
+        'suspended'  => 'suspended',
+        'closed'     => 'closed',
+        'active'     => 'active',
+    ];
+
+    const STATUSFORMATED = [
+        ''               => '',
+        'suspended'      => 'Subscription Suspended',
+        'closed'         => 'Subscription Closed',
+        'active'         => 'active',
+        'for-activation' => 'Wating for Activation',
+        'shipping'       => 'Wating for Activation',
     ];
 
     const InvoiceItemTypes = [
@@ -114,6 +123,7 @@ class Subscription extends Model
 
     	return $this->hasMany('App\Model\SubscriptionAddon', 'id');
     }
+    
     public function getNamesOfSubscriptionAddonNotRemovedAttribute()
     {
         return $this->subscriptionAddonNotRemoved->load('addons')->pluck('addons.name');
@@ -426,5 +436,10 @@ class Subscription extends Model
             'name' => $name,
             'amount' => $amount
         ];
+    }
+
+    public function getStatusFormatedAttribute()
+    {
+        return self::STATUSFORMATED[$this->status];
     }
 }

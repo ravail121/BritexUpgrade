@@ -154,7 +154,7 @@ class OrderController extends BaseController
                     "address_2" => $order->shipping_address2,
                     "city" => $order->shipping_city,
                     "post_code" => $order->shipping_zip,
-                    "region" => $customer['billing_state_id'].' '."associated with".' '.$order->shipping_state_id,
+                    "region" => $order->shipping_state_id,
                     "country" => "USA",
                     "phone" =>  $order->customer->phone,
                 ], 

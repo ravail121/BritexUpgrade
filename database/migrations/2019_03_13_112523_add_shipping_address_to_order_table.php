@@ -17,7 +17,7 @@ class AddShippingAddressToOrderTable extends Migration
             $table->text('shipping_address1')->after('customer_id')->nullable();
             $table->text('shipping_address2')->after('shipping_address1')->nullable();
             $table->string('shipping_state_id')->after('shipping_address2')->nullable();
-            $table->integer('shipping_zip')->after('shipping_state_id')->nullable();
+            $table->string('shipping_zip')->after('shipping_state_id')->nullable();
         });
     }
 
