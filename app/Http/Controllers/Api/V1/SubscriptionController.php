@@ -165,7 +165,7 @@ class SubscriptionController extends BaseController
             $subscriptionAddon = SubscriptionAddon::create([
                 'subscription_id' => $request->subscription_id,
                 'addon_id'        => $request->addon_id,
-                'status'          => $request->addon_subscription_id ? SubscriptionAddon::STATUSES['for-adding'] : SubscriptionAddon::STATUSES['active'],
+                'status'          => $request->addon_subscription_id ? SubscriptionAddon::STATUSES['for-adding'] : SubscriptionAddon::STATUSES['for-adding'],
             ]);
         }
 

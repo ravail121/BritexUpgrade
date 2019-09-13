@@ -161,8 +161,6 @@ class InvoiceController extends BaseController implements ConstantInterface
                     ]
                 );
             }
-            
-            
     
         } else if ($request->status == 'Without Payment') {
             
