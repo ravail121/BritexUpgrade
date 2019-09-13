@@ -57,33 +57,30 @@ class CouponController extends Controller
         $coupon = Coupon::where('code', $request->code)->first();
         $order  = Order::find($request->order_id);
         
-        if (!$coupon) { return ['error' => 'Invalid coupon code']; }
+        if (!$coupon) { 
 
-        if (!$this->couponIsValid($coupon)) {
+            return ['error' => 'Invalid coupon code']; 
+        } elseif (!$this->couponIsValid($coupon)) {
 
             return ['error' => $this->failedResponse];
-
+        } elseif (!$request->hash) {
+            $this->failResponse = 'Please login first';
+            return ['error' => $this->failResponse];
         } else {
-            
+
             $customerHash          = $request->hash ? $request->hash : $order->customer->hash;
-
             $customer              = Customer::where('hash', $customerHash)->first();
-
             $alreadyUsed           = count(CustomerCoupon::where('customer_id', $customer->id)->where('coupon_id', $coupon->id)->get());
-            
+
             if ($alreadyUsed) {
-                
                 return ['error' => 'You have already used this coupon'];
             }
 
             $billableSubscriptions = $customer->billableSubscriptions;
-            
             $billablePlans = [];
 
             foreach ($billableSubscriptions as $subscription) {
-
                 $billablePlans[] = Plan::find($subscription->plan_id);
-
             }
 
             if (!empty($coupon)) {
