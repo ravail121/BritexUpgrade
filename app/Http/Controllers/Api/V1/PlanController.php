@@ -1,14 +1,12 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1;
-
 use Validator;
 use Carbon\Carbon;
-use App\Model\Sim;
-use App\Model\Port;
 use App\Model\Plan;
 use App\Model\Order;
-use GuzzleHttp\Client;
+use App\Model\Device;
+use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
@@ -16,391 +14,340 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
-use App\Http\Controllers\Controller;
-use App\Events\SubcriptionStatusChanged;
 use App\Http\Controllers\BaseController;
 
-class SubscriptionController extends BaseController
+/**
+ * 
+ */
+class PlanController extends BaseController
 {
-    const DEFAULT_INT = 0;
 
+    const ACCOUNT = [
+        'active'    => 0,
+        'suspended' => 1
+    ];
 
-    /**
-     * Firstly validates the data and then Inserts data to subscription table
-     * 
-     * @param  Request    $request
-     * @return Response
-     */
-    public function createSubscription(Request $request)
+    function __construct()
     {
-        $validation = $this->validateData($request);
-        if ($validation) {
-            return $validation;
-        }
+        $this->content = array();
+    }
 
-        $order = Order::find($request->order_id);
-        if($request->customer_id){
-            if($order->customer_id != $request->customer_id){
-                return $this->respond(['details' => "Order Id ".$order->id." does not belongs to this customer"]);
-            }
-        }
-        if($request->subscription){
-            $subscription = Subscription::find($request->subscription['id']);
+    public function get(Request $request)
+    {
+        $company = \Request::get('company');
 
-            if($request->status == "Upgrade"){
-                $data['old_plan_id'] = $subscription->plan_id;
-                $data['upgrade_downgrade_date_submitted'] = Carbon::now();
-                $data['plan_id'] = $request->plan_id;
-                $data['upgrade_downgrade_status'] = 'for-upgrade';
-                $updateSubcription = $subscription->update($data);
+        $plans = [];
 
-                return $this->respond(['subscription_id' => $subscription->id]);
-            }
-            return $this->respond(['same_subscription_id' => $subscription->id]);
-        }else{
-
-            $validation = $this->validateSim($request);
-            if ($validation) {
-                return $validation;
-            }
-
-            $request->status = ($request->sim_id != null || $request->device_id !== null) ? 'shipping' : 'for-activation' ;
-           
-            $insertData = $this->generateSubscriptionData($request, $order);
-            $subscription = Subscription::create($insertData);
-
-            if(!$subscription) {
-                return $this->respondError(['subscription_id' => null]);
-            }
+        if ($device_id = $request->input('device_id')) {
+            $device = Device::find($device_id);
             
-            $request->headers->set('authorization', $request->api_key);
+            if ($device->type == 0) {
+                //Get plans from device_to_plan
+                // $device_to_plans = DeviceToPlan::with(['device', 'plan'])->where('device_id', $device_id)
+                        /*->whereHas('device', function($query) use( $device) {
+                            $query->where('device_id', $device->id);
+                        })->whereHas('plan', function($query) use( $device) {
+                            $query->where('type', $device->type);
+                        })*/
+                //     ->get();
+                // $plans = array();
 
-            if($subscription['status'] == 'for-activation'){
-                event(new SubcriptionStatusChanged($subscription['id']));
+                // foreach ($device_to_plans as $dp) {
+                //     array_push($plans, $dp->plan);
+                // }
+                $plans = $device->plans;
+                
+            } else {
+                $plans = Plan::where(
+                        ['type' => $device->type, 'company_id' => $company->id, 'carrier_id' => $device->carrier_id])->get();
+            }
+        } else {
+            $plans = Plan::where('company_id', $company->id)->get();
+        }
+        return response()->json($plans);
+    }
+
+    public function find(Request $request, $id)
+    {
+        $this->content = Plan::find($id);
+        return response()->json($this->content);
+    }
+
+    public function check_area_code(Request $request)
+    {
+        /*
+        Check porting
+        */
+        $validation = Validator::make(
+            $request->all(),
+            [
+                'order_hash' => 'required|string',
+                'plan_id' => 'required|numeric'
+            ]
+        );
+
+        if ($validation->fails()) {
+            return response()->json($validation->getmessagebag()->all());
+        }
+
+        $data = $request->all();
+        $plan_id = $data['plan_id'];
+        $hash = $data['order_hash'];
+
+        $order = Order::with(['OG'])->where('hash', $hash)->whereHas(
+            'OG',
+            function($query) use ($plan_id) {
+                $query->where('plan_id', $plan_id);
+            }
+        )->get();
+
+        if (!count($order)) {
+            return response()->json(array('error' => ['invalid order_hash or plan_id']));
+        } else {
+            $order = $order[0];
+            $area_code = $order->og->area_code;
+            $plan = Plan::find($order->og->plan_id);
+            $plan_area_code = $plan->area_code;
+
+            if ($plan_area_code == 0 && $area_code != '') {
+                return response()->json(array('show_area_code' => false, 'clear_area_code' => true));
+            } else if ($plan_area_code == 1 && $area_code != '') {
+                return response()->json(array('show_area_code' => true, 'area_code' => $area_code, 'require_area_code' => false));
+            } else if ($plan_area_code == 2 && $area_code != '') {
+                return response()->json(array('show_area_code' => true, 'area_code' => $area_code, 'require_area_code' => true));
+            } else if ($plan_area_code == 0 && $area_code == '') {
+                return response()->json(['show_area_code' => false]);
+            } else if ($plan_area_code == 1 && $area_code == '') {
+                return response()->json(array('show_area_code' => true, 'require_area_code' => false));
+            } else if ($plan_area_code == 2 && $area_code == '') {
+                return response()->json(array('show_area_code' => true, 'require_area_code' => true));
             }
 
-            if ($request->porting_number) {
-                $arr = $this->generatePortData($request->porting_number, $subscription->id);
-                $port = Port::create($arr);
-            }
-            return $this->respond([
-                'success' => 1,
-                'subscription_id' => $subscription->id
-            ]);
+            return response()->json([]);
         }
     }
 
-    public function updateSubscription(Request $request)
+    public function compatiblePlans(Request $request)
     {
-        $data=$request->validate([
-            'id'  => 'required',
-            'upgrade_downgrade_status'  => 'required',
-        ]);
-        $subscription = Subscription::find($data['id']);
+        $data = $request->validate(
+            [
+                'subscription_id' => 'required',
+                'customer_id'     => 'required'
+            ]
+        );
 
-        
-        $data['upgrade_downgrade_date_submitted'] = Carbon::now();
-        if($data['upgrade_downgrade_status'] == "downgrade-scheduled"){
-            $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
-            $data['new_plan_id'] = $request->new_plan_id;
-            
-        }else{
-            $data['old_plan_id'] = $subscription->plan_id;
-            $data['plan_id'] = $request->new_plan_id;
+        $plan = Subscription::where([['id' , $data['subscription_id']], ['customer_id', $data['customer_id']]])->first();
+        if(!$plan){
+            return $this->respond('Invalid Subcription ID');
+        }
+        $planId = $plan->plan_id;
+
+        $subscription       = Subscription::with('plan', 'order.allOrderGroup.orderGroupAddon')->find($data['subscription_id']);
+        $plan               = Plan::find($planId);
+        $accountStatus      = Customer::find($request->customer_id)->account_suspended;
+ 
+
+        $activeAddon = $this->activeAddons($subscription->id);
+        $removalAddon = $this->removalScheduledAddon($subscription->id);
+        if (!$subscription) {
+            return $this->respond('Invalid Subcription ID');
+        }
+        if ($subscription->upgrade_downgrade_status) {
+            return $this->respond('Upgrade/Downgrade Already Scheduled');
         }
 
-        $updateSubcription = $subscription->update($data);
-
-        $removeSubcriptionAddonId = OrderGroupAddon::where([['order_group_id',$request->order_group],['subscription_addon_id', '<>', null]])->pluck('subscription_addon_id');
-        if(isset($removeSubcriptionAddonId['0'])){
-            $subscriptionAddonData = [
-                'status'            => 'removal-scheduled',
-                'date_submitted'    => Carbon::now(),
-
-                'removal_date'      => Carbon::parse($subscription->customerRelation->billing_end)->addDays(1),
-            ];
-
-            SubscriptionAddon::whereIn('id', $removeSubcriptionAddonId)->update($subscriptionAddonData);
+        if ($subscription->status != 'active') {
+            return $this->respond('Can Upgrade/Downgrade only Active Subscriptions');
         }
 
-
-        return $this->respond(['subscription_id' => $subscription->id]);
-    }
-
-    /**
-     * Firstly validates the data and then Inserts data to subscription_addon table
-     * 
-     * @param  Request    $request
-     * @return Response
-     */
-    public function subscriptionAddons(Request $request)
-    {
-        $validation = $this->validateAddonData($request);
-        
-        if ($validation) {
-            return $validation;
-        }
-        if($request->subscription_addon_id){
-
-            $subscriptionAddon = SubscriptionAddon::find($request->subscription_addon_id);
-            
-            $planToAddon = PlanToAddon::where('plan_id', $request->plan_id)->pluck('addon_id');
-
-            if ($planToAddon->contains($request->addon_id)){
-                $date = Carbon::parse($subscriptionAddon->subscriptionDetail->customerRelation->billing_end)->addDays(1); 
-                $subscriptionAddonData = [
-                    'status' => 'removal-scheduled',
-                    'removal_date' => Carbon::now(),
-                    'date_submitted' => $date,
-                ];
-            }else{
-                $subscriptionAddonData = [
-                    'status' => 'removed',
-                    'removal_date' => Carbon::now(),
-                    'date_submitted' => Carbon::now(),
-                ];
-            }
-            $subscriptionAddon->update($subscriptionAddonData);
-        }else{
-            $subscriptionAddon = SubscriptionAddon::create([
-                'subscription_id' => $request->subscription_id,
-                'addon_id'        => $request->addon_id,
-                'status'          => $request->addon_subscription_id ? SubscriptionAddon::STATUSES['for-adding'] : SubscriptionAddon::STATUSES['for-adding'],
-            ]);
-        }
-
-        return $this->respond(['subscription_addon_id' => $subscriptionAddon->id]);
-    }
-
-
-    /**
-     * Returns data as array which is to be inserted in subscription table
-     * 
-     * @param  Request  $request
-     * @param  Order  $order
-     * @return array
-     */
-    protected function generateSubscriptionData($request, $order)
-    {
-        $plan  = Plan::find($request->plan_id);
-
-        if ($request->sim_type == null) {
-            $sim = Sim::find($request->sim_id);
-            $request->sim_type = ($sim) ? $sim->name : null ;
-        }
-
-        return [
-            'order_id'                         =>  $request->order_id,
-            'customer_id'                      =>  $order->customer_id,
-            'order_num'                        =>  $order->order_num,
-            'plan_id'                          =>  $request->plan_id,
-            'status'                           =>  $request->status,
-            'upgrade_downgrade_status'         =>  '',
-            'sim_id'                           =>  $request->sim_id,
-            'sim_name'                         =>  $request->sim_type,
-            'sim_card_num'                     =>  ($request->sim_num) ?: '',
-            'old_plan_id'                      =>  self::DEFAULT_INT,
-            'new_plan_id'                      =>  self::DEFAULT_INT,
-            'device_id'                        =>  $request->device_id,
-            'device_os'                        =>  ($request->operating_system) ?: '',
-            'device_imei'                      =>  ($request->imei_number) ?: '',
-            'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : self::DEFAULT_INT,
-            'requested_area_code'              =>  $request->area_code,
+        $condition = [
+            ['carrier_id', '=', $subscription->plan->carrier_id],
+            ['company_id', '=', $subscription->plan->company_id],
+            ['type', '=', $subscription->plan->type]
         ];
-    }
 
+        $ifSuspended = ['amount_recurring' , '<', $plan->amount_recurring];
+        
+        if ($accountStatus == self::ACCOUNT['suspended']) {
+            array_push($condition, $ifSuspended);
+            $plans = Plan::where(function ($query) use ($condition, $subscription) {
+                $query->where($condition)
+                      ->orWhere('id', '=', $subscription->plan_id);
+            })->orderBy('amount_recurring')->get();
 
-
-
-
-    /**
-     * Returns data as array which is to be inserted in port table
-     * 
-     * @param  string    $portNumber
-     * @param  int       $subscriptionId
-     * @return array
-     */
-    protected function generatePortData($portNumber, $subscriptionId)
-    {
-
-        return [
-            'subscription_id'             => $subscriptionId,
-            'status'                      => self::DEFAULT_INT, 
-            'notes'                       => '',
-            'number_to_port'              => $portNumber,
-            'company_porting_from'        => '',
-            'account_number_porting_from' => '',
-            'authorized_name'             => '',
-            'address_line1'               => '',
-            'address_line2'               => '',
-            'city'                        => '',
-            'state'                       => '',
-            'zip'                         => '',
-            'ssn_taxid'                   => '',
-        ];
-    }
-
-    /**
-     * Validates Data from Order-Group table
-     * 
-     * @param  Request        $request
-     * @return Response       validation response
-     */
-    protected function validateData($request)
-    {
-        $validate =  $this->validate_input($request->all(), [
-                'order_id'         => 'required|numeric|exists:order,id',
-                'plan_id'          => 'required|numeric|exists:plan,id',
-                'porting_number'   => 'nullable|string',
-                'area_code'        => 'nullable|string|max:3',
-                'operating_system' => 'nullable|string',
-                'imei_number'      => 'nullable|digits_between:14,16',
-            ]
-        );
-        if($validate){
-            return $validate;
-        }
-
-        if($request->device_id != 0){
-            $validate =  $this->validate_input($request->all(), [
-                'device_id'        => 'nullable|numeric|exists:device,id',
-            ]);
-        }
-        return $validate;
-    }
-
-
-    protected function validateSim($request)
-    {
-        $simNum = null;
-        if($request->sim_num){
-            $simNum = preg_replace("/\F$/","",$request->sim_num);
-            if(preg_match("/[a-z]/i", $simNum)){
-                return $this->respond(['details' => ["Invalid Sim Number"]], 400);
-            }
-        }
-        if ($request->sim_required == 1) {
-            return $this->validate_input(array_merge($request->except('sim_num'), ['sim_num' => $simNum]), [
-                'sim_id'           => 'nullable|required_without:sim_num|numeric|exists:sim,id',
-                'sim_num'          => 'nullable|required_without:sim_id|min:19|max:20',
-                'sim_type'         => 'nullable|string',
-            ]);
-        }
-
-    }
-
-    /**
-     * Validates Data of create-subscription-addon api
-     * 
-     * @param  Request        $request
-     * @return Response       validation response
-     */
-    protected function validateAddonData($request)
-    {
-        return $this->validate_input($request->all(), [
-                'api_key'          => 'required|string',
-                'order_id'         => 'required|numeric',
-                'subscription_id'  => 'required|numeric',
-                'addon_id'         => 'required|numeric',
-            ]
-        );
-    }
-
-    public function closeSubcription(Request $request)
-    {
-        $validation = $this->validate_input($request->all(), [
-                'phone_number' => 'required|numeric',
-            ]
-        );
-        if ($validation) {
-            return $validation;
-        }
-        $subcriptions = Subscription::where([
-            ['phone_number', $request->phone_number],
-            ['status', Subscription::STATUS['active']]
-        ])->get();
-
-        if(!isset($subcriptions[0])){
-            return $this->respond(['message' => "No Active Subcription found with ".$request->phone_number. " Phone Number"]);
-        }
-
-        foreach ($subcriptions as $key => $subcription) {
-            $subcription->update([
-               'status' => Subscription::STATUS['closed'],
-               'sub_status' => Subscription::SUB_STATUSES['confirm-closing'],
-               'closed_date' => Carbon::now(),
-            ]);
-        }
-
-        return $this->respond(['success' => 1]);
-    }
-
-    public function changeSim(Request $request)
-    {
-        $validation = $this->validate_input($request->all(), [
-            "customer_id"     => 'required|numeric',
-            "phone_number"    => 'required|numeric',
-            "sim_num"         => 'required|min:19|max:20',
-            ]
-        );
-        if ($validation) {
-            return $validation;
-        }
-
-        $simNumber = preg_replace('/[^0-9]/', '', $request->sim_num);
-        $length = strlen($simNumber);
-        if($length >20 || $length < 19){
-            return $this->respond(['details' => ["Invalid Sim Number"]], 400);
+        } else {
+            $plans = Plan::where($condition)->orderBy('amount_recurring')->get();
         } 
+        $plans['account_status'] = $accountStatus;
+        $plans['active_plan'] = $subscription->plan_id;
+        $plans['active_addons'] = $activeAddon;
+        $plans['removal_scheduled_addon'] = $removalAddon;
         
-        $subcriptions = Subscription::where([
-            ['phone_number', $request->phone_number],
-            ['customer_id', $request->customer_id]
-        ])->get();
+        return $this->respond($plans);
+    }
 
-        if(!isset($subcriptions[0])){
-            return $this->respond(['message' => "Phone Number Not Found"]);
+    public function compatibleAddons(Request $request)
+    {
+        $data = $request->validate(
+            [
+                'plan_id' => 'required',
+            ]
+        );
+
+        $addons = PlanToAddon::with('addon')->where(
+            [
+                ['plan_id', '=', $data['plan_id']],
+            ]
+        )->get();
+        return $addons;
+       
+    }
+
+    public function activeAddons($subscriptionId)
+    {
+        $allActiveAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId]])->whereNotIn('status', ['removed','removal-scheduled'])->pluck('addon_id')->toArray();
+        if($allActiveAddon){
+            return implode(",", $allActiveAddon);
+        }
+        return ;
+    }
+
+    private function removalScheduledAddon($subscriptionId)
+    {
+        $allRemovalAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId]])->whereNotIn('status', ['removed','removal-scheduled'])->pluck('addon_id')->toArray();
+        $allRemovalAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId],['status', 'removal-scheduled']])->pluck('addon_id')->toArray();
+        if($allRemovalAddon){
+            return implode(",", $allRemovalAddon);
+        }
+        return ;
+    }
+
+    public function checkPlan(Request $request)
+    {
+        $data = $request->validate(
+            [
+                'plan'          => 'required',
+                'active_plans'  => 'required',
+                'id'            => 'required',
+                'subscription_id' => 'required',
+            ]
+        );
+        $subscription = Subscription::find($data['subscription_id']);
+
+        $orderData = $subscription->order->toArray();
+        $orderData['invoice_id'] = null;
+        $orderData['status'] = 0;
+        $orderData['hash'] = md5(time().rand());
+        $orderData['order_num'] = null;
+        $order = Order::create($orderData);
+
+        $orderGroupData = [
+            'plan_id'                      => $data['plan'],
+            'old_subscription_plan_id'     => $data['active_plans'],
+            'subscription_id'              => $data['subscription_id'],
+            'order_id'                     => $order->id,
+        ];
+
+        $paidInvoice = $request->paid_monthly_invoice ?: '0';
+        
+        $newPlan = Plan::find($data['plan']);
+        $activePlan = Plan::find($data['active_plans']);
+        $plan_prorated_amt= $newPlan->amount_recurring - $activePlan->amount_recurring;
+
+        if($plan_prorated_amt < 0){
+            $amount  = 0;
+        }else{
+            $amount = $plan_prorated_amt;
         }
 
-        foreach ($subcriptions as $key => $subcription) {
+        $orderGroupData['plan_prorated_amt'] = $amount;
 
-            $errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
+        if($plan_prorated_amt > 0){
+            //UPGARDE
+            $orderGroupData['change_subscription'] = '1';
+            $order['status'] = 'upgrade';
 
-            if(!$errorMessage){
-                $subcription->update([
-                   'sim_card_num' => $simNumber,
-                ]);
-                return $this->respond(['success' => 1]);
+        }elseif ($plan_prorated_amt == 0) {
+            if($data['plan'] == $data['active_plans']){
+                //Added new Addon in Same Plan
+                $orderGroupData ['change_subscription'] = '0';
+                $order['status'] = 'sameplan';
+            }else{
+                $orderGroupData['change_subscription'] = '1';
+                $order['status'] = 'upgrade';
+            }
+        }else{
+            //DOWNGRADE
+            $orderGroupData ['change_subscription'] = '-1';
+            $order['status'] = 'downgrade';
+        }
+
+        $orderGroup = OrderGroup::create($orderGroupData);   
+
+        $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans']);
+
+
+        if($paidInvoice == "1" && $order['status'] != 'downgrade'){
+            $orderGroup = OrderGroup::create($orderGroupData);   
+
+            $this->updateAddons($request, $orderGroup, $subscription, $data['active_plans'], 'paidInvoice');
+        }
+
+        return $this->respond($order);
+    }
+
+    public function updateAddons($request, $orderGroup, $subscription, $plan, $paidInvoice=null)
+    {
+        $addons = $request->addon;
+        if(!$addons){
+            $addons = [];
+        }
+        $activeAddons = [];
+        if($request->active_addons){
+            $activeAddons = explode(",",$request->active_addons);
+            $removedAddon = array_diff($activeAddons, $addons);
+            if(!empty($removedAddon) && $paidInvoice ==null){
+                $this->updateRemovedAddon($removedAddon, $subscription->id, $orderGroup->id);
             }
 
-            return $this->respond(['message' => $errorMessage]);
+        }
+
+        $newAddon=array_diff($addons, $activeAddons);
+        $this->insertNewAddon($newAddon, $orderGroup, $subscription);
+
+    }
+
+    public function updateRemovedAddon($addons, $subscription_id, $orderGroupId)
+    {
+        $data = ['subscription_id' => $subscription_id,
+                'prorated_amt'     => 0,
+                'order_group_id'   => $orderGroupId,
+            ];
+        foreach ($addons as $key => $addon) {
+            $subscriptionAddon = SubscriptionAddon::where([['subscription_id', $subscription_id],['addon_id',$addon]])->whereIn('status', ['active', 'for-adding'])->first();
+            if($subscriptionAddon){
+                $data['addon_id'] = $addon;
+                $data['subscription_addon_id'] = $subscriptionAddon->id;
+
+                $orderGroupAddon = OrderGroupAddon::create($data);
+            }
         }
     }
 
-    protected function getSimNumber($phoneNumber, $sim_number, $customerId)
+    public function insertNewAddon($addons, $orderGroup, $subscription)
     {
-        $customer = Customer::find($customerId);
+        foreach ($addons as $key => $addon) {
+            $data = [
+                'addon_id'       => $addon,
+                'order_group_id' => $orderGroup->id,
+            ];
+            if($orderGroup->change_subscription == "-1"){
+                $data ['prorated_amt'] = "0";
+            }
+            $data ['subscription_id'] = $subscription->id;
+        
+            OrderGroupAddon::create($data);
 
-        $headers = [
-            'X-API-KEY' => $customer->company->goknows_api_key,
-        ];
-
-        $client = new Client([
-            'headers' => $headers
-        ]);
-
-        $errorMessage = null;
-        try {
-            $client->request('PUT', env('GO_KNOW_URL').$phoneNumber, [
-                'form_params' => [
-                    'sim_number' => $sim_number,
-                ]
-            ]);
-        } catch (\Exception $e) {
-
-            $responseBody = json_decode($e->getResponse()->getBody(true), true);
-            $errorMessage = $responseBody['message'];
         }
-        return $errorMessage;
     }
 }
