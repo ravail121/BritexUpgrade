@@ -389,6 +389,20 @@ class Subscription extends Model
         
     }
 
+    public function getCalRegulatoryFeeAttribute()
+    {
+        return $this->calCharges(
+            $this->invoiceItemDetail()->where('type', self::InvoiceItemTypes['regulatory_fee'])->get()
+        );
+    }
+
+    public function getCalTaxRateAttribute()
+    {
+        return $this->calCharges(
+            $this->invoiceItemDetail()->where('type', self::InvoiceItemTypes['taxes'])->get()
+        );
+    }
+
     public static function calculateChargesForAllproducts($types, $invoiceId, $subscriptionId)
     {
         $amount = [];

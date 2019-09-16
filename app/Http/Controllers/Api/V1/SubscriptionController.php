@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Validator;
+
 use Carbon\Carbon;
 use App\Model\Sim;
 use App\Model\Port;
@@ -10,20 +10,19 @@ use App\Model\Plan;
 use App\Model\Order;
 use GuzzleHttp\Client;
 use App\Model\Customer;
-use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
-use App\Http\Controllers\Controller;
 use App\Events\SubcriptionStatusChanged;
 use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
 class SubscriptionController extends BaseController
 {
     const DEFAULT_INT = 0;
-
+    use InvoiceCouponTrait;
 
     /**
      * Firstly validates the data and then Inserts data to subscription table
@@ -68,6 +67,8 @@ class SubscriptionController extends BaseController
            
             $insertData = $this->generateSubscriptionData($request, $order);
             $subscription = Subscription::create($insertData);
+
+            $this->storeCoupon($request->coupon_data, $order, $subscription);
 
             if(!$subscription) {
                 return $this->respondError(['subscription_id' => null]);
@@ -403,4 +404,23 @@ class SubscriptionController extends BaseController
         }
         return $errorMessage;
     }
+
+    // protected function insertSubscriptionCoupon($subcription, $couponAmount, $coupon)
+    // {
+        
+    //     if ($couponAmount) {
+    //         InvoiceItem::create([
+    //             'invoice_id'      => $subcription->order->invoice->id,
+    //             'subscription_id' => $subcription->id,
+    //             'product_type'    => '',
+    //             'product_id'      => null,
+    //             'type'            => InvoiceItem::TYPES['coupon'],
+    //             'description'     => "Coupon",
+    //             'amount'          => number_format($couponAmount, 2),
+    //             'start_date'      => $subcription->order->invoice->start_date,
+    //             'taxable'         => self::TAX_FALSE,
+    //         ]);
+    //     }
+    // }
+
 }

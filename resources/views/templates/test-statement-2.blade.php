@@ -213,10 +213,10 @@
                             <td colspan="2" class="last total_value">
                                 <a>
                                     <strong>Total One-Time Charges: $
-                                        @if ($subscription->invoiceItemDetail->where('type', 3)->sum('amount'))
+                                        @if ($subscription->cal_onetime_charges)
                                             {{
                                                 number_format (
-                                                    $subscription->invoiceItemDetail->where('type', 3)->sum('amount'), 2
+                                                    $subscription->cal_onetime_charges, 2
                                                 )
                                             }}
                                         @else 
@@ -247,8 +247,8 @@
                                     <td>Regulatory</td>
                                     <td colspan="2" class="last"><a>$
                                         
-                                        @if ($subscription->calculateChargesForAllproducts([5], $data['invoice']->id, $subscription->id))
-                                            {{ number_format( $subscription->calculateChargesForAllproducts([5], $data['invoice']->id, $subscription->id), 2) }}
+                                        @if ($subscription->cal_regulatory_fee)
+                                            {{ number_format($subscription->cal_regulatory_fee, 2) }}
                                         @else
                                             0.00
                                         @endif
@@ -260,8 +260,8 @@
                                 <td>State</td>
                                 <td colspan="2" class="last"><a>$
                                     @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if ($subscription->calculateChargesForAllproducts([7], $data['invoice']->id, $subscription->id))
-                                            {{ number_format( $subscription->calculateChargesForAllproducts([7], $data['invoice']->id, $subscription->id), 2) }}
+                                        @if ($subscription->cal_tax_rate)
+                                            {{ number_format($subscription->cal_tax_rate, 2) }}
                                         @else
                                             0.00
                                         @endif
@@ -279,8 +279,8 @@
                             <tr>
                                 <td colspan="3" class="right total_value"><a><strong>Total Taxes/Fees: $
                                     @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if ($subscription->calculateChargesForAllproducts([5], $data['invoice']->id, $subscription->id))
-                                            {{ number_format( $subscription->calculateChargesForAllproducts([7,5], $data['invoice']->id, $subscription->id), 2) }}
+                                        @if ($subscription->cal_taxes)
+                                            {{ number_format( $subscription->cal_taxes, 2) }}
                                         @else
                                             0.00
                                         @endif
@@ -310,8 +310,8 @@
                             <tr>
                                 <td></td>
                                 <td colspan="2" class="last total_value"><a><strong>Total Usage Charges: $
-                                    @if ($subscription->calculateChargesForAllproducts([4], $data['invoice']->id, $subscription->id))
-                                        {{ number_format( $subscription->calculateChargesForAllproducts([4], $data['invoice']->id, $subscription->id), 2) }}
+                                    @if ($subscription->cal_usage_charges)
+                                        {{ number_format( $subscription->cal_usage_charges, 2) }}
                                     @else
                                         0.00
                                     @endif
@@ -338,8 +338,8 @@
                             <tr>
                                 <td><strong></strong></td>
                                 <td colspan="2" class="last total_value"><a><strong>Total Coupons: - $
-                                    @if ($subscription->calculateChargesForAllproducts([6, 8, 10], $data['invoice']->id, $subscription->id))
-                                        {{ number_format( $subscription->calculateChargesForAllproducts([6, 8, 10], $data['invoice']->id, $subscription->id), 2) }}
+                                    @if ($subscription->cal_credits)
+                                        {{ number_format( $subscription->cal_credits, 2) }}
                                     @else
                                         0.00
                                     @endif
@@ -363,11 +363,10 @@
                                     @endif
                                 </td>
                                 <td colspan="3" class="right"> $
-                                    @if (isset($subscription->invoiceItemDetail) && $subscription->invoiceItemDetail->sum('amount'))
+                                    @if (isset($subscription->cal_total_charges))
                                         {{
                                             number_format(
-                                                $subscription->totalSubscriptionCharges($data['invoice']->id, $subscription) - 
-                                                $subscription->totalSubscriptionDiscounts($data['invoice']->id, $subscription), 2
+                                                $subscription->cal_total_charges, 2
                                             ) 
                                         }}
                                     @else

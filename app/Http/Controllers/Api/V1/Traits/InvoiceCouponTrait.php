@@ -9,26 +9,26 @@ use App\Model\InvoiceItem;
 trait InvoiceCouponTrait
 {
    
-    public function storeCoupon($couponData, $order)
+    public function storeCoupon($couponData, $order, $subscription = null)
     {
+        
         if (isset($couponData['code'])) {
+            $couponToProcess   = Coupon::where('code', $couponData['code']);
             //store coupon in invoice_items.
             if ($couponData['amount']) {
                 $order->invoice->invoiceItem()->create(
                     [
-                        'subscription_id' => null,
+                        'subscription_id' => $subscription ? $subscription->id : null,
                         'product_type'    => '',
-                        'product_id'      => null,
+                        'product_id'      => $couponToProcess->first()->id,
                         'type'            => InvoiceItem::TYPES['coupon'],
                         'description'     => "(Coupon) ".$couponData['code'],
-                        'amount'          => $couponData['amount'],
+                        'amount'          => number_format($couponData['amount'], 2),
                         'start_date'      => $order->invoice->start_date,
                         'taxable'         => self::TAX_FALSE,
                     ]
                 );
             }
-
-            $couponToProcess   = Coupon::where('code', $couponData['code']);
             $numUses           = $couponToProcess->pluck('num_uses')->first();
             
             $couponToProcess->update([
@@ -61,7 +61,10 @@ trait InvoiceCouponTrait
                 $data = array_merge($customerCoupon, $customerCouponInfinite);
 
             }
-            CustomerCoupon::create($data);
+            $alreadyUsed = CustomerCoupon::where('coupon_id', $couponId)->where('customer_id', $order->invoice->customer_id)->count();
+            if (!$alreadyUsed) {
+                CustomerCoupon::create($data);
+            }
         }
     }
 }

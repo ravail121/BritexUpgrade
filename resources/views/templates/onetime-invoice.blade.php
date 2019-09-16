@@ -281,12 +281,12 @@
                                                     {{ $subscription->cal_taxes }}
                                                 @endif
                                             </td>
-                                            <td>-$ @if($subscription->cal_taxes)
+                                            <td>-$ @if($subscription->cal_credits)
                                                     {{ $subscription->cal_credits }}
                                                  @endif
                                             </td>
-                                            <td>$ @if ($subscription->invoiceItemDetail->sum('amount'))
-                                                    {{ number_format($subscription->invoiceItemDetail->sum('amount'), 2) }}
+                                            <td>$ @if ($subscription->cal_total_charges)
+                                                    {{ number_format($subscription->cal_total_charges, 2) }}
                                                     @else 
                                                     0.00
                                                 @endif
