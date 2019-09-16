@@ -33,7 +33,7 @@ class SubscriptionController extends BaseController
      */
     public function createSubscription(Request $request)
     {
-    	$validation = $this->validateData($request);
+        $validation = $this->validateData($request);
         if ($validation) {
             return $validation;
         }
@@ -98,18 +98,19 @@ class SubscriptionController extends BaseController
         ]);
         $subscription = Subscription::find($data['id']);
 
-        
-        $data['upgrade_downgrade_date_submitted'] = Carbon::now();
-        if($data['upgrade_downgrade_status'] == "downgrade-scheduled"){
-            $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
-            $data['new_plan_id'] = $request->new_plan_id;
-            
-        }else{
-            $data['old_plan_id'] = $subscription->plan_id;
-            $data['plan_id'] = $request->new_plan_id;
-        }
+        if(! $data['upgrade_downgrade_status'] == "samePlan"){ 
+            $data['upgrade_downgrade_date_submitted'] = Carbon::now();
+            if($data['upgrade_downgrade_status'] == "downgrade-scheduled"){
+                $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
+                $data['new_plan_id'] = $request->new_plan_id;
+                
+            }else{
+                $data['old_plan_id'] = $subscription->plan_id;
+                $data['plan_id'] = $request->new_plan_id;
+            }
 
-        $updateSubcription = $subscription->update($data);
+            $updateSubcription = $subscription->update($data);
+        }
 
         $removeSubcriptionAddonId = OrderGroupAddon::where([['order_group_id',$request->order_group],['subscription_addon_id', '<>', null]])->pluck('subscription_addon_id');
         if(isset($removeSubcriptionAddonId['0'])){
@@ -122,7 +123,6 @@ class SubscriptionController extends BaseController
 
             SubscriptionAddon::whereIn('id', $removeSubcriptionAddonId)->update($subscriptionAddonData);
         }
-
 
         return $this->respond(['subscription_id' => $subscription->id]);
     }
@@ -189,11 +189,11 @@ class SubscriptionController extends BaseController
             $request->sim_type = ($sim) ? $sim->name : null ;
         }
 
-    	return [
-        	'order_id'                         =>  $request->order_id,
-        	'customer_id'                      =>  $order->customer_id,
+        return [
+            'order_id'                         =>  $request->order_id,
+            'customer_id'                      =>  $order->customer_id,
             'order_num'                        =>  $order->order_num,
-        	'plan_id'                          =>  $request->plan_id,
+            'plan_id'                          =>  $request->plan_id,
             'status'                           =>  $request->status,
             'upgrade_downgrade_status'         =>  '',
             'sim_id'                           =>  $request->sim_id,
@@ -201,9 +201,9 @@ class SubscriptionController extends BaseController
             'sim_card_num'                     =>  ($request->sim_num) ?: '',
             'old_plan_id'                      =>  self::DEFAULT_INT,
             'new_plan_id'                      =>  self::DEFAULT_INT,
-        	'device_id'                        =>  $request->device_id,
-        	'device_os'                        =>  ($request->operating_system) ?: '',
-        	'device_imei'                      =>  ($request->imei_number) ?: '',
+            'device_id'                        =>  $request->device_id,
+            'device_os'                        =>  ($request->operating_system) ?: '',
+            'device_imei'                      =>  ($request->imei_number) ?: '',
             'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : self::DEFAULT_INT,
             'requested_area_code'              =>  $request->area_code,
         ];
@@ -248,7 +248,7 @@ class SubscriptionController extends BaseController
      */
     protected function validateData($request)
     {
-    	$validate =  $this->validate_input($request->all(), [
+        $validate =  $this->validate_input($request->all(), [
                 'order_id'         => 'required|numeric|exists:order,id',
                 'plan_id'          => 'required|numeric|exists:plan,id',
                 'porting_number'   => 'nullable|string',

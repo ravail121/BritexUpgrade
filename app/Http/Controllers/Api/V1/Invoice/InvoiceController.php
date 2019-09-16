@@ -790,13 +790,13 @@ class InvoiceController extends BaseController implements ConstantInterface
             'end_date'                => $end_date,
             'start_date'              => $customer->billing_start,
             'due_date'                => $customer->billing_end,
-            'type'                    => 2,
+            'type'                    => 1,
             'status'                  => 1,
             'subtotal'                => 0,
             'total_due'               => 0,
             'prev_balance'            => 0,
             'payment_method'          => 1,
-            'notes'                   => 'notes',
+            'notes'                   => 'No Payment',
             'business_name'           => $customer->company_name, 
             'billing_fname'           => $customer->billing_fname, 
             'billing_lname'           => $customer->billing_lname, 
@@ -823,30 +823,33 @@ class InvoiceController extends BaseController implements ConstantInterface
             'order_num' => $orderCount + 1,
         ]);
 
-        $this->createInvoiceItem($data['order_groups'], $invoice);
+        $this->createInvoiceItem($data['order_groups'], $invoice, $request->type);
     }
 
-    private function createInvoiceItem($orderGroups, $invoice)
+    private function createInvoiceItem($orderGroups, $invoice, $type)
     {
         foreach ($orderGroups as $orderGroup) {
             $subscription = Subscription::find($orderGroup['subscription']['id']);
-            if($subscription->upgrade_downgrade_date_submitted == "for-upgrade"){
-                $description = 'Upgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'];
-            }else{
-                $description = 'Downgrade from '.$subscription['plan_id'].' to '.$subscription['new_plan_id'];
+            if(!$type == 'samePlan'){
+                if($subscription->upgrade_downgrade_date_submitted == "for-upgrade"){
+                    $description = 'Upgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'];
+                }else{
+                    $description = 'Downgrade from '.$subscription['plan_id'].' to '.$subscription['new_plan_id'];
+                }
+                $data = [
+                    'invoice_id'      => $invoice->id,
+                    'subscription_id' => $subscription['id'],
+                    'product_type'    => self::PLAN_TYPE,
+                    'product_id'      => $orderGroup['plan']['id'],
+                    'amount'          => 0,
+                    'start_date'      => $invoice->start_date,
+                    'type'            => 1,
+                    'taxable'         => $orderGroup['plan']['taxable'],
+                    'description'     => $description,
+                ];
+                InvoiceItem::create($data);
             }
-            $data = [
-                'invoice_id'      => $invoice->id,
-                'subscription_id' => $subscription['id'],
-                'product_type'    => self::PLAN_TYPE,
-                'product_id'      => $orderGroup['plan']['id'],
-                'amount'          => 0,
-                'start_date'      => $invoice->start_date,
-                'type'            => 1,
-                'taxable'         => $orderGroup['plan']['taxable'],
-                'description'     => $description,
-            ];
-            InvoiceItem::create($data);
+
             if(isset($orderGroup['addons'])){
                 $addonData = [
                     'invoice_id'      => $invoice->id,
@@ -855,7 +858,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'amount'          => 0,
                     'type'            => 1,
                     'start_date'      => $invoice->start_date,
-                    'description'     => $description,
+                    'description'     => "removal-scheduled",
                 ];
 
                 foreach ($orderGroup['addons'] as $addon) {
