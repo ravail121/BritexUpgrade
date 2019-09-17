@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-
 use Carbon\Carbon;
 use App\Model\Sim;
 use App\Model\Port;
@@ -33,6 +32,7 @@ class SubscriptionController extends BaseController
     public function createSubscription(Request $request)
     {
         $validation = $this->validateData($request);
+        \Log::info($request->all());
         if ($validation) {
             return $validation;
         }
@@ -98,8 +98,7 @@ class SubscriptionController extends BaseController
             'upgrade_downgrade_status'  => 'required',
         ]);
         $subscription = Subscription::find($data['id']);
-
-        if(! $data['upgrade_downgrade_status'] == "samePlan"){ 
+        if(!($data['upgrade_downgrade_status'] == "samePlan")){ 
             $data['upgrade_downgrade_date_submitted'] = Carbon::now();
             if($data['upgrade_downgrade_status'] == "downgrade-scheduled"){
                 $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 
@@ -109,18 +108,24 @@ class SubscriptionController extends BaseController
                 $data['old_plan_id'] = $subscription->plan_id;
                 $data['plan_id'] = $request->new_plan_id;
             }
-
             $updateSubcription = $subscription->update($data);
         }
 
         $removeSubcriptionAddonId = OrderGroupAddon::where([['order_group_id',$request->order_group],['subscription_addon_id', '<>', null]])->pluck('subscription_addon_id');
         if(isset($removeSubcriptionAddonId['0'])){
-            $subscriptionAddonData = [
-                'status'            => 'removal-scheduled',
-                'date_submitted'    => Carbon::now(),
-
-                'removal_date'      => Carbon::parse($subscription->customerRelation->billing_end)->addDays(1),
-            ];
+            if($data['upgrade_downgrade_status'] == "downgrade-scheduled"){
+                $subscriptionAddonData = [
+                    'status'            => 'removal-scheduled',
+                    'date_submitted'    => Carbon::now(),
+                    'removal_date'      => Carbon::parse($subscription->customerRelation->billing_end)->addDays(1),
+                ];
+            }else{
+                $subscriptionAddonData = [
+                    'status'            => 'removed',
+                    'date_submitted'    => Carbon::now(),
+                    'removal_date'      => Carbon::now(),
+                ];
+            }
 
             SubscriptionAddon::whereIn('id', $removeSubcriptionAddonId)->update($subscriptionAddonData);
         }
@@ -146,7 +151,6 @@ class SubscriptionController extends BaseController
             $subscriptionAddon = SubscriptionAddon::find($request->subscription_addon_id);
             
             $planToAddon = PlanToAddon::where('plan_id', $request->plan_id)->pluck('addon_id');
-
             if ($planToAddon->contains($request->addon_id)){
                 $date = Carbon::parse($subscriptionAddon->subscriptionDetail->customerRelation->billing_end)->addDays(1); 
                 $subscriptionAddonData = [
@@ -404,23 +408,5 @@ class SubscriptionController extends BaseController
         }
         return $errorMessage;
     }
-
-    // protected function insertSubscriptionCoupon($subcription, $couponAmount, $coupon)
-    // {
-        
-    //     if ($couponAmount) {
-    //         InvoiceItem::create([
-    //             'invoice_id'      => $subcription->order->invoice->id,
-    //             'subscription_id' => $subcription->id,
-    //             'product_type'    => '',
-    //             'product_id'      => null,
-    //             'type'            => InvoiceItem::TYPES['coupon'],
-    //             'description'     => "Coupon",
-    //             'amount'          => number_format($couponAmount, 2),
-    //             'start_date'      => $subcription->order->invoice->start_date,
-    //             'taxable'         => self::TAX_FALSE,
-    //         ]);
-    //     }
-    // }
 
 }

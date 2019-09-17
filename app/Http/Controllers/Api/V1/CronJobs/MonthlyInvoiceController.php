@@ -478,6 +478,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 'order_num'     => $count+1,
                 'company_id'    => Company::Id['britex'],
                 'customer_id'   => $invoice->customer_id,
+                'date_processed' => Carbon::today(),
             ]);
         }
 

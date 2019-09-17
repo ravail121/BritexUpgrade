@@ -95,7 +95,8 @@ class PaymentController extends BaseController implements ConstantInterface
                 $order->update([
                     'status'     => 1, 
                     'invoice_id' => $invoice->id,
-                    'order_num'  => $orderCount+1
+                    'order_num'  => $orderCount+1,
+                    'date_processed' => Carbon::today()
                 ]);
 
                 PaymentLog::where('order_id', $order->id)->update(['invoice_id' => $invoice->id]);

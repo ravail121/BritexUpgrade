@@ -830,9 +830,9 @@ class InvoiceController extends BaseController implements ConstantInterface
     {
         foreach ($orderGroups as $orderGroup) {
             $subscription = Subscription::find($orderGroup['subscription']['id']);
-            if(!$type == 'samePlan'){
-                if($subscription->upgrade_downgrade_date_submitted == "for-upgrade"){
-                    $description = 'Upgrade from '.$subscription['old_plan_id'].' to '.$subscription['new_plan_id'];
+            if(!($type == 'samePlan')){
+                if($type == "for-upgrade"){
+                    $description = 'Upgrade from '.$subscription['old_plan_id'].' to '.$subscription['plan_id'];
                 }else{
                     $description = 'Downgrade from '.$subscription['plan_id'].' to '.$subscription['new_plan_id'];
                 }
@@ -862,7 +862,6 @@ class InvoiceController extends BaseController implements ConstantInterface
                 ];
 
                 foreach ($orderGroup['addons'] as $addon) {
-
                     $addonData['product_id'] = $addon['id'];
                     $addonData['taxable'] = $addon['taxable'];
 
