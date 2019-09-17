@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Api\V1;
 
 use Carbon\Carbon;
@@ -113,7 +112,8 @@ class SubscriptionController extends BaseController
 
         $removeSubcriptionAddonId = OrderGroupAddon::where([['order_group_id',$request->order_group],['subscription_addon_id', '<>', null]])->pluck('subscription_addon_id');
         if(isset($removeSubcriptionAddonId['0'])){
-            if($data['upgrade_downgrade_status'] == "downgrade-scheduled"){
+            $planToAddon = PlanToAddon::where('plan_id', $request->new_plan_id)->pluck('addon_id');
+            if ($planToAddon->contains($request->addon_id) || $data['upgrade_downgrade_status'] == "downgrade-scheduled"){
                 $subscriptionAddonData = [
                     'status'            => 'removal-scheduled',
                     'date_submitted'    => Carbon::now(),
