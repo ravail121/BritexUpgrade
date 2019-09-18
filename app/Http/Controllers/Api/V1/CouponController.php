@@ -153,7 +153,7 @@ class CouponController extends Controller
             }
             return true;
         } else {
-            $this->failedResponse = 'Coupon is not active';
+            $this->failedResponse = 'Not active';
             return false;
         }
     }
@@ -186,13 +186,13 @@ class CouponController extends Controller
 
         if ($coupon['multiline_min']) {
             if (count($totalSubscriptions) < $coupon['multiline_min']) {
-                $this->failedResponse = 'Minimum subscription requirements not met';
+                $this->failedResponse = 'Min subscriptions required: '.$coupon['multiline_min'];
                 return false;
             } 
         } 
         if ($coupon['multiline_max']) {
             if (count($totalSubscriptions) > $coupon['multiline_max']) {
-                $this->failedResponse = 'Maximum subscription requirements not met';
+                $this->failedResponse = 'Max subscriptions required: '.$coupon['multiline_max'];
                 return false;
             }
         }
@@ -209,11 +209,11 @@ class CouponController extends Controller
         $this->failedResponse = '';
 
         if ($couponStartDate && $today < $couponStartDate) {
-            $this->failedResponse = 'Coupon is valid from '.$couponStartDate;
+            $this->failedResponse = 'Starts: '.$couponStartDate;
             return false;
 
         } elseif ($couponExpiryDate && ($today >= $couponExpiryDate)) {
-            $this->failedResponse = 'Coupon expired on '.$couponExpiryDate;
+            $this->failedResponse = 'Expired: '.$couponExpiryDate;
             return false;
 
         }
@@ -373,8 +373,10 @@ class CouponController extends Controller
         if ($isPercentage) {
             $total = $itemsAmount * $coupon['amount'] / 100;
         } else {
-            $total = $coupon['amount'] * isset($countItems) ? count($countItems) : [];
+            $count = isset($countItems) ? count($countItems) : 0;
+            $total = $coupon['amount'] * $count;
         }
+
         isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
         return (['total' => $total, 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : [], 'order' => $order]);
 
