@@ -7,11 +7,11 @@ use App\Model\Order;
 use GuzzleHttp\Client;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Events\ShippingNumber;
 use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
-use App\Events\SendMailForShippingNumber;
 use App\Events\SubcriptionStatusChanged;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -85,24 +85,25 @@ class OrderDataController extends BaseController
 
     public function updateOrderDetails($boxdetail, $boxes)
     {
-        $subString = substr($boxdetail['part_number'], 0, 3);
+        if($boxes['tracking_number'] != null){
+            $subString = substr($boxdetail['part_number'], 0, 3);
+            $partNumId = subStr($boxdetail['part_number'], 4);
+            $isSubcription = null;
 
-        $partNumId = subStr($boxdetail['part_number'], 4);
-        $isSubcription = null;
-        if($subString == 'SUB') {
-            $isSubcription = 1;
-            $table = Subscription::find($partNumId);
+            if($subString == 'SUB') {
+                $isSubcription = 1;
+                $table = Subscription::find($partNumId);
+                $table = Subscription::whereId($partNumId)->with('customer', 'device', 'sim')->first();
 
-        } elseif($subString == 'SIM') {
-            $table = CustomerStandaloneDevice::find($partNumId);
-
-        } elseif($subString == 'DEV') {
-            $table = CustomerStandaloneSim::find($partNumId);
-        }
-        if($table){
-            if($boxes['tracking_number'] != null){
+            } elseif($subString == 'DEV') {
+                $table = CustomerStandaloneDevice::whereId($partNumId)->with('device')->first();
+                
+            } elseif($subString == 'SIM') {
+                $table = CustomerStandaloneSim::whereId($partNumId)with('sim')->first();
+            }
+            if($table){
                 $table->update(['tracking_num' => $boxes['tracking_number']]);
-                event(new SendMailForShippingNumber($boxes['tracking_number'], $table));
+                event(new ShippingNumber($boxes['tracking_number'], $table));
                 if($isSubcription){
                     event(new SubcriptionStatusChanged($table->id));
                 }

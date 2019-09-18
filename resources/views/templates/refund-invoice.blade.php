@@ -92,15 +92,15 @@
                                 <tr>
                                     <th>Payment Mode</th>
                                     <th>Refund Amount</th>
-                                    <th>Total Amount</th>
+                                    <th>Original Charge Amount</th>
                                     <th>Refund Date</th>
                                 </tr>
                             </thead>
                             <tbody>
 
                             <tr class="tfootQ">
-                                <td>CARD {{-- {{ $paymentRefundLog->paymentLog->paymentMode }} --}}</td>
-                                <td>$ {{ $paymentRefundLog->amount }}</td>
+                                <td>Card ending in XXXXX{{ $paymentRefundLog->paymentLog->last4 }}</td>
+                                <td>-$ {{ $paymentRefundLog->amount }}</td>
                                 <td>$ {{ $paymentRefundLog->paymentLog->amount }}</td>
                                 <td>{{ $paymentRefundLog->createdAtFormatted }}</td>
                             </tr>

@@ -39,23 +39,26 @@ class SendMailForShippingNumber
         $trackingNumber = $event->trackingNumber;
         $table = $event->table;
 
-        $customer = Customer::find($table->customer_id);
+        $dataRow = [
+            'customer'    => $table->customer,
+        ];
 
-        $configurationSet = $this->setMailConfiguration($customer);
+        $configurationSet = $this->setMailConfiguration($table->customer);
 
         if ($configurationSet) {
             return false;
         }
 
-        $dataRow = [
-            'customer' => $customer,
-            'device'   => $table->device,
-            'plan'     => $table->plan,
-            'sim'      => $table->sim,
-        ];
+        if($table->device && $table->sim){
+            $productName = $table->device->name.' & '.$table->sim->name;
+        }elseif ($table->device) {
+            $productName = $table->device->name;
+        }elseif ($table->sim) {
+            $productName = $table->sim->name;
+        }
 
-        $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)
-        ->where('code','shipping-tracking')
+        $emailTemplates = EmailTemplate::where('company_id', $dataRow['customer']['company_id'])
+        ->where('code', 'shipping-tracking')
         ->get();
 
         $order = Order::where('customer_id', $customer->id)->first();
@@ -63,7 +66,7 @@ class SendMailForShippingNumber
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            $row['body'] = $this->addFieldsToBody('[tracking_num]', $trackingNumber, $row['body']);
+            $row['body'] = $this->addFieldsToBody(['[product_name]','[tracking_num]'], [$productName, $trackingNum], $row['body']);
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }
