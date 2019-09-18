@@ -22,4 +22,10 @@ class OrderCoupon extends Model
         return $this->hasMany('App\Model\OrderCouponProduct', 'order_coupon_id', 'id');
     }
 
+    public function coupon()
+    {
+        return $this->belongsTo('App\Model\Coupon');
+    }
+    
+
 }

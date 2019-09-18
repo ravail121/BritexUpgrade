@@ -30,14 +30,8 @@ trait InvoiceCouponTrait
                     ]
                 );
             }
-            $numUses       = $couponToProcess->pluck('num_uses')->first();
             $couponCycles  = $couponToProcess->first()->num_cycles;
             $couponId      = $couponToProcess->first()->id;
-
-            $couponToProcess->update([
-                'num_uses' => $numUses + $order->orderCoupon->orderCouponProduct->count()
-            ]);
-
             $data = $this->infiniteOrNot($couponCycles);
             $this->insertIntoTables($couponId, $order, $subscription, $data);
         }
@@ -76,5 +70,14 @@ trait InvoiceCouponTrait
             $data['coupon_id']   = $couponId;
             SubscriptionCoupon::create($data);
         }
+    }
+    protected function updateCouponNumUses($order)
+    {
+        $orderCoupon = $order->orderCoupon;
+        $numUses = $orderCoupon->coupon->num_uses;
+        $orderCoupon->coupon->update([
+            'num_uses' => $numUses + $orderCoupon->orderCouponProduct->count()
+        ]);
+
     }
 }
