@@ -115,18 +115,6 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
   ]);
 
-  Route::get('/invoice/tax-items', [
-    'as'=>'api.invoice.getTax',
-    'uses'=> 'InvoiceController@getTax',
- 
-   ]);
-
-   Route::get('/invoice/coupons', [
-    'as'=>'api.invoice.getCoupons',
-    'uses'=> 'InvoiceController@getCoupons',
- 
-   ]);
-
    Route::get('/invoice/amount-paid', [
      'as' => 'api.invoice.amountPaid',
      'uses' => 'InvoiceController@amountPaid',

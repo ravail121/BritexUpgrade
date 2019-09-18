@@ -31,7 +31,6 @@ class SubscriptionController extends BaseController
     public function createSubscription(Request $request)
     {
         $validation = $this->validateData($request);
-        \Log::info($request->all());
         if ($validation) {
             return $validation;
         }

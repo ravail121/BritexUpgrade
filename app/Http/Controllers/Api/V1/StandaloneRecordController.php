@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Model\Order;
-use App\Model\OrderGroup;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
 class StandaloneRecordController extends BaseController
 {
@@ -16,7 +15,7 @@ class StandaloneRecordController extends BaseController
     const DEFAULT_STATUS       = 'shipping';
     const DEFAULT_TRACKING_NUM = 1;
     const DEFAULT_PROSSED = 0;
-
+    use InvoiceCouponTrait;
 
     public $rules;
 
@@ -58,6 +57,8 @@ class StandaloneRecordController extends BaseController
             'imei'      => 'null', 
         ]));
 
+        $order = Order::find($request->order_id);
+        $this->storeCoupon($request->coupon_data, $order);
 
         return $this->respond(['device_id' => $record->id]);
     }
@@ -83,6 +84,9 @@ class StandaloneRecordController extends BaseController
             'sim_id'  => $request->sim_id, 
             'sim_num' => 'null', 
         ]));
+
+        $order = Order::find($request->order_id);
+        $this->storeCoupon($request->coupon_data, $order);
 
         return $this->respond(['sim_id' => $record->id]);
     }

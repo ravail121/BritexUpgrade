@@ -117,15 +117,13 @@
                         <table class="test table-padding">
                             <tbody>
                                 @if (count($data['standalone_items']->where('type', 3)))
-                                    @foreach($data['standalone_items']->where('type', 3) as $item)
+                                    @foreach($data['standalone_items']->where('type', 3)->whereNotIn('description', 'Shipping Fee') as $item)
                                         <tr>
                                             <td>
                                                 @if ($item['product_type'] == 'device')
                                                     {{ $item->standaloneDevice()->first()->name }}
                                                 @elseif ($item['product_type'] == 'sim')
                                                     {{ $item->standaloneSim()->first()->name }}
-                                                @elseif ($item['description'] == 'Shipping Fee')
-                                                    Shipping Fee
                                                 @elseif ($item['description'] == 'Activation Fee')
                                                     Activation Fee
                                                 @endif
@@ -135,6 +133,16 @@
                                             </td>
                                         </tr>
                                     @endforeach
+                                @endif
+                                @if (count($data['standalone_items']->where('type', 3)->where('description', 'Shipping Fee')))
+                                    <tr>
+                                        <td>
+                                            Shipping fee
+                                        </td>
+                                        <td colspan='2' class='last'>
+                                            <span>$</span> {{number_format($data['standalone_items']->where('type', 3)->where('description', 'Shipping Fee')->sum('amount'), 2)}}
+                                        </td>
+                                    </tr>
                                 @endif
                                 <tr>
                                     <td colspan="3">

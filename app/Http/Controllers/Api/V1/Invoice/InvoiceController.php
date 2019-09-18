@@ -177,20 +177,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         ];
     }
 
-    public function getTax(Request $request)
-    {
-        $order      = Order::where('hash', $request->hash)->first();
-        $taxes      = $order->invoice->invoiceItem->where('type', self::TAXES)->sum('amount');
-        $shipping   = $order->invoice->invoiceItem->where('description', self::SHIPPING)->sum('amount');
-        return ['taxes' => $taxes, 'shipping' => $shipping];
-    }
-
-    public function getCoupons(Request $request)
-    {
-        $coupons = Order::where('hash', $request->hash)->first()->invoice->invoiceItem->where('type', self::COUPONS)->sum('amount');
-        return ['coupons' => $coupons];
-    }
-
     /**
      * Generates the Invoice template and downloads the invoice.pdf file
      * 

@@ -240,12 +240,7 @@ trait InvoiceTrait
             $subscriptionsExists ? array_push($subscriptions, Subscription::find($id)) : null;
         }
         
-        if (!count($subscriptions)) {
-
-            return false;
-
-        }
-
+        if (!count($subscriptions)) { return false; }
         return $subscriptions;
     }
 
