@@ -88,24 +88,36 @@ class OrderDataController extends BaseController
         if($boxes['tracking_number'] != null){
             $subString = substr($boxdetail['part_number'], 0, 3);
             $partNumId = subStr($boxdetail['part_number'], 4);
-            $isSubcription = null;
 
             if($subString == 'SUB') {
-                $isSubcription = 1;
                 $table = Subscription::find($partNumId);
                 $table = Subscription::whereId($partNumId)->with('customer', 'device', 'sim')->first();
-
+                if($table){
+                    $table->update([
+                        'tracking_num' => $boxes['tracking_number'],
+                        'device_imei'  => $boxdetail['pick_location'],
+                        'sim_card_num' => $boxdetail['code'],
+                    ]);
+                    event(new ShippingNumber($boxes['tracking_number'], $table));
+                    event(new SubcriptionStatusChanged($table->id));
+                }
             } elseif($subString == 'DEV') {
                 $table = CustomerStandaloneDevice::whereId($partNumId)->with('device')->first();
-                
+                if($table){
+                    $table->update([
+                        'tracking_num' => $boxes['tracking_number'],
+                        'device_imei'  => $boxdetail['pick_location'],
+                    ]);
+                    event(new ShippingNumber($boxes['tracking_number'], $table));
+                } 
             } elseif($subString == 'SIM') {
                 $table = CustomerStandaloneSim::whereId($partNumId)with('sim')->first();
-            }
-            if($table){
-                $table->update(['tracking_num' => $boxes['tracking_number']]);
-                event(new ShippingNumber($boxes['tracking_number'], $table));
-                if($isSubcription){
-                    event(new SubcriptionStatusChanged($table->id));
+                if($table){
+                    $table->update([
+                        'tracking_num' => $boxes['tracking_number'],
+                        'sim_card_num' => $boxdetail['code'],
+                    ]);
+                    event(new ShippingNumber($boxes['tracking_number'], $table));
                 }
             }
         }

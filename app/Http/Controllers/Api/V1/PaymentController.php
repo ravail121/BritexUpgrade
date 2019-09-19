@@ -214,6 +214,7 @@ class PaymentController extends BaseController implements ConstantInterface
             'refnum'     => 'required',
             'amount'     => 'required|numeric',
             'credit'     => 'required',
+            'staff_id'   => 'required',
         ]); 
         
         $this->setConstantData($request);
@@ -224,7 +225,7 @@ class PaymentController extends BaseController implements ConstantInterface
         if($this->tran->Process()) {
             $status = PaymentRefundLog::STATUS['success'];
             $amount = $data['credit'] == '1' ? 0: $this->tran->amount;
-            $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount);
+            $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request->staff_id);
             if($invoice){
                 $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
                 $msg = "success";
@@ -285,7 +286,7 @@ class PaymentController extends BaseController implements ConstantInterface
         ]);
     }
 
-    protected function createRefundInvoice($invoiceId, $amount)
+    protected function createRefundInvoice($invoiceId, $amount, $staffId)
     {
         $invoiceData = Invoice::find($invoiceId)->toArray();
         if($invoiceData){
@@ -295,6 +296,7 @@ class PaymentController extends BaseController implements ConstantInterface
             // $invoiceData['start_date']   = $this->carbon->toDateString(),
             // $invoiceData['end_date']     = $this->carbon->addMonth()->subDay()->toDateString(),
             // $invoiceData['due_date']     = $this->carbon->subDay()->toDateString(),
+            $invoiceData['staff_id']     = $staffId;
             $invoiceData['subtotal']     = $amount;
             $invoiceData['total_due']    = self::DEFAULT_DUE;
             $invoiceData['prev_balance'] = self::DEFAULT_DUE;

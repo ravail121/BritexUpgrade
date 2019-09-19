@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddInvoiceIdInPaymentRefundLogTable extends Migration
+class AddStaffIdInInvoiceTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,10 @@ class AddInvoiceIdInPaymentRefundLogTable extends Migration
      */
     public function up()
     {
-        Schema::table('payment_refund_log', function (Blueprint $table) {
-            $table->unsignedInteger('invoice_id')->after('payment_log_id')->nullable();
-            $table->foreign('invoice_id')->references('id')->on('invoice');
+        Schema::table('invoice', function (Blueprint $table) {
+            $table->unsignedInteger('staff_id')->after('notes')->nullable();
+            $table->foreign('staff_id')->references('id')->on('staff');
         });
-            
     }
 
     /**
@@ -27,9 +26,9 @@ class AddInvoiceIdInPaymentRefundLogTable extends Migration
      */
     public function down()
     {
-        Schema::table('payment_refund_log', function (Blueprint $table) {
+        Schema::table('invoice', function (Blueprint $table) {
             $table->dropColumn([
-                'goknows_api_key'
+                'staff_id'
             ]);
         });
     }
