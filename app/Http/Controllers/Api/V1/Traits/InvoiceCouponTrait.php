@@ -13,7 +13,6 @@ trait InvoiceCouponTrait
     public function storeCoupon($couponData, $order, $subscription = null)
     {
         if (isset($couponData['code'])) {
-            $data = [];
             $couponToProcess   = Coupon::where('code', $couponData['code']);
             //store coupon in invoice_items.
             if ($couponData['amount']) {
@@ -33,7 +32,6 @@ trait InvoiceCouponTrait
             $couponCycles  = $couponToProcess->first()->num_cycles;
             $couponId      = $couponToProcess->first()->id;
             $data = $this->infiniteOrNot($couponCycles);
-            $this->insertIntoTables($couponId, $order, $subscription, $data);
         }
     }
 
@@ -56,28 +54,27 @@ trait InvoiceCouponTrait
         return $data;
     }
 
-    protected function insertIntoTables($couponId, $order, $subscription, $data)
-    {
-        $alreadyUsedAccountCoupon = CustomerCoupon::where('coupon_id', $couponId)->where('customer_id', $order->invoice->customer_id)->count();
-        $alreadyUsedSubscriptionCoupon = SubscriptionCoupon::where('coupon_id', $couponId)->where('subscription_id', $order->invoice->customer_id)->count();
-        if (!$alreadyUsedAccountCoupon && !$subscription) {
-            $data['customer_id'] = $order->invoice->customer_id;
-            $data['coupon_id']   = $couponId;
-            CustomerCoupon::create($data);
-        }
-        if (!$alreadyUsedSubscriptionCoupon && $subscription) {
-            $data['subscription_id'] = $subscription->id;
-            $data['coupon_id']   = $couponId;
-            SubscriptionCoupon::create($data);
-        }
-    }
     protected function updateCouponNumUses($order)
     {
         $orderCoupon = $order->orderCoupon;
-        $numUses = $orderCoupon->coupon->num_uses;
-        $orderCoupon->coupon->update([
-            'num_uses' => $numUses + $orderCoupon->orderCouponProduct->count()
-        ]);
+        if (isset($orderCoupon) && $orderCoupon->count()) {
+            $numUses = $orderCoupon->coupon->num_uses;
+            $orderCoupon->coupon->update([
+                'num_uses' => $numUses + 1
+            ]);
+            $this->insertIntoTables($order);
+        }
+    }
+
+    protected function insertIntoTables($order)
+    {
+        $coupon        = Coupon::find($order->orderCoupon->coupon_id);
+        if ($coupon->num_cycles != 1) {
+            $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $coupon->num_cycles - 1;
+            $data['customer_id'] = $order->invoice->customer_id;
+            $data['coupon_id']   = $order->orderCoupon->coupon_id;
+            CustomerCoupon::create($data);
+        }
 
     }
 }

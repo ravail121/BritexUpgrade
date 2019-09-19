@@ -51,7 +51,6 @@ class CouponController extends Controller
 
     protected $failedResponse;
     protected $totalSubscriptions;
-    protected $warning;
 
     public function addCoupon(Request $request)
     {
@@ -66,12 +65,13 @@ class CouponController extends Controller
 
                 return ['error' => $this->failedResponse];
             } elseif (!$request->hash) {
+
                 $this->failResponse = 'Please login first';
                 return ['error' => $this->failResponse];
             } else {
 
                 $customer              = Customer::where('hash', $request->hash ? $request->hash : $order->customer->hash)->first();   
-                $billableSubscriptions = $customer->billableSubscriptions;
+                $billableSubscriptions = $customer->billableSubscriptionsForCoupons;
                 $billablePlans = [];
 
                 foreach ($billableSubscriptions as $subscription) {
@@ -94,30 +94,22 @@ class CouponController extends Controller
                     $couponSpecificTypes    = $coupon->couponProductTypes;
                     $orderGroupCart         = $request->orderGroupsCart;
                     $billablePlans          = $billablePlans;
-                    
                     $cartPlans              = isset($orderGroupCart['plans']['items']) ? ['items' => $orderGroupCart['plans']['items']]    : [];
 
                     $appliedToAll       = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order->id, $customer) : 0;
                     $appliedToTypes     = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $couponSpecificTypes, $order->id, $orderGroupCart, $customer) : 0;
                     $appliedToProducts  = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $couponProductTypes, $order->id, $orderGroupCart, $customer) : 0;                
                     
-                    
                     if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
-
                         $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
-                        
-                        return ['total' => $total, 'code' => $coupon->code, 'alert' => $this->warning, 'applied_to' => [
+                        return ['total' => $total, 'code' => $coupon->code, 'applied_to' => [
                                 'applied_to_all'        => $appliedToAll['applied_to'],
                                 'applied_to_types'      => $appliedToTypes['applied_to'],
                                 'applied_to_products'   => $appliedToProducts['applied_to'],
                             ]
                         ];
-
-
                     } else {
-                        
                         return ['error' => $this->failedResponse];
-                    
                     }
 
                 }
@@ -135,7 +127,7 @@ class CouponController extends Controller
     protected function couponIsValid($coupon) 
     {
         if ($coupon['company_id'] != \Request::get('company')->id) {
-            $this->failedResponse = 'Coupon is Invalid';
+            $this->failedResponse = 'Coupon is invalid';
             return false;
         }
         if ($coupon['active']) {
@@ -229,24 +221,7 @@ class CouponController extends Controller
             $this->failedResponse = 'Not available anymore';
             return false;
         } 
-        if ($limit <= 10) {
-            $this->warning = [
-                'warning' => 'Coupon max usage limit ',
-                'message' => 'This coupon can only be used on '.$limit.' products'
-            ];
-        } 
-        if (isset($countItems) && count($countItems) >= $coupon['max_uses'] - $coupon['num_uses']) {
-            $limit = $coupon['max_uses'] - $coupon['num_uses'];
-            $this->warning = [
-                'warning' => 'Coupon max usage limit ',
-                'message' => 'This coupon can only be used on '.$limit.' products'
-            ];
-            return false;
-        }
-    
-        
         return true;
-
     }
 
 
@@ -256,15 +231,7 @@ class CouponController extends Controller
         $orderGroup         = $order->allOrderGroup;
         $isPercentage       = $coupon['fixed_or_perc'] == 2 ? true : false;
         $multilineRestrict  = $coupon['multiline_restrict_plans'] == 1 ? $coupon->multilinePlanTypes->pluck('plan_type') : null;
-        $alreadyUsed        = $customer->customerCoupon->where('coupon_id', $coupon['id'])->count();
         $countItems         = [];
-        if ($alreadyUsed && $orderGroup->where('plan_id', null)->count()) {
-            $orderGroup = $orderGroup->where('plan_id', '!=', null);
-            $this->warning = [
-                'warning' => 'Subscriptions only ',
-                'message' => 'Coupon already used, will apply on new subscriptions.'
-            ];
-        }
         
         foreach ($orderGroup as $og) {
 
@@ -273,7 +240,7 @@ class CouponController extends Controller
                 $deviceCharge   = $og->plan_id ? $device->amount_w_plan : $device->amount;
                 $deviceAmount[] = $deviceCharge;
                 $countItems[]   = $og->device_id;
-                    if (!$this->couponNotReachedMaxLimit($coupon, $countItems)) {
+                    if (!$this->couponNotReachedMaxLimit($coupon)) {
                         break;
                     }
                 $orderCouponProduct[]   = [
@@ -295,7 +262,7 @@ class CouponController extends Controller
                         $planCharge     = $og->plan_prorated_amt ? $og->plan_prorated_amt : $plan->amount_recurring;
                         $planAmount[]   = $planCharge;
                         $countItems[]   = $og->plan_id;
-                        if (!$this->couponNotReachedMaxLimit($coupon, $countItems)) {
+                        if (!$this->couponNotReachedMaxLimit($coupon)) {
                             break;
                         }
                         $orderCouponProduct[]   = [
@@ -312,7 +279,7 @@ class CouponController extends Controller
                     $planCharge     = $og->plan_prorated_amt ? $og->plan_prorated_amt : $plan->amount_recurring;
                     $planAmount[]   = $planCharge;
                     $countItems[]   = $og->plan_id;
-                    if (!$this->couponNotReachedMaxLimit($coupon, $countItems)) {
+                    if (!$this->couponNotReachedMaxLimit($coupon)) {
                         break;
                     }
                     $orderCouponProduct[]   = [
@@ -331,7 +298,7 @@ class CouponController extends Controller
                 $simCharge      = $og->plan_id ? $sim->amount_w_plan : $sim->amount_alone; 
                 $simAmount[]    = $simCharge; 
                 $countItems[]   = $og->sim_id;
-                if (!$this->couponNotReachedMaxLimit($coupon, $countItems)) {
+                if (!$this->couponNotReachedMaxLimit($coupon)) {
                     break;
                 }
                 $orderCouponProduct[]   = [
@@ -362,7 +329,7 @@ class CouponController extends Controller
                     'order'                 => $order,
                     'order_group_id'        => $og->id
                 ];
-                if (!$this->couponNotReachedMaxLimit($coupon, $countItems)) {
+                if (!$this->couponNotReachedMaxLimit($coupon)) {
                     break;
                 }
             }
@@ -411,12 +378,6 @@ class CouponController extends Controller
         $plans              = $couponMain   ['multiline_restrict_plans'] > 0 ? $ifPlanApplicable : $orderGroupPlans;
         $alreadyUsed        = $customer->customerCoupon->where('coupon_id', $couponMain['id'])->count();
         $countItems         = [];
-        if ($alreadyUsed && $orderGroup->where('plan_id', null)->count()) {
-            $this->warning = [
-                'warning' => 'Subscriptions only ',
-                'message' => 'Coupon already used, will apply on new subscriptions.'
-            ];;
-        }
 
         foreach ($couponSpecificTypes as $coupon) {
 
@@ -444,7 +405,7 @@ class CouponController extends Controller
                                 'order_group_id'        => $device['order_group_id']
                             ];
                         }
-                        if (!$this->couponNotReachedMaxLimit($couponMain, $countItems)) {
+                        if (!$this->couponNotReachedMaxLimit($couponMain)) {
                             break;
                         }
                     }
@@ -479,14 +440,14 @@ class CouponController extends Controller
                             $countItems[]   = 1;
                             $orderCouponProduct[]   = [
                                 'order_product_type'    => self::SPECIFIC_TYPES['PLAN'],
-                                'order_product_id'      => $plan->id,
+                                'order_product_id'      => $planData->id,
                                 'amount'                => $coupon['amount'],
                                 'discount'              => number_format($isPercentage ? $coupon['amount'] * $planAmount / 100 : $coupon['amount'], 2),
                                 'order'                 => $order,
                                 'order_group_id'        => $plan['order_group_id']
                             ];
                         }
-                        if (!$this->couponNotReachedMaxLimit($couponMain, $countItems)) {
+                        if (!$this->couponNotReachedMaxLimit($couponMain)) {
                             break;
                         }
                     }
@@ -516,7 +477,7 @@ class CouponController extends Controller
                                 'order_group_id'        => $sim['order_group_id']
                             ];
                         }
-                        if (!$this->couponNotReachedMaxLimit($couponMain, $countItems)) {
+                        if (!$this->couponNotReachedMaxLimit($couponMain)) {
                             break;
                         }
                     }
@@ -541,7 +502,7 @@ class CouponController extends Controller
                                 'order'                 => $order,
                                 'order_group_id'        => $item['order_group_id']
                             ];
-                            if (!$this->couponNotReachedMaxLimit($couponMain, $countItems)) {
+                            if (!$this->couponNotReachedMaxLimit($couponMain)) {
                                 break;
                             }
                         }
@@ -566,12 +527,6 @@ class CouponController extends Controller
         $plans              = $couponMain['multiline_restrict_plans'] > 0 ? $ifPlanApplicable : $orderGroupPlans;
         $alreadyUsed        = $customer->customerCoupon->where('coupon_id', $couponMain['id'])->count();
         $countItems         = [];
-        if ($alreadyUsed && $orderGroup->where('plan_id', null)->count()) {
-            $this->warning = [
-                'warning' => 'Subscriptions only ',
-                'message' => 'Coupon already used, will apply on new subscriptions.'
-            ];
-        }
 
         foreach ($couponProductTypes as $coupon) {
             $productId = $coupon['product_id'];
@@ -593,7 +548,7 @@ class CouponController extends Controller
                                 'order_group_id'        => $plan['order_group_id']
                             ];
                         }
-                        if (!$this->couponNotReachedMaxLimit($couponMain, $countItems)) {
+                        if (!$this->couponNotReachedMaxLimit($couponMain)) {
                             break;
                         }
                     }
@@ -623,7 +578,7 @@ class CouponController extends Controller
                                 ];
                             }
                         }
-                        if (!$this->couponNotReachedMaxLimit($couponMain, isset($countItems) ? $countItems : [])) {
+                        if (!$this->couponNotReachedMaxLimit($couponMain)) {
                             break;
                         }
                     }
@@ -655,14 +610,12 @@ class CouponController extends Controller
                                 ];
                             }
                         }
-                        if (!$this->couponNotReachedMaxLimit($couponMain, $countItems)) {
+                        if (!$this->couponNotReachedMaxLimit($couponMain)) {
                             break;
                         }
                     }
                 }
             }
-            
-            $orderGroupIds = [];
 
             if ($coupon['product_type'] == self::SPECIFIC_TYPES['ADDON'] && isset($orderGroupCart['addons']['items'])) {
                 if (isset($orderGroupCart['addons']['items'])) {
@@ -683,7 +636,7 @@ class CouponController extends Controller
                                     'order_group_id'        => $item['order_group_id']
                                 ];
                             }
-                            if (!$this->couponNotReachedMaxLimit($couponMain, $countItems)) {
+                            if (!$this->couponNotReachedMaxLimit($couponMain)) {
                                 break;
                             }
                         }
@@ -693,14 +646,6 @@ class CouponController extends Controller
         }
         isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
         return (['total' => array_sum(isset($couponAmount) ? $couponAmount : [0]), 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : [], 'order' => $order]);
-    }
-
-    protected function removeCoupon(Request $request)
-    {
-        $order = Order::find($request->order_id);
-        $order->orderCoupon->orderCouponProduct()->delete();
-        $order->orderCoupon()->delete();
-
     }
 
     protected function orderCoupon($data, $order)

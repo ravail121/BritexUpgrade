@@ -184,10 +184,6 @@ Route::middleware('APIToken')->group(function () {
           'as' => 'api.order_group.edit',
           'uses' => 'OrderGroupController@edit',
         ]);
-        Route::get('/state-tax', [
-          'as' => 'api.order_group.taxrate'  ,
-          'uses' => 'OrderGroupController@taxrate'  
-        ]);
         Route::get('/edit-sim', [
           'as' => 'api.order_group.editSim'  ,
           'uses' => 'OrderGroupController@editSim'  
@@ -200,11 +196,6 @@ Route::middleware('APIToken')->group(function () {
         Route::post('/add-coupon', [
           'as' => 'api.coupon.addCoupon'  ,
           'uses' => 'CouponController@addCoupon'  
-        ]);
-
-        Route::post('/remove-coupon', [
-          'as' => 'api.remove.removeCoupon',
-          'uses' => 'CouponController@removeCoupon'
         ]);
 
       });
@@ -332,12 +323,6 @@ Route::middleware('APIToken')->group(function () {
         Route::post('/',[
         'as'=>'api.customer.post',
         'uses'=>'CustomerController@post',
-        ]);
-
-
-        Route::post('/billing-details',[
-          'as'=>'api.customer.billing-details',
-          'uses'=>'CustomerController@saveBillingDetails',
         ]);
 
         /*Route::get('/subscriptions',[
@@ -524,17 +509,6 @@ Route::middleware('APIToken')->group(function () {
           'as'   => 'api.customer.details',
           'uses' => 'CustomerController@customerDetails',
         ]);
-
-        Route::post('customer/account-status',[
-          'as'   => 'api.customer.status',
-          'uses' => 'CustomerController@accountStatus',
-        ]);
-
-        Route::post('/prorated-remaining-days',[
-          'as'=>'api.customer.prorated',
-          'uses'=>'CustomerController@proratedDays',
-        ]);
-
 
         Route::post('update-customer',[
           'as'   => 'api.customer.update',

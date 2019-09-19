@@ -88,6 +88,8 @@ class CouponTest extends TestCase
             'order_id' => $order['id'], 
             'plan_id' => $testPlan['id'],
         ]);
+        
+        $testPlan['order_group_id'] = $order->allOrderGroup->first()->id;
         $randomCode = str_random(10);
         Coupon::create([
             'company_id'    => $customer['company_id'],
@@ -596,7 +598,7 @@ class CouponTest extends TestCase
                     ]
                 ));
                 return ($applyCoupon->assertJson([
-                    'error' => 'Minimum subscription requirements not met'
+                    'error' => 'Min subscriptions required: 1'
                 ]));
             }
         }
@@ -649,7 +651,7 @@ class CouponTest extends TestCase
                     ]
                 ));
                 return ($applyCoupon->assertJson([
-                    'error' => 'Maximum subscription requirements not met'
+                    'error' => 'Max subscriptions required: 2'
                 ]));
             }
         }
@@ -685,7 +687,7 @@ class CouponTest extends TestCase
             ]
         ));
         return ($applyCoupon->assertJson([
-            'error' => 'Coupon is not active'
+            'error' => 'Not active'
         ]));
 
     }
@@ -733,7 +735,7 @@ class CouponTest extends TestCase
             ]
         ));
         return ($applyCoupon->assertJson([
-            'error' => 'Coupon is Invalid'
+            'error' => 'Coupon is invalid'
         ]));
 
     }
@@ -783,7 +785,7 @@ class CouponTest extends TestCase
             ]
         ));
         return ($applyCoupon->assertJson([
-            'error' => 'Coupon expired on '.$endDate
+            'error' => 'Expired: '.$endDate
         ]));
 
     }
@@ -833,7 +835,7 @@ class CouponTest extends TestCase
             ]
         ));
         return ($applyCoupon->assertJson([
-            'error' => 'Coupon is valid from '.$startDate
+            'error' => 'Starts: '.$startDate
         ]));
 
     }
@@ -883,7 +885,7 @@ class CouponTest extends TestCase
             ]
         ));
         return ($applyCoupon->assertJson([
-            'error' => 'Coupon has reached maximum usage'
+            'error' => 'Not available anymore'
         ]));
 
     }

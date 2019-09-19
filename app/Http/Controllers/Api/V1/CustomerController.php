@@ -5,22 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use Validator;
 use App\Model\Order;
 use App\Model\Customer;
-use App\Model\OrderGroup;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Events\AutoPayStatus;
-use App\Model\OrderGroupAddon;
-use App\Model\SubscriptionAddon;
-use Illuminate\Support\Collection;
-use App\Model\BusinessVerification;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
-
-
+use App\Model\Tax;
 
 class CustomerController extends BaseController
 {
@@ -31,9 +24,26 @@ class CustomerController extends BaseController
 	 
 	public function post(Request $request)
 	{
+		if ($request->billing_state_id) {
+			$validate = $request->validate([
+				'billing_state_id'   => 'required|string',
+				'billing_fname'      => 'required|string',
+				'billing_lname'      => 'required|string',
+				'billing_address1'   => 'required|string',
+				'billing_address2'   => 'required|string',
+				'billing_city'       => 'required|string',
+				'billing_zip'		 => 'required|string',
+				'id'        		 => 'required'
+			]);
+			$customer = Customer::find($request->id);
+			if ($validate) {
+				$customer->update($validate);
+				return ['success' => 'Details Added', 'id' => $customer->billing_state_id];
+			}
+			return false;
+		}
 
 		if ($request->customer_id) {
-			
 				if($request->fname){
 
 						$customer = $this->updateCustomer($request);
@@ -207,7 +217,7 @@ class CustomerController extends BaseController
 			'shipping_address2'  => 'nullable|string',
 			'shipping_city'      => 'required|string',
 			'shipping_state_id'  => 'required|string|max:2',
-			'shipping_zip'       => 'required|digits:5',
+			'shipping_zip'       => 'required|string',
 			'pin'                => 'required|digits:4',
 		]);
 	}
@@ -223,6 +233,14 @@ class CustomerController extends BaseController
 	 */
 	public function customerDetails(Request $request)
 	{
+		if ($request->tax_id) {
+			$company = \Request::get('company');
+			$rate = Tax::where('state', $request->tax_id)
+						->where('company_id', $company->id)
+						->pluck('rate')
+						->first();
+			return ['tax_rate' => $rate];
+		}
 		$msg = $this->respond(['error' => 'Hash is required']);
 		if ($request->hash) {
 			$customer = Customer::where(['hash' => $request->hash])->first();
@@ -392,35 +410,6 @@ class CustomerController extends BaseController
 				}
 				
 				return $this->respond($customerDetails);
-		}  
-
-		public function proratedDays(Request $request)
-		{
-			$customer   = Customer::find($request->id);
-			$totalDays  = $customer->billing_start;
-			return $customer; 
-		}
-
-		public function accountStatus(Request $request)
-		{
-			return Customer::find($request->id)->account_suspended;
-		}
-
-		public function saveBillingDetails(Request $request)
-		{
-				$customer = Customer::find($request->id);
-				$customer->update(
-						[
-								'billing_state_id'  => $request->billing_state_id,
-								'billing_fname'     => $request->billing_fname,
-								'billing_lname'     => $request->billing_lname,
-								'billing_address1'  => $request->billing_address1,
-								'billing_address2'  => $request->billing_address2,
-								'billing_city'      => $request->billing_city,
-								'billing_zip'       => $request->billing_zip,
-						]
-				);
-				return ['success' => 'Details Added', 'id' => $customer->billing_state_id];
 		}
 
 }

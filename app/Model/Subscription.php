@@ -235,6 +235,15 @@ class Subscription extends Model
                 ->notScheduledForSuspensionOrClosure();
     }
 
+    public function scopeBillabeForCoupons($query)
+    {
+        return $query
+                ->whereIn('status', [
+                  'active', 'shipping', 'for-activation'])
+                ->notSuspendedOrClosed()
+                ->notScheduledForSuspensionOrClosure();
+    }
+
     public function scopeNotClosed($query)
     {
         return $query->where('status', '!=', 'closed');

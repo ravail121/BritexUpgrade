@@ -3,21 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 use Validator;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Model\Order;
 use App\Model\Plan;
 use App\Model\Device;
-use App\Model\Tax;
 use App\Model\DeviceToSim;
 use App\Model\Sim;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
-use App\Model\Coupon;
-use App\Model\OrderCoupon;
-use App\Model\Customer;
-
 
 class OrderGroupController extends Controller
 {
@@ -90,16 +83,6 @@ class OrderGroupController extends Controller
     
     return response()->json($this->output);
 
-    }
-
-    public function taxrate(Request $request)
-    {
-        $company = \Request::get('company');
-        $rate = Tax::where('state', $request->id)
-                   ->where('company_id', $company->id)
-                   ->pluck('rate')
-                   ->first();
-        return $rate;
     }
 
     public function editSim(Request $request)

@@ -26,6 +26,8 @@ class OrderController extends BaseController
             $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
         })->with('company')->get();
 
+        // $orders = Order::where('id', '6172')->get();
+
         try {
             foreach ($orders as $orderKey => $order) {
                 $readyCloudApiKey = $order->company->readycloud_api_key;
@@ -93,7 +95,7 @@ class OrderController extends BaseController
         return [
             'description' => $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'],
             'part_number' => 'SUB-'.$subscription->id,
-            'unit_amount' => $subscription->sim['amount_w_plan'],
+            'unit_price' => $subscription->sim['amount_w_plan'].' USD',
             'quantity'    =>   '1',
         ];
     }
@@ -103,7 +105,7 @@ class OrderController extends BaseController
         return [
             'description' => $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'],
             'part_number' => 'SUB-'.$subscription->id,
-            'unit_amount' => $subscription->device['amount_w_plan'],
+            'unit_price' => $subscription->device['amount_w_plan'].' USD',
             'quantity'    =>   '1',
         ];
     }
@@ -113,7 +115,7 @@ class OrderController extends BaseController
         return [
             'description' => $subscription->sim_name.' '.'associated with'.' '.$subscription->plan['name'].' and '.$subscription->device['name'],
             'part_number' => 'SUB-'.$subscription->id,
-            'unit_amount' => $subscription->device['amount_w_plan'],
+            'unit_price' => $subscription->device['amount_w_plan'].' USD',
             'quantity'    =>   '1',
         ];
     }
@@ -123,7 +125,7 @@ class OrderController extends BaseController
         return [
             'description' => $standAloneDevice->device['name'],
             'part_number' => 'DEV-'.$standAloneDevice->id,
-            'unit_amount' => $standAloneDevice->device['amount'],
+            'unit_price' => $standAloneDevice->device['amount'].' USD',
             'quantity'    =>   '1',];
     }
 
@@ -131,15 +133,15 @@ class OrderController extends BaseController
     {
         return [
             'description' => $standAloneSim->sim['name'],
-            'part_number' => 'SIM‌-'.$standAloneSim->id,
-            'unit_amount' => $standAloneSim->sim['amount_alone'],
+            'part_numbe0r' => 'SIM‌-'.$standAloneSim->id,
+            'unit_price' => $standAloneSim->sim['amount_alone'].' USD',
             'quantity'    =>   '1',
         ];
     }
 
     public function data($order, $row)
     {
-        
+        // dd($row);
         $company = $order->company;
         $customer = $order->customer;
 
@@ -156,6 +158,7 @@ class OrderController extends BaseController
                     "post_code" => $order->shipping_zip,
                     "region" => $order->shipping_state_id,
                     "country" => "USA",
+                    'email' => $customer->email,
                     "phone" =>  $order->customer->phone,
                 ], 
             "ship_from" => [
@@ -169,7 +172,7 @@ class OrderController extends BaseController
                     "phone" => $company->support_phone_number
                 ],
                 "ship_type" => "Priority Mail",
-                "ship_via" => "Stamps.com"     
+                "ship_via" => "Stamps.com"   
             ],
             "boxes" => $row,
             "source" => [
@@ -187,6 +190,7 @@ class OrderController extends BaseController
 
     public function SentToReadyCloud($data, $readyCloudApiKey)
     {
+
         $client = new Client();
         $response = $client->request('POST', env('READY_CLOUD_URL').$readyCloudApiKey, [
             'headers' => ['Content-type' => 'application/json'],

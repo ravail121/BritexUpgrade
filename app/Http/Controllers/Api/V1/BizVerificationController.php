@@ -2,20 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Validator;
 use App\Model\Order;
-use App\Model\EmailTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
 use App\Model\BusinessVerification;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\File;
 use App\Model\BusinessVerificationDocs;
 use App\Http\Controllers\BaseController;
 use App\Events\BusinessVerificationCreated;
 use App\Events\BusinessVerificationApproved;
-use App\Model\Customer;
 
 class BizVerificationController extends BaseController
 { 

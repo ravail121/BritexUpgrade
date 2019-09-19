@@ -42,7 +42,7 @@ class SignOnController extends BaseController
 
         if(Auth::validate($data))
         {
-            $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id','hash']);
+            $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id','hash', 'account_suspended']);
 
             $date = Carbon::today()->addDays(6)->endOfDay();
             $invoice = Invoice::where([

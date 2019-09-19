@@ -173,7 +173,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
         return [
             'status' => $this->respond($msg), 
-            'invoice_items_total' => number_format(InvoiceItem::where('invoice_id', $order->invoice->id)->sum('amount'), 2)
+            'invoice_items_total' => number_format($order->invoice->cal_total_charges, 2)
         ];
     }
 

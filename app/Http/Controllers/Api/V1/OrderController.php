@@ -23,7 +23,6 @@ class OrderController extends BaseController
     }
     public function get(Request $request){
 
-
         $hash = $request->input('order_hash');
         $paidMonthlyInvoice = $request->input('paid_monthly_invoice');
 

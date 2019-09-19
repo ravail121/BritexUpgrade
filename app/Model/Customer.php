@@ -83,6 +83,11 @@ class Customer extends Authenticatable
         return $this->subscription()->billabe();
     }
 
+    public function billableSubscriptionsForCoupons()
+    {
+        return $this->subscription()->BillabeForCoupons();
+    }
+
     public function nonClosedSubscriptions()
     {
         return $this->subscription()->notClosed();
