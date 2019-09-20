@@ -857,8 +857,4 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
     }
 
-    public function amountPaid(Request $request)
-    {
-        return Order::where('hash', $request->order_hash)->first()->invoice->creditsToInvoice->sum('amount');
-    }
 }

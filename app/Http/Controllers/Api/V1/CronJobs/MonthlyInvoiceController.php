@@ -19,6 +19,7 @@ use App\Model\SystemGlobalSetting;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
+use Exception;
 
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {
@@ -54,235 +55,247 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
      */
     public function generateMonthlyInvoice(Request $request)
     {
-
-        // $customers = Customer::shouldBeGeneratedNewInvoices();
-        $customers = Customer::shouldBeGeneratedNewInvoices();
-        
-        foreach ($customers as $customer) {
-            /*if( $customer->openMonthlyInvoice ){
-
-
-            } else {
-                
-            }*/
+        try {
+            // $customers = Customer::shouldBeGeneratedNewInvoices();
+            $customers = Customer::shouldBeGeneratedNewInvoices();
             
-            if ($customer->billableSubscriptions->count()) {
-                // ToDo: Temporary fix. Check why 'billing_state'
-                // is null
-                // And will there be a guarranty that every state
-                // has tax?
+            foreach ($customers as $customer) {
+                try {
                 
-                if(!$customer->stateTax){
-                    \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Monthly Invoice Generation skipped");
-                    continue;
-                }
-
-                $invoice = Invoice::create($this->getInvoiceData($customer));
-                
-                $dueDate = Carbon::parse($invoice->start_date)->subDay();
-
-                $dueDateChange = $invoice->update([
-                    'due_date' => $dueDate
-                ]);
-
-                $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
-                
-                $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
-
-                $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
-
-                $pendingCharges = $this->pendingCharges($invoice);
-                $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
-
-                $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
-                
-                // Subtotal = sum of ( Debits - coupons [applied to each subscription] + Taxes [applied to each subscription] )
-
-                // Add Coupons
-                $couponAccount = $this->customerAccountCoupons($customer, $invoice);
-                $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
-                
-                $couponDiscountTotal = $invoice->invoiceItem->whereIn('type', 
-                    [
-                        InvoiceItem::TYPES['coupon'],
-                        InvoiceItem::TYPES['manual']
-                    ])->sum('amount');
-
-                $monthlyCharges = $invoice->invoiceItem->whereIn('type', 
-                    [
-                        InvoiceItem::TYPES['plan_charges'],
-                        InvoiceItem::TYPES['feature_charges'],
-                        InvoiceItem::TYPES['regulatory_fee'],
-                        InvoiceItem::TYPES['taxes'],
-                    ])->sum('amount');
-
-                //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
-                
-                $subtotal = number_format($monthlyCharges + $totalPendingCharges - $couponDiscountTotal, 2);
-
-                $invoiceUpdate = $invoice->update(compact('subtotal'));
-
-                $totalDue = $this->applyCredits($customer, $invoice);
-
-                $invoice->update(['total_due' => $totalDue]);
-
-                if ($totalDue == 0) {
-                    $invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
-                }
-    
-                $insertOrder = $this->insertOrder($invoice);
-                
-                $order       = Order::where('invoice_id', $invoice->id)->first();
-
-                $request->headers->set('authorization', $order->company->api_key);
-
-                $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
-                
-                $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
-
-                $this->generateInvoice($order, $fileSavePath, $request);
-                
-                /*foreach ($customer->billableSubscriptions as $billableSubscription) {
-                    $this->response = $this->triggerEvent($customer);
-                    break;
-                }*/
-            } /*elseif ($customer->pending_charge) {
-                foreach ($customer->pending_charge as $pendingCharge) {
-                    if ($pendingCharge->invoice_id == 0) {
-
-                        $this->response = $this->triggerEvent($customer);
-                        break;
+                    if ($customer->billableSubscriptions->count()) {
+                        // ToDo: Temporary fix. Check why 'billing_state'
+                        // is null
+                        // And will there be a guarranty that every state
+                        // has tax?
                         
-                    }
+                        if(!$customer->stateTax){
+                            \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Monthly Invoice Generation skipped");
+                            continue;
+                        }
+
+                        $invoice = Invoice::create($this->getInvoiceData($customer));
+                        
+                        $dueDate = Carbon::parse($invoice->start_date)->subDay();
+
+                        $dueDateChange = $invoice->update([
+                            'due_date' => $dueDate
+                        ]);
+
+                        $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
+                        
+                        $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
+
+                        $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
+
+                        $pendingCharges = $this->pendingCharges($invoice);
+                        $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
+
+                        $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
+                        
+                        // Subtotal = sum of ( Debits - coupons [applied to each subscription] + Taxes [applied to each subscription] )
+
+                        // Add Coupons
+                        $couponAccount = $this->customerAccountCoupons($customer, $invoice);
+                        $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+                        
+                        $couponDiscountTotal = $invoice->invoiceItem->whereIn('type', 
+                            [
+                                InvoiceItem::TYPES['coupon'],
+                                InvoiceItem::TYPES['manual']
+                            ])->sum('amount');
+
+                        $monthlyCharges = $invoice->invoiceItem->whereIn('type', 
+                            [
+                                InvoiceItem::TYPES['plan_charges'],
+                                InvoiceItem::TYPES['feature_charges'],
+                                InvoiceItem::TYPES['regulatory_fee'],
+                                InvoiceItem::TYPES['taxes'],
+                            ])->sum('amount');
+
+                        //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
+                        
+                        $subtotal = number_format($monthlyCharges + $totalPendingCharges - $couponDiscountTotal, 2);
+
+                        $invoiceUpdate = $invoice->update(compact('subtotal'));
+
+                        $totalDue = $this->applyCredits($customer, $invoice);
+
+                        $invoice->update(['total_due' => $totalDue]);
+
+                        if ($totalDue == 0) {
+                            $invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
+                        }
+            
+                        $insertOrder = $this->insertOrder($invoice);
+                        
+                        $order       = Order::where('invoice_id', $invoice->id)->first();
+
+                        $request->headers->set('authorization', $order->company->api_key);
+
+                        $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
+                        
+                        $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
+
+                        $this->generateInvoice($order, $fileSavePath, $request);
+                        
+                        /*foreach ($customer->billableSubscriptions as $billableSubscription) {
+                            $this->response = $this->triggerEvent($customer);
+                            break;
+                        }*/
+                    } /*elseif ($customer->pending_charge) {
+                        foreach ($customer->pending_charge as $pendingCharge) {
+                            if ($pendingCharge->invoice_id == 0) {
+
+                                $this->response = $this->triggerEvent($customer);
+                                break;
+                                
+                            }
+                        }
+                    }*/
+
+                } catch (Exception $e) {
+                    \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
                 }
-            }*/
+            }
 
-
+            return $this->respond($this->response);
+        } catch (Exception $e) {
+            \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
         }
-
-        return $this->respond($this->response);
     }
 
     public function applyCredits($customer, $invoice)
     {
         $totalDue = $invoice->subtotal;
-
-        foreach ($customer->creditsNotAppliedCompletely as $creditNotAppliedCompletely) {
-            
-            $pendingCredits = $creditNotAppliedCompletely->amount;
-            
-            if($totalDue >= $pendingCredits){
-                $creditNotAppliedCompletely->update(['applied_to_invoice' => 1]);
-                
-                $creditNotAppliedCompletely->usedOnInvoices()->create([
-                    'invoice_id'  => $invoice->id,
-                    'amount'      => $pendingCredits,
-                    'description' => "{$pendingCredits} applied on invoice id {$invoice->id}",
-                ]);
-
-                $totalDue -= $pendingCredits;
-
-                if($totalDue == $pendingCredits) break;
-            }else {
-                $creditNotAppliedCompletely->usedOnInvoices()->create([
-                    'invoice_id'  => $invoice->id,
-                    'amount'      => $totalDue,
-                    'description' => "{$totalDue} applied on invoice id {$invoice->id}",
-                ]);
-                // Warning: Don't move it above as the value
-                $totalDue -= $totalDue;
-                break;
+        if (isset($totalDue) && $totalDue) {
+            foreach ($customer->creditsNotAppliedCompletely as $creditNotAppliedCompletely) {
+                try {
+                    $pendingCredits = $creditNotAppliedCompletely->amount;
+                    
+                    if($totalDue >= $pendingCredits){
+                        $creditNotAppliedCompletely->update(['applied_to_invoice' => 1]);
+                        
+                        $creditNotAppliedCompletely->usedOnInvoices()->create([
+                            'invoice_id'  => $invoice->id,
+                            'amount'      => $pendingCredits,
+                            'description' => "{$pendingCredits} applied on invoice id {$invoice->id}",
+                        ]);
+        
+                        $totalDue -= $pendingCredits;
+        
+                        if($totalDue == $pendingCredits) break;
+                    }else {
+                        $creditNotAppliedCompletely->usedOnInvoices()->create([
+                            'invoice_id'  => $invoice->id,
+                            'amount'      => $totalDue,
+                            'description' => "{$totalDue} applied on invoice id {$invoice->id}",
+                        ]);
+                        // Warning: Don't move it above as the value
+                        $totalDue -= $totalDue;
+                        break;
+                    }
+                } catch (Exception $e) {
+                    \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
+                }
             }
+    
+            return $totalDue;
         }
-
-        return $totalDue;
     }
 
     public function addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems)
     {
-        $taxes = collect();
+        try {
+            $taxes = collect();
 
-        $taxPercentage = ($customer->stateTax->rate)/100;
-        
-        $taxableBillableSubscriptionInvoiceItems = $billableSubscriptionInvoiceItems->where('taxable', true)->all();
-        
-        // For each plan/subscription
-        // Calculate total of plan + feature, one-time or usage charges
-        // and apply tax on it
-        foreach($taxableBillableSubscriptionInvoiceItems as $taxableBillableSubscriptionInvoiceItem){
-
-            $amount = ($taxableBillableSubscriptionInvoiceItem
-                            ->subscriptionDetail
-                            ->invoiceItemOfTaxableServices
-                            ->where('invoice_id', $invoice->id)
-                            ->pluck('amount')->sum()
-                       ) * $taxPercentage;
-
-            $data = [
-                'subscription_id' => $taxableBillableSubscriptionInvoiceItem->subscription_id,
-                'product_type'    => '',
-                'product_id'      => null,
-                'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-                'start_date'      => $invoice->start_date,
-                'description'     => '(Taxes)',
-                'amount'          => $amount,
-                'taxable'         => self::TAX_FALSE
-            ];
-
-            $taxes->push(
-                $invoice->invoiceItem()->create($data)
-            );
-
+            $taxPercentage = ($customer->stateTax->rate)/100;
+            
+            $taxableBillableSubscriptionInvoiceItems = $billableSubscriptionInvoiceItems->where('taxable', true)->all();
+            
+            // For each plan/subscription
+            // Calculate total of plan + feature, one-time or usage charges
+            // and apply tax on it
+            foreach($taxableBillableSubscriptionInvoiceItems as $taxableBillableSubscriptionInvoiceItem){
+    
+                $amount = ($taxableBillableSubscriptionInvoiceItem
+                                ->subscriptionDetail
+                                ->invoiceItemOfTaxableServices
+                                ->where('invoice_id', $invoice->id)
+                                ->pluck('amount')->sum()
+                           ) * $taxPercentage;
+    
+                $data = [
+                    'subscription_id' => $taxableBillableSubscriptionInvoiceItem->subscription_id,
+                    'product_type'    => '',
+                    'product_id'      => null,
+                    'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                    'start_date'      => $invoice->start_date,
+                    'description'     => '(Taxes)',
+                    'amount'          => $amount,
+                    'taxable'         => self::TAX_FALSE
+                ];
+    
+                $taxes->push(
+                    $invoice->invoiceItem()->create($data)
+                );
+    
+            }
+    
+            return $taxes;
+        } catch (Exception $e) {
+            \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
         }
-
-        return $taxes;
-
+        
     }
 
     public function customerAccountCoupons($customer, $invoice)
     {
         $customerCouponRedeemable = $customer->customerCouponRedeemable;
+        if ($customerCouponRedeemable) {
+            foreach ($customerCouponRedeemable as $customerCoupon) {
+                try {
+                    $coupon = $customerCoupon->coupon;
+                    
+                    if($customerCoupon->cycles_remaining == 0) continue;
+                    
+                    list($isApplicable, $subscriptions) = 
+                                $this->isCustomerAccountCouponApplicable(
+                                    $coupon,
+                                    $customer->billableSubscriptions
+                                );
+                    
+                    if($isApplicable){
+                        
+                        $coupon->load('couponProductTypes', 'couponProducts');
 
-        foreach ($customerCouponRedeemable as $customerCoupon) {
-            $coupon = $customerCoupon->coupon;
-            
-            if($customerCoupon->cycles_remaining == 0) continue;
-            
-            list($isApplicable, $subscriptions) = 
-                        $this->isCustomerAccountCouponApplicable(
-                            $coupon,
-                            $customer->billableSubscriptions
-                        );
-            
-            if($isApplicable){
-                
-                $coupon->load('couponProductTypes', 'couponProducts');
+                        foreach($subscriptions as $subscription){
 
-                foreach($subscriptions as $subscription){
+                            $amount = $this->customerAccountCouponAmount($subscription, $coupon);
 
-                    $amount = $this->customerAccountCouponAmount($subscription, $coupon);
+                            // Possibility of returning 0 as well but
+                            // returns false when coupon is not applicable
+                            if($amount === false || $amount == 0) continue;
 
-                    // Possibility of returning 0 as well but
-                    // returns false when coupon is not applicable
-                    if($amount === false || $amount == 0) continue;
-
-                    $invoice->invoiceItem()->create([
-                        'subscription_id' => $subscription->id,
-                        'product_type'    => '',
-                        'product_id'      => $coupon->id,
-                        'type'            => InvoiceItem::TYPES['coupon'],
-                        'description'     => "(Customer Account Coupon) $coupon->code",
-                        'amount'          => $amount,
-                        'start_date'      => $invoice->start_date,
-                        'taxable'         => self::TAX_FALSE,
-                    ]);
+                            $invoice->invoiceItem()->create([
+                                'subscription_id' => $subscription->id,
+                                'product_type'    => '',
+                                'product_id'      => $coupon->id,
+                                'type'            => InvoiceItem::TYPES['coupon'],
+                                'description'     => "(Customer Account Coupon) $coupon->code",
+                                'amount'          => $amount,
+                                'start_date'      => $invoice->start_date,
+                                'taxable'         => self::TAX_FALSE,
+                            ]);
+                        }
+                        if ($customerCoupon['cycles_remaining'] > 0) {
+                            $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
+                        }
+                        // ToDo: Add logs,Order not provided in requirements
+                    }
+                } catch (Exception $e) {
+                    \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
                 }
-                if ($customerCoupon['cycles_remaining'] > 0) {
-                    $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
-                }
-                // ToDo: Add logs,Order not provided in requirements
             }
-
         }
     }
 
@@ -319,93 +332,101 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
     private function customerAccountCouponAmount($subscription, $coupon)
     {
-        $plan           = $subscription->plan;
-        $addons         = $subscription->subscriptionAddon;
+        try {
+            $plan           = $subscription->plan;
+            $addons         = $subscription->subscriptionAddon;
 
-        if ($addons) {
-            $addonAmount = $this->getAddonAmountForCoupons($addons);
-        }
-
-        // Had to use continue, so used if else 
-        // and not switch statement
-        if($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']){
-            $couponProductTypeForPlans      = $coupon->couponProductTypes->where('type', CouponProductType::TYPES['plan']);
-            $couponProductTypeForThisPlan   = $couponProductTypeForPlans->where('sub_type', '!=', 0)->where('sub_type', $plan->type)->first();
-            $couponProductTypeForAddons     = $coupon->couponProductTypes->where('type', CouponProductType::TYPES['addon'])->first();
-            
-            // Coupon doesnot support plans or 
-            // doesnot supports this plan
-            //if(!$couponProductTypeForPlans || !$couponProductTypeForThisPlan ) return false;
-            $addonTotalAmount   = 0;
-            $planAmount         = 0;
-            
-            if($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']){
-                $addonTotalAmount   = $addonAmount['total_amount'] && $couponProductTypeForAddons ? $couponProductTypeForAddons->amount * $addonAmount['total_amount'] / 100 : 0;
-
-                if ($couponProductTypeForThisPlan) {
-                    $planAmount = $couponProductTypeForThisPlan->amount * $plan->amount_recurring / 100;
-                } else {
-                    if ($couponProductTypeForPlans) {
-                        $planAmount = $couponProductTypeForPlans->first()->amount * $plan->amount_recurring / 100;
-                    }
-                }
-
-                $amount = $planAmount + $addonTotalAmount;
-                
-            } else {
-                $addonTotalAmount   = $addonAmount['count'] && $couponProductTypeForAddons ? $couponProductTypeForAddons->amount * $addonAmount['count'] : 0;
-                if ($couponProductTypeForThisPlan) {
-                    $planAmount = $couponProductTypeForThisPlan->amount;
-                } else {
-                    if ($couponProductTypeForPlans) {
-                        $planAmount = $couponProductTypeForPlans->first()->amount;
-                    }
-                }
-
-                $amount = $planAmount + $addonTotalAmount;
+            if ($addons) {
+                $addonAmount = $this->getAddonAmountForCoupons($addons);
             }
 
-        } elseif($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT']){
-            $couponProductsForPlans         = $coupon->couponProducts->where('product_type', CouponProduct::PRODUCT_TYPES['plan']);
-            $couponProductForThisPlan       = $couponProductsForPlans->where('product_id', $plan->id)->first();
-
-            $addonTotalAmount   = [];
-            $planAmount         = 0;
-            
-            //Checks if plan coupon supports plan
-            if($couponProductForThisPlan) {
-                if ($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']) {
-                    $planAmount = $couponProductForThisPlan->amount * $plan->amount_recurring / 100;
-                } else {
-                    $planAmount = $couponProductForThisPlan->amount;
-                }
-            }
-
-            //Checks if plan coupon supports addons
-            foreach ($addons as $subAddon) {
-                $addon  = Addon::find($subAddon->addon_id);
-                $couponProductForAddons     = $coupon->couponProducts->where('product_type', CouponProductType::TYPES['addon'])->where('product_id', $addon->id)->first();
+            // Had to use continue, so used if else 
+            // and not switch statement
+            if($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']){
+                $couponProductTypeForPlans      = $coupon->couponProductTypes->where('type', CouponProductType::TYPES['plan']);
+                $couponProductTypeForThisPlan   = $couponProductTypeForPlans->where('sub_type', '!=', 0)->where('sub_type', $plan->type)->first();
+                $couponProductTypeForAddons     = $coupon->couponProductTypes->where('type', CouponProductType::TYPES['addon'])->first();
                 
-                if ($couponProductForAddons) {
-                    if ($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']) {
-                        $addonTotalAmount[] = $couponProductForAddons->amount * $addon->amount_recurring / 100;
+                // Coupon doesnot support plans or 
+                // doesnot supports this plan
+                //if(!$couponProductTypeForPlans || !$couponProductTypeForThisPlan ) return false;
+                $addonTotalAmount   = 0;
+                $planAmount         = 0;
+                
+                if($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']){
+                    $addonTotalAmount   = $addonAmount['total_amount'] && $couponProductTypeForAddons ? $couponProductTypeForAddons->amount * $addonAmount['total_amount'] / 100 : 0;
+
+                    if ($couponProductTypeForThisPlan) {
+                        $planAmount = $couponProductTypeForThisPlan->amount * $plan->amount_recurring / 100;
                     } else {
-                        $addonTotalAmount[] = $couponProductForAddons->amount;
+                        if ($couponProductTypeForPlans) {
+                            $planAmount = $couponProductTypeForPlans->first()->amount * $plan->amount_recurring / 100;
+                        }
+                    }
+
+                    $amount = $planAmount + $addonTotalAmount;
+                    
+                } else {
+                    $addonTotalAmount   = $addonAmount['count'] && $couponProductTypeForAddons ? $couponProductTypeForAddons->amount * $addonAmount['count'] : 0;
+                    if ($couponProductTypeForThisPlan) {
+                        $planAmount = $couponProductTypeForThisPlan->amount;
+                    } else {
+                        if ($couponProductTypeForPlans) {
+                            $planAmount = $couponProductTypeForPlans->first()->amount;
+                        }
+                    }
+
+                    $amount = $planAmount + $addonTotalAmount;
+                }
+
+            } elseif($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT']){
+                $couponProductsForPlans         = $coupon->couponProducts->where('product_type', CouponProduct::PRODUCT_TYPES['plan']);
+                $couponProductForThisPlan       = $couponProductsForPlans->where('product_id', $plan->id)->first();
+
+                $addonTotalAmount   = [];
+                $planAmount         = 0;
+                
+                //Checks if plan coupon supports plan
+                if($couponProductForThisPlan) {
+                    if ($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']) {
+                        $planAmount = $couponProductForThisPlan->amount * $plan->amount_recurring / 100;
+                    } else {
+                        $planAmount = $couponProductForThisPlan->amount;
                     }
                 }
-            }
-            //Add both amounts
-            $amount = $planAmount + array_sum($addonTotalAmount);
 
-        } else {
-            $amount = $addonAmount['count'] ? $coupon->amount + ($coupon->amount * $addonAmount['count']) : $coupon->amount;
-            if($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']){
-                $addonTotalAmount   = $addonAmount['total_amount'] ? $addonAmount['total_amount'] : 0;
-                $amount             = ($plan->amount_recurring + $addonTotalAmount) * ($coupon->amount/100);
+                //Checks if plan coupon supports addons
+                foreach ($addons as $subAddon) {
+                    try {
+                        $addon  = Addon::find($subAddon->addon_id);
+                        $couponProductForAddons     = $coupon->couponProducts->where('product_type', CouponProductType::TYPES['addon'])->where('product_id', $addon->id)->first();
+                        
+                        if ($couponProductForAddons) {
+                            if ($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']) {
+                                $addonTotalAmount[] = $couponProductForAddons->amount * $addon->amount_recurring / 100;
+                            } else {
+                                $addonTotalAmount[] = $couponProductForAddons->amount;
+                            }
+                        }
+                    } catch (Exception $e) {
+                        \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
+                    }
+                }
+                //Add both amounts
+                $amount = $planAmount + array_sum($addonTotalAmount);
+
+            } else {
+                $amount = $addonAmount['count'] ? $coupon->amount + ($coupon->amount * $addonAmount['count']) : $coupon->amount;
+                if($coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage']){
+                    $addonTotalAmount   = $addonAmount['total_amount'] ? $addonAmount['total_amount'] : 0;
+                    $amount             = ($plan->amount_recurring + $addonTotalAmount) * ($coupon->amount/100);
+                }
             }
+
+            return $amount;
+        } catch (Exception $e) {
+            \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
         }
-
-        return $amount;
     }
 
 
@@ -419,31 +440,35 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             if(!$subscriptionCouponRedeemable) continue;
 
             foreach ($subscriptionCouponRedeemable as $subscriptionCoupon) {
-                $coupon = $subscriptionCoupon->coupon;
+                try {
+                    $coupon = $subscriptionCoupon->coupon;
 
-                if($subscriptionCoupon->cycles_remaining == 0) continue;
+                    if($subscriptionCoupon->cycles_remaining == 0) continue;
 
-                $coupon->load('couponProductTypes', 'couponProducts');
+                    $coupon->load('couponProductTypes', 'couponProducts');
 
-                $amount = $this->customerAccountCouponAmount($subscription, $coupon);
+                    $amount = $this->customerAccountCouponAmount($subscription, $coupon);
 
-                // Possibility of returning 0 as well but
-                // returns false when coupon is not applicable
-                if($amount === false) continue;
+                    // Possibility of returning 0 as well but
+                    // returns false when coupon is not applicable
+                    if($amount === false) continue;
 
-                $invoice->invoiceItem()->create([
-                    'subscription_id' => $subscription->id,
-                    'product_type'    => '',
-                    'product_id'      => null,
-                    'type'            => InvoiceItem::TYPES['coupon'],
-                    'description'     => "(Subscription Coupon) $coupon->code",
-                    'amount'          => $amount,
-                    'start_date'      => $invoice->start_date,
-                    'taxable'         => self::TAX_FALSE,
-                ]);
+                    $invoice->invoiceItem()->create([
+                        'subscription_id' => $subscription->id,
+                        'product_type'    => '',
+                        'product_id'      => null,
+                        'type'            => InvoiceItem::TYPES['coupon'],
+                        'description'     => "(Subscription Coupon) $coupon->code",
+                        'amount'          => $amount,
+                        'start_date'      => $invoice->start_date,
+                        'taxable'         => self::TAX_FALSE,
+                    ]);
 
-                if ($subscriptionCoupon['cycles_remaining'] > 0) {
-                    $subscriptionCoupon->update(['cycles_remaining' => $subscriptionCoupon['cycles_remaining'] - 1]);
+                    if ($subscriptionCoupon['cycles_remaining'] > 0) {
+                        $subscriptionCoupon->update(['cycles_remaining' => $subscriptionCoupon['cycles_remaining'] - 1]);
+                    }
+                } catch (Exception $e) {
+                    \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
                 }
                     
             }
@@ -631,45 +656,49 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $invoiceItems = collect();
         
         foreach ($billableSubscriptions as $billableSubscription) {
-            $data = [
-                'subscription_id' => $billableSubscription->id,
-                'product_type'    => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['plan'],
-                'type'            => InvoiceItem::INVOICE_ITEM_TYPES['plan_charges'],
-                'start_date'      => $invoice->start_date,
-                'description'     => "(Billable Subscription) {$billableSubscription->plan->description}",
-                // Values added below
-                'product_id'      => '',
-                'amount'          => '',
-                'taxable'         => '',
-            ];
+            try {
+                $data = [
+                    'subscription_id' => $billableSubscription->id,
+                    'product_type'    => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['plan'],
+                    'type'            => InvoiceItem::INVOICE_ITEM_TYPES['plan_charges'],
+                    'start_date'      => $invoice->start_date,
+                    'description'     => "(Billable Subscription) {$billableSubscription->plan->description}",
+                    // Values added below
+                    'product_id'      => '',
+                    'amount'          => '',
+                    'taxable'         => '',
+                ];
 
-            if ($billableSubscription->is_status_shipping_or_for_activation) {
-                $plan     = $billableSubscription->plan;
-                $planData = $this->getPlanData($plan);
+                if ($billableSubscription->is_status_shipping_or_for_activation) {
+                    $plan     = $billableSubscription->plan;
+                    $planData = $this->getPlanData($plan);
 
+                }
+                // Subscription that are scheduled for Suspension/Closure  are already excluded
+                // (sub_status!=’suspend-scheduled’ AND sub_status!=’close-scheduled’)
+                // See  in Customer@billableSubscriptions() and
+                // Subscription@scopeBillabe()
+                elseif ($billableSubscription->is_status_active_not_upgrade_downgrade_status) {
+                    $plan     = $billableSubscription->plan;
+                    $planData = $this->getPlanData($plan);
+
+                } elseif ($billableSubscription->status_active_and_upgrade_downgrade_status) {
+                    $plan     = $billableSubscription->newPlanDetail;
+                    $planData = $this->getPlanData($plan);
+
+                } else {
+                    \Log::error(">>>>>>>>>> Subscription status not met in Monthly Invoice for subscription.id = {$billableSubscription} <<<<<<<<<<<<");
+                    continue;
+                }
+
+                $dataForInvoiceItem = array_merge($data, $planData);
+                
+                $invoiceItems->push(
+                    $invoice->invoiceItem()->create($dataForInvoiceItem)
+                );
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller. Subscription id: '.$billableSubscription->id);
             }
-            // Subscription that are scheduled for Suspension/Closure  are already excluded
-            // (sub_status!=’suspend-scheduled’ AND sub_status!=’close-scheduled’)
-            // See  in Customer@billableSubscriptions() and
-            // Subscription@scopeBillabe()
-            elseif ($billableSubscription->is_status_active_not_upgrade_downgrade_status) {
-                $plan     = $billableSubscription->plan;
-                $planData = $this->getPlanData($plan);
-
-            } elseif ($billableSubscription->status_active_and_upgrade_downgrade_status) {
-                $plan     = $billableSubscription->newPlanDetail;
-                $planData = $this->getPlanData($plan);
-
-            } else {
-                \Log::error(">>>>>>>>>> Subscription status not met in Monthly Invoice for subscription.id = {$billableSubscription} <<<<<<<<<<<<");
-                continue;
-            }
-
-            $dataForInvoiceItem = array_merge($data, $planData);
-            
-            $invoiceItems->push(
-                $invoice->invoiceItem()->create($dataForInvoiceItem)
-            );
         }
         
         return $invoiceItems;
@@ -689,23 +718,27 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
         foreach ($subscriptionInvoiceItems as $invoiceItem) {
             $subscription = $invoiceItem->subscriptionDetail;
-
-            foreach ( $subscription->billableSubscriptionAddons as $subscriptionAddon ) {
-
-                $addon = $subscriptionAddon->addon;
-                
-                $subscriptionAddons->push(
-                    $subscription->invoiceItemDetail()->create([
-                        'invoice_id'   => $invoiceItem->invoice_id,
-                        'product_type' => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['addon'],
-                        'product_id'   => $subscriptionAddon->addon_id,
-                        'type'         => InvoiceItem::INVOICE_ITEM_TYPES['feature_charges'],
-                        'start_date'   => $invoiceItem->invoice->start_date,
-                        'description'  => "(Billable Addon) {$addon->description}",
-                        'amount'       => $addon->amount_recurring,
-                        'taxable'      => $addon->taxable,
-                    ])
-                );
+            if ($subscription) {
+                foreach ( $subscription->billableSubscriptionAddons as $subscriptionAddon ) {
+                    try {
+                        $addon = $subscriptionAddon->addon;
+                        
+                        $subscriptionAddons->push(
+                            $subscription->invoiceItemDetail()->create([
+                                'invoice_id'   => $invoiceItem->invoice_id,
+                                'product_type' => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['addon'],
+                                'product_id'   => $subscriptionAddon->addon_id,
+                                'type'         => InvoiceItem::INVOICE_ITEM_TYPES['feature_charges'],
+                                'start_date'   => $invoiceItem->invoice->start_date,
+                                'description'  => "(Billable Addon) {$addon->description}",
+                                'amount'       => $addon->amount_recurring,
+                                'taxable'      => $addon->taxable,
+                            ])
+                        );
+                    } catch (Exception $e) {
+                        \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
+                    }
+                }
             }
         }
         
@@ -746,23 +779,27 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $pendingCharges = collect();
 
         foreach ($invoice->customer->pendingChargesWithoutInvoice as $pendingChargeWithoutInvoice) {
-            $data = [
-                'subscription_id' => $pendingChargeWithoutInvoice->subscription_id,
-                'product_type'    => '',
-                'type'            => $pendingChargeWithoutInvoice->type,
-                'start_date'      => $invoice->start_date,
-                'description'     => "(Pending Charge) $pendingChargeWithoutInvoice->description",
-                'amount'          => $pendingChargeWithoutInvoice->amount,
-                'taxable'         => self::TAX_TRUE
-            ];
+            try {
+                $data = [
+                    'subscription_id' => $pendingChargeWithoutInvoice->subscription_id,
+                    'product_type'    => '',
+                    'type'            => $pendingChargeWithoutInvoice->type,
+                    'start_date'      => $invoice->start_date,
+                    'description'     => "(Pending Charge) $pendingChargeWithoutInvoice->description",
+                    'amount'          => $pendingChargeWithoutInvoice->amount,
+                    'taxable'         => self::TAX_TRUE
+                ];
 
-            $pendingCharges->push(
-                $invoice->invoiceItem()->create($data)
-            );
+                $pendingCharges->push(
+                    $invoice->invoiceItem()->create($data)
+                );
 
-            $pendingChargeWithoutInvoice->update([
-                'invoice_id' => $invoice->id
-            ]);
+                $pendingChargeWithoutInvoice->update([
+                    'invoice_id' => $invoice->id
+                ]);
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
+            }
 
         }
 

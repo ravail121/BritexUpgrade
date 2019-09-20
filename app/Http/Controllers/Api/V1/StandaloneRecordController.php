@@ -45,7 +45,6 @@ class StandaloneRecordController extends BaseController
      */
     public function createDeviceRecord(Request $request)
     {
-        \Log::info($request->all());
     	$hasError = $this->validateDeviceRecord($request);
 	    if($hasError){
 	      return $hasError;

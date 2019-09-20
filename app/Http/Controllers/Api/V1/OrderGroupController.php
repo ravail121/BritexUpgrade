@@ -85,7 +85,7 @@ class OrderGroupController extends Controller
 
     }
 
-    public function editSim(Request $request)
+    protected function editSim($request)
     {
         $newSimNumber   = $request->newSimNumber;
 
@@ -102,6 +102,9 @@ class OrderGroupController extends Controller
 
     public function edit(Request $request)
     {
+        if ($request->newSimNumber) {
+            return $this->editSim($request);
+        }
         $orderGroup = OrderGroup::find($request->order_group_id);
 
         if ($orderGroup->closed == 1) {

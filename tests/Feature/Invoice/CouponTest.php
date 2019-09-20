@@ -53,7 +53,7 @@ class CouponTest extends TestCase
             'start_date'    => '2019-07-10 18:09:57	',
             'end_date'      => '2021-07-10 18:09:57	',
             'multiline_min' => 0,
-            'multiline_max' => 100,
+            'multiline_max' => 1000,
             'multiline_restrict_plans' => 0
         ]);
 
@@ -105,7 +105,7 @@ class CouponTest extends TestCase
             'start_date'    => '2019-07-10 18:09:57	',
             'end_date'      => '2021-07-10 18:09:57	',
             'multiline_min' => 0,
-            'multiline_max' => 100,
+            'multiline_max' => 1000,
             'multiline_restrict_plans' => 0
         ]);
 
@@ -173,7 +173,7 @@ class CouponTest extends TestCase
             'start_date'    => '2019-07-10 18:09:57	',
             'end_date'      => '2021-07-10 18:09:57	',
             'multiline_min' => 0,
-            'multiline_max' => 100,
+            'multiline_max' => 1000,
             'multiline_restrict_plans' => 0
         ]);
 
@@ -243,7 +243,7 @@ class CouponTest extends TestCase
             'start_date'    => '2019-07-10 18:09:57	',
             'end_date'      => '2021-07-10 18:09:57	',
             'multiline_min' => 0,
-            'multiline_max' => 100,
+            'multiline_max' => 1000,
             'multiline_restrict_plans' => 1
         ]);
         $testClassOneCoupon = Coupon::where('code', $randomCode)->first();
@@ -319,7 +319,7 @@ class CouponTest extends TestCase
             'start_date'    => '2019-07-10 18:09:57	',
             'end_date'      => '2021-07-10 18:09:57	',
             'multiline_min' => 0,
-            'multiline_max' => 100,
+            'multiline_max' => 1000,
             'multiline_restrict_plans' => 0
         ]);
         $testClassOneCoupon = Coupon::where('code', $randomCode)->first();
@@ -394,7 +394,7 @@ class CouponTest extends TestCase
             'start_date'    => '2019-07-10 18:09:57	',
             'end_date'      => '2021-07-10 18:09:57	',
             'multiline_min' => 0,
-            'multiline_max' => 100,
+            'multiline_max' => 1000,
             'multiline_restrict_plans' => 0
         ]);
         $couponUsed = Coupon::where('code', $randomCode)->first();
@@ -497,7 +497,7 @@ class CouponTest extends TestCase
             'start_date'    => '2019-07-10 18:09:57	',
             'end_date'      => '2021-07-10 18:09:57	',
             'multiline_min' => 0,
-            'multiline_max' => 100,
+            'multiline_max' => 1000,
             'multiline_restrict_plans' => 0
         ]);
         $couponUsed = Coupon::where('code', $randomCode)->first();
@@ -564,9 +564,8 @@ class CouponTest extends TestCase
             'device_id' => $testDevice['id']
         ]);
         foreach ($customers as $customer) {
-            if (!count($customer->billableSubscriptions)) {
-
-                $randomCode = str_random(10);
+            if (!count($customer->billableSubscriptionsForCoupons)) {
+                $randomCode = md5(rand(11,99));
                 Coupon::create([
                     'company_id'    => $customer['company_id'],
                     'active'        => 1,
@@ -617,9 +616,9 @@ class CouponTest extends TestCase
             'device_id' => $testDevice['id']
         ]);
         foreach ($customers as $customer) {
-            if (count($customer->billableSubscriptions) > 2) {
+            if (count($customer->billableSubscriptionsForCoupons) > 2) {
 
-                $randomCode = str_random(10);
+                $randomCode = md5(rand(11,99));
                 Coupon::create([
                     'company_id'    => $customer['company_id'],
                     'active'        => 1,

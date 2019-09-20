@@ -68,6 +68,11 @@ Route::get('/cron-jobs-monthly-invoice', [
 //   'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
 // ]);
 
+Route::get('/update-cron', [
+  'as'=>'api.cron.update',
+  'uses'=> 'Api\V1\CronJobs\ProcessController@processSubscriptions',
+]);
+
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
 	Route::group(['namespace' => 'CronJobs'], function(){
@@ -114,11 +119,6 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
    'uses'=> 'SampleInvoiceGenerationController@getStatement',
 
   ]);
-
-   Route::get('/invoice/amount-paid', [
-     'as' => 'api.invoice.amountPaid',
-     'uses' => 'InvoiceController@amountPaid',
-   ]);
 });
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
@@ -183,10 +183,6 @@ Route::middleware('APIToken')->group(function () {
         Route::post('/edit', [
           'as' => 'api.order_group.edit',
           'uses' => 'OrderGroupController@edit',
-        ]);
-        Route::get('/edit-sim', [
-          'as' => 'api.order_group.editSim'  ,
-          'uses' => 'OrderGroupController@editSim'  
         ]);
 
       });

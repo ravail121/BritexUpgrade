@@ -8,12 +8,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Model\Tax;
 use App\Model\Customer;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use App\Model\Order;
+use App\Model\Plan;
 
 class CheckoutFormsTest extends TestCase
 {
     const HEADER_DATA = ['Authorization' => 'alar324r23423'];
     use WithFaker;
-    use DatabaseTransactions;
+    // use DatabaseTransactions;
     public $customerId;
 
     public function test_update_billing_details()
@@ -211,6 +213,35 @@ class CheckoutFormsTest extends TestCase
         $response = $this->withHeaders(self::HEADER_DATA)->post('api/add-card?'.http_build_query($urlData));
 
         $response->assertStatus(500);
+    }
+
+    public function test_sim_number_edit()
+    {
+        $customer   = Customer::inRandomOrder()
+                            ->whereNotNull('billing_fname')
+                            ->whereNotNull('shipping_fname')->first();
+        $randomPlan = Plan::inRandomOrder()->where('sim_required', 1)->limit(1)->first();
+        $insertOrder = $this->withHeaders(self::HEADER_DATA)->post('api/order');
+        $order       = Order::find($insertOrder->json()['id']);
+        $newSimNumber = '7896541230';
+        $updateOrder = $this->withHeaders(self::HEADER_DATA)->post('api/order?'.http_build_query([
+            'plan_in' => $randomPlan['id'],
+            'sim_id'  => 0,
+            'order_hash' => $order['hash'],
+            'sim_type' => 'T-MOBILE MICRO',
+            'sim_num' => '1234561234561234561',
+            'sim_required' => $randomPlan['sim_required'],
+            'customer_hash' => $customer['hash']
+        ]));
+        $editSim = $this->withHeaders(self::HEADER_DATA)->post('api/order-group/edit?'.http_build_query([
+            'newSimNumber'  => $newSimNumber,
+            'orderGroupId'  => $order->allOrderGroup->first()->id
+        ]));
+        $editSim->assertJson(
+            [
+                'new_sim_num' => $newSimNumber
+            ]
+        );
     }
     
 }

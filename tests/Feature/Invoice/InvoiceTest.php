@@ -31,8 +31,9 @@ class InvoiceTests extends TestCase
         $customers      = Customer::inRandomOrder()
                             ->whereNotNull('billing_fname')
                             ->whereNotNull('shipping_fname')->get();
-        $order          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
-
+        $insertOrder          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
+        $order = Order::find($insertOrder->json()['id']);
+     
         foreach ($customers as $customer) {
             
             if (count($customer->customerCreditCards)) {
@@ -43,14 +44,17 @@ class InvoiceTests extends TestCase
                 
                 $customerStandaloneDevice = $this->withHeaders(self::HEADER_DATA)->post('api/create-device-record?'.http_build_query([
                     'api_key'       => self::HEADER_DATA['Authorization'],
-                    'order_id'      => $order->json()['id'],
+                    'order_id'      => $order['id'],
                     'device_id'     => $randomDevice['id'],
                     'customer_id'   => $customer['id']
                 ]));
 
-                //Need to upate order manually to add customer_id because it gets added from frontend.
-                $updatedOrder = Order::find($order->json()['id']);
-                $updatedOrder->update(['customer_id' => $customer['id']]);
+                $updateOrder  = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query(
+                    [
+                        'customer_id'   => $customer['id'],
+                        'order_hash'    => $order['hash']
+                    ]));
+                    
                 $saveInvoice  = $this->withHeaders(self::HEADER_DATA)->post('api/charge-new-card?'.http_build_query([
                     'billing_fname'     => $customer['billing_fname'],
                     'billing_lname'     => $customer['billing_lname'],
@@ -67,8 +71,8 @@ class InvoiceTests extends TestCase
                     'expires_mmyy'      => $customer->customerCreditCards->first()['expiration'],
                     'payment_cvc'       => $customer->customerCreditCards->first()['cvc'],
                     'amount'            => $totalInvoice,
-                    'customer_id'       => $updatedOrder['customer_id'],
-                    'order_hash'        => $updatedOrder['hash'],
+                    'customer_id'       => $order['customer_id'],
+                    'order_hash'        => $order['hash'],
                 ]));
             
                 $invoiceItems = $this->withHeaders(self::HEADER_DATA)->post('api/generate-one-time-invoice?'.http_build_query(
@@ -77,12 +81,12 @@ class InvoiceTests extends TestCase
                     [
                         $customerStandaloneDevice->json()['device_id']]
                     ],
-                    'customer_id'       => $updatedOrder['customer_id'],
-                    'hash'              => $updatedOrder['hash'],
-                    'order_id'          => $updatedOrder['id']
+                    'customer_id'       => $order['customer_id'],
+                    'hash'              => $order['hash'],
+                    'order_id'          => $order['id']
                 ]));
 
-                return  $customerStandaloneDevice->assertJson(['device_id' => $updatedOrder->standAloneDevices->first()['id']]) &&
+                return  $customerStandaloneDevice->assertJson(['device_id' => $order->standAloneDevices->first()['id']]) &&
                         $saveInvoice->assertJson(['success' => true]) &&
                         $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(
                             [
@@ -101,7 +105,8 @@ class InvoiceTests extends TestCase
         $customers      = Customer::inRandomOrder()
                             ->whereNotNull('billing_fname')
                             ->whereNotNull('shipping_fname')->get();
-        $order          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
+        $insertOrder    = $this->withHeaders(self::HEADER_DATA)->post('api/order');
+        $order = Order::find($insertOrder->json()['id']);
 
         foreach ($customers as $customer) {
             
@@ -113,14 +118,16 @@ class InvoiceTests extends TestCase
                 
                 $customerStandalonesim = $this->withHeaders(self::HEADER_DATA)->post('api/create-sim-record?'.http_build_query([
                     'api_key'       => self::HEADER_DATA['Authorization'],
-                    'order_id'      => $order->json()['id'],
+                    'order_id'      => $order['id'],
                     'sim_id'        => $randomsim['id'],
                     'customer_id'   => $customer['id']
                 ]));
                 
-                //Need to upate order manually to add customer_id because it gets added from frontend.
-                $updatedOrder = Order::find($order->json()['id']);
-                $updatedOrder->update(['customer_id' => $customer['id']]);
+                $updateOrder  = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query(
+                    [
+                        'customer_id'   => $customer['id'],
+                        'order_hash'    => $order['hash']
+                    ]));
 
                 $saveInvoice  = $this->withHeaders(self::HEADER_DATA)->post('api/charge-new-card?'.http_build_query([
                     'billing_fname'     => $customer['billing_fname'],
@@ -138,22 +145,20 @@ class InvoiceTests extends TestCase
                     'expires_mmyy'      => $customer->customerCreditCards->first()['expiration'],
                     'payment_cvc'       => $customer->customerCreditCards->first()['cvc'],
                     'amount'            => $totalInvoice,
-                    'customer_id'       => $updatedOrder['customer_id'],
-                    'order_hash'        => $updatedOrder['hash'],
+                    'customer_id'       => $order['customer_id'],
+                    'order_hash'        => $order['hash'],
                 ]));
             
-                $generateInvoice = $this->withHeaders(self::HEADER_DATA)->post('api/generate-one-time-invoice', [
+                $invoiceItems = $this->withHeaders(self::HEADER_DATA)->post('api/generate-one-time-invoice', [
                     'data_to_invoice'   => ['customer_standalone_sim_id' => [$customerStandalonesim->json()['sim_id']]],
-                    'customer_id'       => $updatedOrder['customer_id'],
-                    'hash'              => $updatedOrder['hash'],
-                    'couponAmount'      => 0,
-                    'couponCode'        => NULL,
-                    'order_id'          => $updatedOrder['id']
+                    'customer_id'       => $order['customer_id'],
+                    'hash'              => $order['hash'],
+                    'order_id'          => $order['id']
                 ]);
                 
-                return  $customerStandalonesim->assertJson(['sim_id' => $updatedOrder->standAloneSims->first()['id']]) &&
+                return  $customerStandalonesim->assertJson(['sim_id' => $order->standAloneSims->first()['id']]) &&
                         $saveInvoice->assertJson(['success' => true]) &&
-                        $generateInvoice->assertSeeText('Invoice item generated successfully')->assertJson(
+                        $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(
                             [
                                 'invoice_items_total' => number_format($totalInvoice, 2)
                             ]
@@ -170,21 +175,22 @@ class InvoiceTests extends TestCase
         $customers      = Customer::inRandomOrder()
                             ->whereNotNull('billing_fname')
                             ->whereNotNull('shipping_fname')->get();
-        $randomPlan         = Plan::inRandomOrder()->limit(1)->first();
-        $hash               = sha1(time());
+        $randomPlan     = Plan::inRandomOrder()->limit(1)->first();
+        $hash           = sha1(time());
         foreach ($customers as $customer) {
             
             if (count($customer->customerCreditCards)) {
 
-                $storeOrder         = $this->withHeaders(self::HEADER_DATA)->post('api/order?'.http_build_query([
-                    'hash' => $hash,
-                    'company_id' => $customer->company_id
-                ]));
+                $storeOrder = $this->withHeaders(self::HEADER_DATA)->post('api/order');
                 
-                //Need to upate order manually to add customer_id because it gets added from frontend.
                 $order = Order::find($storeOrder->json()['id']);
-                $order->update(['customer_id' => $customer['id']]);
 
+                $updateOrder  = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query(
+                    [
+                        'customer_id'   => $customer['id'],
+                        'order_hash'    => $order['hash']
+                    ]));
+                $order = Order::where('hash', $order['hash'])->first();
                 $planAmount         = number_format($order->planProRate($randomPlan['id']), 2);
                 $tax                = number_format(isset($customer->stateTax) && $randomPlan['taxable'] ? ($planAmount * $customer->stateTax->rate) / 100 : 0, 2);
                 $regulatory         = number_format($randomPlan['regulatory_fee_type'] == 1 ? $randomPlan['regulatory_fee_amount'] : $planAmount * $randomPlan['regulatory_fee_amount'] / 100, 2);
@@ -247,11 +253,11 @@ class InvoiceTests extends TestCase
         $customers      = Customer::inRandomOrder()
                             ->whereNotNull('billing_fname')
                             ->whereNotNull('shipping_fname')->get();
-        $randomPlan         = Plan::inRandomOrder()->limit(1)->first();
-        $randomSim          = Sim::inRandomOrder()->limit(1)->first();
-        $randomDevice       = Device::inRandomOrder()->limit(1)->first();
-        $randomAddon        = Addon::inRandomOrder()->limit(1)->first();
-        $hash               = sha1(time());
+        $randomPlan     = Plan::inRandomOrder()->limit(1)->first();
+        $randomSim      = Sim::inRandomOrder()->limit(1)->first();
+        $randomDevice   = Device::inRandomOrder()->limit(1)->first();
+        $randomAddon    = Addon::inRandomOrder()->limit(1)->first();
+        $hash           = sha1(time());
         
         foreach ($customers as $customer) {
             
@@ -261,9 +267,14 @@ class InvoiceTests extends TestCase
                     'hash'          => $hash,
                     'company_id'    => $customer->company_id
                 ]));
-        
                 $order = Order::find($storeOrder->json()['id']);
-                $order->update(['customer_id' => $customer['id']]);
+                $updateOrder  = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query(
+                    [
+                        'customer_id'   => $customer['id'],
+                        'order_hash'    => $order['hash']
+                    ]));
+
+                $order = Order::where('hash', $order['hash'])->first();
         
                 $planAmount         = number_format($order->planProRate($randomPlan['id']), 2);
                 $addonAmount        = number_format($order->addonProRate($randomAddon['id']), 2);
@@ -425,7 +436,7 @@ class InvoiceTests extends TestCase
                     'payment_card_holder' => $customer->customerCreditCards->first()['cardholder'],
                     'expires_mmyy'      => $customer->customerCreditCards->first()['expiration'],
                     'payment_cvc'       => $customer->customerCreditCards->first()['cvc'],
-                    'amount'            => number_format($total, 2),
+                    'amount'            => $total,
                     'customer_id'       => $order['customer_id'],
                     'order_hash'        => $order['hash'],
                 ]));
@@ -450,7 +461,7 @@ class InvoiceTests extends TestCase
                             'subscription_id' => $order->subscriptions->first()['id']]) && 
                         $subscriptionAddon->assertJson(['subscription_addon_id' => $order->subscriptions->first()->subscriptionAddon->first()['id']]) &&
                         $saveInvoice->assertJson(['success' => true]) &&
-                        $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(['invoice_items_total' => number_format($total, 2)]);
+                        $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(['invoice_items_total' => $total]);
 
             }
         }
@@ -462,7 +473,7 @@ class InvoiceTests extends TestCase
         $customers      = Customer::inRandomOrder()
                             ->whereNotNull('billing_fname')
                             ->whereNotNull('shipping_fname')->get();
-        $order          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
+        $insertOrder          = $this->withHeaders(self::HEADER_DATA)->post('api/order');
         
         foreach ($customers as $customer) {
             
@@ -494,13 +505,19 @@ class InvoiceTests extends TestCase
                     'amount' => 40
                 ]);
 
-                $tax            = isset($customer->stateTax) && $randomDevice['taxable'] ? ($randomDevice['amount'] * $customer->stateTax->rate) / 100 : 0;
-                $shipping       = $randomDevice['shipping_fee'];
+                $tax            = number_format(isset($customer->stateTax) && $randomDevice['taxable'] ? ($randomDevice['amount'] * $customer->stateTax->rate) / 100 : 0, 2);
+                $shipping       = number_format($randomDevice['shipping_fee'], 2);
                 $discount       = $randomDevice->amount * 40 / 100;
-                $totalInvoice   = $randomDevice['amount'] + $shipping + $tax - $discount;
-                //Need to upate order manually to add customer_id because it gets added from frontend.
-                $updatedOrder = Order::find($order->json()['id']);
-                $updatedOrder->update(['customer_id' => $customer['id']]);
+                $totalInvoice   = number_format($randomDevice['amount'] + $shipping + $tax - $discount, 2);
+                
+                $order = Order::find($insertOrder->json()['id']);
+                $updateOrder  = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query(
+                    [
+                        'customer_id'   => $customer['id'],
+                        'order_hash'    => $order['hash']
+                    ]));
+
+                $order = Order::where('hash', $order['hash'])->first();
                 $saveInvoice  = $this->withHeaders(self::HEADER_DATA)->post('api/charge-new-card?'.http_build_query([
                     'billing_fname'     => $customer['billing_fname'],
                     'billing_lname'     => $customer['billing_lname'],
@@ -517,17 +534,14 @@ class InvoiceTests extends TestCase
                     'expires_mmyy'      => $customer->customerCreditCards->first()['expiration'],
                     'payment_cvc'       => $customer->customerCreditCards->first()['cvc'],
                     'amount'            => $totalInvoice,
-                    'customer_id'       => $updatedOrder['customer_id'],
-                    'order_hash'        => $updatedOrder['hash'],
+                    'customer_id'       => $order['customer_id'],
+                    'order_hash'        => $order['hash'],
                 ]));
                 $invoiceId = Credit::find($saveInvoice->json()['credit']['id'])->usedOnInvoices->first()->invoice_id;
-                $updatedOrder->update(
-                    ['invoice_id' => $invoiceId]
-                );
 
                 $customerStandaloneDevice = $this->withHeaders(self::HEADER_DATA)->post('api/create-device-record?'.http_build_query([
                     'api_key'       => self::HEADER_DATA['Authorization'],
-                    'order_id'      => $order->json()['id'],
+                    'order_id'      => $order['id'],
                     'customer_id'   => $customer['id'],
                     'coupon_data'   => [
                         'code'      => $randomCode,
@@ -543,16 +557,16 @@ class InvoiceTests extends TestCase
                     [
                         $customerStandaloneDevice->json()['device_id']]
                     ],
-                    'customer_id'       => $updatedOrder['customer_id'],
-                    'hash'              => $updatedOrder['hash'],
-                    'order_id'          => $updatedOrder['id']
+                    'customer_id'       => $order['customer_id'],
+                    'hash'              => $order['hash'],
+                    'order_id'          => $order['id']
                 ]));
 
-                return  $customerStandaloneDevice->assertJson(['device_id' => $updatedOrder->standAloneDevices->first()['id']]) &&
+                return  $customerStandaloneDevice->assertJson(['device_id' => $order->standAloneDevices->first()['id']]) &&
                         $saveInvoice->assertJson(['success' => true]) &&
                         $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(
                             [
-                                'invoice_items_total' => number_format($totalInvoice, 2)
+                                'invoice_items_total' => $totalInvoice
                             ]
                         );
 
@@ -560,7 +574,7 @@ class InvoiceTests extends TestCase
         }
     }
 
-     public function test_plan_with_coupon()
+    public function test_plan_with_coupon()
     {
         $customers      = Customer::inRandomOrder()
                             ->whereNotNull('billing_fname')
@@ -602,14 +616,19 @@ class InvoiceTests extends TestCase
                     'company_id' => $customer->company_id
                 ]));
                 
-                //Need to upate order manually to add customer_id because it gets added from frontend.
                 $order = Order::find($storeOrder->json()['id']);
-                $order->update(['customer_id' => $customer['id']]);
+                $updateOrder  = $this->withHeaders(self::HEADER_DATA)->post('api/create-customer?'.http_build_query(
+                    [
+                        'customer_id'   => $customer['id'],
+                        'order_hash'    => $order['hash']
+                    ]));
+
+                $order = Order::where('hash', $order['hash'])->first();
 
                 $planAmount         = number_format($order->planProRate($randomPlan['id']), 2);
                 $tax                = number_format(isset($customer->stateTax) && $randomPlan['taxable'] ? ($planAmount * $customer->stateTax->rate) / 100 : 0, 2);
                 $regulatory         = number_format($randomPlan['regulatory_fee_type'] == 1 ? $randomPlan['regulatory_fee_amount'] : $planAmount * $randomPlan['regulatory_fee_amount'] / 100, 2);
-                $discount           = number_format($planAmount * 3 / 100, 2);
+                $discount           = $planAmount * 3 / 100;
         
                 $totalInvoice       = $planAmount + $tax + $regulatory + $randomPlan['amount_onetime'] - $discount;
 
