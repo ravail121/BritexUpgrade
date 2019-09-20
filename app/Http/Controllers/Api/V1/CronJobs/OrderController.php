@@ -6,6 +6,7 @@ use Exception;
 use App\Model\Tax;
 use App\Model\Order;
 use GuzzleHttp\Client;
+use App\Model\Invoice;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\CustomerStandaloneSim;
@@ -13,12 +14,13 @@ use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
 
 class OrderController extends BaseController
 {
     public function order()
     {
-        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims')->whereHas('subscriptions', function(Builder $subscription) {
+        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem')->whereHas('subscriptions', function(Builder $subscription) {
             $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
         })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
             $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
@@ -26,7 +28,7 @@ class OrderController extends BaseController
             $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
         })->with('company')->get();
 
-        // $orders = Order::where('id', '6172')->get();
+        // $orders = Order::where('id', '7346')->get();
 
         try {
             foreach ($orders as $orderKey => $order) {
@@ -37,7 +39,7 @@ class OrderController extends BaseController
 
                 foreach ($order->subscriptions as $key => $subscription) {
                     // $subscriptionRow[$key]['items'] = $this->subscriptions($subscription);
-                    $responseData = $this->subscriptions($subscription);
+                    $responseData = $this->subscriptions($subscription, $order->invoice->invoiceItem);
                     if($responseData){
                         $subscriptionRow[$key] = $responseData;
                     }
@@ -45,12 +47,12 @@ class OrderController extends BaseController
 
                 foreach ($order->standAloneDevices as $key => $standAloneDevice) {
                     // $standAloneDeviceRow[$key]['items'] = $this->standAloneDevice($standAloneDevice);
-                    $standAloneDeviceRow[$key] = $this->standAloneDevice($standAloneDevice);
+                    $standAloneDeviceRow[$key] = $this->standAloneDevice($standAloneDevice, $order->invoice->invoiceItem);
                 }
 
                 foreach ($order->standAloneSims as $key => $standAloneSim) {
                     // $standAloneSimRow[$key]['items'] = $this->standAloneSim($standAloneSim);
-                    $standAloneSimRow[$key] = $this->standAloneSim($standAloneSim);
+                    $standAloneSimRow[$key] = $this->standAloneSim($standAloneSim, $order->invoice->invoiceItem);
                 }
                 $row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
                     $apiData = $this->data($order, $row);
@@ -71,83 +73,136 @@ class OrderController extends BaseController
         return $this->respond(['message' => 'Orders Shipped Successfully.']); 
     }
 
-    public function subscriptions($subscription) 
+    public function subscriptions($subscription, $invoiceItem) 
     {
         if(($subscription->sim_id != 0) && ($subscription->device_id == 0)) { 
-            return  $this->subscriptionWithSim($subscription);
+            return  $this->subscriptionWithSim($subscription, $invoiceItem);
         }
 
         if(($subscription->device_id != 0) && ($subscription->sim_id == 0)) {
-            return  $this->subscriptionWithDevice($subscription);
+            return  $this->subscriptionWithDevice($subscription, $invoiceItem);
         }
 
         if(($subscription->sim_id != 0) && ($subscription->device_id != 0)) {
-            return $this->subscriptionWithSimAndDevice($subscription);
+            return $this->subscriptionWithSimAndDevice($subscription, $invoiceItem);
             // $simData = $this->subscriptionWithSim($subscription);
             // $deviceData = $this->subscriptionWithDevice($subscription);
             // return [$simData, $deviceData];
         }
-
     }
 
-    public function subscriptionWithSim($subscription)
+    public function subscriptionWithSim($subscription, $invoiceItem)
     {
+
+        $amount = $invoiceItem->where(
+            'subscription_id', $subscription->id)
+        ->where(
+            'product_type', InvoiceController::SIM_TYPE 
+        )->where(
+            'product_id',  $subscription->sim_id
+        )->sum('amount');
+
         return [
             'description' => $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'],
             'part_number' => 'SUB-'.$subscription->id,
-            'unit_price' => $subscription->sim['amount_w_plan'].' USD',
+            'unit_price' => $amount.' USD',
             'quantity'    =>   '1',
         ];
     }
 
-    public function subscriptionWithDevice($subscription)
+    public function subscriptionWithDevice($subscription, $invoiceItem)
     {
+        $amount = $invoiceItem->where(
+            'subscription_id', $subscription->id)
+        ->where(
+            'product_type', InvoiceController::DEVICE_TYPE 
+        )->where(
+            'product_id',  $subscription->device_id
+        )->sum('amount');
+
         return [
             'description' => $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'],
             'part_number' => 'SUB-'.$subscription->id,
-            'unit_price' => $subscription->device['amount_w_plan'].' USD',
+            'unit_price' => $amount.' USD',
             'quantity'    =>   '1',
         ];
     }
 
-    public function subscriptionWithSimAndDevice($subscription)
+    public function subscriptionWithSimAndDevice($subscription, $invoiceItem)
     {
+        $amount = $invoiceItem->where('subscription_id', $subscription->id)->whereIn('product_type', [InvoiceController::DEVICE_TYPE, InvoiceController::SIM_TYPE])->sum('amount');
+
         return [
             'description' => $subscription->sim_name.' '.'associated with'.' '.$subscription->plan['name'].' and '.$subscription->device['name'],
             'part_number' => 'SUB-'.$subscription->id,
-            'unit_price' => $subscription->device['amount_w_plan'].' USD',
+            'unit_price' => $amount.' USD',
             'quantity'    =>   '1',
         ];
     }
 
-    public function standAloneDevice($standAloneDevice)
+    public function standAloneDevice($standAloneDevice, $invoiceItem)
     {
+        $invoiceItemAmount = $invoiceItem->where(
+            'product_type', InvoiceController::DEVICE_TYPE 
+        )->where(
+            'product_id',  $standAloneDevice->device_id
+        );
+
+        foreach ($invoiceItemAmount->toArray() as $key => $value) {
+            $amount = $value['amount'];
+            break;
+        }
         return [
             'description' => $standAloneDevice->device['name'],
             'part_number' => 'DEV-'.$standAloneDevice->id,
-            'unit_price' => $standAloneDevice->device['amount'].' USD',
-            'quantity'    =>   '1',];
+            'unit_price' => $amount.' USD',
+            'quantity'    =>   '1',
+        ];
     }
 
-    public function standAloneSim($standAloneSim)
+    public function standAloneSim($standAloneSim, $invoiceItem)
     {
+        $invoiceItemAmount = $invoiceItem->where(
+            'product_type', InvoiceController::SIM_TYPE 
+        )->where(
+            'product_id',  $standAloneSim->sim_id
+        );
+
+        foreach ($invoiceItemAmount->toArray() as $key => $value) {
+            $amount = $value['amount'];
+            break;
+        }
         return [
             'description' => $standAloneSim->sim['name'],
             'part_numbe0r' => 'SIM‌-'.$standAloneSim->id,
-            'unit_price' => $standAloneSim->sim['amount_alone'].' USD',
+            'unit_price' => $amount.' USD',
             'quantity'    =>   '1',
         ];
     }
 
     public function data($order, $row)
     {
-        // dd($row);
+        $taxes = $order->invoice->invoiceItem->where('type', Invoice::InvoiceItemTypes['taxes'])->sum('amount');
+
+        $shippingAmount = $order->invoice->invoiceItem->where('description', InvoiceController::SHIPPING)->sum('amount');
+
+        // $totalAmount = $order->invoice->invoiceItem
+        // ->whereIn('product_type',[InvoiceController::DEVICE_TYPE,InvoiceController::SIM_TYPE])
+        // ->sum('amount');
+
+        // $totalAmount += $taxes;
         $company = $order->company;
         $customer = $order->customer;
 
         $json = [
             "primary_id" => "BX-".$order->order_num,
             "ordered_at" => $order->created_at_format,
+            "billing" => [
+                // "subtotal" => " USD",
+                "shipping" => $shippingAmount." USD",
+                "tax" => $taxes." USD",
+                "total" => $order->invoice->subtotal." USD",
+            ],
             "shipping" => [
                 "ship_to"=> [
                     "first_name" => $order->shipping_fname,
