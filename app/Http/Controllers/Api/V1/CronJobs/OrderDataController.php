@@ -94,6 +94,7 @@ class OrderDataController extends BaseController
                 $table = Subscription::whereId($partNumId)->with('customer', 'device', 'sim')->first();
                 if($table){
                     $table->update([
+                        'status'       => 'for-activation',
                         'tracking_num' => $boxes['tracking_number'],
                         'device_imei'  => $boxdetail['pick_location'],
                         'sim_card_num' => $boxdetail['code'],
@@ -105,6 +106,7 @@ class OrderDataController extends BaseController
                 $table = CustomerStandaloneDevice::whereId($partNumId)->with('device')->first();
                 if($table){
                     $table->update([
+                        'status'       => CustomerStandaloneDevice::STATUS['complete'],
                         'tracking_num' => $boxes['tracking_number'],
                         'device_imei'  => $boxdetail['pick_location'],
                     ]);
@@ -114,6 +116,7 @@ class OrderDataController extends BaseController
                 $table = CustomerStandaloneSim::whereId($partNumId)with('sim')->first();
                 if($table){
                     $table->update([
+                        'status'       => CustomerStandaloneSim::STATUS['complete'],
                         'tracking_num' => $boxes['tracking_number'],
                         'sim_card_num' => $boxdetail['code'],
                     ]);

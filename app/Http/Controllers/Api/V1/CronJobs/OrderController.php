@@ -182,15 +182,11 @@ class OrderController extends BaseController
 
     public function data($order, $row)
     {
-        $taxes = $order->invoice->invoiceItem->where('type', Invoice::InvoiceItemTypes['taxes'])->sum('amount');
+        $taxes = $order->invoice->invoiceItem->whereIn('type', [Invoice::InvoiceItemTypes['taxes'],
+            Invoice::InvoiceItemTypes['regulatory_fee']])->sum('amount');
 
         $shippingAmount = $order->invoice->invoiceItem->where('description', InvoiceController::SHIPPING)->sum('amount');
 
-        // $totalAmount = $order->invoice->invoiceItem
-        // ->whereIn('product_type',[InvoiceController::DEVICE_TYPE,InvoiceController::SIM_TYPE])
-        // ->sum('amount');
-
-        // $totalAmount += $taxes;
         $company = $order->company;
         $customer = $order->customer;
 

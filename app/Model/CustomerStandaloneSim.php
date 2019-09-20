@@ -21,6 +21,10 @@ class CustomerStandaloneSim extends Model
         'processed',
     ];
 
+    const STATUS = [
+        'complete'    =>  'complete',
+    ];
+    
     public function sim()
     {
     	return $this->belongsTo('App\Model\Sim', 'sim_id', 'id');

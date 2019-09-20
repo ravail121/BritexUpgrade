@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
+use Exception;
 
 class UpdateController extends BaseController
 {
@@ -47,12 +48,15 @@ class UpdateController extends BaseController
         $customers = Customer::whereNotNull('billing_end')->get();
 
         foreach ($customers as $customer) {
-            
-            if ($customer->today_greater_than_billing_end) {
-                $customer->update([
-                    'billing_start' => $customer->add_day_to_billing_end,
-                    'billing_end'   => $customer->add_month_to_billing_end,
-                ]);
+            try {
+                if ($customer->today_greater_than_billing_end) {
+                    $customer->update([
+                        'billing_start' => $customer->add_day_to_billing_end,
+                        'billing_end'   => $customer->add_month_to_billing_end,
+                    ]);
+                }
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ', From: UpdateController@updateCustomerDates: '.$e->getLine().', Possible issue from customer with id of '.$customer->id);
             }
         }
         return true;
@@ -69,18 +73,22 @@ class UpdateController extends BaseController
         $invoices = Invoice::where('type', 1)->where('status', 1)->get();
 
         foreach ($invoices as $invoice) {
-            if ($invoice->today_greater_than_due_date) {
-                $invoice->update([
-                    'status' => 0,
-                ]);
+            try {
+                if ($invoice->today_greater_than_due_date) {
+                    $invoice->update([
+                        'status' => 0,
+                    ]);
 
-                $customer = $this->updateAccountSuspended($invoice->customer_id);
-                if ($customer) {
-                    $subscriptions = $this->updateSubscriptions($customer->id);
-                    $request->headers->set('authorization', $customer->company->api_key);
-                    event(new AccountSuspended(Customer::find($customer->id), $subscriptions, $invoice->subtotal));
+                    $customer = $this->updateAccountSuspended($invoice->customer_id);
+                    if ($customer) {
+                        $subscriptions = $this->updateSubscriptions($customer->id);
+                        $request->headers->set('authorization', $customer->company->api_key);
+                        event(new AccountSuspended(Customer::find($customer->id), $subscriptions, $invoice->subtotal));
+                    }
+
                 }
-
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ', From: UpdateController@updateInvoiceStatus: '.$e->getLine().', Possible issue from invoice with id of '.$invoice->id);
             }
         }
         return true;
@@ -97,14 +105,18 @@ class UpdateController extends BaseController
         $subscriptions = Subscription::where('status', Subscription::STATUS['suspended'])->get();
 
         foreach ($subscriptions as $subscription) {
-            $order   = Order::find($subscription->order_id);
-            if ($subscription->checkGracePeriod($order->company->suspend_grace_period)) {
-                $subscription->update([
-                    'status' => Subscription::STATUS['closed'], 
-                ]);
+            try {
+                $order   = Order::find($subscription->order_id);
+                if ($subscription->checkGracePeriod($order->company->suspend_grace_period)) {
+                    $subscription->update([
+                        'status' => Subscription::STATUS['closed'], 
+                    ]);
+                }
+                $request->headers->set('authorization', $subscription->customerRelation->company->api_key);
+                event(new SubcriptionStatusChanged($subscription->id));
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on the line '.$e->getLine().', Possible issue from subscription with id of '.$subscription->id);
             }
-            $request->headers->set('authorization', $subscription->customerRelation->company->api_key);
-            event(new SubcriptionStatusChanged($subscription->id));
         }
         return true;
     }
@@ -120,28 +132,31 @@ class UpdateController extends BaseController
         $orders = Order::where('status', 0)->get();
 
         foreach ($orders as $order) {
-            $orderGroup = OrderGroup::find($order->id);
-            if ($orderGroup) {
+            try {
+                $orderGroup = OrderGroup::find($order->id);
+                if ($orderGroup) {
 
-                $plan = Plan::find($orderGroup->plan_id);
-                if ($plan) {
-                    $orderGroup->update([
-                        'plan_prorated_amt' => $plan->amount_recurring,
-                    ]);
-                }
-
-                foreach ($orderGroup->order_group_addon as $orderGroupAddon) {
-                    $addon = Addon::find($orderGroupAddon->addon_id);
-                    if ($addon) {
-                        $orderGroupAddon->update([
-                            'prorated_amt' => $addon->amount_recurring,
+                    $plan = Plan::find($orderGroup->plan_id);
+                    if ($plan) {
+                        $orderGroup->update([
+                            'plan_prorated_amt' => $plan->amount_recurring,
                         ]);
-
                     }
+
+                    foreach ($orderGroup->order_group_addon as $orderGroupAddon) {
+                        $addon = Addon::find($orderGroupAddon->addon_id);
+                        if ($addon) {
+                            $orderGroupAddon->update([
+                                'prorated_amt' => $addon->amount_recurring,
+                            ]);
+
+                        }
+                    }
+                    
                 }
-                
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on the line '.$e->getLine().', Possible issue from order with id of '.$order->id);
             }
-            
         }
         return true;
     }
@@ -155,15 +170,19 @@ class UpdateController extends BaseController
      */
     private function updateAccountSuspended($customerId)
     {
-    	$customer = Customer::find($customerId);
-        if ($customer) {
-            $customer->update([
-                'account_suspended' => 1,
-            ]);
+        try {
+            $customer = Customer::find($customerId);
+            if ($customer) {
+                $customer->update([
+                    'account_suspended' => 1,
+                ]);
 
+            }
+
+            return $customer;
+        } catch (Exception $e) {
+            \Log::info($e->getMessage(). ' on the line '.$e->getLine().', Possible issue from customer with id of '.$customer->id);
         }
-
-		return $customer;
     }
 
 
@@ -178,9 +197,13 @@ class UpdateController extends BaseController
         $subscriptions = Subscription::where('customer_id', $customerId)->get();
 
         foreach($subscriptions as $subscription){
-            $subscription->update([
-                'sub_status' => 'for-suspension',
-            ]);
+            try {
+                $subscription->update([
+                    'sub_status' => 'for-suspension',
+                ]);
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on the line '.$e->getLine().', Possible issue from subscription with id of '.$subscription->id);
+            }
         }
         
 		return $subscriptions;
@@ -190,15 +213,19 @@ class UpdateController extends BaseController
     {
         $scheduledSuspensions = Subscription::where('scheduled_suspend_date', '<=' ,Carbon::today())->get();
         foreach ($scheduledSuspensions as $sub) {
-            $sub->update([
-                'status'                => Subscription::STATUS['suspended'],
-                'sub_status'            => Subscription::SUB_STATUSES['confirm-suspension'],
-                'scheduled_suspend_date'=> null,
-                'suspended_date'        => Carbon::today()
-            ]);
-            $request->headers->set('authorization', $sub->customerRelation->company->api_key);
-            
-            event(new SubcriptionStatusChanged($sub->id));
+            try {
+                $sub->update([
+                    'status'                => Subscription::STATUS['suspended'],
+                    'sub_status'            => Subscription::SUB_STATUSES['confirm-suspension'],
+                    'scheduled_suspend_date'=> null,
+                    'suspended_date'        => Carbon::today()
+                ]);
+                $request->headers->set('authorization', $sub->customerRelation->company->api_key);
+                
+                event(new SubcriptionStatusChanged($sub->id));
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on the line '.$e->getLine().', Possible issue from subscription with id of '.$sub->id);
+            }
         }
     }
 
@@ -206,14 +233,18 @@ class UpdateController extends BaseController
     {
         $scheduledClosings = Subscription::where('scheduled_close_date', '<=', Carbon::today())->get();
         foreach ($scheduledClosings as $sub) {
-            $sub->update([
-                'status'                => Subscription::STATUS['closed'],
-                'sub_status'            => Subscription::SUB_STATUSES['confirm-closing'],
-                'scheduled_close_date'  => null,
-                'closed_date'           => Carbon::today()
-            ]);
-            $request->headers->set('authorization', $sub->customerRelation->company->api_key);
-            event(new SubcriptionStatusChanged($sub->id));
+            try {
+                $sub->update([
+                    'status'                => Subscription::STATUS['closed'],
+                    'sub_status'            => Subscription::SUB_STATUSES['confirm-closing'],
+                    'scheduled_close_date'  => null,
+                    'closed_date'           => Carbon::today()
+                ]);
+                $request->headers->set('authorization', $sub->customerRelation->company->api_key);
+                event(new SubcriptionStatusChanged($sub->id));
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on the line '.$e->getLine().', Possible issue from subscription with id of '.$sub->id);
+            }
         }
     }
 

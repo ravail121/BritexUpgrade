@@ -21,6 +21,10 @@ class CustomerStandaloneDevice extends Model
         'processed',
     ];
 
+    const STATUS = [
+        'complete'    =>  'complete',
+    ];
+
     public function device()
     {
     	return $this->belongsTo('App\Model\Device',  'device_id' , 'id');

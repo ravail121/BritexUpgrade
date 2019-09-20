@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Traits;
 use App\Model\Coupon;
 use App\Model\CustomerCoupon;
 use App\Model\InvoiceItem;
-use App\Model\SubscriptionCoupon;
+use App\Model\Order;
 
 trait InvoiceCouponTrait
 {
@@ -54,8 +54,9 @@ trait InvoiceCouponTrait
         return $data;
     }
 
-    protected function updateCouponNumUses($order)
+    public function updateCouponNumUses($order)
     {
+        $order = Order::find($order->id);
         $orderCoupon = $order->orderCoupon;
         if (isset($orderCoupon) && $orderCoupon->count()) {
             $numUses = $orderCoupon->coupon->num_uses;

@@ -231,7 +231,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                     'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                     'start_date'      => $invoice->start_date,
                     'description'     => '(Taxes)',
-                    'amount'          => $amount,
+                    'amount'          => number_format($amount, 2),
                     'taxable'         => self::TAX_FALSE
                 ];
     
@@ -282,7 +282,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                                 'product_id'      => $coupon->id,
                                 'type'            => InvoiceItem::TYPES['coupon'],
                                 'description'     => "(Customer Account Coupon) $coupon->code",
-                                'amount'          => $amount,
+                                'amount'          => number_format($amount, 2),
                                 'start_date'      => $invoice->start_date,
                                 'taxable'         => self::TAX_FALSE,
                             ]);
@@ -459,7 +459,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         'product_id'      => null,
                         'type'            => InvoiceItem::TYPES['coupon'],
                         'description'     => "(Subscription Coupon) $coupon->code",
-                        'amount'          => $amount,
+                        'amount'          => number_format($amount, 2),
                         'start_date'      => $invoice->start_date,
                         'taxable'         => self::TAX_FALSE,
                     ]);
