@@ -26,4 +26,5 @@ class CouponProduct extends Model
     {
         return $this->belongsTo('App\Model\Coupon');
     }
+    
 }

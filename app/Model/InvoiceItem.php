@@ -94,6 +94,13 @@ class InvoiceItem extends Model implements ConstantInterface
         ]);
     }
 
+    public function scopePlanOnlyCharges($query) 
+    {
+        return $query->whereIn('type', [
+            self::INVOICE_ITEM_TYPES['plan_charges'], 
+        ]);
+    }
+
     public function scopePaymentsCharges($query)
     {
         return $query->whereIn('type', [

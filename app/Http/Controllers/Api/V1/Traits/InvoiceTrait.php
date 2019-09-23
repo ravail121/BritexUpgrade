@@ -165,7 +165,6 @@ trait InvoiceTrait
     public function generateInvoice($order, $fileSavePath, $request = null)
     {
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
-
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
             $data = $this->dataForInvoice($order);
@@ -270,18 +269,14 @@ trait InvoiceTrait
     public function ifUpgradeOrDowngradeInvoice($order)
     {
         $subscriptionId = array_unique($order->invoice->invoiceItem->pluck('subscription_id')->toArray());
+        $subscription = Subscription::find($order->allOrderGroup->first()->subscription_id);
         if (count($subscriptionId) == 1) {
             $subscription = Subscription::find($subscriptionId[0]);
             if ($subscription && $subscription->upgrade_downgrade_status) {
                 $addonsIds = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['feature_charges'])->pluck('product_id');
-                
                 $planData = [
                     'name' => Plan::find($subscription->plan_id)->name,
-                    'amount' => $subscription->invoiceItemDetail
-                                ->where('invoice_id', $order->invoice->id)
-                                ->where('type', InvoiceItem::TYPES['plan_charges'])
-                                ->where('product_id', $subscription->plan_id)
-                                ->sum('amount'),
+                    'amount' => $order->invoice->cal_plan_only_charges,
                 ];
 
                 $addonData = [];
@@ -304,6 +299,9 @@ trait InvoiceTrait
                 return [
                     'addon_data' => $addonData,
                     'plan_data'  => $planData,
+                    'total' => $order->invoice->cal_plan_charges,
+                    'phone' => $subscription->phone_number,
+                    'total_line' => $order->invoice->cal_total_charges,
                     'upgrade_downgrade_status' => true
                 ];
             } else {

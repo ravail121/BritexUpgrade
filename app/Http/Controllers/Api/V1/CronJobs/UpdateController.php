@@ -11,7 +11,6 @@ use App\Model\OrderGroup;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\AccountSuspended;
-use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
@@ -194,7 +193,7 @@ class UpdateController extends BaseController
      */
     private function updateSubscriptions($customerId)
     {
-        $subscriptions = Subscription::where('customer_id', $customerId)->get();
+        $subscriptions = Subscription::where('customer_id', $customerId)->with('plan', 'subscriptionAddonNotRemoved')->get();
 
         foreach($subscriptions as $subscription){
             try {

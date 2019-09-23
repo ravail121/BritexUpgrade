@@ -57,4 +57,5 @@ class Coupon extends Model
     {
         return $this->hasMany('App\Model\CouponMultilinePlanType');
     }
+
 }

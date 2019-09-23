@@ -132,7 +132,10 @@ class InvoiceController extends BaseController implements ConstantInterface
             }
 
             $this->addShippingCharges($order->id); // giving order directly excludes shipping fee in some cases.
-    
+
+            if ($request->coupon_data) {
+                $this->storeCoupon($request->coupon_data, $order);
+            }
             $this->updateCouponNumUses($order);
 
             if ($request->customer_id) {
@@ -169,7 +172,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             return $this->respond($msg);
         }
 
-        $this->generateInvoice($order, $fileSavePath, $request);
+        return $this->generateInvoice($order, $fileSavePath, $request);
 
         return [
             'status' => $this->respond($msg), 

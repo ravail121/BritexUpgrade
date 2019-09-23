@@ -33,7 +33,7 @@ class ProcessController extends BaseController
 
                 $customer->update(['account_suspended' => true]);
 
-                $subscriptions = $customer->nonClosedSubscriptions->load('plan', 'subscriptionAddonNotRemoved', 'ban');
+                $subscriptions = $customer->nonClosedSubscriptions->load('plan', 'subscriptionAddonNotRemoved');
 
                 foreach($subscriptions as $subscription){
                     $subscription->update([

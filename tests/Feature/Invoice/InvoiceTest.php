@@ -17,6 +17,7 @@ use App\Model\CouponProduct;
 use App\Model\Credit;
 use App\Model\CouponProductType;
 use App\Model\Tax;
+use App\Model\OrderCoupon;
 
 class InvoiceTests extends TestCase
 {
@@ -396,7 +397,7 @@ class InvoiceTests extends TestCase
                 $regulatory         = $randomPlan['regulatory_fee_type'] == 1 ? $randomPlan['regulatory_fee_amount'] : number_format($planAmount * $randomPlan['regulatory_fee_amount'] / 100, 2);
                 $device             = $randomDevice->first()['amount_w_plan'] + $randomDevice->last()['amount'];
                 $sim                = $randomSim['amount_w_plan'];
-                $total              = ($device + $sim + $planAmount + $regulatory + $addonAmount + array_sum($totalShipping) + $randomPlan['amount_onetime']) + number_format(array_sum($taxableAmount), 2);
+                $total              = ($device + $sim + number_format($planAmount, 2) + number_format($regulatory, 2) + $addonAmount + array_sum($totalShipping) + $randomPlan['amount_onetime']) + number_format(array_sum($taxableAmount), 2);
 
                 $customerStandaloneDevice = $this->withHeaders(self::HEADER_DATA)->post('api/create-device-record?'.http_build_query([
                     'api_key'       => self::HEADER_DATA['Authorization'],
@@ -461,7 +462,7 @@ class InvoiceTests extends TestCase
                             'subscription_id' => $order->subscriptions->first()['id']]) && 
                         $subscriptionAddon->assertJson(['subscription_addon_id' => $order->subscriptions->first()->subscriptionAddon->first()['id']]) &&
                         $saveInvoice->assertJson(['success' => true]) &&
-                        $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(['invoice_items_total' => $total]);
+                        $invoiceItems->assertSeeText('Invoice item generated successfully')->assertJson(['invoice_items_total' => number_format($total, 2)]);
 
             }
         }
@@ -493,8 +494,8 @@ class InvoiceTests extends TestCase
                             'stackable'     => 1,
                             'start_date'    => '2019-07-10 18:09:57	',
                             'end_date'      => '2021-07-10 18:09:57	',
-                            'multiline_min' => 1,
-                            'multiline_max' => 2,
+                            'multiline_min' => 0,
+                            'multiline_max' => 0,
                             'multiline_restrict_plans' => 0
                         ]);
                 $coupon = Coupon::where('code', $randomCode)->first();
@@ -538,6 +539,14 @@ class InvoiceTests extends TestCase
                     'order_hash'        => $order['hash'],
                 ]));
                 $invoiceId = Credit::find($saveInvoice->json()['credit']['id'])->usedOnInvoices->first()->invoice_id;
+                
+                //need to add values inside ordercoupon manually because this gets added when coupon is applied.
+                OrderCoupon::create(
+                    [
+                        'order_id'  => $order->id,
+                        'coupon_id' => $coupon->id,
+                    ]
+                );
 
                 $customerStandaloneDevice = $this->withHeaders(self::HEADER_DATA)->post('api/create-device-record?'.http_build_query([
                     'api_key'       => self::HEADER_DATA['Authorization'],
@@ -624,6 +633,14 @@ class InvoiceTests extends TestCase
                     ]));
 
                 $order = Order::where('hash', $order['hash'])->first();
+
+                //need to add values inside ordercoupon manually because this gets added when coupon is applied.
+                OrderCoupon::create(
+                    [
+                        'order_id'  => $order->id,
+                        'coupon_id' => $coupon->id,
+                    ]
+                );
 
                 $planAmount         = number_format($order->planProRate($randomPlan['id']), 2);
                 $tax                = number_format(isset($customer->stateTax) && $randomPlan['taxable'] ? ($planAmount * $customer->stateTax->rate) / 100 : 0, 2);

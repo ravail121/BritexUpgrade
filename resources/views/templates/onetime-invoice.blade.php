@@ -54,7 +54,6 @@
                                 <p><span>{{ $data['order']->customer->zip_address }}</span></p>
                             </div>
                         </div>
-                        
                         <div style='position:absolute; right:15px; margin: auto; top: 100px; border-color: transparent; box-shadow:none;' class="bill_info">
                             <h2>Bill for</h2>
                             <h3>{{ $data['invoice']->dateFormatForInvoice($data['invoice']->created_at) }}</h3>
@@ -404,4 +403,6 @@
         @include('templates.test-statement-2')
 
     @endforeach
+@elseif (isset($ifUpgradeOrDowngradeInvoice))
+    @include('templates.test-statement-2')
 @endif

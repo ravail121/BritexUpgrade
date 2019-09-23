@@ -58,8 +58,13 @@ class PlanController extends BaseController
                 $plans = $device->plans;
                 
             } else {
-                $plans = Plan::where(
-                        ['type' => $device->type, 'company_id' => $company->id, 'carrier_id' => $device->carrier_id])->get();
+                if ($device->carrier_id != 0) {
+                    $plans = Plan::where(
+                            ['type' => $device->type, 'company_id' => $company->id, 'carrier_id' => $device->carrier_id])->get();
+                } else {
+                    $plans = Plan::where(
+                        ['type' => $device->type, 'company_id' => $company->id])->get();
+                }
             }
         } else {
             $plans = Plan::where('company_id', $company->id)->get();

@@ -7,11 +7,8 @@ use Notification;
 use App\Model\Order;
 use App\Model\EmailTemplate;
 use App\Listeners\EmailLayout;
-use App\Events\AutoPayReminder;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Support\Configuration\MailConfiguration;
 
 class SendAccountPastDueMail
@@ -57,15 +54,9 @@ class SendAccountPastDueMail
                                 <tr>
                                     <th>Phone Number</th>
                                     <th>Plan</th>
-                                    <th>Ban Number</th>
                                     <th>Addon</th>
                                 </tr>';
         foreach ($subscriptions as $key => $subscription) {
-            if($subscription->ban){
-                $ban = $subscription->ban->number;
-            }else{
-                $ban = "NA";
-            }
 
             if(isset($subscription->subscriptionAddonNotRemoved['0'])){
                 $addons = $subscription->subscriptionAddonNotRemoved->pluck('addons')->pluck('name')->toArray();
@@ -79,7 +70,6 @@ class SendAccountPastDueMail
             $subscriptionList .='<tr>
                                     <td>'.$subscription->phone_number.'</td>
                                     <td>'.$subscription->plan->name.'</td>
-                                    <td>'.$ban.'</td>
                                     <td>'.$addon.'</td>
                                 </tr>';
         }

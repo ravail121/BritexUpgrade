@@ -104,6 +104,12 @@ class Invoice extends Model implements ConstantInterface
         return $this->calAmount($invoiceItems);
     }
 
+    public function getCalPlanOnlyChargesAttribute()
+    {
+        $invoiceItems = $this->invoiceItem()->planOnlyCharges()->get();
+        return $this->calAmount($invoiceItems);
+    }
+
     public function getCalOnetimeAttribute()
     {
         $invoiceItems = $this->invoiceItem()->onetimeCharges()->get();
