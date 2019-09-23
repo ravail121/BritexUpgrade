@@ -114,7 +114,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                         //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
                         
-                        $subtotal = number_format($monthlyCharges + $totalPendingCharges - $couponDiscountTotal, 2);
+                        $subtotal = str_replace(',', '',number_format($monthlyCharges + $totalPendingCharges - $couponDiscountTotal, 2));
 
                         $invoiceUpdate = $invoice->update(compact('subtotal'));
 
@@ -282,7 +282,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                                 'product_id'      => $coupon->id,
                                 'type'            => InvoiceItem::TYPES['coupon'],
                                 'description'     => "(Customer Account Coupon) $coupon->code",
-                                'amount'          => number_format($amount, 2),
+                                'amount'          => str_replace(',', '',number_format($amount, 2)),
                                 'start_date'      => $invoice->start_date,
                                 'taxable'         => self::TAX_FALSE,
                             ]);
@@ -451,7 +451,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                     // Possibility of returning 0 as well but
                     // returns false when coupon is not applicable
-                    if($amount === false) continue;
+                    if($amount === false || $amount == 0) continue;
 
                     $invoice->invoiceItem()->create([
                         'subscription_id' => $subscription->id,
@@ -459,7 +459,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         'product_id'      => null,
                         'type'            => InvoiceItem::TYPES['coupon'],
                         'description'     => "(Subscription Coupon) $coupon->code",
-                        'amount'          => number_format($amount, 2),
+                        'amount'          => str_replace(',', '', number_format($amount, 2)),
                         'start_date'      => $invoice->start_date,
                         'taxable'         => self::TAX_FALSE,
                     ]);
