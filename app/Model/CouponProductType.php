@@ -37,4 +37,14 @@ class CouponProductType extends Model
     {
         return $this->belongsTo('App\Model\Coupon');
     }
+
+    public function scopePlanTypes($query)
+    {
+        return $query->where('type', self::TYPES['plan']);
+    }
+
+    public function scopeAddonTypes($query)
+    {
+        return $query->where('type', self::TYPES['addon']);
+    }
 }

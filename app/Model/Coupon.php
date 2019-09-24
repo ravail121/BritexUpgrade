@@ -48,9 +48,29 @@ class Coupon extends Model
         return $this->hasMany('App\Model\CouponProduct');
     }
 
+    public function couponPlanProducts()
+    {
+        return $this->couponProducts()->planProducts();
+    }
+
+    public function couponAddonProducts()
+    {
+        return $this->couponProducts()->addonProducts();
+    }
+
     public function couponProductTypes()
     {
         return $this->hasMany('App\Model\CouponProductType');
+    }
+
+    public function couponProductPlanTypes()
+    {
+        return $this->couponProductTypes()->planTypes();
+    }
+
+    public function couponProductAddonTypes()
+    {
+        return $this->couponProductTypes()->addonTypes();
     }
 
     public function multilinePlanTypes()

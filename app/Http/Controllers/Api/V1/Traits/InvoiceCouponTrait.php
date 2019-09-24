@@ -7,10 +7,11 @@ use App\Model\CustomerCoupon;
 use App\Model\InvoiceItem;
 use App\Model\Order;
 use App\Model\SubscriptionCoupon;
+use App\Model\Addon;
 
 trait InvoiceCouponTrait
 {
-   
+    // Functions for orders
     public function storeCoupon($couponData, $order, $subscription = null)
     {
         if (isset($couponData['code'])) {
@@ -79,4 +80,70 @@ trait InvoiceCouponTrait
             }
         }
     }
+
+    // Functions for monthly invoices
+    protected function couponProductTypesAmount($planTypes, $plan, $coupon, $addonTypes, $addons)
+    {
+        $amount = [0];
+        $isPercentage = $coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage'] ? true : false;
+        foreach ($planTypes as $planType) {
+            if ($plan) {
+                if ($planType->sub_type != 0) {
+                    if ($planType->sub_type == $plan->type) {
+                        $amount[] = $isPercentage ? $planType->amount * $plan->amount_recurring / 100 : $planType->amount;
+                    }
+                } else {
+                    $amount[] = $isPercentage ? $planType->amount * $plan->amount_recurring / 100 : $planType->amount;
+                }
+            }
+        }
+        foreach ($addonTypes as $addonType) {
+            foreach ($addons as $addon) {
+                if ($addonType->sub_type != 0) {
+                    if ($addonType->sub_type == $plan->type) {
+                        $amount[] = $isPercentage ? $addonType->amount * $addon->amount_recurring / 100 : $addonType->amount;
+                    }
+                } else {
+                    $amount[] = $isPercentage ? $addonType->amount * $addon->amount_recurring / 100 : $addonType->amount;
+                }
+            }
+        }
+        return array_sum($amount);
+    }
+
+    protected function couponProductsAmount($planProducts, $plan, $coupon, $addonProducts, $addons)
+    {
+        $amount = [0];
+        $isPercentage = $coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage'] ? true : false;
+        foreach ($planProducts as $product) {
+            if ($plan) {
+
+                if ($product->product_id == $plan->id) {
+
+                    $amount[] = $isPercentage ? $product->amount * $plan->amount_recurring / 100 : $product->amount;
+                }
+            }
+        }
+        foreach ($addonProducts as $product) {
+            foreach ($addons as $addon) {
+                $amount[] = $isPercentage ? $product->amount * $addon->amount_recurring / 100 : $product->amount;
+            }
+        }
+
+        return array_sum($amount);
+    }
+
+    public function couponAllTypesAmount($plan, $coupon, $addons)
+    {
+        $amount = [0];
+        $isPercentage = $coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage'] ? true : false;
+        if ($plan) {
+            $amount[]     = $isPercentage ? $coupon->amount * $plan->amount_recurring / 100 : $coupon->amount;
+        }
+        foreach ($addons as $addon) {
+            $amount[] = $isPercentage ? $coupon->amount * $addon->amount_recurring / 100 : $coupon->amount;
+        }
+        return array_sum($amount);
+    }
+
 }

@@ -233,35 +233,6 @@ class Customer extends Authenticatable
         return $invoices;
     }
 
-    public static function oneTimeInvoiceAfterMonthly()
-    {
-        $customers          = self::whereNotNull('billing_end')->get();
-        $monthlyInvoice     = [];
-        $customerId         = '';
-        $customer           = [];
-        foreach ($customers as $customer) {
-            $monthlyInvoice = $customer->invoice
-                                ->where('type', 1)
-                                ->where('status', 1)->first();
-                                
-            if ($monthlyInvoice) {
-               
-                $customerId = $customer->invoice()
-                                    ->where('type', 2)
-                                    ->where('status', 2)
-                                    ->where('created_at', '>', Carbon::parse($monthlyInvoice->created_at)->format('y-m-d H:i:s'))->first();
-                                   
-                if ($customerId) {
-                    $customerIds[] = $customerId->customer_id;
-                }
-
-            }
-                                
-        }
-
-        return $customerIds;
-    }
-
     public static function shouldBeGeneratedNewInvoices()
     {
         $today     = self::currentDate();
@@ -282,17 +253,6 @@ class Customer extends Authenticatable
         $customers = $customers->filter(function($customer, $i) use ($today){
             $billingEndParsed = Carbon::parse($customer->billing_end);
             $billingEndFiveDaysBefore   = $billingEndParsed->copy()->subDays(5);
-            if ($today > $billingEndParsed) {
-                $invoiceGenerated = $customer->invoice
-                                    ->where('type', 1)
-                                    ->where('status', 1);
-                                    
-                if (!count($invoiceGenerated)) {
-                    return 
-                        $today >= $billingEndFiveDaysBefore &&
-                        $today > $billingEndParsed;
-                }
-            }
             // Is today between customer.billing_date and -5 days
             return 
                 $today >= $billingEndFiveDaysBefore &&

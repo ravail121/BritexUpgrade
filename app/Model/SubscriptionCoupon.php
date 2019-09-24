@@ -12,7 +12,7 @@ class SubscriptionCoupon extends Model
 
   	public function scopeRedeemable($query)
     {
-        return $query->where('cycles_remaining', '>', 0);
+        return $query->where('cycles_remaining', '!=', 0);
     }
 
     public function coupon()

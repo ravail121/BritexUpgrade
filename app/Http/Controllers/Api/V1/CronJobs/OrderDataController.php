@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use Carbon\Carbon;
 use Exception;
 use App\Model\Order;
 use GuzzleHttp\Client;
 use App\Model\Subscription;
-use Illuminate\Http\Request;
 use App\Events\ShippingNumber;
-use App\Http\Controllers\Controller;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
