@@ -295,7 +295,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $plan   = $subscription->restricted_type ? $subscription->plan : null;
         $addons = $subscription->subscriptionAddon;
         $amount = [0];
-        \Log::info($plan);
         if($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']){
             $planTypes  = $coupon->couponProductPlanTypes;
             $addonTypes = $coupon->couponProductAddonTypes;

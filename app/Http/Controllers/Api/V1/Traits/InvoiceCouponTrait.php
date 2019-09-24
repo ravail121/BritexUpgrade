@@ -99,12 +99,13 @@ trait InvoiceCouponTrait
         }
         foreach ($addonTypes as $addonType) {
             foreach ($addons as $addon) {
+                $addonAmount = Addon::find($addon->addon_id)->amount_recurring;
                 if ($addonType->sub_type != 0) {
                     if ($addonType->sub_type == $plan->type) {
-                        $amount[] = $isPercentage ? $addonType->amount * $addon->amount_recurring / 100 : $addonType->amount;
+                        $amount[] = $isPercentage ? $addonType->amount * $addonAmount / 100 : $addonType->amount;
                     }
                 } else {
-                    $amount[] = $isPercentage ? $addonType->amount * $addon->amount_recurring / 100 : $addonType->amount;
+                    $amount[] = $isPercentage ? $addonType->amount * $addonAmount / 100 : $addonType->amount;
                 }
             }
         }
@@ -126,7 +127,8 @@ trait InvoiceCouponTrait
         }
         foreach ($addonProducts as $product) {
             foreach ($addons as $addon) {
-                $amount[] = $isPercentage ? $product->amount * $addon->amount_recurring / 100 : $product->amount;
+                $addonAmount = Addon::find($addon->addon_id)->amount_recurring;
+                $amount[] = $isPercentage ? $product->amount * $addonAmount / 100 : $product->amount;
             }
         }
 
@@ -141,7 +143,8 @@ trait InvoiceCouponTrait
             $amount[]     = $isPercentage ? $coupon->amount * $plan->amount_recurring / 100 : $coupon->amount;
         }
         foreach ($addons as $addon) {
-            $amount[] = $isPercentage ? $coupon->amount * $addon->amount_recurring / 100 : $coupon->amount;
+            $addonAmount = Addon::find($addon->addon_id)->amount_recurring;
+            $amount[] = $isPercentage ? $coupon->amount * $addonAmount / 100 : $coupon->amount;
         }
         return array_sum($amount);
     }
