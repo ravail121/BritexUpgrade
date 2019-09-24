@@ -38,7 +38,8 @@ class Kernel extends ConsoleKernel
         
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes();
 
-        // $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyFiveMinutes();
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->hourly();
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->hourlyAt(30);
     }
 
     /**

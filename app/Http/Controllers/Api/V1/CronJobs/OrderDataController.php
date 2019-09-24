@@ -90,11 +90,12 @@ class OrderDataController extends BaseController
             $partNumId = subStr($boxdetail['part_number'], 4);
 
             if($subString == 'SUB') {
-                $table = Subscription::find($partNumId);
                 $table = Subscription::whereId($partNumId)->with('customer', 'device', 'sim')->first();
                 if($table){
+                    $date = Carbon::today();
                     $table->update([
                         'status'       => 'for-activation',
+                        'shipping_date'=> $date,
                         'tracking_num' => $boxes['tracking_number'],
                         'device_imei'  => $boxdetail['pick_location'],
                         'sim_card_num' => $boxdetail['code'],
@@ -107,16 +108,18 @@ class OrderDataController extends BaseController
                 if($table){
                     $table->update([
                         'status'       => CustomerStandaloneDevice::STATUS['complete'],
+                        'shipping_date'=> $date,
                         'tracking_num' => $boxes['tracking_number'],
                         'device_imei'  => $boxdetail['pick_location'],
                     ]);
                     event(new ShippingNumber($boxes['tracking_number'], $table));
                 } 
             } elseif($subString == 'SIM') {
-                $table = CustomerStandaloneSim::whereId($partNumId)with('sim')->first();
+                $table = CustomerStandaloneSim::whereId($partNumId)->with('sim')->first();
                 if($table){
                     $table->update([
                         'status'       => CustomerStandaloneSim::STATUS['complete'],
+                        'shipping_date'=> $date,
                         'tracking_num' => $boxes['tracking_number'],
                         'sim_card_num' => $boxdetail['code'],
                     ]);
