@@ -133,17 +133,14 @@ class CustomerController extends BaseController
 		if ($order->bizVerification) {
 			$data['business_verification_id'] = $order->bizVerification->id;
 			$data['business_verified']        = $order->bizVerification->approved;
-
 		} elseif ($order->company->business_verification == 0) {
 			$data['business_verification_id'] = null;
 			$data['business_verified']        = 1;
-
 		}
-		
-		
+
 		$data['company_id'] = $order->company_id;
 		$data['password']   = Hash::make($data['password']);
-		$data['hash']       = sha1(time());
+		$data['hash']       = sha1(time().rand());
 		$data['pin']        = $data['pin'];
 
 		return $data;
@@ -209,7 +206,7 @@ class CustomerController extends BaseController
 			'fname'              => 'required|string',
 			'lname'              => 'required|string',
 			'email'              => 'required|email',
-			'company_name'       => 'required|string',
+			'company_name'       => 'sometimes|required|string',
 			'phone'              => 'required|string',
 			'alternate_phone'    => 'nullable|string',
 			'password'           => 'required|string',
@@ -361,7 +358,7 @@ class CustomerController extends BaseController
 				]);
 				
 				if($request->hash){
-						$emailCount = Customer::where([['email' , $request->newEmail], ['company_id', \Request::get('company')->id], ['hash', '!=' , $request->hash]])->count();
+						$emailCount = Customer::where([['email' , $request->newEmail], ['company_id', \Request::get('company')->id], ['id', '!=' , $request->id]])->count();
 				}else{
 						$emailCount = Customer::where([['email' , $request->newEmail],['company_id', \Request::get('company')->id]])->count();
 				}

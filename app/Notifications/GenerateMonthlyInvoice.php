@@ -6,7 +6,6 @@ use App\Model\Order;
 use App\Model\EmailLog;
 use App\Model\EmailTemplate;
 use Illuminate\Bus\Queueable;
-use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Model\SystemEmailTemplateDynamicField;
@@ -51,14 +50,12 @@ class GenerateMonthlyInvoice extends Notification
     {
 
         $emailTemplate = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'monthly-invoice')->first();
-        
-        $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
 
         $note = 'Invoice Link '.route('api.invoice.get').'?order_hash='.$this->order->hash;
 
-        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $this->order, $bizVerification, $templateVales, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',], $note);
+        $mailMessage = $this->getEmailWithAttachment($emailTemplate, $this->order, $this->order->customer->business_verification_id, $templateVales, $this->pdf->output(), 'monthly-invoice.pdf', ['mime' => 'application/pdf',], $note);
 
         return $mailMessage;
 //commented previous code because it was not tested on server

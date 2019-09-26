@@ -10,7 +10,6 @@ use App\Model\Order;
 use App\Model\Company;
 use App\Model\EmailTemplate;
 use App\Events\MonthlyInvoice;
-use App\Model\BusinessVerification;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -43,7 +42,7 @@ class SendMonthlyInvoiceMail
 
         // NEED TO RECODE BECAUSE IT WILL GENERATE PREVIOUS INVOICES
         
-        $order = Order::where('customer_id', $customer->id)->first();
+        $order = Order::where('customer_id', $customer->id)->with('customer')->first();
 
         $invoice = [
             'start_date' => '2019-01-11',
@@ -68,8 +67,6 @@ class SendMonthlyInvoiceMail
         }
 
         $emailTemplates = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'monthly-invoice')->get();
-        
-        $bizVerification = BusinessVerification::find($this->order->customer->business_verification_id);
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
 
@@ -81,7 +78,7 @@ class SendMonthlyInvoiceMail
             }else{
                 $email = $customer->email;
             }
-            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $bizVerification, $templateVales, $note));
+            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $$this->order->customer->business_verification_id, $templateVales, $note));
         }          
     }
 

@@ -22,9 +22,9 @@ class EventServiceProvider extends ServiceProvider
             'App\Listeners\SendEmailWithInvoice',
         ],
 
-        'App\Events\MonthlyInvoice' => [
-            'App\Listeners\SendMonthlyInvoiceMail',
-        ],
+        // 'App\Events\MonthlyInvoice' => [
+        //     'App\Listeners\SendMonthlyInvoiceMail',
+        // ],
 
         'App\Events\AccountSuspended' => [
             'App\Listeners\SendAccountPastDueMail',

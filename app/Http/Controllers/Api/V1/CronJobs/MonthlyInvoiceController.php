@@ -378,34 +378,34 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
      * @param  Customer   $customer
      * @return Response
      */
-    protected function triggerEvent($customer)
-    {
-        if ($customer->invoice) {
-            foreach ($customer->invoice as $invoice) {
-                if ($invoice->type_not_one) {
-                    $this->flag = '';
-                    $invoice = $this->createInvoice($customer->id);
+    // protected function triggerEvent($customer)
+    // {
+    //     if ($customer->invoice) {
+    //         foreach ($customer->invoice as $invoice) {
+    //             if ($invoice->type_not_one) {
+    //                 $this->flag = '';
+    //                 $invoice = $this->createInvoice($customer->id);
 
-                    if ($invoice && $this->flag == '') {
-                        $this->debitInvoiceItems($invoice);
-                        $this->response = event(new MonthlyInvoice($customer));
+    //                 if ($invoice && $this->flag == '') {
+    //                     $this->debitInvoiceItems($invoice);
+    //                     $this->response = event(new MonthlyInvoice($customer));
 
-                    } elseif ($invoice && $this->flag == 'pending') {
-                        $this->deleteOldInvoiceItems($invoice); // This need to be changed when plan is neither upgraded nor downgraded
+    //                 } elseif ($invoice && $this->flag == 'pending') {
+    //                     $this->deleteOldInvoiceItems($invoice); // This need to be changed when plan is neither upgraded nor downgraded
 
-                        $this->debitInvoiceItems($invoice);
-                        $this->response = event(new MonthlyInvoice($customer));
+    //                     $this->debitInvoiceItems($invoice);
+    //                     $this->response = event(new MonthlyInvoice($customer));
 
-                    } elseif (!$invoice && $this->flag == 'error') {
-                        \Log::error('Invoice not created/found.');
+    //                 } elseif (!$invoice && $this->flag == 'error') {
+    //                     \Log::error('Invoice not created/found.');
 
-                    }
-                    break;
-                }
-            }
-        }
-        return $this->response;
-    }
+    //                 }
+    //                 break;
+    //             }
+    //         }
+    //     }
+    //     return $this->response;
+    // }
 
 
     /**
