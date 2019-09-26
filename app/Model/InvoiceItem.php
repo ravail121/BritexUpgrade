@@ -162,5 +162,9 @@ class InvoiceItem extends Model implements ConstantInterface
         );
     }
 
+    public function scopeUsedCoupon($query)
+    {
+        return $query->where('type', self::TYPES['coupon']);
+    }
 
 }

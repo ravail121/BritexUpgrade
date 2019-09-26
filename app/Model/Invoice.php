@@ -191,6 +191,12 @@ class Invoice extends Model implements ConstantInterface
         ]);
     }
 
+    public function scopeOpenAndUnpaid($query)
+    {
+        return $query->where('type', self::TYPES['monthly'])
+                        ->where('status', self::INVOICESTATUS['open']);
+    }
+
     /**
      * Fetches Invoice Details from invoice table if status < 2
      * 
@@ -351,5 +357,11 @@ class Invoice extends Model implements ConstantInterface
 
         return $total - $discounts;
     }
+
+    public function couponUsed()
+    {
+        return $this->invoiceItem()->usedCoupon();
+    }
+
 
 }

@@ -48,7 +48,11 @@
                         <div style='position:absolute; left:0; right:0; margin: auto; top: 100px; border-color: transparent;' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
-                                <p><span>{{ $data['order']->customer->company_name }},</span></p>
+                                @if ($data['order']->customer->company_name)
+                                    <p><span>
+                                        {{ $data['order']->customer->company_name }},
+                                    </span></p>
+                                @endif
                                 <p><span>{{ $data['order']->customer->full_name }},</span></p>
                                 <p><span>{{ $data['order']->customer->shipping_address1 }}</span></p>
                                 <p><span>{{ $data['order']->customer->zip_address }}</span></p>

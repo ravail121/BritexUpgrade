@@ -85,11 +85,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
 
                         $pendingCharges = $this->pendingCharges($invoice);
+
                         $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
 
                         $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
-                        
-                        // Subtotal = sum of ( Debits - coupons [applied to each subscription] + Taxes [applied to each subscription] )
 
                         // Add Coupons
                         $couponAccount = $this->customerAccountCoupons($customer, $invoice);
@@ -223,134 +222,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
         return $taxes;
         
-    }
-
-    public function customerAccountCoupons($customer, $invoice)
-    {
-        $customerCouponRedeemable = $customer->customerCouponRedeemable;
-        if ($customerCouponRedeemable) {
-            foreach ($customerCouponRedeemable as $customerCoupon) {
-                $coupon = $customerCoupon->coupon;
-                
-                if($customerCoupon->cycles_remaining == 0) continue;
-
-                list($isApplicable, $subscriptions) = 
-                            $this->isCustomerAccountCouponApplicable(
-                                $coupon,
-                                $customer->billableSubscriptions
-                            );
-                
-                if($isApplicable){
-                    $coupon->load('couponProductTypes', 'couponProducts');
-
-                    foreach($subscriptions as $subscription){
-
-                        $amount = $this->couponAmount($subscription, $coupon);
-
-                        // Possibility of returning 0 as well but
-                        // returns false when coupon is not applicable
-                        if($amount === false || $amount == 0) continue;
-
-                        $invoice->invoiceItem()->create([
-                            'subscription_id' => $subscription->id,
-                            'product_type'    => '',
-                            'product_id'      => $coupon->id,
-                            'type'            => InvoiceItem::TYPES['coupon'],
-                            'description'     => "(Customer Account Coupon) $coupon->code",
-                            'amount'          => str_replace(',', '',number_format($amount, 2)),
-                            'start_date'      => $invoice->start_date,
-                            'taxable'         => self::TAX_FALSE,
-                        ]);
-                    }
-                    if ($customerCoupon['cycles_remaining'] > 0) {
-                        $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
-                    }
-                    // ToDo: Add logs,Order not provided in requirements
-                }
-            }
-        }
-    }
-
-    protected function isCustomerAccountCouponApplicable($coupon, $subscriptions)
-    {
-        $isApplicable  = true;
-        $multilineMin = $coupon->multiline_min;
-            if($coupon->multiline_restrict_plans){
-                $supportedPlanTypes = $coupon->multilinePlanTypes->pluck('plan_type');
-                foreach ($subscriptions as $sub) {
-                    $supportedPlanTypes->contains($sub->plan->type) ? $sub['restricted_type'] = 1 : $sub['restricted_type'] = 0;
-                }
-            }
-
-        $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
-        if($coupon->multiline_max){
-            $isApplicable = $isApplicable && $subscriptions->count() <= $coupon->multiline_max;
-        }
-        
-        return [$isApplicable, $subscriptions];
-    }
-
-    private function couponAmount($subscription, $coupon)
-    {
-        $plan   = $subscription->restricted_type ? $subscription->plan : null;
-        $addons = $subscription->subscriptionAddon;
-        $amount = [0];
-        if($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']){
-            $planTypes  = $coupon->couponProductPlanTypes;
-            $addonTypes = $coupon->couponProductAddonTypes;
-            $amount[]   = $this->couponProductTypesAmount($planTypes, $plan, $coupon, $addonTypes, $addons);
-        } elseif($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT']){
-            $planProducts   = $coupon->couponPlanProducts;
-            $addonProducts  = $coupon->couponAddonProducts;
-            $amount[]       = $this->couponProductsAmount($planProducts, $plan, $coupon, $addonProducts, $addons); 
-        } else {
-            $amount[] = $this->couponAllTypesAmount($plan, $coupon, $addons);
-        }
-
-        return array_sum($amount);
-    }
-
-
-    public function customerSubscriptionCoupons($invoice, $subscriptions)
-    {
-        foreach($subscriptions as $subscription){
-            
-            $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
-
-            // Subscription doesnot has any coupons
-            if(!$subscriptionCouponRedeemable) continue;
-
-            foreach ($subscriptionCouponRedeemable as $subscriptionCoupon) {
-                $coupon = $subscriptionCoupon->coupon;
-
-                if($subscriptionCoupon->cycles_remaining == 0) continue;
-
-                $coupon->load('couponProductTypes', 'couponProducts');
-
-                $amount = $this->couponAmount($subscription, $coupon);
-
-                // Possibility of returning 0 as well but
-                // returns false when coupon is not applicable
-                if($amount === false || $amount == 0) continue;
-
-                $invoice->invoiceItem()->create([
-                    'subscription_id' => $subscription->id,
-                    'product_type'    => '',
-                    'product_id'      => $coupon->id,
-                    'type'            => InvoiceItem::TYPES['coupon'],
-                    'description'     => "(Subscription Coupon) $coupon->code",
-                    'amount'          => str_replace(',', '', number_format($amount, 2)),
-                    'start_date'      => $invoice->start_date,
-                    'taxable'         => self::TAX_FALSE,
-                ]);
-
-                if ($subscriptionCoupon['cycles_remaining'] > 0) {
-                    $subscriptionCoupon->update(['cycles_remaining' => $subscriptionCoupon['cycles_remaining'] - 1]);
-                }
-            }
-
-        }
-
     }
 
     protected function insertOrder($invoice)

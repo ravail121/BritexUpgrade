@@ -589,46 +589,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         return $invoiceItem;    
     }
 
-    public function availableCreditsAmount($id)
-    {
-        $customer = Customer::find($id);
-
-        $credits  = $customer->creditsNotAppliedCompletely;
-        
-        foreach ($credits as $credit) {
-
-            $availableCredits[] = ['id' => $credit->id, 'amount' => $credit->amount];
-            
-        }
-        
-        if (isset($availableCredits)) {
-
-            foreach ($availableCredits as $key => $credit) {
-
-                $notFullUsedCredit = CreditToInvoice::where('credit_id', $credit['id'])->sum('amount');
-
-                if ($notFullUsedCredit && $notFullUsedCredit < $credit['amount']) {
-
-                    $totalUsableCredits = $credit['amount'] - $notFullUsedCredit;
-                    
-                    $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
-                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
-                    
-
-                } else if (!$notFullUsedCredit) {
-
-                    $totalUsableCredits = $credit['amount'];
-                    $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
-                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
-
-                } 
-                
-
-                
-            }
-        }
-        
-    }
 
     public function applyCreditsToInvoice($creditId, $amount, $openInvoices)
     {

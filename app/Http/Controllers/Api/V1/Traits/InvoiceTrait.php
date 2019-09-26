@@ -17,6 +17,7 @@ use App\Events\UpgradeDowngradeInvoice;
 use Carbon\Carbon;
 use App\Model\SystemGlobalSetting;
 use App\Model\PendingCharge;
+use App\Model\Customer;
 
 trait InvoiceTrait
 {
@@ -400,6 +401,47 @@ trait InvoiceTrait
         $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.$encryptedId;
         $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
         $this->saveInvoiceFile($pdf, $fileSavePath);
+    }
+
+    public function availableCreditsAmount($id)
+    {
+        $customer = Customer::find($id);
+
+        $credits  = $customer->creditsNotAppliedCompletely;
+        
+        foreach ($credits as $credit) {
+
+            $availableCredits[] = ['id' => $credit->id, 'amount' => $credit->amount];
+            
+        }
+        
+        if (isset($availableCredits)) {
+
+            foreach ($availableCredits as $key => $credit) {
+
+                $notFullUsedCredit = CreditToInvoice::where('credit_id', $credit['id'])->sum('amount');
+
+                if ($notFullUsedCredit && $notFullUsedCredit < $credit['amount']) {
+
+                    $totalUsableCredits = $credit['amount'] - $notFullUsedCredit;
+                    
+                    $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
+                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
+                    
+
+                } else if (!$notFullUsedCredit) {
+
+                    $totalUsableCredits = $credit['amount'];
+                    $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
+                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
+
+                } 
+                
+
+                
+            }
+        }
+        
     }
     
 

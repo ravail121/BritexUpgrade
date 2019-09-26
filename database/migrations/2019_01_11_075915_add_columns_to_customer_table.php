@@ -18,7 +18,7 @@ class AddColumnsToCustomerTable extends Migration
             $table->string('fname')->after('business_verified');
             $table->string('lname')->after('fname');
             $table->string('email')->after('lname');
-            $table->string('company_name')->after('email');
+            $table->string('company_name')->nullable()->after('email');
             $table->string('password')->after('lname');
             $table->bigInteger('phone')->after('password');
             $table->bigInteger('alternate_phone')->nullable()->after('phone');

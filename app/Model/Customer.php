@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Events\InvoiceGenerated;
+use App\Model\Invoice;
 
 class Customer extends Authenticatable
 {
@@ -215,22 +216,33 @@ class Customer extends Authenticatable
         return $this->shipping_city.', '.$this->shipping_state_id.' '.$this->shipping_zip;
     }
 
-    public static function customerInvoiceGroups()
+    public static function invoicesForRegeneration()
     {
-        $customers          = self::whereNotNull('billing_end')
-                                    ->whereDate('billing_end', '>=', Carbon::today()->format('Y-m-d'))->get();
+        $today     = self::currentDate();
+        $customers          = self::whereNotNull('billing_end')->get();
 
-        $invoices           = [];
-        
-        foreach ($customers as $customer) {
-            $invoice = $customer->invoice;
-            
-            if (count($invoice)) {
-                $invoices[] = $invoice;
-            }
-        }
-        
-        return $invoices;
+        $eligibleCustomers = $customers->filter(function($customer, $i) use ($today) {
+
+            $billingEndParsed = Carbon::parse($customer->billing_end);
+            $billingEndFiveDaysBefore   = $billingEndParsed->copy()->subDays(5);
+            return
+                $today >= $billingEndFiveDaysBefore &&
+                $today <= $billingEndParsed;
+        });
+        $eligibleCustomers = $eligibleCustomers->filter(function($customer) {
+            return $customer->openAndUnpaidInvoices->count();
+        });
+        return $eligibleCustomers;
+    }
+
+    public function openAndUnpaidInvoices()
+    {
+        return $this->invoice()->openAndUnpaid();
+    }
+
+    public function orderInvoice()
+    {
+        return $this->invoice()->onetime();
     }
 
     public static function shouldBeGeneratedNewInvoices()
@@ -377,5 +389,18 @@ class Customer extends Authenticatable
             return Carbon::parse($this->billing_end)->format('M d, Y');   
         }
         return 'NA';
+    }
+
+    public static function compareDates($invoice, $orderInvoices)
+    {
+        $dateToCompare = Carbon::parse($invoice->getOriginal('created_at'));
+        $invoices = [];
+        foreach ($orderInvoices as $orderInvoice) {
+            $orderDate = Carbon::parse($orderInvoice->getOriginal('created_at'));
+            if ($orderDate > $dateToCompare) {
+                $invoices[] = $orderInvoice;
+            }
+        }
+        return $invoices;
     }
 }

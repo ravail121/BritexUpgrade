@@ -487,7 +487,7 @@ class CreateOrderTable extends Migration
             $table->double('prev_balance');
             $table->text('payment_method');
             $table->text('notes');
-            $table->text('business_name');
+            $table->text('business_name')->nullable();
             $table->text('billing_fname');
             $table->text('billing_lname');
             $table->text('billing_address_line_1');

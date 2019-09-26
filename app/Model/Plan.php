@@ -43,4 +43,5 @@ class Plan extends Model
     {
      return $this->belongsToMany('App\Model\PlanToAddon');
     }
+
 }

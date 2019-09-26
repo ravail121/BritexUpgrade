@@ -17,6 +17,11 @@ class Coupon extends Model
         'percentage' => 2
     ];
 
+    const TYPES = [
+        'subscription_coupon' => 'Subscription coupon',
+        'customer_coupon' => 'Customer coupon'
+    ];
+
     protected $table = 'coupon';
 
     protected $fillable = [
