@@ -15,7 +15,6 @@ use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 use Illuminate\Http\Request;
 use App\Model\SystemGlobalSetting;
 use App\Events\InvoiceGenerated;
-use App\Model\Coupon;
 
 class RegenerateInvoiceController extends Controller
 {
@@ -64,10 +63,10 @@ class RegenerateInvoiceController extends Controller
                         return $newInvoice->order->count();
                     });
                 $invoiceAfterMonthly = $customer->compareDates($invoice, $invoiceAfterMonthly);
-                count($invoiceAfterMonthly) ? $this->processPendingOrderInvoices($invoiceAfterMonthly, $customer, $invoice) : null;
-                count($invoiceAfterMonthly) ? $this->updateInvoice($invoice) : null;
+                $amount = count($invoiceAfterMonthly) ? $this->processPendingOrderInvoices($invoiceAfterMonthly, $customer, $invoice) : null;
+                count($invoiceAfterMonthly) && $amount ? $this->updateInvoice($invoice) : null;
                 $request->headers->set('authorization', $customer->company->api_key);
-                count($invoiceAfterMonthly) && isset($invoice->order) && $invoice->order->count() ? $this->saveAndSendInvoice($invoice->order) : null;
+                count($invoiceAfterMonthly) && isset($invoice->order) && $invoice->order->count() && $amount ? $this->saveAndSendInvoice($invoice->order) : null;
             }
         }
     }
@@ -83,7 +82,7 @@ class RegenerateInvoiceController extends Controller
                     })->toArray()
                 );
         }
-        count($subscriptionIds) ? $this->regenerateAmount($subscriptionIds, $customer, $invoice) : null;
+        return count($subscriptionIds) ? $this->regenerateAmount($subscriptionIds, $customer, $invoice) : false;
         
     }
 
@@ -111,11 +110,12 @@ class RegenerateInvoiceController extends Controller
     protected function regenerateAmount($subscriptionIds, $customer, $invoice)
     {
         $taxOnAmount = [0];
+        $count = 0;
         foreach ($subscriptionIds as $id) {
             $subscription = Subscription::find($id);
             $plan = $subscription->plan;
             if ($subscription->phone_number) {
-
+                $count++;
                 // Insert Plan and get amount for tax if plan.taxable = 1
                 $this->itemAmount($invoice, $subscription, $plan, self::SUBSCRIPTION_TYPES['plan']);
                 $taxOnAmount[] = $plan->taxable ? $plan->amount_recurring : 0;
@@ -136,49 +136,43 @@ class RegenerateInvoiceController extends Controller
 
                 // If tax != 0, insert tax.
                 $taxRate = array_sum($taxOnAmount) ? array_sum($taxOnAmount) * $customer->tax->rate / 100 : 0;
-    
-                $taxRate ? $this->taxesAndFeesAmount($invoice, $subscription, $taxRate, self::FEE_TYPES['taxes'], self::FEE_DESCRIPTION['taxes']) : null;
-
-                // Restore coupons.
-                $subscriptionCoupon = SubscriptionCoupon::where('subscription_id', $id);
-                $customerCoupons    = CustomerCoupon::where('customer_id', $customer->id);
-                $this->regenerateCoupons($subscriptionCoupon, $invoice, Coupon::TYPES['subscription_coupon'], $customer);
-                $this->regenerateCoupons($customerCoupons, $invoice, Coupon::TYPES['customer_coupon'], $customer);
+                $taxRate ? $this->taxesAndFeesAmount($invoice, $subscription, $taxRate, self::FEE_TYPES['taxes'], self::FEE_DESCRIPTION['taxes']) : null;               
             }
         }
-
-        
+        if ($count) {
+            $this->regenerateCoupons($invoice, $customer);
+            return true;
+        }
+        return false;
     }
 
-    protected function regenerateCoupons($usedCoupons, $invoice, $type, $customer)
+    protected function regenerateCoupons($invoice, $customer)
     {
-        foreach ($usedCoupons->get() as $coupon) {
-            $ifUsed = $invoice->couponUsed->where('product_id', $coupon->coupon_id);
-            $cyclesRemaining = $coupon->cycles_remaining;
-            if ($type == Coupon::TYPES['customer_coupon']) {
-                if ($ifUsed->count()) {
-                    if ($cyclesRemaining > -1) {
-                        $coupon->update(['cycles_remaining' => $cyclesRemaining + 1]);
-                    }
-                }
-            } elseif ($type == Coupon::TYPES['subscription_coupon']) {
-                if ($ifUsed->count()) {
-                    if ($cyclesRemaining > -1) {
-                        $coupon->update(['cycles_remaining' => $cyclesRemaining + 1]);
-                    }
+        $usedCoupons = $invoice->couponUsed;
+        $subscriptionCoupons = $usedCoupons->where('subscription_id', '!=', 0)->pluck('product_id', 'subscription_id');
+        $customerCoupons = array_unique($usedCoupons->where('subscription_id', 0)->pluck('product_id')->toArray());
+        foreach ($subscriptionCoupons as $subscription => $coupon) {
+            if ($subscription) {
+                if ($coupon) {
+                    SubscriptionCoupon::where([
+                        ['subscription_id', $subscription],
+                        ['coupon_id', $coupon],
+                        ['cycles_remaining', '!=', -1]])->increment('cycles_remaining');
                 }
             }
         }
-        if ($invoice->invoiceItem()->where('type', InvoiceItem::TYPES['coupon'])->delete()) {
-            $this->customerAccountCoupons($customer, $invoice);
-            $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+        foreach ($customerCoupons as $coupon) {
+            $finiteCoupons = CustomerCoupon::where([['customer_id', $customer->id], ['coupon_id', $coupon]])->filter(function ($c) { return $c->cycles_remaining > -1; });
+            
+            $finiteCoupons->increment('cycles_remaining');
         }
-
+        foreach ($usedCoupons as $coupon) { $coupon->delete(); }
+        $this->customerAccountCoupons($customer, $invoice);
+        $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
     }
 
     protected function itemAmount($invoice, $subscription, $item, $type)
     {
-
         InvoiceItem::create([
             'invoice_id'        => $invoice->id,
             'subscription_id'   => $subscription->id,
@@ -211,14 +205,11 @@ class RegenerateInvoiceController extends Controller
     {
         $this->availableCreditsAmount($invoice->customer_id);
         $total = $invoice->cal_total_charges;
-        $totalDue = $total - $invoice->total_due;
-        $invoice->update(
-            [
+        $invoice->update([
                 'subtotal' => $total,
-                'total_due' => str_replace(',', '',number_format($total - $totalDue, 2)),
+                'total_due' => $total - $invoice->creditsToInvoice->sum('amount'),
                 'created_at' => Carbon::now()
-            ]
-        );
+            ]);
     }
 
 }

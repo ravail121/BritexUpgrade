@@ -50,18 +50,13 @@ class CouponController extends Controller
     ];
 
     protected $failedResponse;
-    protected $totalSubscriptions;
-
+    
     public function addCoupon(Request $request)
     {
         try {
             $coupon = Coupon::where('code', $request->code)->first();
             $order  = Order::find($request->order_id);
-            
-            if (!$coupon) { 
-
-                return ['error' => 'Invalid coupon code']; 
-            } elseif (!$this->couponIsValid($coupon)) {
+            if (!$this->couponIsValid($coupon)) {
 
                 return ['error' => $this->failedResponse];
             } elseif (!$request->hash) {
@@ -69,64 +64,49 @@ class CouponController extends Controller
                 $this->failResponse = 'Please login first';
                 return ['error' => $this->failResponse];
             } else {
-
-                $customer              = Customer::where('hash', $request->hash ? $request->hash : $order->customer->hash)->first();   
-                $billableSubscriptions = $customer->billableSubscriptionsForCoupons;
-                $billablePlans = [];
-
-                foreach ($billableSubscriptions as $subscription) {
-                    $billablePlans[] = Plan::find($subscription->plan_id);
+                $billableSubscriptions = $order->customer->billableSubscriptionsForCoupons;
+                $alreadyExists = OrderCoupon::where('order_id', $request->order_id)->get();
+                if (!count($alreadyExists)) {
+                    OrderCoupon::create([
+                        'order_id' => $request->order_id,
+                        'coupon_id' => $coupon->id
+                    ]);
                 }
+                $couponProductTypes     = $coupon->couponProducts;
+                $couponSpecificTypes    = $coupon->couponProductTypes;
+                $orderGroupCart         = $request->orderGroupsCart;
+                $cartPlans              = isset($orderGroupCart['plans']['items']) ? ['items' => $orderGroupCart['plans']['items']] : [];
 
-                if (!empty($coupon)) {
-                    $alreadyExists = OrderCoupon::where('order_id', $request->order_id)->get();
-                    if (count($alreadyExists) < 1) {
-
-                        OrderCoupon::create([
-                            'order_id' => $request->order_id,
-                            'coupon_id' => $coupon->id
-                        ]);
-
-                    }
-                    
-                    $coupon                 = $coupon;
-                    $couponProductTypes     = $coupon->couponProducts;
-                    $couponSpecificTypes    = $coupon->couponProductTypes;
-                    $orderGroupCart         = $request->orderGroupsCart;
-                    $billablePlans          = $billablePlans;
-                    $cartPlans              = isset($orderGroupCart['plans']['items']) ? ['items' => $orderGroupCart['plans']['items']]    : [];
-
-                    $appliedToAll       = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order->id) : 0;
-                    $appliedToTypes     = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $couponSpecificTypes, $order->id, $orderGroupCart, $customer) : 0;
-                    $appliedToProducts  = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $couponProductTypes, $order->id, $orderGroupCart, $customer) : 0;                
-                    
-                    if ($this->isApplicable($cartPlans, $billablePlans, $coupon)) {
-                        $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
-                        return ['total' => $total, 'code' => $coupon->code, 'applied_to' => [
-                                'applied_to_all'        => $appliedToAll['applied_to'],
-                                'applied_to_types'      => $appliedToTypes['applied_to'],
-                                'applied_to_products'   => $appliedToProducts['applied_to'],
-                            ]
-                        ];
-                    } else {
-                        return ['error' => $this->failedResponse];
-                    }
-
-                }
+                $appliedToAll       = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order->id) : 0;
+                $appliedToTypes     = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $couponSpecificTypes, $order->id, $orderGroupCart) : 0;
+                $appliedToProducts  = $coupon['class'] == self::COUPON_CLASS['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $couponProductTypes, $order->id, $orderGroupCart) : 0;                
                 
+                if ($this->isApplicable($cartPlans, $billableSubscriptions, $coupon)) {
+                    $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
+                    return ['total' => $total, 'code' => $coupon->code, 'applied_to' => [
+                            'applied_to_all'        => $appliedToAll['applied_to'],
+                            'applied_to_types'      => $appliedToTypes['applied_to'],
+                            'applied_to_products'   => $appliedToProducts['applied_to'],
+                        ]
+                    ];
+                } else {
+                    return ['error' => $this->failedResponse];
+                }
+
             }
         } catch (Exception $e) {
             \Log::info($e->getMessage().' on line number: '.$e->getLine().' in CouponController');
             return [
                 'total' => 0,
-                'error' => 'Server error.'
+                'error' => 'Server error'
             ];
         }    
     }
 
     protected function couponIsValid($coupon) 
     {
-        if ($coupon['company_id'] != \Request::get('company')->id) {
+
+        if (!$coupon || $coupon['company_id'] != \Request::get('company')->id) {
             $this->failedResponse = 'Coupon is invalid';
             return false;
         }
@@ -150,47 +130,25 @@ class CouponController extends Controller
         }
     }
 
-    protected function isApplicable($cartPlans, $billablePlans, $coupon)
+    protected function isApplicable($cartPlans, $billableSubscriptions, $coupon)
     {
-        $this->failedResponse = '';
-        $restrictedBillablePlans  = [];
-        $restrictedCartPlans      = [];
-
+        $totalSubscriptions = count($cartPlans) + count($billableSubscriptions);
         if ($coupon['multiline_restrict_plans']) {
             $multilineRestrict  = $coupon->multilinePlanTypes->pluck('plan_type');
-            foreach ($billablePlans as $plan) {
-                if ($multilineRestrict->contains($plan['type'])) {
-                    $restrictedBillablePlans[] = $plan;
-                }
-            }
-            if (isset($cartPlans['items'])) {
-
-                foreach ($cartPlans['items'] as $plan) {
-                    if ($multilineRestrict->contains($plan['type'])) {
-                        $restrictedCartPlans[] = $plan;
-                    }
-                }
-            }
-            $totalSubscriptions = count($restrictedCartPlans) ? array_merge($restrictedBillablePlans, $restrictedCartPlans) : [];
-        } else {
-            $totalSubscriptions = count($billablePlans) ? array_merge($cartPlans, $billablePlans) : [];
+            $billableSubscriptions = $billableSubscriptions->filter(function($sub) use ($multilineRestrict) {
+                return $multilineRestrict->contains($sub->plan->type);
+            });
+            $totalSubscriptions = count(array_intersect(array_column($cartPlans['items'], 'type'), $multilineRestrict->toArray())) + count($billableSubscriptions);
         }
-
-        if ($coupon['multiline_min']) {
-            if (count($totalSubscriptions) < $coupon['multiline_min']) {
-                $this->failedResponse = 'Min subscriptions required: '.$coupon['multiline_min'];
-                return false;
-            } 
+        if ($coupon['multiline_min'] && $totalSubscriptions < $coupon['multiline_min']) {
+            $this->failedResponse = 'Min subscriptions required: '.$coupon['multiline_min'];
+            return false;
         } 
-        if ($coupon['multiline_max']) {
-            if (count($totalSubscriptions) > $coupon['multiline_max']) {
-                $this->failedResponse = 'Max subscriptions required: '.$coupon['multiline_max'];
-                return false;
-            }
+        if ($coupon['multiline_max'] && $totalSubscriptions > $coupon['multiline_max']) {
+            $this->failedResponse = 'Max subscriptions required: '.$coupon['multiline_max'];
+            return false;
         }
-
         return $this->couponCanBeUsed($coupon);
-
     }
 
     protected function couponCanBeUsed($coupon)
@@ -198,31 +156,19 @@ class CouponController extends Controller
         $today              = Carbon::now();
         $couponStartDate    = Carbon::parse($coupon['start_date']);
         $couponExpiryDate   = Carbon::parse($coupon['end_date']);
-        $this->failedResponse = '';
-
         if ($couponStartDate && $today < $couponStartDate) {
             $this->failedResponse = 'Starts: '.$couponStartDate;
             return false;
-
         } elseif ($couponExpiryDate && ($today >= $couponExpiryDate)) {
             $this->failedResponse = 'Expired: '.$couponExpiryDate;
             return false;
-
-        }
-        return $this->couponNotReachedMaxLimit($coupon);
-
-    }
-
-    protected function couponNotReachedMaxLimit($coupon)
-    {
-        $this->failedResponse = '';
-        if ($coupon['num_uses'] >= $coupon['max_uses']) {
+        } elseif ($coupon['num_uses'] >= $coupon['max_uses']) {
             $this->failedResponse = 'Not available anymore';
             return false;
         } 
         return true;
-    }
 
+    }
 
     protected function appliedToAll($coupon, $id)
     {
@@ -355,7 +301,7 @@ class CouponController extends Controller
 
     }
 
-    protected function appliedToTypes($couponMain, $couponSpecificTypes, $id, $orderGroupCart, $customer)
+    protected function appliedToTypes($couponMain, $couponSpecificTypes, $id, $orderGroupCart)
     {
         
         $order              = Order::find($id);
@@ -396,6 +342,7 @@ class CouponController extends Controller
                     foreach ($plans as $plan) {
                         $isProrated = $order->planProRate($plan['id']);
                         $planData   = Plan::find($plan['id']);
+                        
                         if ($isLimited) {
                             if ($planData['type'] == $isLimited) {
                                 $planAmount     = $isProrated ? $isProrated : $planData->amount_recurring;
@@ -479,7 +426,7 @@ class CouponController extends Controller
         return (['total' => array_sum(isset($couponAmount) ? $couponAmount : [0]), 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : [], 'order' => $order]);
     }
 
-    protected function appliedToProducts($couponMain, $couponProductTypes, $id, $orderGroupCart, $customer)
+    protected function appliedToProducts($couponMain, $couponProductTypes, $id, $orderGroupCart)
     {
 
         $order              = Order::find($id);

@@ -29,7 +29,7 @@ class AddInvoiceIdInPaymentRefundLogTable extends Migration
     {
         Schema::table('payment_refund_log', function (Blueprint $table) {
             $table->dropColumn([
-                'goknows_api_key'
+                'invoice_id'
             ]);
         });
     }

@@ -44,9 +44,17 @@ class SimController extends BaseController
 
                         })
                         ->get();
-      foreach ($device_to_sims as $sim) {
+      if (!count($device_to_sims)) {
+        $sims = Sim::where([
+          ['carrier_id', $carrier_id],
+          ['company_id', $company->id]
+        ])->get();
+      } else {
+        foreach ($device_to_sims as $sim) {
           array_push($sims, $sim->sim);
+        }
       }
+      
 
     }else{
       $_sims = Sim::where(
@@ -60,7 +68,7 @@ class SimController extends BaseController
     foreach ($_sims as $sim) {
         array_push($sims, $sim);
     }
-
+    
     return $sims;
 
   }

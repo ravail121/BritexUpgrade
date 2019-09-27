@@ -280,56 +280,56 @@ class Customer extends Authenticatable
      * @param  [type] $value
      * @return [type]       
      */
-    public function getBillingAddress1Attribute($value)
-    {
-        return $value ?: 'N/A';
-    }
-
-    /**
-     * For test accounts only
-     * Customers should always have this value
-     * @param  [type] $value
-     * @return [type]       
-     */
-    // public function getShippingAddress2Attribute($value)
+    // public function getBillingAddress1Attribute($value)
     // {
     //     return $value ?: 'N/A';
     // }
 
-    /**
-     * For test accounts only
-     * Customers should always have this value
-     * @param  [type] $value
-     * @return [type]       
-     */
-    public function getBillingCityAttribute($value)
-    {
-        return $value ?: 'N/A';
-    }
+    // /**
+    //  * For test accounts only
+    //  * Customers should always have this value
+    //  * @param  [type] $value
+    //  * @return [type]       
+    //  */
+    // // public function getShippingAddress2Attribute($value)
+    // // {
+    // //     return $value ?: 'N/A';
+    // // }
 
-    /**
-     * For test accounts only
-     * Customers should always have this value
-     * @param  [type] $value
-     * @return [type]       
-     */
-    // Should be Commented the function as using it in where queries was
-    // also creating problem
-    public function getBillingStateIdAttribute($value)
-    {
-        return $value ?: 'N/A';
-    }
+    // /**
+    //  * For test accounts only
+    //  * Customers should always have this value
+    //  * @param  [type] $value
+    //  * @return [type]       
+    //  */
+    // public function getBillingCityAttribute($value)
+    // {
+    //     return $value ?: 'N/A';
+    // }
 
-    /**
-     * For test accounts only
-     * Customers should always have this value
-     * @param  [type] $value
-     * @return [type]       
-     */
-    public function getBillingZipAttribute($value)
-    {
-        return $value ?: 'N/A';
-    }
+    // /**
+    //  * For test accounts only
+    //  * Customers should always have this value
+    //  * @param  [type] $value
+    //  * @return [type]       
+    //  */
+    // // Should be Commented the function as using it in where queries was
+    // // also creating problem
+    // public function getBillingStateIdAttribute($value)
+    // {
+    //     return $value ?: 'N/A';
+    // }
+
+    // /**
+    //  * For test accounts only
+    //  * Customers should always have this value
+    //  * @param  [type] $value
+    //  * @return [type]       
+    //  */
+    // public function getBillingZipAttribute($value)
+    // {
+    //     return $value ?: 'N/A';
+    // }
 
     public function getIsTodayFiveDaysBeforeBillingAttribute()
     {
@@ -375,14 +375,13 @@ class Customer extends Authenticatable
         return Carbon::parse($billingEnd ?: $this->billing_end);
     }
 
-    public function getBillingStartDateFormattedAttribute()
-    {
-        if($this->billing_start){
-            return Carbon::parse($this->billing_start)->format('M d, Y');   
-        }
-        return 'NA';
-    }
-
+    // public function getBillingStartDateFormattedAttribute()
+    // {
+    //     if($this->billing_start){
+    //         return Carbon::parse($this->billing_start)->format('M d, Y');   
+    //     }
+    //     return 'NA';
+    // }
     public function getBillingEndDateFormattedAttribute()
     {
         if($this->billing_end){
@@ -403,4 +402,12 @@ class Customer extends Authenticatable
         }
         return $invoices;
     }
+
+    // public function getBillingEndDateFormattedAttribute()
+    // {
+    //     if($this->billing_end){
+    //         return Carbon::parse($this->billing_end)->format('M d, Y');   
+    //     }
+    //     return 'NA';
+    // }
 }

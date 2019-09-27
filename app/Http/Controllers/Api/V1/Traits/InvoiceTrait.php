@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use App\Model\SystemGlobalSetting;
 use App\Model\PendingCharge;
 use App\Model\Customer;
+use App\Model\CreditToInvoice;
 
 trait InvoiceTrait
 {

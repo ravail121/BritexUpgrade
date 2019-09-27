@@ -21,7 +21,7 @@ trait InvoiceCouponTrait
                 $order->invoice->invoiceItem()->create(
                     [
                         'subscription_id' => $subscription ? $subscription->id : 0,
-                        'product_type'    => '',
+                        'product_type'    => $this->ifMultiline($couponToProcess) ? Coupon::TYPES['customer_coupon'] : Coupon::TYPES['subscription_coupon'],
                         'product_id'      => $couponToProcess->id,
                         'type'            => InvoiceItem::TYPES['coupon'],
                         'description'     => $couponData['description'],
@@ -219,16 +219,20 @@ trait InvoiceCouponTrait
         $amount = [0];
         $isPercentage = $coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage'] ? true : false;
         foreach ($planTypes as $planType) {
+          
             if ($plan) {
                 if ($planType->sub_type != 0) {
                     if ($planType->sub_type == $plan->type) {
                         $amount[] = $isPercentage ? $planType->amount * $plan->amount_recurring / 100 : $planType->amount;
                     }
                 } else {
+                    
                     $amount[] = $isPercentage ? $planType->amount * $plan->amount_recurring / 100 : $planType->amount;
+              
                 }
             }
         }
+
         foreach ($addonTypes as $addonType) {
             foreach ($addons as $addon) {
                 if ($addon->addon_id) {
