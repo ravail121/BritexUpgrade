@@ -48,6 +48,7 @@ trait UsaEpayTransaction
             $tran->command = $command;
         }
        $tran->key         = $couponData['key'];
+       $tran->pin         = "1234";
        $tran->usesandbox  = $couponData['usesandbox'];
        $tran->card        = $request->payment_card_no;
        $tran->exp         = $request->expires_mmyy;

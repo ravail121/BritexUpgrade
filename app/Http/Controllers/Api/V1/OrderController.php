@@ -192,6 +192,9 @@ class OrderController extends BaseController
             if ($customer) {
                 $order->update(['customer_id' => $customer->id]);
                 $paidMonthlyInvoice = isset($data['paid_monthly_invoice'])? $data['paid_monthly_invoice'] : null;
+                \Log::info("TEST");
+                \Log::info($paidMonthlyInvoice);
+
             }
         }
 
@@ -211,7 +214,7 @@ class OrderController extends BaseController
 
         $this->insertOrderGroup($data, $order, $order_group);
 
-        if(isset($paidMonthlyInvoice) && isset($data['plan_id'])){
+        if(isset($paidMonthlyInvoice) && $paidMonthlyInvoice == "1" && isset($data['plan_id'])){
             $monthly_order_group = OrderGroup::create([
                 'order_id' => $order->id
             ]);

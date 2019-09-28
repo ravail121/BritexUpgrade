@@ -1,25 +1,18 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1;
-use Validator;
-use App\Classes\GenerateMonthlyInvoiceClass;
+
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
-use App\Http\Controllers\Controller;
 use App\Model\Invoice;
 use App\Model\Customer;
 use  App\Model\Subscription;
 use App\Model\InvoiceItem;
 use App\Model\PendingCharge;
 use App\Model\SubscriptionAddon;
-use App\Model\Company;
-use App\Model\CustomerCoupon;
-use App\Model\Coupon;
 use App\Model\subscriptionCoupon;
 use App\Model\Tax;
-use App\Model\Credit;
 use App\Model\CreditToInvoice;
 
 class InvoiceController extends BaseController
@@ -42,66 +35,39 @@ class InvoiceController extends BaseController
 				$cmonth = date("n");
 				 
 				$current_month_last_date = $lastdayofmonth[$cmonth];
-				//echo $current_month_last_date;
+
 				$billing_end = date("Y-m-$current_month_last_date");
-			 //echo $billing_end;
+
 				 $fivedaybefore = $current_month_last_date -5;
 				$five_day_before_billing_end = date("Y-m-$fivedaybefore");
-				//echo $five_day_before_billing_end;
 		
 				$today = date("y-m-d");
-				//$customer = Customer::where('billing_end', $billing_end )->get();
-				// $customers =  Customer::with(['company'])->where('billing_end','<=', $billing_end)->where('billing_end' ,'>=', $five_day_before_billing_end)->get();
-					//echo $customers;
-
-				//echo $billing_end. ' . ' .$five_day_before_billing_end;
 				$customers = Customer::with(['company'])->where(
 						[
 							['billing_end' , '<=' , $billing_end],
-						 // ['billing_end', '>=', $five_day_before_billing_end]
 						]
 				)->get();
 
 			 
 				foreach($customers as $customer){
-				 // echo $customer;           //echo $five_day_before_billing_end ;
 
 					if($customer->billing_end >= $five_day_before_billing_end){
 						continue;
 					}
-					 //echo $customer;
-				 // echo $customer->id;
 						$subscriptions = Subscription::where('customer_id', $customer->id)->get();
 						$pendingcharges = PendingCharge::with(['customer'])->where('customer_id' , $customer->id)->where('invoice_id' , null)->get();
-						
 
-					// echo $pendingcharges;
-					 // echo $subscriptions;
-
-						
 				 foreach ($subscriptions as $subscription){
 
 						 $_invoice = [];
-							 
-							//echo $subscription;
 							if($subscription->status= 'active' || $subscription->status = 'shipping' || $subscription->status = 'for-activation' && $pendingcharges){
-									//echo "success";
 									$invoices = Invoice::where('customer_id',$customer->id)->get();
-								 // echo $invoices;
-
 									foreach ($invoices as $invoice) {
-										//echo $invoice->start_date;
-										// echo $customer->billing_end;
-										 
 										 if($invoice->start_date > $customer->billing_end && $invoice->type!= 1){
-												//echo "success";
 												$_enddate = $customer->end_date;
 												$start_date = date ("Y-m-d", strtotime ($_enddate ."+1 days"));
-											 //echo $start_date; 
 												$end_date =date ("Y-m-d", strtotime ( $start_date ."+1 months"));
-												//echo $end_date;
 												$due_date = $customer->billing_end;
-												//echo $due_date;
 												$_invoice = Invoice::create([
 												 'end_date'=>$start_date,
 												 'start_date'=>$end_date,
@@ -131,11 +97,6 @@ class InvoiceController extends BaseController
 
 												
 												]);
-												//echo "success";
-												//echo $invoice->customer_id;
-
-											 
-
 													}
 												}
 												 
@@ -144,21 +105,15 @@ class InvoiceController extends BaseController
 							}else{
 											return respond(['subscription status or pendingcharge doesnot match']);
 									}
-						 
-												// Add to  invoiceitem
 							$_subscriptions = Subscription::with(['plan'])->where('customer_id', $subscription->customer_id)->get();
 							 
 						 foreach ($_subscriptions as $_subscription ){
-							 //echo $_subscription->id;
 						
 							
 							 
 								if($_subscription->status ='active'|| $_subscription->status = 'shipping' || $_subscription->status = 'for-activation'){
 										 $name = $_subscription->plans->name;
 										 $cost = $_subscription->plans->amount_recurring;
-											// echo $name;
-										 // echo $cost;
-										 //echo $_subscription->id;
 								}elseif($_subscription->status= 'active' && $_subscription->upgrade_downgrade_status != 'downgrade-scheduled'){
 												$name= $_subscription->plans->name;
 												$cost = $_subscription->plans->amount_recurring;
@@ -166,7 +121,6 @@ class InvoiceController extends BaseController
 								}elseif($_subscription->status= 'active' && $_subscription->upgrade_downgrade_status = 'downgrade-scheduled'){
 											$name = $_subscription->new_plan->name;
 											$cost = $_subscription->new_plan->amount_recurring;
-											// echo $cost;
 
 								}elseif($_subscription->status = 'suspended' || $_subscription->status ='closed'){
 											continue ;
@@ -187,10 +141,8 @@ class InvoiceController extends BaseController
 
 								
 							 $subscriptionaddons = SubscriptionAddon::with('subscription')->where('subscription_id' , $_subscription->id)->get();
-							 // echo $subscriptionaddons;
 								 
 							 foreach ($subscriptionaddons as $subscriptionaddon) {
-							 //echo $subscriptionaddon;
 										
 										if($subscriptionaddon->status ='removal-scheduled' || $subscriptionaddon->status = 'for-removal'){
 
@@ -198,8 +150,6 @@ class InvoiceController extends BaseController
 												 
 
 										}
-
-											 // echo $_subscription->id;
 
 										if($_subscription->plans->taxable = 1){
 												$taxable = $subscriptionaddon->addon->taxable;
@@ -245,25 +195,11 @@ class InvoiceController extends BaseController
 									 
 
 							}
-					 
-					// print_r($pendingcharge) ;
-					 
 
 					}   
-				
-					//$coupons = CustomerCoupon::where('customer_id' , $customer->id)->where('cycles_remaining', '>', 0)->get();
-					 
-					//foreach($coupons as $coupon ){
-					//   echo $coupon;
-					//}
 
 					$subscription_coupons = SubscriptionCoupon::where('subscription_id' , $_subscription->id)->where('cycles_remaining', '>', 0)->get();
 					 foreach ($subscription_coupons as $subscription_coupon) {
-						//if($coupon->class =2 || $coupon->class = 3){
-							
-						//  }
-							 
-							 
 							 $invoice_item = InvoiceItem::create([
 							'subscription_id'=>$_subscription->id,
 								'type'=> 6,
@@ -288,13 +224,6 @@ class InvoiceController extends BaseController
 							 echo $tax_rate;
 							 }
 							}
-					// $customer_company = Customer::with(['tax'])->where('company_id' , $customer->company_id)->get();
-
-
-					 // echo $customer_company;
-
-
-				
 				}
 				
 		}
@@ -329,7 +258,12 @@ class InvoiceController extends BaseController
 			$customerInvoice = Invoice::where('customer_id', $customer->id)->get();
 
 			if(isset($customerInvoice['0'])){
-				$charges = $customerInvoice->where('start_date', $customer->billing_start)->sum('subtotal');
+				$invoices = $customerInvoice->where('start_date', $customer->billing_start);
+				$charges = [0];
+				foreach ($invoices as $invoice) {
+					$charges[] = $invoice->cal_total_charges;
+				}
+				$charges = array_sum($charges);
 				$payment = $this->getPaymentAndCreditAmount($customer);
 				$pastDue = $customerInvoice->where('start_date', '<', $customer->billing_start)->sum('total_due');
 			}else{

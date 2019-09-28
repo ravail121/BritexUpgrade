@@ -119,6 +119,11 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
    'uses'=> 'SampleInvoiceGenerationController@getStatement',
 
   ]);
+
+    Route::get('/check-monthly-invoice', [
+        'as'=>'api.invoice.get',
+        'uses'=> 'InvoiceController@checkMonthlyInvoice',
+    ]);
 });
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){

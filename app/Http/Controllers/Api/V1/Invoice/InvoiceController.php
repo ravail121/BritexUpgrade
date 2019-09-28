@@ -820,4 +820,16 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
     }
 
+    public function checkMonthlyInvoice($request)
+    {
+        $date = Carbon::today()->addDays(6)->endOfDay();
+            $invoice = Invoice::where([
+                ['customer_id', $request->id],
+                ['status', Invoice::INVOICESTATUS['closed&paid'] ],
+                ['type', Invoice::TYPES['monthly']]
+            ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
+
+            return $invoice ? 1: 0;
+    }
+
 }

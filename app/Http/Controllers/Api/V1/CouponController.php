@@ -138,7 +138,7 @@ class CouponController extends Controller
             $billableSubscriptions = $billableSubscriptions->filter(function($sub) use ($multilineRestrict) {
                 return $multilineRestrict->contains($sub->plan->type);
             });
-            $totalSubscriptions = count(array_intersect(array_column($cartPlans['items'], 'type'), $multilineRestrict->toArray())) + count($billableSubscriptions);
+            $totalSubscriptions = count($cartPlans) ? count(array_intersect(array_column($cartPlans['items'], 'type'), $multilineRestrict->toArray())) + count($billableSubscriptions) : 0;
         }
         if ($coupon['multiline_min'] && $totalSubscriptions < $coupon['multiline_min']) {
             $this->failedResponse = 'Min subscriptions required: '.$coupon['multiline_min'];
@@ -167,7 +167,6 @@ class CouponController extends Controller
             return false;
         } 
         return true;
-
     }
 
     protected function appliedToAll($coupon, $id)

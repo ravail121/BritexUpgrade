@@ -50,8 +50,8 @@ class SignOnController extends BaseController
                 ['status', Invoice::INVOICESTATUS['closed&paid'] ],
                 ['type', Invoice::TYPES['monthly']]
             ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->first();
-            $user[0]['paid_monthly_invoice'] = $invoice ? 1: null;
-            
+
+            $user[0]['paid_monthly_invoice'] = $invoice ? 1: 0;
             return $this->respond($user[0]);
         }
         else{

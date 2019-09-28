@@ -316,25 +316,24 @@ trait InvoiceTrait
 
     public function ifTotalDue($order)
     {
-        $totalAmount    = $order->invoice->subtotal;
+        $totalAmount    = $order->invoice->cal_total_charges;
         $paidAmount     = $order->invoice->creditsToInvoice->sum('amount');
         $totalDue       = $totalAmount > $paidAmount ? $totalAmount - $paidAmount : 0;
-       
-        $order->invoice->update(
-            [
-                'total_due'     => $totalDue
-            ]
-        );
-        if ($totalDue) {
+        if ($totalDue > 0) {
+            $order->invoice->update([
+                    'total_due'  => str_replace(',', '',number_format($totalDue, 2)),
+                    'status' => 1 
+                ]);
             PendingCharge::create([
                 'customer_id' => $order->customer_id,
                 'subscription_id' => 0,
                 'invoice_id' => $order->invoice_id,
                 'type'  => 3,
-                'amount' => $totalDue,
+                'amount' => str_replace(',', '',number_format($totalDue)),
                 'description' => 'Pending one time payment'
             ]);
         }
+  
     }
 
     public function addShippingCharges($orderId)
