@@ -192,7 +192,7 @@ class CardController extends BaseController implements ConstantInterface
     protected function setConstantData($request)
     {
         // $request->key         = env('SOURCE_KEY');
-        // $request->usesandbox  = self::TRAN_TRUE;
+        $request->usesandbox  = false;
         $request->invoice     = self::TRAN_INVOICE;
         $request->isrecurring = self::TRAN_TRUE; 
         $request->savecard    = self::TRAN_TRUE; 
