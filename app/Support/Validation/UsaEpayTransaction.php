@@ -92,7 +92,7 @@ trait UsaEpayTransaction
            if($coupon->code == env('COUPON_CODE')) {
 
                 $data['key'] = env('SOURCE_KEY_SANDBOX');
-                $data['usesandbox'] = self::TRAN_TRUE;
+                $data['usesandbox'] = false;
 
                 return $data;
            }
@@ -100,7 +100,7 @@ trait UsaEpayTransaction
         }
         $defaultData['key'] = \Request::get('company') ?\Request::get('company')->usaepay_api_key : $order->company->usaepay_api_key;
         
-        $defaultData['usesandbox'] = self::TRAN_TRUE;
+        $defaultData['usesandbox'] = false;
         
         return $defaultData;
    }
