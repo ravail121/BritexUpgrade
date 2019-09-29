@@ -11,6 +11,10 @@ class Company extends Model
 	];
     protected $table = 'company';
 
+    protected $appends = [
+        'usaepay_live_formatted'
+    ];
+
     public function device(){
     	return $this->belongsTo('App\Model\Device')->withTrashed();
     }
@@ -43,5 +47,10 @@ class Company extends Model
     public function tax()
     {
         return $this->belongsTo('App\Model\Tax', 'company_id', 'id');
+    }
+
+    public function getUsaepayLiveFormattedAttribute()
+    {
+        return $this->usaepay_live ? false :true;
     }
 }

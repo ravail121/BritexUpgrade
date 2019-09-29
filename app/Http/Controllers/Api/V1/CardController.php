@@ -192,7 +192,7 @@ class CardController extends BaseController implements ConstantInterface
     protected function setConstantData($request)
     {
         // $request->key         = env('SOURCE_KEY');
-        $request->usesandbox  = false;
+        $request->usesandbox  = \Request::get('company')->usaepay_live_formatted;
         $request->invoice     = self::TRAN_INVOICE;
         $request->isrecurring = self::TRAN_TRUE; 
         $request->savecard    = self::TRAN_TRUE; 
