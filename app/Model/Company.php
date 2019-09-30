@@ -51,6 +51,6 @@ class Company extends Model
 
     public function getUsaepayLiveFormattedAttribute()
     {
-        return $this->usaepay_live ? false :true;
+        return (bool) !$this->usaepay_live;
     }
 }

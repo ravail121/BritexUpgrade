@@ -41,15 +41,15 @@ trait UsaEpayTransaction
    {
         $orderhash = $request->order_hash;
         $order = Order::whereHash($orderhash)->first();
-        $couponData = $this->couponData($order, $request);
+        $data = $this->couponData($order, $request);
         $this->stringReplacement($request);
 
         if($command){
             $tran->command = $command;
         }
-       $tran->key         = $couponData['key'];
-       $tran->pin         = "1234";
-       $tran->usesandbox  = $couponData['usesandbox'];
+       $tran->key         = $data['key'];
+       $tran->pin         = env('UsaEpay_PIN');
+       $tran->usesandbox  = $data['usesandbox'];
        $tran->card        = $request->payment_card_no;
        $tran->exp         = $request->expires_mmyy;
        $tran->cvv2        = $request->payment_cvc;

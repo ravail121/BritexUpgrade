@@ -423,6 +423,11 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'PaymentController@processRefund',
         ]);
 
+        Route::post('/payment-failed',[
+          'as'   => 'api.payment.failed',
+          'uses' => 'PaymentController@paymentFailed',
+        ]);
+
         Route::get('/customer-cards',[
           'as'   => 'api.get.customercards',
           'uses' => 'CardController@getCustomerCards',

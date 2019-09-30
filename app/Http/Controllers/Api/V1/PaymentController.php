@@ -13,6 +13,7 @@ use App\Model\PaymentLog;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Events\PaymentFailed;
 use App\Model\PaymentRefundLog;
 use App\Events\SendRefundInvoice;
 use App\Services\Payment\UsaEpay;
@@ -328,6 +329,12 @@ class PaymentController extends BaseController implements ConstantInterface
             'description'     =>  $type['1'],
             'taxable'         =>  '0'
         ]);
+    }
+
+    public function paymentFailed(Request $request)
+    {
+        $customer = Customer::whereId($request->id)->with('company')->first();
+        event(new PaymentFailed($customer));
     }
 }
 

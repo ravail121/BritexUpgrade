@@ -19,7 +19,7 @@ class CreatePaymentLogTable extends Migration
             $table->unsignedInteger('order_id')->nullable();
             $table->unsignedInteger('invoice_id')->default(0);
             $table->string('transaction_num')->nullable();
-            $table->bigInteger('processor_customer_num')->nullable();
+            $table->string('processor_customer_num')->nullable();
             $table->tinyInteger('status');
             $table->text('error');
             $table->integer('exp')->nullable();

@@ -820,7 +820,7 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
     }
 
-    public function checkMonthlyInvoice($request)
+    public function checkMonthlyInvoice(Request $request)
     {
         $date = Carbon::today()->addDays(6)->endOfDay();
             $invoice = Invoice::where([
