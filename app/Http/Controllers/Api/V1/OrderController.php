@@ -192,7 +192,6 @@ class OrderController extends BaseController
             if ($customer) {
                 $order->update(['customer_id' => $customer->id]);
                 $paidMonthlyInvoice = isset($data['paid_monthly_invoice'])? $data['paid_monthly_invoice'] : null;
-
             }
         }
 
