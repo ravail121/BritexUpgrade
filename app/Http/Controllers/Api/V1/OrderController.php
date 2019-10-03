@@ -74,7 +74,7 @@ class OrderController extends BaseController
                         'subscription'      => $og->subscription,
                     );
 
-                if(isset($paidMonthlyInvoice) && isset($tmp['plan']['id'])){
+                if(isset($paidMonthlyInvoice) && $paidMonthlyInvoice == "1" && isset($tmp['plan']['id'])){
                     if(in_array($og->plan_id, $newPlan)){
                         $tmp['plan']['amount_onetime'] = 0;
                         $tmp['plan']['auto_generated_plans'] = 1;
