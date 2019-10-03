@@ -20,7 +20,7 @@ class OrderController extends BaseController
 {
     public function order()
     {
-        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem')->whereHas('subscriptions', function(Builder $subscription) {
+        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem, payLog')->whereHas('subscriptions', function(Builder $subscription) {
             $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
         })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
             $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
@@ -28,7 +28,7 @@ class OrderController extends BaseController
             $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
         })->with('company')->get();
 
-        // $orders = Order::where('id', '7346')->get();
+        // $orders = Order::where('id', '6172')->get();
 
         try {
             foreach ($orders as $orderKey => $order) {
@@ -189,10 +189,12 @@ class OrderController extends BaseController
 
         $company = $order->company;
         $customer = $order->customer;
+        $payment = $order->payLog;
 
         $json = [
             "primary_id" => "BX-".$order->order_num,
             "ordered_at" => $order->created_at_format,
+            "terms" => $payment->card_type." ".$payment->last4,
             "billing" => [
                 // "subtotal" => " USD",
                 "shipping" => $shippingAmount." USD",
