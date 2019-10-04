@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use Exception;
 use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Order;
@@ -17,7 +18,6 @@ use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
-use Exception;
 
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {

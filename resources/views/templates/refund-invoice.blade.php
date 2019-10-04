@@ -24,22 +24,22 @@
                                     <tr>
                                         <td>Invoice No.</td>
                                         <td width="20px"></td>
-                                        <td class="detail">{{ $invoice['id'] }}</td>
+                                        <td class="detail">{{ $paymentRefundLog->paymentLog->invoice->id }}</td>
                                     </tr>
                                     <tr>
                                         <td>Period Beginning</td>
                                         <td width="20px"></td>
-                                        <td class="detail">@date($invoice['start_date'])</td>
+                                        <td class="detail">@date($paymentRefundLog->paymentLog->invoice->start_date)</td>
                                     </tr>
                                     <tr>
                                         <td>Period Ending</td>
                                         <td width="20px"></td>
-                                        <td class="detail">@date($invoice['end_date'])</td>
+                                        <td class="detail">@date($paymentRefundLog->paymentLog->invoice->end_date)</td>
                                     </tr>
                                     <tr>
                                         <td>Due Date</td>
                                         <td width="20px"></td>
-                                        <td class="detail">@date($invoice['due_date'])</td>
+                                        <td class="detail">@date($paymentRefundLog->paymentLog->invoice->due_date)</td>
                                     </tr>
                                 </tbody>
                             </table>

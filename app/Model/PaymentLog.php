@@ -28,6 +28,11 @@ class PaymentLog extends Model
         return $this->hasOne(Order::class);
     }
 
+    public function invoice()
+    {
+        return $this->belongsTo('App\Model\Invoice', 'invoice_id')->orderBy('id', 'desc');
+    }
+
     public function paymentRefundLog()
     {
         return $this->hasMany('App\Model\PaymentRefundLog', 'payment_log_id')->orderBy('id', 'desc');

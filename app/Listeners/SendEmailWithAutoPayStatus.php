@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use Notification;
 use App\Model\Order;
+use App\Model\Invoice;
 use App\Model\EmailTemplate;
 use App\Events\AutoPayStatus;
 use App\Listeners\EmailLayout;
@@ -42,6 +43,8 @@ class SendEmailWithAutoPayStatus
         if ($configurationSet) {
             return false;
         }
+        $invoice = Invoice::where([['customer_id', $customer->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
+        $amount = $invoice ? $invoice->subtotal : 0;
 
         $dataRow['customer'] = $customer;
 
@@ -49,12 +52,14 @@ class SendEmailWithAutoPayStatus
         ->where('code', $customer->auto_pay == '1' ? 'auto-pay-enabled' : 'auto-pay-disabled')
         ->get();
 
-        $order = Order::where('customer_id', $customer->id)->first();
+        $customer['customer_id'] = $customer->id;
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
+            $row['body'] = $this->addFieldsToBody('[total_amount_due]', $amount, $row['body']);
+
+            Notification::route('mail', $row['email'])->notify(new SendEmails($customer, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }
     }
 }
