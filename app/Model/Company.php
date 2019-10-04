@@ -53,4 +53,9 @@ class Company extends Model
     {
         return (bool) !$this->usaepay_live;
     }
+
+    public function getUrlFormattedAttribute()
+    {
+        return str_replace(['http://', 'https://', 'www.'], ['','',''], $this->url);
+    }
 }

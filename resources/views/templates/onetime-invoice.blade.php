@@ -81,7 +81,7 @@
                                             not
                                         @endif    
                                     </strong> be forwarded for automatic processing.</p>
-                                <p>2. Pay online <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">teltik.com</a></p>
+                                <p>2. Pay online <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">{{ $data['order']->company->url_formatted }}</a></p>
                             </div>
                     </div>
                     <div class="billing_detail">
@@ -328,39 +328,39 @@
                             </tr>
                             @if (!isset($ifUpgradeOrDowngradeInvoice))
                                 <tr class="tfootQ">
-                                    <td>Total</td>
-                                    <td>$ 
+                                    <td><b>Total</b></td>
+                                    <td><b>$ 
                                         @if($data['invoice']->cal_plan_charges)
                                             {{ number_format($data['invoice']->cal_plan_charges, 2) }}
                                         @endif
-                                    </td>
-                                    <td>$ 
+                                    </b></td>
+                                    <td><b>$ 
                                         @if($data['invoice']->cal_onetime)
                                             {{ number_format($data['invoice']->cal_onetime, 2) }}
                                         @endif
-                                    </td>
-                                    <td>$ 
+                                    </b></td>
+                                    <td><b>$ 
                                         @if($data['invoice']->cal_usage_charges)
                                             {{ number_format($data['invoice']->cal_usage_charges, 2) }}
                                         @endif
-                                    </td>
-                                    <td>$ 
+                                    </b></td>
+                                    <td><b>$ 
                                         @if($data['invoice']->cal_taxes)
                                             {{ number_format($data['invoice']->cal_taxes, 2) }}
                                         @endif
-                                    </td>
-                                    <td>-$ 
+                                    </b></td>
+                                    <td><b>-$ 
                                         @if($data['invoice']->cal_credits)
                                             {{ number_format($data['invoice']->cal_credits, 2) }}
                                         @endif
-                                        </td>
-                                    <td>$ 
+                                        </b></td>
+                                    <td><b>$ 
                                         @if($data['invoice']->cal_total_charges)
                                         {{ 
                                             number_format($data['invoice']->cal_total_charges, 2)
                                         }}
                                         @endif
-                                    </td>
+                                    </b></td>
                                 </tr>
                             @endisset
                             <tr>
@@ -378,7 +378,7 @@
                             <div class="container">
                                 <div class="center">
                                     <a href="#">Contact us: <td colspan="2">{{ isset($data['order']->company->support_phone_number) ? $data['order']->phoneNumberFormatted($data['order']->company->support_phone_number) : '' }}</td></a>
-                                    <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">teltik.com</a>
+                                    <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">{{ $data['order']->company->url_formatted }}</a>
                                 </div>
                             </div>
                         </div>

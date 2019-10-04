@@ -13,15 +13,6 @@ use Illuminate\Http\Request;
 |
 */
 
-// Route::get('test', function(){
-// });
-
-Route::get('test', 'Api\V1\CronJobs\OrderController@order');
-
-// Route::middleware('auth:api')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
 
 $config = [
 		'driver'   => 'smtp',

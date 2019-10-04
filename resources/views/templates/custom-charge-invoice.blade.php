@@ -49,7 +49,11 @@
                         <div style='position:absolute; left:0; right:0; margin: auto; top: 100px; border-color: transparent;' class="linksfooter">
                             <h3>Customer Info</h3>
                             <div class="customer_info">
-                                <p><span>{{ $invoice->customer['company_name'] }},</span></p>
+                                @if ($invoice->customer->company_name)
+                                    <p><span>
+                                        {{ $invoice->customer->company_name }},
+                                    </span></p>
+                                @endif
                                 <p><span>{{ $invoice->customer['full_name'] }},</span></p>
                                 <p><span>{{ $invoice->customer['shipping_address1'] }}</span></p>
                                 <p><span>{{ $invoice->customer['zip_address'] }}</span></p>
@@ -79,7 +83,7 @@
                                             not
                                         @endif    
                                     </strong> be forwarded for automatic processing.</p>
-                                <p>2. Pay online <a href="{{ isset($invoice['reseller_domain']) ? $invoice['reseller_domain'] : '' }}">teltik.pw</a></p>
+                                <p>2. Pay online <a href="{{ isset($invoice['reseller_domain']) ? $invoice['reseller_domain'] : '' }}">{{ $invoice->customer->company->url_formatted }}</a></p>
                             </div>
                     </div>
                 </div>
@@ -127,7 +131,7 @@
                             <div class="container">
                                 <div class="center">
                                     <a href="#">Contact us: {{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}</a>
-                                    <a href="{{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}">teltik.pw</a>
+                                    <a href="{{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}">{{ $invoice->customer->company->url_formatted }} </a>
                                 </div>
                             </div>
                         </div>

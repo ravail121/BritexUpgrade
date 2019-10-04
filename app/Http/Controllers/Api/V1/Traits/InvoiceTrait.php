@@ -399,6 +399,7 @@ trait InvoiceTrait
         $company = $invoice->customer->company_id;
         $path = SystemGlobalSetting::first()->upload_path;
         $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.$encryptedId;
+        return view('templates/custom-charge-invoice', compact('invoice'));
         $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
         $this->saveInvoiceFile($pdf, $fileSavePath);
     }
