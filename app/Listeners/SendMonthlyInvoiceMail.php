@@ -78,7 +78,7 @@ class SendMonthlyInvoiceMail
             }else{
                 $email = $customer->email;
             }
-            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $$this->order->customer->business_verification_id, $templateVales, $note));
+            Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $this->order->customer->business_verification_id, $templateVales, $note));
         }          
     }
 

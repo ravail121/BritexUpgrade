@@ -131,7 +131,7 @@
                             <div class="container">
                                 <div class="center">
                                     <a href="#">Contact us: {{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}</a>
-                                    <a href="{{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}">{{ $$invoice->customer->company->url_formatted }}</a>
+                                    <a href="{{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}">{{ $invoice->customer->company->url_formatted }}</a>
                                 </div>
                             </div>
                         </div>
