@@ -17,9 +17,12 @@ class CustomerPlanController extends BaseController
     public function get(Request $request){
 
         if ($request->hash) {
-    	    $customerId = Customer::whereHash($request->hash)->first(['id']);
-
-            return $this->respond(['customer-plans' => $this->getSubscriptions($customerId['id'])]);
+    	    $customer = Customer::whereHash($request->hash)->with('tax')->first();
+            $subscriptionDetails = $this->getSubscriptions($customer);
+            return $this->respond([
+                'customer-plans' => $subscriptionDetails[0],
+                'monthlyAmountDetails' => $subscriptionDetails[1],
+            ]);
         } else {
             return [
                 'error' => true
@@ -27,11 +30,53 @@ class CustomerPlanController extends BaseController
         }
     }
 
-    public function getSubscriptions($customerId){
+    public function getSubscriptions($customer){
 
-    	$subscriptions = Subscription::with('plan', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customerId)->orderBy('id', 'desc')->get();
-    	
-    	return $subscriptions;
+    	$subscriptions = Subscription::with('plan', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
+
+        $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer->tax->rate);
+
+    	return [$subscriptions, $subscriptionPriceDetails];
+    }
+
+    private function getSubscriptionPriceDetails($subscriptions, $rate)
+    {
+        $subtotal = $stateTax = $regulatoryFee = 0;
+        $rate = $rate/100;
+
+        foreach ($subscriptions as $key => $subscription) {
+            if($subscription->status == Subscription::STATUS['active']){
+                $subtotal += $subscription->plan->amount_recurring;
+                if($subscription->plan->taxable){
+                    $stateTax += $subscription->plan->amount_recurring * $rate;
+                }
+                if($subscription->plan->regulatory_fee_type == "1"){
+                    $regulatoryFee += $subscription->plan->regulatory_fee_amount;
+                }else{
+                    $regulatoryFee += $subscription->plan->amount_recurring * ($subscription->plan->regulatory_fee_amount/100 );
+                }
+
+                if( isset($subscription->subscription_addon_not_removed[0]) ){
+                    foreach ($subscription->subscription_addon_not_removed->addons as $addon) {
+                        $subtotal += $addon->amount_recurring;
+                        if($addon->taxable){
+                            $stateTax += $addon->amount_recurring * $rate;
+                        }
+                    }
+                }
+            }
+        }
+        $subtotal = $this->toTwoDecimals($subtotal);
+        $stateTax = $this->toTwoDecimals($stateTax);
+        $regulatoryFee = $this->toTwoDecimals($regulatoryFee);
+
+        $monthlyTotalAmount = $subtotal + $stateTax + $regulatoryFee;
+        return [
+            'subtotal'      => $subtotal,
+            'stateTax'      => $stateTax,
+            'regulatoryFee' => $regulatoryFee,
+            'monthlyTotalAmount' => $monthlyTotalAmount
+        ];
     }
 
     public function updatePort(Request $request)
@@ -68,5 +113,10 @@ class CustomerPlanController extends BaseController
             return $this->respond('sucessfully Updated');
         }
         
+    }
+
+    protected static function toTwoDecimals($amount)
+    {
+        return number_format((float)$amount, 2, '.', '');
     }
 }
