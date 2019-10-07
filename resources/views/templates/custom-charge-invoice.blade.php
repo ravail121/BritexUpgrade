@@ -46,9 +46,9 @@
                         </div>
                         <br><br><br><br>
                         <!-- Customer Info -->
-                        <div style='position:absolute; left:0; right:0; margin: auto; top: 100px; border-color: transparent;' class="linksfooter">
+                        <div style='position:absolute; left:0; right:0; margin: auto; top: 75px; border-color: transparent;' class="linksfooter">
                             <h3>Customer Info</h3>
-                            <div class="customer_info">
+                            <div class="customer_info" style='margin-top: 5px;'>
                                 @if ($invoice->customer->company_name)
                                     <p><span>
                                         {{ $invoice->customer->company_name }},
@@ -60,9 +60,9 @@
                             </div>
                         </div>
                         
-                        <div style='position:absolute; right:15px; margin: auto; top: 100px; border-color: transparent; box-shadow:none;' class="bill_info">
+                        <div style='position:absolute; right:15px; margin: auto; top: 65px; border-color: transparent; box-shadow:none;' class="bill_info">
                             <h2>Date</h2>
-                            <h3>{{ $invoice->createdAtFormatted }}</h3>
+                            <h3 style='margin-top: 10px;'>{{ $invoice->createdAtFormatted }}</h3>
                         </div>
                     
                         <div class="info">

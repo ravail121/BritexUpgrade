@@ -180,7 +180,7 @@ trait InvoiceTrait
                     event(new UpgradeDowngradeInvoice($order, $generatePdf));
                     $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                     return $generatePdf->download('Invoice.pdf');
-                } else {    
+                } else {
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
                 }
             } else {   
