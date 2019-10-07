@@ -16,7 +16,6 @@ use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Model\CreditToInvoice;
 use App\Model\OrderGroupAddon;
 use App\Model\SystemGlobalSetting;
 use App\Model\CustomerStandaloneSim;
@@ -474,8 +473,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $this->addActivationCharges(
                     $subscription, 
                     $invoiceItem->invoice,
-                    self::DESCRIPTION,
-                    self::TAX_FALSE
+                    self::DESCRIPTION
                 );   
             }
 

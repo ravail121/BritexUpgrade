@@ -72,8 +72,9 @@ trait InvoiceTrait
         $taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
 
         if ($taxPercentage > 0) {
-            $taxesWithSubscriptions = $subscription->invoiceItemDetail->where('taxable', 1)->sum('amount');
-
+            $taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
+            $taxesWithSubscriptions = $taxableItems->sum('amount');
+            // $taxesForActivationFee  = $taxableItems->where('type', InvoiceItem::INVOICE_ITEM_TYPES['plan_charges']);
             if ($taxesWithSubscriptions > 0) {
                 $subscription->invoiceItemDetail()->create(
                     [
@@ -121,9 +122,10 @@ trait InvoiceTrait
         }
     }
 
-    public function addActivationCharges($subscription, $invoice, $description, $isTaxable)
+    public function addActivationCharges($subscription, $invoice, $description)
     {
-        $activationFee = Plan::find($subscription->plan_id)->amount_onetime;
+        $plan = $subscription->plan;
+        $activationFee = $plan->amount_onetime;
         if ($activationFee > 0) {
             $subscription->invoiceItemDetail()->create([
                 'invoice_id'   => $invoice->id,
@@ -133,7 +135,7 @@ trait InvoiceTrait
                 'start_date'   => $invoice->start_date,
                 'description'  => $description,
                 'amount'       => $activationFee,
-                'taxable'      => $isTaxable, 
+                'taxable'      => $plan->taxable, 
             ]);
 
         }

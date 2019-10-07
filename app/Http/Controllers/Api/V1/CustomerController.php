@@ -30,19 +30,18 @@ class CustomerController extends BaseController
 				'billing_fname'      => 'required|string',
 				'billing_lname'      => 'required|string',
 				'billing_address1'   => 'required|string',
-				'billing_address2'   => 'required|string',
+				'billing_address2'   => 'nullable|string',
 				'billing_city'       => 'required|string',
 				'billing_zip'		 => 'required|string',
-				'id'        		 => 'required'
 			]);
 			$customer = Customer::find($request->id);
 			if ($validate) {
 				$customer->update($validate);
+				!$request->billing_address2 ? $customer->update(['billing_address2' => '']) : null;
 				return ['success' => 'Details Added', 'id' => $customer->billing_state_id];
 			}
 			return false;
 		}
-
 		if ($request->customer_id) {
 				if($request->fname){
 
