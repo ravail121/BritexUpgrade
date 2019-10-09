@@ -133,7 +133,6 @@ Route::middleware('APIToken')->group(function () {
       {
         Route::get('/', [
           'as' => 'api.orders.list',
-          //'middleware' => 'auth:api',
           'uses' => 'OrderController@get',
         ]);
         

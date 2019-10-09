@@ -26,16 +26,11 @@ class OrderController extends BaseController
         $hash = $request->input('order_hash');
         $paidMonthlyInvoice = $request->input('paid_monthly_invoice');
 
-        $order = [];
-        $ordergroups = [];
+        $order =  $ordergroups = $newPlan = [];
         
         if($hash){
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                         $query->where('hash', $hash);})->get();
-
-            if(isset($paidMonthlyInvoice)){
-                $newPlan = [];
-            }
             
             foreach($order_groups as $key => $og){
 

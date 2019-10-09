@@ -576,7 +576,7 @@ class CreateOrderTable extends Migration
            $table->text('product_type');
            $table->integer('product_id')->nullable();
            $table->integer('type');
-           $table->date('start_date');
+           $table->date('start_date')->nullable();
            $table->text('description');
            $table->double('amount');
            $table->tinyinteger('taxable');

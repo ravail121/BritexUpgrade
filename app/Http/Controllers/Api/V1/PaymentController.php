@@ -225,7 +225,7 @@ class PaymentController extends BaseController implements ConstantInterface
         $request->headers->set('authorization', $customer->company->api_key);
         if($this->tran->Process()) {
             $status = PaymentRefundLog::STATUS['success'];
-            $amount = $data['credit'] == '1' ? 0: $this->tran->amount;
+            $amount = $this->tran->amount;
             $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request->staff_id);
             if($invoice){
                 $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
@@ -294,9 +294,6 @@ class PaymentController extends BaseController implements ConstantInterface
             unset ($invoiceData['id'], $invoiceData['created_at'], $invoiceData['updated_at']);
             $invoiceData['type']         = Invoice::TYPES['one-time'];
             $invoiceData['status']       = self::DEFAULT_VALUE;
-            // $invoiceData['start_date']   = $this->carbon->toDateString(),
-            // $invoiceData['end_date']     = $this->carbon->addMonth()->subDay()->toDateString(),
-            // $invoiceData['due_date']     = $this->carbon->subDay()->toDateString(),
             $invoiceData['staff_id']     = $staffId;
             $invoiceData['subtotal']     = $amount;
             $invoiceData['total_due']    = self::DEFAULT_DUE;
@@ -323,10 +320,9 @@ class PaymentController extends BaseController implements ConstantInterface
         return InvoiceItem::create([
             'invoice_id'      =>  $invoice->id,
             'product_type'    =>  "refund",
-            'start_date'      =>  Carbon::now(),
             'type'            =>  InvoiceItem::TYPES[$type['0']],
             'amount'          =>  $this->tran->amount,
-            'description'     =>  $type['1'],
+            'description'     =>  'Refund',
             'taxable'         =>  '0'
         ]);
     }
