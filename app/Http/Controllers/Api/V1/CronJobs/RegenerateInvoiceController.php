@@ -133,9 +133,8 @@ class RegenerateInvoiceController extends Controller
                         $taxOnAmount[] = $addon->taxable ? $addon->amount_recurring : 0;
                     }
                 }
-
                 // If tax != 0, insert tax.
-                $taxRate = array_sum($taxOnAmount) ? array_sum($taxOnAmount) * $customer->tax->rate / 100 : 0;
+                $taxRate = array_sum($taxOnAmount) ? array_sum($taxOnAmount) * $customer->stateTax->rate / 100 : 0;
                 $taxRate ? $this->taxesAndFeesAmount($invoice, $subscription, $taxRate, self::FEE_TYPES['taxes'], self::FEE_DESCRIPTION['taxes']) : null;               
             }
         }
