@@ -221,7 +221,6 @@ trait InvoiceTrait
 
     public function dataForInvoice($order)
     {                                    
-
         $invoice = [
             'order'                         =>   $order,
             'invoice'                       =>   $order->invoice,

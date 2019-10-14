@@ -214,7 +214,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             if ($request->order_hash) {
                 $order = Order::where('hash', $request->order_hash)->first();
                 // $fileSavePath = $path.'/uploads/'.$companyId.'/invoice-pdf/';
-                return $this->generateInvoice($order);
+                return $this->generateInvoice($order, $request);
                 // return response()->download($fileSavePath.$order->hash.'.pdf', 'Invoice.pdf');
             } elseif ($request->invoice_hash) {
                 // return bin2hex($request->invoice_hash);

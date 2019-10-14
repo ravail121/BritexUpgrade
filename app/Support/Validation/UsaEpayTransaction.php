@@ -221,12 +221,12 @@ trait UsaEpayTransaction
             ])->count();
 
             if($count == 0){
-                $this->updateSubscription($customer);
+                $this->updateSub($customer);
             }
         }
     }
 
-    protected function updateSubscription($customer)
+    protected function updateSub($customer)
     {
         $subscription = Subscription::where('customer_id', $customer->id)->get();
         $suspendedSubscriptions = $subscription->where('status', Subscription::STATUS['suspended']);
