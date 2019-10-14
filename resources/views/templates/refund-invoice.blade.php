@@ -27,19 +27,9 @@
                                         <td class="detail">{{ $paymentRefundLog->paymentLog->invoice->id }}</td>
                                     </tr>
                                     <tr>
-                                        <td>Period Beginning</td>
+                                        <td>Original Charge Date</td>
                                         <td width="20px"></td>
-                                        <td class="detail">@date($paymentRefundLog->paymentLog->invoice->start_date)</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Period Ending</td>
-                                        <td width="20px"></td>
-                                        <td class="detail">@date($paymentRefundLog->paymentLog->invoice->end_date)</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Due Date</td>
-                                        <td width="20px"></td>
-                                        <td class="detail">@date($paymentRefundLog->paymentLog->invoice->due_date)</td>
+                                        <td class="detail">@date($paymentRefundLog->paymentLog->created_at)</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -83,7 +73,7 @@
                                             not
                                         @endif    
                                     </strong> be forwarded for automatic processing.</p>
-                                <p>2. Pay online <a href="{{ isset($invoice['reseller_domain']) ? $invoice['reseller_domain'] : '' }}">{{ $invoice->customer->company->url_formatted }}</a></p>
+                                <p>2. Pay online <a href="{{ $invoice->customer->company->url }}">{{ $invoice->customer->company->url_formatted }}</a></p>
                             </div>
                     </div>
                 </div>
@@ -130,8 +120,8 @@
                         <div class="footer">
                             <div class="container">
                                 <div class="center">
-                                    <a href="#">Contact us: {{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}</a>
-                                    <a href="{{ isset($invoice['reseller_phone_number']) ? $invoice['reseller_phone_number'] : '' }}">{{ $invoice->customer->company->url_formatted }}</a>
+                                    <a href="#">{{ $invoice->customer->company->support_phone_formatted ? 'Contact us: &nbsp;'. $invoice->customer->company->support_phone_formatted : '' }}</a>
+                                    <a href="{{ $invoice->customer->company->url }}">{{ $invoice->customer->company->url_formatted }}</a>
                                 </div>
                             </div>
                         </div>

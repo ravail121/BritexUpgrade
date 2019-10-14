@@ -184,8 +184,8 @@ class CreateOrderTable extends Migration
             $table->integer('max_uses');
             $table->integer('num_uses');
             $table->tinyinteger('stackable');
-            $table->datetime('start_date');
-            $table->datetime('end_date');
+            $table->datetime('start_date')->nullable();
+            $table->datetime('end_date')->nullable();
             $table->integer('multiline_min')->nullable();
             $table->integer('multiline_max')->nullable();
             $table->tinyinteger('multiline_restrict_plans')->nullable();

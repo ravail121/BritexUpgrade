@@ -15,7 +15,6 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\PaymentFailed;
 use App\Model\PaymentRefundLog;
-use App\Events\SendRefundInvoice;
 use App\Services\Payment\UsaEpay;
 use App\Model\CustomerCreditCard;
 use App\Model\SystemGlobalSetting;
@@ -241,7 +240,7 @@ class PaymentController extends BaseController implements ConstantInterface
                 $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
             }
             $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice->id);
-            $this->generateRefundInvoice($invoice, $this->tran, $paymentLog);
+            $this->generateRefundInvoice($invoice, $paymentLog);
         }else {
             
             $status = PaymentRefundLog::STATUS['fail'];
@@ -254,25 +253,6 @@ class PaymentController extends BaseController implements ConstantInterface
             'paymentRefundLog'=> $paymentRefundLog,
             'message' => $msg
         ]); 
-    }
-
-    public function generateRefundInvoice($invoice, $tran, $paymentLog)
-    {
-        $invoice = Invoice::where('id', $invoice->id)->with('customer', 'invoiceItem')->first();
-
-        $paymentRefundLog = PaymentRefundLog::where('invoice_id', $invoice->id)->with('paymentLog')->first();
-        
-        if($paymentRefundLog){
-            $pdf = PDF::loadView('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
-            $companyId = \Request::get('company')->id;
-            $systemGlobalSetting = SystemGlobalSetting::first();
-            $invoivePath = '/uploads/'.$companyId.'/non-order-invoice-pdf/'.bin2hex('invoice='.$invoice->id);
-            $fileSavePath = $systemGlobalSetting->upload_path.$invoivePath;
-            $this->saveInvoiceFile($pdf, $fileSavePath);
-            event(new SendRefundInvoice($paymentLog, $invoice, $pdf));
-        }else{
-            return 'Sorry, we could not find any refund Invoice';
-        }
     }
 
     protected function createPaymentRefundLog($paymentLog, $status, $invoiceId = null)

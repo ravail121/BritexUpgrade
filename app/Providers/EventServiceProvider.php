@@ -72,7 +72,11 @@ class EventServiceProvider extends ServiceProvider
 
         'App\Events\UpgradeDowngradeInvoice' => [
             'App\Listeners\SendUpgradeDowngradeInvoice'
-        ]
+        ],
+
+        'App\Events\AccountUnsuspended' => [
+            'App\Listeners\SendAccountUnsuspendedMail',
+        ],
     ];
 
     /**

@@ -15,6 +15,7 @@ class Invoice extends Model implements ConstantInterface
     ];
 
     const INVOICESTATUS = [
+        'closed&upaid'  => 0,
         'open'          => 1,
         'closed'        => 2,
         'closed&paid'   => 2,
@@ -363,5 +364,14 @@ class Invoice extends Model implements ConstantInterface
         return $this->invoiceItem()->usedCoupon();
     }
 
+    public function refundLog()
+    {
+        return $this->hasOne('App\Model\PaymentRefundLog');
+    }
+
+    public function paymentLog()
+    {
+        return $this->hasOne('App\Model\PaymentLog');
+    }
 
 }

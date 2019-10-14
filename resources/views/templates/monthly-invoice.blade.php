@@ -377,10 +377,9 @@
 
 
 @include('templates.test-statement')
+
 @if (count($subscriptions))
     @foreach ($subscriptions as $index => $subscription)
-        
         @include('templates.test-statement-2-monthly')
-
     @endforeach
 @endif

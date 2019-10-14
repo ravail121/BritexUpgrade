@@ -194,33 +194,38 @@ class InvoiceController extends BaseController implements ConstantInterface
         }else{
             $order = Order::hash($request->order_hash)->first();
         }
-        return $this->generateInvoice($order, $fileSavePath);
+        return $this->generateInvoice($order);
     }
 
     public function downloadInvoice($companyId, Request $request)
     {
-        $path = SystemGlobalSetting::first()->upload_path;
-        $fileSavePath = $path.'/uploads/'.$companyId;
+        // $path = SystemGlobalSetting::first()->upload_path;
+        // $fileSavePath = $path.'/uploads/'.$companyId;
 
-        if($request->order_hash){
-            $fileSavePath = $fileSavePath.'/invoice-pdf/'.$request->order_hash.'.pdf';
-        }elseif($request->invoice_hash){
-            $fileSavePath = $fileSavePath.'/non-order-invoice-pdf/'.$request->invoice_hash.'.pdf';
-        }
+        // if($request->order_hash){
+        //     $fileSavePath = $fileSavePath.'/invoice-pdf/'.$request->order_hash.'.pdf';
+        // }elseif($request->invoice_hash){
+        //     $fileSavePath = $fileSavePath.'/non-order-invoice-pdf/'.$request->invoice_hash.'.pdf';
+        // }
 
-        if (file_exists($fileSavePath)) {
-            return response()->download($fileSavePath, 'Invoice.pdf');
-        } else {
+        // if (file_exists($fileSavePath)) {
+        //     return response()->download($fileSavePath, 'Invoice.pdf');
+        // } else {
             if ($request->order_hash) {
                 $order = Order::where('hash', $request->order_hash)->first();
-                $fileSavePath = $path.'/uploads/'.$companyId.'/invoice-pdf/';
-                $this->generateInvoice($order, $fileSavePath);
-                return response()->download($fileSavePath.$order->hash.'.pdf', 'Invoice.pdf');
+                // $fileSavePath = $path.'/uploads/'.$companyId.'/invoice-pdf/';
+                return $this->generateInvoice($order);
+                // return response()->download($fileSavePath.$order->hash.'.pdf', 'Invoice.pdf');
             } elseif ($request->invoice_hash) {
-                $this->regenerateRefundInvoice($request->invoice_hash);
-                return response()->download($fileSavePath, 'Invoice.pdf');
+                // return bin2hex($request->invoice_hash);
+                // return pack("H*",$request->invoice_hash);
+                $invoice = Invoice::find(pack("H*",$request->invoice_hash));
+
+                $transactionNumber = $invoice->refundLog ? $invoice->refundLog->transaction_num : null;
+                return $this->generateRefundInvoice($invoice, $transactionNumber, true);
+                // return response()->download($fileSavePath, 'Invoice.pdf');
             }
-        }
+        // }
         return 'Sorry, invoice not found.';
     }
 

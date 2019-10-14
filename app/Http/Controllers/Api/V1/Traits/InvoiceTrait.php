@@ -19,6 +19,8 @@ use App\Model\SystemGlobalSetting;
 use App\Model\PendingCharge;
 use App\Model\Customer;
 use App\Model\CreditToInvoice;
+use App\Model\PaymentRefundLog;
+use App\Events\SendRefundInvoice;
 
 trait InvoiceTrait
 {
@@ -166,50 +168,47 @@ trait InvoiceTrait
         }
     }
 
-    public function generateInvoice($order, $fileSavePath, $request = null)
+    public function generateInvoice($order, $request = null)
     {
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
             $data = $this->dataForInvoice($order);
-            
             if ($order->invoice->type == Invoice::TYPES['one-time']) {
                 $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
                     event(new UpgradeDowngradeInvoice($order, $generatePdf));
-                    $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
+                    // $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                     return $generatePdf->download('Invoice.pdf');
                 } else {
+                    // return View('templates/onetime-invoice', compact('data'));
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
                 }
             } else {   
                 $subscriptions = $this->subscriptionData($order);
+                
                 if (!$subscriptions) {
                     return 'Api error: missing subscriptions data';
                 }
+                // return View('templates/monthly-invoice', compact('data', 'subscriptions'));
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                        
             }
 
-            $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash); // To save the generated pdf
+            // $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash); // To save the generated pdf
 
             $request ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
 
             return $generatePdf->download('Invoice.pdf'); //To trigger the old generate and download logic
 
         } else {
-
             return 'Sorry, we could not find the details for your invoice';
-
         }
-
-        
         return 'Sorry, something went wrong please try again later......';
     }
 
     public function saveInvoiceFile($generatePdf, $fileSavePath)
     {
-        
         try {
             if (!file_exists($fileSavePath.'.pdf')) {
                 
@@ -392,18 +391,21 @@ trait InvoiceTrait
         return true;
     }
 
-    public function regenerateRefundInvoice($encryptedId)
-    {
-        $decryptedId = pack("H*",$encryptedId);
-        $invoiceId   = substr($decryptedId, strpos($decryptedId, "=") + 1);
-        $invoice = Invoice::where('id', $invoiceId)->with('customer', 'invoiceItem')->first();
+    // public function regenerateRefundInvoice($encryptedId)
+    // {
+    //     $decryptedId = pack("H*",$encryptedId);
+    //     $invoiceId   = substr($decryptedId, strpos($decryptedId, "=") + 1);
+    //     $invoice = Invoice::where('id', $invoiceId)->with('customer', 'invoiceItem')->first();
 
-        $company = $invoice->customer->company_id;
-        $path = SystemGlobalSetting::first()->upload_path;
-        $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.$encryptedId;
-        $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
-        $this->saveInvoiceFile($pdf, $fileSavePath);
-    }
+    //     $company = $invoice->customer->company_id;
+    //     $path = SystemGlobalSetting::first()->upload_path;
+    //     // $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.$encryptedId;
+    //     $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
+        
+    //     // $this->saveInvoiceFile($pdf, $fileSavePath);
+    //     return view('templates/custom-charge-invoice', compact('invoice'));
+    //     return $pdf->download('Invoice.pdf');
+    // }
 
     public function availableCreditsAmount($id)
     {
@@ -439,12 +441,33 @@ trait InvoiceTrait
 
                 } 
                 
-
-                
             }
         }
         
     }
-    
+
+    public function generateRefundInvoice($invoice, $paymentLog, $stopMail = true)
+    {
+        $invoice = Invoice::where('id', $invoice->id)->with('customer', 'invoiceItem')->first();
+        if (!$invoice) {
+            return 'Error: Missing data';
+        }
+
+        $paymentRefundLog = PaymentRefundLog::where('invoice_id', $invoice->id)->with('paymentLog')->first();
+        if($paymentRefundLog){
+            $pdf = PDF::loadView('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
+            // $companyId = \Request::get('company')->id;
+            // $systemGlobalSetting = SystemGlobalSetting::first();
+            // $invoivePath = '/uploads/'.$companyId.'/non-order-invoice-pdf/'.bin2hex('invoice='.$invoice->id);
+            // $fileSavePath = $systemGlobalSetting->upload_path.$invoivePath;
+            // $this->saveInvoiceFile($pdf, $fileSavePath);
+            !$stopMail ? event(new SendRefundInvoice($paymentLog, $invoice, $pdf)) : null;
+            // return view('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
+            return $pdf->download('Invoice.pdf');
+        }
+        $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
+        
+        return $pdf->download('Invoice.pdf');
+    }
 
 }

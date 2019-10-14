@@ -282,7 +282,7 @@ class CardController extends BaseController implements ConstantInterface
 
                         $request->replace([
                             'credit_card_id' => $card->id,
-                            'amount'         => $customer['mounthlyInvoice']['subtotal'],
+                            'amount'         => $customer['mounthlyInvoice']['total_due'],
                             'order_hash'    => $invoice->order->hash,
                         ]);
 

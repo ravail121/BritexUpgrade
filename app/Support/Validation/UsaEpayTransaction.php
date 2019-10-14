@@ -3,6 +3,7 @@
 namespace App\Support\Validation;
 
 use Validator;
+use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Coupon;
 use App\Model\Credit;
@@ -10,7 +11,9 @@ use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\PaymentLog;
 use App\Model\OrderCoupon;
+use App\Model\Subscription;
 use App\Model\CustomerCreditCard;
+use App\Events\AccountUnsuspended;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\CreditCardRequest;
 
@@ -162,19 +165,119 @@ trait UsaEpayTransaction
     protected function transactionSuccessfulWithoutOrder($request, $tran)
     {
         $credit = $this->createCredits($request, $tran, $request->description);
-        $invoice = Invoice::where([['customer_id', $request->customer_id],[ 'status', '<>', '2']])->first();
-        
-        if($invoice){
-            $this->addCreditToInvoiceRow($invoice, $credit ,$tran);
+        $tranAmount = $tran->amount;
+        $invoices = Invoice::where([
+            ['customer_id', $request->customer_id],
+            ['status', Invoice::INVOICESTATUS['open']]
+        ])->get();
+
+        $date = Carbon::today()->subDays(31)->endOfDay();
+        $closedInvoice = Invoice::where([
+            ['customer_id', $request->customer_id],
+            ['status', Invoice::INVOICESTATUS['closed&upaid']]
+        ])->whereBetween('start_date', [$date, Carbon::today()->startOfDay()])->get()->last();
+
+        if($closedInvoice){
+            $invoices->push($closedInvoice);
         }
+        if($invoices[0]){
+            foreach ($invoices as $key => $invoice) {
+                if($invoice->total_due == $tranAmount){
+                    $this->updateCredit(1 ,$credit);
+                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
+                    $this->updateInvoice($invoice ,0, Invoice::INVOICESTATUS['closed&paid']);
+
+                    break;
+                }else if($invoice->total_due < $tranAmount){
+                    $this->updateCredit(0 ,$credit);
+                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $invoice->total_due);
+                    $tranAmount -= $invoice->total_due;
+                    $this->updateInvoice($invoice ,0, Invoice::INVOICESTATUS['closed&paid']);
+
+                }else if($invoice->total_due > $tranAmount){
+                    $this->updateCredit(1 ,$credit);
+                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
+                    $leftAmount = $invoice->total_due - $tranAmount;
+                    $this->updateInvoice($invoice ,$leftAmount, $invoice->status);
+
+                    break;
+                }
+            }
+        $this->accountSuspendedAccount( $request->customer_id);
+        }
+
         $response = response()->json(['success' => true, 'transaction' => $tran]);
 
         return $response;
     }
 
+    protected function accountSuspendedAccount($customerId)
+    {
+        $customer = Customer::find($customerId);
+        if($customer->account_suspended){
+            $count = Invoice::where([
+                ['customer_id', $customer->id],
+                ['status', '!=', Invoice::INVOICESTATUS['closed']]
+            ])->count();
+
+            if($count == 0){
+                $this->updateSubscription($customer);
+            }
+        }
+    }
+
+    protected function updateSubscription($customer)
+    {
+        $subscription = Subscription::where('customer_id', $customer->id)->get();
+        $suspendedSubscriptions = $subscription->where('status', Subscription::STATUS['suspended']);
+        $pastDueSubscriptions = $subscription->where('sub_status', Subscription::SUB_STATUSES['account-past-due']);
+
+        foreach ($suspendedSubscriptions as $key => $suspendedSubscription) {
+            $suspendedSubscription->update([
+                'status'     => Subscription::STATUS['active'],
+                'sub_status' => Subscription::SUB_STATUSES['for-restoration'],
+            ]); 
+        }
+
+        foreach ($pastDueSubscriptions as $key => $pastDueSubscription) {
+            $pastDueSubscription->update([
+                'sub_status' => '',
+            ]);
+        }
+
+        $customer->update([
+            'account_suspended' => 0,
+        ]);
+        event(new AccountUnsuspended($customer));
+    }
 
 
+    protected function updateInvoice($invoice ,$amount, $status)
+    {
+        $invoice->update( [
+            'total_due' => $amount,
+            'status'    => $status,
+        ] );
+    }
 
+    protected function updateCredit($applied ,$credit)
+    {
+        $credit->update( [
+            'applied_to_invoice' => $applied,
+            'description' => "$credit->description (One Time New Invoice)",
+        ] );
+    }
+
+    public function addCreditToInvoiceRowNonOrder($invoice, $credit, $amount)
+    {        
+        return $credit->usedOnInvoices()->create([
+            'invoice_id'  => $invoice->id,
+            'amount'      => $amount,
+            'description' => "{$invoice->subtotal} applied on invoice id {$invoice->id}",
+        ]);
+
+        return Credit::create($credit);
+    }
 
     /**
      * This function inserts data to payment_logs table and returns error message
@@ -277,11 +380,10 @@ trait UsaEpayTransaction
         if (!$request->card_id) {
             $customerCreditCard = CustomerCreditCard::where('customer_id', $order->customer_id)->get();
             if(isset($customerCreditCard[0])){
-                $count = $customerCreditCard->where([
-                    ['expiration', $request->expires_mmyy],
-                    ['cvc', $request->payment_cvc],
-                    ['customer_id', $order->customer_id]
-                ])->count();
+                $count = $customerCreditCard
+                ->where('expiration', $request->expires_mmyy)
+                ->where('cvc', $request->payment_cvc)
+                ->count();
                 $default = 0;
             }else{
                 $count = 0;

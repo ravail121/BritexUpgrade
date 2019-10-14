@@ -58,4 +58,17 @@ class Company extends Model
     {
         return str_replace(['http://', 'https://', 'www.'], ['','',''], $this->url);
     }
+
+    public function getSupportPhoneFormattedAttribute()
+    {
+        $number = preg_replace("/[^\d]/","",$this->support_phone_number);
+    
+        $length = strlen($number);
+
+        if($length == 10) {
+            $number = preg_replace("/^1?(\d{3})(\d{3})(\d{4})$/", "$1-$2-$3", $number);
+        }
+
+        return $number;
+    }
 }
