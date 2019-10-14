@@ -275,13 +275,20 @@ trait UsaEpayTransaction
     protected function createCustomerCard($request, $order, $tran)
     {   
         if (!$request->card_id) {
-            $customerCreditCard = CustomerCreditCard::where('cardholder', $request->payment_card_holder)
-                ->where('expiration', $request->expires_mmyy)
-                ->where('cvc', $request->payment_cvc)
-                ->where('customer_id', $order->customer_id)
-                ->first();
+            $customerCreditCard = CustomerCreditCard::where('customer_id', $order->customer_id)->get();
+            if(isset($customerCreditCard[0])){
+                $count = $customerCreditCard->where([
+                    ['expiration', $request->expires_mmyy],
+                    ['cvc', $request->payment_cvc],
+                    ['customer_id', $order->customer_id]
+                ])->count();
+                $default = 0;
+            }else{
+                $count = 0;
+                $default = 1;
+            }
                 
-            if (!$customerCreditCard) {    
+            if ($count == 0) {    
                 $customerCreditCard = CustomerCreditCard::create([
                     'token'            => $tran->cardref,
                     'api_key'          => $order->company->api_key, 
@@ -289,6 +296,7 @@ trait UsaEpayTransaction
                     'cardholder'       => $request->payment_card_holder,
                     'expiration'       => $request->expires_mmyy,
                     'last4'            => $tran->last4,
+                    'default'          => $default,
                     'card_type'        => $tran->cardType,
                     'cvc'              => $request->payment_cvc,
                     'billing_address1' => $request->billing_address1, 
@@ -297,7 +305,6 @@ trait UsaEpayTransaction
                     'billing_state_id' => $request->billing_state_id, 
                     'billing_zip'      => $request->billing_zip,
                 ]);
-
                 $customer = Customer::find($order->customer_id);
                 if($request->auto_pay){
                     $customer->update(['auto_pay' => '1']);
@@ -313,16 +320,15 @@ trait UsaEpayTransaction
                         'billing_city'     => $request->billing_city, 
                         'billing_state_id' => $request->billing_state_id, 
                         'billing_zip'      => $request->billing_zip,
-
                     ]);
                 }
                 return ['card' => $customerCreditCard];
             }
         }
-
         $customerCreditCard = CustomerCreditCard::find($request->card_id);
         return ['card' => $customerCreditCard];
     }
+
 
 
     /**

@@ -26,7 +26,7 @@ class OrderDataController extends BaseController
             
         })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
             $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
-        })->with('company')->get();
+        })->with('company')->take(30);
         
 
         foreach ($orders as $order) {

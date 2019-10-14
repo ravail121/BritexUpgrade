@@ -208,7 +208,16 @@ class CardController extends BaseController implements ConstantInterface
         ]);
 
         if($this->validateCardId($data)){
-            CustomerCreditCard::whereId($data['customer_credit_card_id'])->delete();
+            $customerCreditCard = CustomerCreditCard::find($data['customer_credit_card_id']);
+            if($customerCreditCard->default){
+                $customerCreditCard->delete();
+                $leftCustomerCreditCard = CustomerCreditCard::where('customer_id', $customerCreditCard->customer_id)->first();
+                if($leftCustomerCreditCard){
+                    $leftCustomerCreditCard->update(['default' => true ]);
+                }
+            }else{
+                $customerCreditCard->delete();
+            }
             return $this->respond(['details' => 'Card Sucessfully Deleted']);
         }
         else{
