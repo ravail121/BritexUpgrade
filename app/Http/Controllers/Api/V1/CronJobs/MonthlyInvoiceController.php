@@ -94,7 +94,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                         $couponAccount = $this->customerAccountCoupons($customer, $invoice);
 
                         $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
-
+                            
                         $monthlyCharges = $invoice->cal_total_charges;
 
                         //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
@@ -118,9 +118,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
                         $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
                         
-                        $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
+                        // $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
 
-                        $this->generateInvoice($order, $fileSavePath, $request);
+                        $this->generateInvoice($order, $request);
                         
                         /*foreach ($customer->billableSubscriptions as $billableSubscription) {
                             $this->response = $this->triggerEvent($customer);

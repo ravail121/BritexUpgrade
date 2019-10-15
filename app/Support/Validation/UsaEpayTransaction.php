@@ -180,7 +180,7 @@ trait UsaEpayTransaction
         if($closedInvoice){
             $invoices->push($closedInvoice);
         }
-        if($invoices[0]){
+        if(isset($invoices[0]) && $invoices[0]){
             foreach ($invoices as $key => $invoice) {
                 if($invoice->total_due == $tranAmount){
                     $this->updateCredit(1 ,$credit);

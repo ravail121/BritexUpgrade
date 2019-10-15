@@ -279,6 +279,7 @@ class CustomerController extends BaseController
 		$customer->update($data);
 
 		if (isset($data['auto_pay'])) {
+			$request->headers->set('authorization', $customer->company->api_key);
 				event(new AutoPayStatus($customer));
 		}
 	 
@@ -389,9 +390,10 @@ class CustomerController extends BaseController
 				]);
 				$customer = Customer::whereHash($request->hash)->first();
 
-				$customerDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan', 'orders.allOrderGroup.device','orders.allOrderGroup.sim','orders.allOrderGroup.order_group_addon.addon','orders.invoice')->find($customer['id'])->toArray();
+				$customerDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan', 'orders.allOrderGroup.device','orders.allOrderGroup.sim','orders.allOrderGroup.order_group_addon.addon','orders.invoice', 'invoice.invoiceItem')->find($customer['id'])->toArray();
 
 				foreach ($customerDetails['orders'] as $key => $order) {
+					
 						foreach ($order['all_order_group'] as $orderGroupKey => $orderGroup) {
 								if($orderGroup['plan']){
 										$customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['plan']['subscription'] = Subscription::where([['plan_id', $orderGroup['plan']['id']],['order_id', $order['id']]])->first(); 

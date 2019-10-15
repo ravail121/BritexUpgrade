@@ -309,6 +309,9 @@ class Invoice extends Model implements ConstantInterface
     {
         $value = $this->type;
         if ($this->type == 2) {
+            if ($this->invoiceItem()->where('product_type', 'refund')->count()) {
+                return 'Refund';    
+            }
             return 'One-time invoice';
         }
         return 'Monthly invoice';

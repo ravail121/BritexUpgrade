@@ -37,10 +37,13 @@ class PlanController extends BaseController
         $company = \Request::get('company');
 
         $plans = [];
-
+        
         if ($device_id = $request->input('device_id')) {
             $device = Device::find($device_id);
-            
+            $associateWithPlan = $device->associate_with_plan;
+            if ($associateWithPlan == Device::ASSOCIATE_WITH_PLAN['no_plan']) {
+                return;
+            }
             if ($device->type == 0) {
                 //Get plans from device_to_plan
                 // $device_to_plans = DeviceToPlan::with(['device', 'plan'])->where('device_id', $device_id)
