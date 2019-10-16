@@ -236,12 +236,16 @@ trait UsaEpayTransaction
             $suspendedSubscription->update([
                 'status'     => Subscription::STATUS['active'],
                 'sub_status' => Subscription::SUB_STATUSES['for-restoration'],
+                'scheduled_suspend_date' => null,
+                'account_past_due_date' => null,
             ]); 
         }
 
         foreach ($pastDueSubscriptions as $key => $pastDueSubscription) {
             $pastDueSubscription->update([
                 'sub_status' => '',
+                'scheduled_suspend_date' => null,
+                'account_past_due_date' => null,
             ]);
         }
 

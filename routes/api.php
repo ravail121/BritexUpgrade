@@ -24,6 +24,10 @@ $config = [
 
 Config::set('mail',$config);
 
+Route::get('test', function(){
+  
+});
+
 Route::get('test-email', function(Illuminate\Http\Request $request){
 	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
 			$message->from('postmaster@mg.teltik.com');

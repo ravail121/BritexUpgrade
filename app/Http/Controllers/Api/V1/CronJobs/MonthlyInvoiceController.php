@@ -153,7 +153,8 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $totalDue = $invoice->subtotal;
         if (isset($totalDue) && $totalDue) {
             foreach ($customer->creditsNotAppliedCompletely as $creditNotAppliedCompletely) {
-                $pendingCredits = $creditNotAppliedCompletely->amount;
+                $usedCredit = $creditNotAppliedCompletely->usedOnInvoices->sum('amount');
+                $pendingCredits = $creditNotAppliedCompletely->amount - $usedCredit;
                 
                 if($totalDue >= $pendingCredits){
                     $creditNotAppliedCompletely->update(['applied_to_invoice' => 1]);

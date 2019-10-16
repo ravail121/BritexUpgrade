@@ -44,7 +44,7 @@ class Invoice extends Model implements ConstantInterface
     ];
 
     protected $appends = [
-        'type_description'
+        'type_description', 'created_at_formatted_with_time'
     ];
 
 	public function order()
@@ -317,10 +317,10 @@ class Invoice extends Model implements ConstantInterface
         return 'Monthly invoice';
     }
 
-    public function getCreatedAtAttribute($value)
-    {
-        return Carbon::parse($value)->format('M-d-Y h:i A');
-    }
+    // public function getCreatedAtAttribute($value)
+    // {
+    //     return Carbon::parse($value)->format('M-d-Y h:i A');
+    // }
 
     public function getDueDateFormattedAttribute()
     {
@@ -375,6 +375,14 @@ class Invoice extends Model implements ConstantInterface
     public function paymentLog()
     {
         return $this->hasOne('App\Model\PaymentLog');
+    }
+
+    public function getCreatedAtFormattedWithTimeAttribute()
+    {
+        if($this->created_at){
+            return Carbon::parse($this->created_at)->format('M-d-Y h:i A');   
+        }
+        return 'NA';
     }
 
 }

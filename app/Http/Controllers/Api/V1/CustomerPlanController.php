@@ -31,7 +31,6 @@ class CustomerPlanController extends BaseController
     }
 
     public function getSubscriptions($customer){
-
     	$subscriptions = Subscription::with('plan', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
         $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer->tax->rate);
@@ -56,11 +55,13 @@ class CustomerPlanController extends BaseController
                     $regulatoryFee += $subscription->plan->amount_recurring * ($subscription->plan->regulatory_fee_amount/100 );
                 }
 
-                if( isset($subscription->subscription_addon_not_removed[0]) ){
-                    foreach ($subscription->subscription_addon_not_removed->addons as $addon) {
-                        $subtotal += $addon->amount_recurring;
+                if( isset($subscription->subscriptionAddonNotRemoved[0]) ){
+                    foreach ($subscription->subscriptionAddonNotRemoved as $addon) {
+                        if($addon->addons){
+                            $subtotal += $addon->addons->amount_recurring;  
+                        }
                         if($addon->taxable){
-                            $stateTax += $addon->amount_recurring * $rate;
+                            $stateTax += $addon->addons->amount_recurring * $rate;
                         }
                     }
                 }

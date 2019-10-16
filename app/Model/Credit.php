@@ -24,7 +24,7 @@ class Credit extends Model
     ];
 
     protected $appends = [
-        'type_description'
+        'type_description', 'created_at_formatted_with_time'
     ];
 
     public function scopeAppliedCompletely($query)
@@ -37,9 +37,17 @@ class Credit extends Model
         return $query->where('applied_to_invoice', 0);
     }
 
-    public function getCreatedAtAttribute($value)
+    // public function getCreatedAtAttribute($value)
+    // {
+    //     return Carbon::parse($value)->format('M-d-Y h:i A');
+    // }
+
+    public function getCreatedAtFormattedWithTimeAttribute()
     {
-        return Carbon::parse($value)->format('M-d-Y h:i A');
+        if($this->created_at){
+            return Carbon::parse($this->created_at)->format('M-d-Y h:i A');   
+        }
+        return 'NA';
     }
 
     public function getUsedCreditsAttribute()
