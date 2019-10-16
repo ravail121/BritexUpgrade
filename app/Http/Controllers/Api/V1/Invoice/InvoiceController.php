@@ -167,11 +167,11 @@ class InvoiceController extends BaseController implements ConstantInterface
         } else if ($request->status == 'Without Payment') {
             
             $this->createInvoice($request);
-            $this->generateInvoice($order, $fileSavePath, $request);
+            $this->generateInvoice($order, true, $request);
             return $this->respond($msg);
         }
 
-        return $this->generateInvoice($order, $fileSavePath, $request);
+        $this->generateInvoice($order, true, $request);
 
         return [
             'status' => $this->respond($msg), 
@@ -214,7 +214,7 @@ class InvoiceController extends BaseController implements ConstantInterface
             if ($request->order_hash) {
                 $order = Order::where('hash', $request->order_hash)->first();
                 // $fileSavePath = $path.'/uploads/'.$companyId.'/invoice-pdf/';
-                return $this->generateInvoice($order, $request);
+                return $this->generateInvoice($order, false, $request);
                 // return response()->download($fileSavePath.$order->hash.'.pdf', 'Invoice.pdf');
             } elseif ($request->invoice_hash) {
                 // return bin2hex($request->invoice_hash);

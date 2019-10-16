@@ -250,6 +250,7 @@ class Customer extends Authenticatable
         $today     = self::currentDate();
         
         $customers = self::whereNotNull('billing_end')
+                        ->whereNotNull('billing_state_id')
                         // doesntHave needs to be before
                         // any other where condition
                         ->doesntHave('generatedInvoiceOfNextMonth')

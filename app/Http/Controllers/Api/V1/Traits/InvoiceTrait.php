@@ -168,7 +168,7 @@ trait InvoiceTrait
         }
     }
 
-    public function generateInvoice($order, $request = null)
+    public function generateInvoice($order, $mail = false, $request = null)
     {
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
         $order = Order::find($order->id);
@@ -197,7 +197,7 @@ trait InvoiceTrait
 
             // $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash); // To save the generated pdf
 
-            $request ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
+            $request && $mail ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
 
             return $generatePdf->download('Invoice.pdf'); //To trigger the old generate and download logic
 
@@ -277,8 +277,10 @@ trait InvoiceTrait
             if ($subscription && $subscription->upgrade_downgrade_status) {
                 $addonsIds = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['feature_charges'])->pluck('product_id');
                 $planData = [
-                    'name' => Plan::find($subscription->plan_id)->name,
+                    'name' => $subscription->plan->name,
                     'amount' => $order->invoice->cal_plan_only_charges,
+                    'old_plan' => isset($subscription->oldPlan->name) ? $subscription->oldPlan->name : false,
+                    'new_plan' => isset($subscription->newPlanDetail->name) ? $subscription->newPlanDetail->name : false
                 ];
 
                 $addonData = [];
@@ -302,9 +304,9 @@ trait InvoiceTrait
                     'addon_data' => $addonData,
                     'plan_data'  => $planData,
                     'total' => $order->invoice->cal_plan_charges,
-                    'phone' => $subscription->phone_number,
+                    'phone' => $subscription->phone_number_formatted,
                     'total_line' => $order->invoice->cal_total_charges,
-                    'upgrade_downgrade_status' => true
+                    'upgrade_downgrade_status' => true,
                 ];
             } else {
                 return [

@@ -33,7 +33,7 @@ class DeviceController extends Controller
 					$visibleDevices = $visibleDevices->whereIn('carrier_id', [$carrierId, '0']);
 				}
 			}
-			$visibleDevices = $visibleDevices->where('type', $plan->type);
+			$visibleDevices = $visibleDevices->where('type', $plan->type)->where('associate_with_plan', '!=', 0);
 			$visibleSims    = [];
 		}
 

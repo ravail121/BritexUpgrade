@@ -26,21 +26,37 @@
                                         <td width="20px"></td>
                                         <td class="detail">{{ $data['invoice']->id }}</td>
                                     </tr>
-                                    <tr>
-                                        <td>Period Beginning</td>
-                                        <td width="20px"></td>
-                                        <td class="detail">@date($data['order']->formatDate($data['invoice']->start_date))</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Period Ending</td>
-                                        <td width="20px"></td>
-                                        <td class="detail">@date($data['order']->formatDate($data['invoice']->end_date))</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Due Date</td>
-                                        <td width="20px"></td>
-                                        <td class="detail">@date($data['order']->formatDate($data['invoice']->due_date))</td>
-                                    </tr>
+                                    <?php 
+                                        $downgradeInvoice = false;
+                                        $upgradeInvoce = false;
+                                        if (isset($ifUpgradeOrDowngradeInvoice)) {
+                                            $downgradeInvoice = $ifUpgradeOrDowngradeInvoice['plan_data']['new_plan'];
+                                            $upgradeInvoce = $ifUpgradeOrDowngradeInvoice['plan_data']['old_plan'];
+                                        }
+                                    ?>
+                                    @if (!$downgradeInvoice) 
+                                        <tr>
+                                            <td>Period Beginning</td>
+                                            <td width="20px"></td>
+                                            <td class="detail">@date($data['order']->formatDate($data['invoice']->start_date))</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Period Ending</td>
+                                            <td width="20px"></td>
+                                            <td class="detail">@date($data['order']->formatDate($data['invoice']->end_date))</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Due Date</td>
+                                            <td width="20px"></td>
+                                            <td class="detail">@date($data['order']->formatDate($data['invoice']->due_date))</td>
+                                        </tr>
+                                    @else 
+                                        <tr>
+                                            <td>Downgrade Date</td>
+                                            <td width="20px"></td>
+                                            <td class="detail">@date($data['order']->formatDate($data['invoice']->created_at))</td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -59,7 +75,15 @@
                             </div>
                         </div>
                         <div style='position:absolute; right:15px; margin: auto; top: 65px; border-color: transparent; box-shadow:none;' class="bill_info">
-                            <h2>Bill for</h2>
+                            <h2>
+                                @if (!$downgradeInvoice && !$upgradeInvoce)
+                                    Bill for
+                                @elseif ($downgradeInvoice)
+                                    Downgrade on
+                                @elseif ($upgradeInvoce)
+                                    Upgrade on
+                                @endif
+                            </h2>
                             <h3 style='margin-top: 10px;'>{{ $data['invoice']->dateFormatForInvoice($data['invoice']->created_at) }}</h3>
                         </div>
                         <div class="info">
@@ -268,27 +292,42 @@
                                                 @endisset
                                             </td>
                                             <td>$ @if ($subscription->cal_plan_charges) 
-                                                    {{ $subscription->cal_plan_charges }} 
+                                                    {{ 
+                                                        number_format (
+                                                            $subscription->calculateChargesForAllproducts([1, 2], $data['invoice']->id, $subscription->id), 2
+                                                        )
+                                                    }} 
                                                 @endif
                                             </td>
                                             <td>$ @if ($subscription->cal_onetime_charges)
-                                                    {{ $subscription->cal_onetime_charges }}
+                                                    {{ 
+                                                        number_format (
+                                                            $subscription->calculateChargesForAllproducts([3], $data['invoice']->id, $subscription->id), 2
+                                                        )
+                                                    }}
                                                 @endif
                                             </td>
                                             <td>$ @if ($subscription->cal_usage_charges)
-                                                    {{ $subscription->cal_usage_charges }}
+                                                    {{ number_format ( $subscription->calculateChargesForAllproducts([4], $data['invoice']->id, $subscription->id), 2) }}
                                                 @endif
                                             </td>
                                             <td>$ @if($subscription->cal_taxes)
-                                                    {{ $subscription->cal_taxes }}
+                                                    {{ number_format ($subscription->calculateChargesForAllproducts([7, 5], $data['invoice']->id, $subscription->id), 2) }}
                                                 @endif
                                             </td>
                                             <td>-$ @if($subscription->cal_credits)
-                                                    {{ $subscription->cal_credits }}
+                                                    {{ 
+                                                        number_format ( $subscription->calculateChargesForAllproducts([6, 8, 10], $data['invoice']->id, $subscription->id), 2)
+                                                    }}
                                                  @endif
                                             </td>
                                             <td>$ @if ($subscription->cal_total_charges)
-                                                    {{ number_format($subscription->cal_total_charges, 2) }}
+                                                        {{ 
+                                                            number_format(
+                                                                $subscription->totalSubscriptionCharges($data['invoice']->id, $subscription) - 
+                                                                $subscription->totalSubscriptionDiscounts($data['invoice']->id, $subscription), 2
+                                                            ) 
+                                                        }}
                                                     @else 
                                                     0.00
                                                 @endif
@@ -298,11 +337,9 @@
                                 @endif
                             @else
                                 <tr>            
-                                    <td>@isset ($subscription->phone_number) 
-                                            {{ $data['order']->phoneNumberFormatted($subscription->phone_number) }}
-                                        @else
-                                            Pending
-                                        @endisset
+                                    <td>@if ($upgradeInvoce || $downgradeInvoice)
+                                            {{ $ifUpgradeOrDowngradeInvoice['phone'] }}
+                                        @endif
                                     </td>
                                     <td>$ {{ number_format($data['invoice']->cal_plan_charges, 2) }}
                                     </td>

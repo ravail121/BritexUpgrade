@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Model\Customer;
+use Carbon\Carbon;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +50,7 @@ Route::get('/cron-jobs-regenerate-invoice', [
   'uses'=> 'Api\V1\CronJobs\RegenerateInvoiceController@regenerateInvoice',
 ]);
 
+
 // Route::get('/cron-jobs-orders', [
 //     'as'=>'api.cron.orders',
 //     'uses'=> 'Api\V1\CronJobs\OrderController@order',
@@ -58,15 +61,15 @@ Route::get('/cron-jobs-regenerate-invoice', [
 //     'uses'=> 'Api\V1\CronJobs\OrderDataController@order',
 // ]);
 
-// Route::get('/update-cron', [
-//   'as'=>'api.cron.update',
-//   'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
-// ]);
-
 Route::get('/update-cron', [
   'as'=>'api.cron.update',
-  'uses'=> 'Api\V1\CronJobs\ProcessController@processSubscriptions',
+  'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
 ]);
+
+// Route::get('/update-cron', [
+//   'as'=>'api.cron.update',
+//   'uses'=> 'Api\V1\CronJobs\ProcessController@processSubscriptions',
+// ]);
 
 
 Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){

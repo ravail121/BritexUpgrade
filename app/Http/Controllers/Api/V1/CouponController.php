@@ -15,10 +15,14 @@ use App\Model\Addon;
 use Carbon\Carbon;
 use Exception;
 use App\Model\Customer;
+use App\Model\Subscription;
+use App\Model\SubscriptionCoupon;
+use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
+use App\Model\CustomerCoupon;
 
 class CouponController extends Controller
 {
-
+    use InvoiceCouponTrait;
     const SPECIFIC_TYPES = [
         'PLAN'      =>  1,
         'DEVICE'    =>  2,
@@ -32,11 +36,33 @@ class CouponController extends Controller
     {
         try {
             $coupon = Coupon::where('code', $request->code)->first();
-            $order  = Order::find($request->order_id);
-            $customer = Customer::where('hash', $request->hash)->first();
             if (!$this->couponIsValid($coupon)) {
                 return ['error' => $this->failedResponse];
+            } 
+            if ($request->subscription_id) {
+                $subscription = Subscription::find($request->subscription_id);
+                $customer = $subscription->customerRelation;
+                if (!$this->isApplicable([], $customer->billableSubscriptionsForCoupons, $coupon)) {
+                    return ['error' => $this->failedResponse];
+                }
+                if ($this->ifMultiline($coupon)) {
+                    CustomerCoupon::create([
+                        'customer_id' => $customer->id,
+                        'coupon_id' => $coupon->id,
+                        'cycles_remaining'  => $coupon->num_cycles
+                    ]);
+                    return ['success' => 'Multiline coupon added'];
+                } else {
+                    SubscriptionCoupon::create([
+                        'subscription_id' => $subscription->id,
+                        'coupon_id' => $coupon->id,
+                        'cycles_remaining' => $coupon->num_cycles
+                    ]);
+                    return ['success' => 'Subscription coupon added'];
+                }
             } else {
+                $order  = Order::find($request->order_id);
+                $customer = Customer::where('hash', $request->hash)->first();
                 OrderCoupon::updateOrCreate([
                     'order_id' => $order->id,
                     'coupon_id' => $coupon->id

@@ -466,4 +466,5 @@ class Subscription extends Model
         return self::STATUSFORMATED[$this->status];
     }
 
+
 }

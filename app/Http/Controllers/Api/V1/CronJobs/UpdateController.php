@@ -16,9 +16,8 @@ use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
 use Exception;
 
-class UpdateController extends BaseController
+class UpdateController extends MonthlyInvoiceController
 {
-
     /**
      * Checks whether any table column needs updation
      * 
@@ -26,7 +25,7 @@ class UpdateController extends BaseController
      */
     public function checkUpdates(Request $request)
     {
-        $this->updateCustomerDates();
+        $this->updateCustomerDates($request);
         // $this->updateInvoiceStatus($request);
         $this->moveSubscriptionSuspendToClose($request);
         $this->updateProratedAmounts();
@@ -42,13 +41,17 @@ class UpdateController extends BaseController
      * 
      * @return boolean
      */
-    protected function updateCustomerDates()
+    protected function updateCustomerDates($request)
     {
         $customers = Customer::whereNotNull('billing_end')->get();
 
         foreach ($customers as $customer) {
             try {
                 if ($customer->today_greater_than_billing_end) {
+                    $openInvoice = $customer->openMonthlyInvoice;
+                    if (!$openInvoice) {
+                        $this->processMonthlyInvoice($customer, $request);
+                    }
                     $customer->update([
                         'billing_start' => $customer->add_day_to_billing_end,
                         'billing_end'   => $customer->add_month_to_billing_end,

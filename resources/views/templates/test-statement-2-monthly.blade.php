@@ -247,8 +247,10 @@
                                     <td>Regulatory</td>
                                     <td colspan="2" class="last"><a>$
                                         
-                                        @if($subscription->cal_taxes)
+                                        @if($subscription->cal_regulatory_fee)
                                             {{ number_format ($subscription->calculateChargesForAllproducts([5], $data['invoice']->id, $subscription->id), 2) }}
+                                        @else
+                                            0.00
                                         @endif
                                     
                                     </a></td>
@@ -322,15 +324,33 @@
                 <div class="credit">
                     <div class="container">
                         <div class="table-padding">
-
                             <h2>Coupons</h2>
                             <table>
 	                            <tr>
 	                                <td colspan="3">
-	                                    <div class="sepratorline dark"></div>
+	                                    <div class="sepratorline"></div>
 	                                </td>
 	                            </tr>
 	                        </table>
+                        
+                            <table class="test">
+                                <tr>
+                                    @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
+                                        <td>{{ $coupon['description'] }}</td>
+                                        <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
+                                    @endforeach
+                                </tr>
+                                <tr>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </table>
+                            <table>
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="sepratorline dark"></div>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                         <table class="test table-padding">
                             <tr>

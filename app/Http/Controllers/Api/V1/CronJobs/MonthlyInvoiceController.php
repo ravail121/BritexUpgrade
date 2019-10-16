@@ -6,7 +6,6 @@ use Exception;
 use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Order;
-use App\Model\Coupon;
 use App\Model\Company;
 use App\Model\Invoice;
 use App\Model\Customer;
@@ -53,99 +52,80 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
      */
     public function generateMonthlyInvoice(Request $request)
     {
-        try {
-            // $customers = Customer::shouldBeGeneratedNewInvoices();
-            $customers = Customer::shouldBeGeneratedNewInvoices();
-            
-            foreach ($customers as $customer) {
-                try {
-                    if ($customer->billableSubscriptions->count()) {
-                        // ToDo: Temporary fix. Check why 'billing_state'
-                        // is null
-                        // And will there be a guarranty that every state
-                        // has tax?
-                        
-                        if(!$customer->stateTax){
-                            \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Monthly Invoice Generation skipped");
-                            continue;
-                        }
-
-                        $invoice = Invoice::create($this->getInvoiceData($customer));
-                        
-                        $dueDate = Carbon::parse($invoice->start_date)->subDay();
-
-                        $dueDateChange = $invoice->update([
-                            'due_date' => $dueDate
-                        ]);
-
-                        $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
-                        
-                        $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
-
-                        $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
-
-                        $pendingCharges = $this->pendingCharges($invoice);
-
-                        $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
-
-                        $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
-
-                        // Add Coupons
-                        $couponAccount = $this->customerAccountCoupons($customer, $invoice);
-
-                        $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
-                            
-                        $monthlyCharges = $invoice->cal_total_charges;
-
-                        //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
-                        $subtotal = str_replace(',', '',number_format($monthlyCharges + $totalPendingCharges, 2));
-
-                        $invoiceUpdate = $invoice->update(compact('subtotal'));
-
-                        $totalDue = $this->applyCredits($customer, $invoice);
-
-                        $invoice->update(['total_due' => $totalDue]);
-
-                        if ($totalDue == 0) {
-                            $invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
-                        }
-            
-                        $insertOrder = $this->insertOrder($invoice);
-                        
-                        $order       = Order::where('invoice_id', $invoice->id)->first();
-
-                        $request->headers->set('authorization', $order->company->api_key);
-
-                        $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
-                        
-                        // $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
-
-                        $this->generateInvoice($order, $request);
-                        
-                        /*foreach ($customer->billableSubscriptions as $billableSubscription) {
-                            $this->response = $this->triggerEvent($customer);
-                            break;
-                        }*/
-                    } /*elseif ($customer->pending_charge) {
-                        foreach ($customer->pending_charge as $pendingCharge) {
-                            if ($pendingCharge->invoice_id == 0) {
-
-                                $this->response = $this->triggerEvent($customer);
-                                break;
-                                
-                            }
-                        }
-                    }*/
-
-                } catch (Exception $e) {
-                    \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
-                }
+        $customers = Customer::shouldBeGeneratedNewInvoices();
+        
+        foreach ($customers as $customer) {
+            try {
+                $this->processMonthlyInvoice($customer, $request);
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
             }
-
-            return $this->respond($this->response);
-        } catch (Exception $e) {
-            \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
         }
+
+        return $this->respond($this->response);
+    }
+
+    public function processMonthlyInvoice($customer, $request)
+    {
+        if ($customer->billableSubscriptions->count()) {
+
+            if($customer->stateTax){
+
+                $invoice = Invoice::create($this->getInvoiceData($customer));
+            
+                $dueDate = Carbon::parse($invoice->start_date)->subDay();
+    
+                $dueDateChange = $invoice->update([
+                    'due_date' => $dueDate
+                ]);
+    
+                $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
+                
+                $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
+    
+                $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
+    
+                $pendingCharges = $this->pendingCharges($invoice);
+    
+                $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
+    
+                $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
+    
+                // Add Coupons
+                $couponAccount = $this->customerAccountCoupons($customer, $invoice);
+    
+                $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+                    
+                $monthlyCharges = $invoice->cal_total_charges;
+    
+                //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
+                $subtotal = str_replace(',', '',number_format($monthlyCharges + $totalPendingCharges, 2));
+    
+                $invoiceUpdate = $invoice->update(compact('subtotal'));
+    
+                $totalDue = $this->applyCredits($customer, $invoice);
+    
+                $invoice->update(['total_due' => $totalDue]);
+    
+                if ($totalDue == 0) {
+                    $invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
+                }
+    
+                $insertOrder = $this->insertOrder($invoice);
+                
+                $order       = Order::where('invoice_id', $invoice->id)->first();
+    
+                $request->headers->set('authorization', $order->company->api_key);
+    
+                $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
+                
+                // $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
+                $this->generateInvoice($order, true, $request);
+
+            } else {
+                \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Monthly Invoice Generation skipped");
+            }    
+        } 
     }
 
     public function applyCredits($customer, $invoice)
