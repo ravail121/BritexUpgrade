@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\BaseController;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use App\Model\Tax;
+use Carbon\Carbon;
 use App\Model\Invoice;
 use App\Model\Customer;
-use  App\Model\Subscription;
 use App\Model\InvoiceItem;
+use App\Model\Subscription;
 use App\Model\PendingCharge;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use App\Model\CreditToInvoice;
 use App\Model\SubscriptionAddon;
 use App\Model\subscriptionCoupon;
-use App\Model\Tax;
-use App\Model\CreditToInvoice;
+use App\Http\Controllers\BaseController;
 
 class InvoiceController extends BaseController
 {
@@ -245,7 +246,13 @@ class InvoiceController extends BaseController
 					'billing_end'   => $customer->billing_end_date_formatted,
 			];
 
-			if($array['billing_start'] =='NA' || $array['billing_end'] =='NA'){
+			$date = Carbon::today()->subDays(31)->endOfDay();
+			$customerInvoice = Invoice::where([
+				'customer_id' => $customer->id,
+				'type' => Invoice::TYPES['monthly']
+			])->where('start_date', '>', $date)->get()->last();
+
+			if($array['billing_start'] =='NA' || $array['billing_end'] =='NA' || ! $customerInvoice){
 				return $this->content = array_merge([
 						'charges'  => ['0','00'],
 						'past_due' => ['0','00'],
@@ -255,21 +262,14 @@ class InvoiceController extends BaseController
 				], $array);
 			}
 
-			$customerInvoice = Invoice::where('customer_id', $customer->id)->get();
+			$charges = $customerInvoice->subtotal; 
 
-			if(isset($customerInvoice['0'])){
-				$invoices = $customerInvoice->where('start_date', $customer->billing_start);
-				$charges = [0];
-				foreach ($invoices as $invoice) {
-					$charges[] = $invoice->cal_total_charges;
-				}
-				$charges = array_sum($charges);
-				$payment = $this->getPaymentAndCreditAmount($customer);
-				$pastDue = $customerInvoice->where('start_date', '<', $customer->billing_start)->sum('total_due');
-			}else{
-				$charges = $payment = $pastDue = 0;
+			$payment = $this->getPaymentAndCreditAmount($customerInvoice);
+
+			$pastDue = 0;
+			if($customerInvoice->status == Invoice::INVOICESTATUS['closed&upaid']){
+				$pastDue = $customerInvoice->total_due;
 			}
-			
 			$total = ($charges - $payment) + $pastDue;
 
 			if($total < 0){
@@ -292,6 +292,62 @@ class InvoiceController extends BaseController
 				], $array);
 		}
 
+		// public function invoiceDetail(Request $request)
+		// {
+		// 	$customer = Customer::hash($request->hash);
+
+		// 	$array = [
+		// 			'billing_start' => $customer->billing_start_date_formatted,
+		// 			'billing_end'   => $customer->billing_end_date_formatted,
+		// 	];
+
+		// 	if($array['billing_start'] =='NA' || $array['billing_end'] =='NA'){
+		// 		return $this->content = array_merge([
+		// 				'charges'  => ['0','00'],
+		// 				'past_due' => ['0','00'],
+		// 				'payment'  => ['0','00'],
+		// 				'total'	   => ['0','00'],
+		// 				'due_date' => 'NA'
+		// 		], $array);
+		// 	}
+
+		// 	$customerInvoice = Invoice::where('customer_id', $customer->id)->get();
+
+		// 	if(isset($customerInvoice['0'])){
+		// 		$invoices = $customerInvoice->where('start_date', $customer->billing_start);
+		// 		$charges = [0];
+		// 		foreach ($invoices as $invoice) {
+		// 			$charges[] = $invoice->cal_total_charges;
+		// 		}
+		// 		$charges = array_sum($charges);
+		// 		$payment = $this->getPaymentAndCreditAmount($customer);
+		// 		$pastDue = $customerInvoice->where('start_date', '<', $customer->billing_start)->sum('total_due');
+		// 	}else{
+		// 		$charges = $payment = $pastDue = 0;
+		// 	}
+			
+		// 	$total = ($charges - $payment) + $pastDue;
+
+		// 	if($total < 0){
+		// 		$total = 0;
+		// 	}
+			
+		// 	$charges = $this->getAmountFormated($charges);
+		// 	$payment = $this->getAmountFormated($payment);
+		// 	$pastDue = $this->getAmountFormated($pastDue);
+		// 	$total   = $this->getAmountFormated($total);
+		// 	$dueDate = $this->getTotalDueDate($customer);
+
+
+		// 	return $this->content = array_merge([
+		// 				'charges'  => $charges, 
+		// 				'past_due' => $pastDue,
+		// 				'payment'  => $payment,
+		// 				'total'	   => $total,
+		// 				'due_date' => $dueDate
+		// 		], $array);
+		// }
+
 
 		public function getTotalDueDate($customer)
 		{
@@ -309,14 +365,19 @@ class InvoiceController extends BaseController
 			return explode(".", (string)self::toTwoDecimals($amount));
 		}
 
-		public function getPaymentAndCreditAmount($customer)
+    	public function getPaymentAndCreditAmount($customerInvoice)
 		{
-            $creditAmount = $customer->creditsNotAppliedCompletely->sum('pending_credits');
-			$id = Invoice::whereCustomerId($customer->id)->pluck('id');
-			$creditToInvoiceAmount = CreditToInvoice::whereIn('invoice_id', $id)->whereBetween('created_at', [date($customer->billing_start), date($customer->billing_end)])->sum('amount');
-
-			return $creditToInvoiceAmount + $creditAmount;
+			return $customerInvoice->creditToInvoice->sum('amount');
 		}
+
+		// public function getPaymentAndCreditAmount($customer)
+		// {
+  //           $creditAmount = $customer->creditsNotAppliedCompletely->sum('pending_credits');
+		// 	$id = Invoice::whereCustomerId($customer->id)->pluck('id');
+		// 	$creditToInvoiceAmount = CreditToInvoice::whereIn('invoice_id', $id)->whereBetween('created_at', [date($customer->billing_start), date($customer->billing_end)])->sum('amount');
+
+		// 	return $creditToInvoiceAmount + $creditAmount;
+		// }
 
 
 

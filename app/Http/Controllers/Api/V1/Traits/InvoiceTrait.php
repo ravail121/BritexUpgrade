@@ -53,10 +53,6 @@ trait InvoiceTrait
         
         return $subscription->invoiceItemDetail()->create([
             'invoice_id'   => $invoice->id,
-            // ToDo: Can it also have a product type 
-            // and product id. May be product_id can be 
-            // invoice_item.product_id
-            // Client has not specified in the description
             'product_type' => '',
             'product_id'   => null,
             'type'         => InvoiceItem::INVOICE_ITEM_TYPES['regulatory_fee'],
@@ -76,7 +72,6 @@ trait InvoiceTrait
         if ($taxPercentage > 0) {
             $taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
             $taxesWithSubscriptions = $taxableItems->sum('amount');
-            // $taxesForActivationFee  = $taxableItems->where('type', InvoiceItem::INVOICE_ITEM_TYPES['plan_charges']);
             if ($taxesWithSubscriptions > 0) {
                 $subscription->invoiceItemDetail()->create(
                     [
@@ -340,19 +335,12 @@ trait InvoiceTrait
 
     public function addShippingCharges($orderId)
     {
-
         $order = Order::find($orderId);
-        
         $items = $order->invoice->invoiceItem;
-
         $itemWithShippingCharges  = [];
-
         foreach ($items as $item) {
-
             if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device'] && $item->product_id) {
-
                 $shippingFee        = Device::find($item->product_id)->shipping_fee;
-
                 if ($shippingFee) { $itemWithShippingCharges[] = [
                     'amount'            => $shippingFee, 
                     'subscription_id'   => $item->subscription_id, 
@@ -360,11 +348,8 @@ trait InvoiceTrait
                     'invoice_id'        => $item->invoice_id,
                     'start_date'        => Carbon::today()
                 ]; }
-
             } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['sim']) {
-
                 $shippingFee        = Sim::find($item->product_id)->shipping_fee;
-
                 if ($shippingFee) { $itemWithShippingCharges[] = [
                     'amount'            => $shippingFee, 
                     'subscription_id'   => $item->subscription_id, 
@@ -372,9 +357,7 @@ trait InvoiceTrait
                     'invoice_id'        => $item->invoice_id,
                     'start_date'        => Carbon::today()
                 ]; }
-
             }
-
         }
 
         $defaultValuesToInsert = [
@@ -382,69 +365,33 @@ trait InvoiceTrait
             'type'         => InvoiceItem::TYPES['one_time_charges'],
             'description'  => 'Shipping Fee',
         ];
-
         foreach ($itemWithShippingCharges as $items) {
-            
             InvoiceItem::create(array_merge($items,$defaultValuesToInsert));
-
         }
-        
         return true;
     }
-
-    // public function regenerateRefundInvoice($encryptedId)
-    // {
-    //     $decryptedId = pack("H*",$encryptedId);
-    //     $invoiceId   = substr($decryptedId, strpos($decryptedId, "=") + 1);
-    //     $invoice = Invoice::where('id', $invoiceId)->with('customer', 'invoiceItem')->first();
-
-    //     $company = $invoice->customer->company_id;
-    //     $path = SystemGlobalSetting::first()->upload_path;
-    //     // $fileSavePath = $path.'/uploads/'.$company.'/non-order-invoice-pdf/'.$encryptedId;
-    //     $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
-        
-    //     // $this->saveInvoiceFile($pdf, $fileSavePath);
-    //     return view('templates/custom-charge-invoice', compact('invoice'));
-    //     return $pdf->download('Invoice.pdf');
-    // }
 
     public function availableCreditsAmount($id)
     {
         $customer = Customer::find($id);
-
         $credits  = $customer->creditsNotAppliedCompletely;
-        
         foreach ($credits as $credit) {
-
             $availableCredits[] = ['id' => $credit->id, 'amount' => $credit->amount];
-            
         }
-        
         if (isset($availableCredits)) {
-
             foreach ($availableCredits as $key => $credit) {
-
                 $notFullUsedCredit = CreditToInvoice::where('credit_id', $credit['id'])->sum('amount');
-
                 if ($notFullUsedCredit && $notFullUsedCredit < $credit['amount']) {
-
-                    $totalUsableCredits = $credit['amount'] - $notFullUsedCredit;
-                    
+                    $totalUsableCredits = $credit['amount'] - $notFullUsedCredit;  
                     $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
-                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
-                    
-
+                    $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices); 
                 } else if (!$notFullUsedCredit) {
-
                     $totalUsableCredits = $credit['amount'];
                     $openInvoices = $customer->invoice->where('status', Invoice::INVOICESTATUS['open']);
                     $this->applyCreditsToInvoice($credit['id'], $totalUsableCredits, $openInvoices);
-
                 } 
-                
             }
         }
-        
     }
 
     public function generateRefundInvoice($invoice, $paymentLog, $stopMail = true)
@@ -453,17 +400,10 @@ trait InvoiceTrait
         if (!$invoice) {
             return 'Error: Missing data';
         }
-
         $paymentRefundLog = PaymentRefundLog::where('invoice_id', $invoice->id)->with('paymentLog')->first();
         if($paymentRefundLog){
             $pdf = PDF::loadView('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
-            // $companyId = \Request::get('company')->id;
-            // $systemGlobalSetting = SystemGlobalSetting::first();
-            // $invoivePath = '/uploads/'.$companyId.'/non-order-invoice-pdf/'.bin2hex('invoice='.$invoice->id);
-            // $fileSavePath = $systemGlobalSetting->upload_path.$invoivePath;
-            // $this->saveInvoiceFile($pdf, $fileSavePath);
             !$stopMail ? event(new SendRefundInvoice($paymentLog, $invoice, $pdf)) : null;
-            // return view('templates/refund-invoice', compact('invoice', 'paymentRefundLog'));
             return $pdf->download('Invoice.pdf');
         }
         $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));

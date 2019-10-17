@@ -325,13 +325,15 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Coupons</h2>
-                            <table>
-	                            <tr>
-	                                <td colspan="3">
-	                                    <div class="sepratorline"></div>
-	                                </td>
-	                            </tr>
-	                        </table>
+                                @if ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id)->count())
+                                    <table>
+                                        <tr>
+                                            <td colspan="3">
+                                                <div class="sepratorline"></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                @endif
                         
                             <table class="test">
                                 <tr>

@@ -64,7 +64,7 @@ class RegenerateInvoiceController extends Controller
                     });
                 $invoiceAfterMonthly = $customer->compareDates($invoice, $invoiceAfterMonthly);
                 $amount = count($invoiceAfterMonthly) ? $this->processPendingOrderInvoices($invoiceAfterMonthly, $customer, $invoice) : null;
-                count($invoiceAfterMonthly) && $amount ? $this->updateInvoice($invoice) : null;
+                count($invoiceAfterMonthly) && $amount ? $this->updateInvoiceDetails($invoice) : null;
                 $request->headers->set('authorization', $customer->company->api_key);
                 count($invoiceAfterMonthly) && isset($invoice->order) && $invoice->order->count() && $amount ? $this->saveAndSendInvoice($invoice->order) : null;
             }
@@ -200,7 +200,7 @@ class RegenerateInvoiceController extends Controller
         ]);
     }
 
-    protected function updateInvoice($invoice)
+    protected function updateInvoiceDetails($invoice)
     {
         $this->availableCreditsAmount($invoice->customer_id);
         $total = $invoice->cal_total_charges;

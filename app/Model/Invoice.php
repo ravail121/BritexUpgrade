@@ -149,13 +149,10 @@ class Invoice extends Model implements ConstantInterface
         return self::toTwoDecimals($total);
     }
 
-
-
     public function scopeMonthly($query)
     {
         return $query->where('type', self::INVOICE_TYPES['monthly']);
     }
-
 
     public function scopeOnetime($query)
     {
@@ -183,7 +180,6 @@ class Invoice extends Model implements ConstantInterface
         return $query->where('start_date', '>', $date);
     }
 
-
     public function scopePendingAndUnpaid($query)
     {
         return $query->whereIn('status', [
@@ -210,12 +206,10 @@ class Invoice extends Model implements ConstantInterface
         return $query->where('customer_id' , $customerId)->pendingAndUnpaid();
     }
 
-
     public function scopeMonthlyInvoicePending($query)
     {
         return $query->monthly()->pendingPayment();
     }
-
 
     public function scopeMonthlyInvoicePaid($query)
     {
@@ -232,8 +226,6 @@ class Invoice extends Model implements ConstantInterface
         return $query->where('due_date', '<', self::currentDate());
     }
 
-
-
     /**
      * Returns total_due amount with 2 decimal places
      * 
@@ -243,7 +235,6 @@ class Invoice extends Model implements ConstantInterface
     {
         return self::toTwoDecimals($this->total_due);
     }
-
 
     public function getTypeNotOneAttribute()
     {
@@ -261,7 +252,6 @@ class Invoice extends Model implements ConstantInterface
         return self::toTwoDecimals($sub_total);
     }
 
-
     public function getPastDueAttribute()
     {
         $pastDue = 0;
@@ -272,8 +262,6 @@ class Invoice extends Model implements ConstantInterface
         }
         return self::toTwoDecimals($pastDue);
     }
-
-
 
     public function getTodayGreaterThanDueDateAttribute()
     {
@@ -292,8 +280,6 @@ class Invoice extends Model implements ConstantInterface
     {
         return $this->hasMany('App\Model\CreditToInvoice', 'invoice_id', 'id');
     }
-
-
 
     /**
      * [toTwoDecimals description]

@@ -95,7 +95,6 @@ class OrderController extends BaseController
                         }else{
                             $tmp['plan']['to'] = $billingStart->toDateString();
                         }
-
                     }
 
                     if ($og->change_subscription == '0') {

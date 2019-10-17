@@ -211,7 +211,7 @@ class CardController extends BaseController implements ConstantInterface
             $customerCreditCard = CustomerCreditCard::find($data['customer_credit_card_id']);
             if($customerCreditCard->default){
                 $customerCreditCard->delete();
-                $leftCustomerCreditCard = CustomerCreditCard::where('customer_id', $customerCreditCard->customer_id)->first();
+                $leftCustomerCreditCard = CustomerCreditCard::where('customer_id', $customerCreditCard->customer_id)->get()->last();
                 if($leftCustomerCreditCard){
                     $leftCustomerCreditCard->update(['default' => true ]);
                 }
@@ -257,7 +257,7 @@ class CardController extends BaseController implements ConstantInterface
         ]])->with('unpaidMounthlyInvoice')->get()->toArray();
 
         $customersB = Customer::where([
-            ['billing_start', '<=', Carbon::today()], ['auto_pay', Customer::AUTO_PAY['enable']
+            ['billing_start', '=', Carbon::today()], ['auto_pay', Customer::AUTO_PAY['enable']
         ]])->with('unpaidAndClosedMounthlyInvoice')->get()->toArray();
 
         $customers = array_merge($customers, $customersB);
@@ -294,6 +294,7 @@ class CardController extends BaseController implements ConstantInterface
                             ]);
                             $request->headers->set('authorization', $invoice->order->company->api_key);
                             event(new InvoiceAutoPaid($customer));
+                            $customer->account_suspended ? $customer->update(['account_suspended' => 0]) && event(new AccountUnsuspended($customer)) : null;
                         }else{
                             $request->headers->set('authorization', $invoice->order->company->api_key);
                             event(new FailToAutoPaidInvoice($customer, $response->getData()->message));

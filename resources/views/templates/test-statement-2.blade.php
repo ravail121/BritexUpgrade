@@ -354,13 +354,15 @@
                         <div class="table-padding">
                             <h2>Coupons</h2>
                             @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                <table>
-                                    <tr>
-                                        <td colspan="3">
-                                            <div class="sepratorline"></div>
-                                        </td>
-                                    </tr>
-                                </table>
+                                @if ($subscription->cal_credits > 0)
+                                    <table>
+                                        <tr>
+                                            <td colspan="3">
+                                                <div class="sepratorline"></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                @endif
                                 <table class="test">
                                     <tr>
                                         @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)

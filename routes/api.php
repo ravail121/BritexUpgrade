@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use App\Model\Customer;
-use Carbon\Carbon;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +26,13 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-  
+    $customer = Customer::find('359');
+    $leftCredits = $customer->creditsNotAppliedCompletely;
+    $amount = $leftCredits->sum('amount');
+    foreach ($leftCredits as $credit) {
+        $amount -= $credit->usedOnInvoices->sum('amount');
+    }
+    dd($amount);
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
