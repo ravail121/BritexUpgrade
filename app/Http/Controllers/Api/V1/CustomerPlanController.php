@@ -57,11 +57,12 @@ class CustomerPlanController extends BaseController
 
                 if( isset($subscription->subscriptionAddonNotRemoved[0]) ){
                     foreach ($subscription->subscriptionAddonNotRemoved as $addon) {
-                        if($addon->addons){
-                            $subtotal += $addon->addons->amount_recurring;  
+                        $addonData = $addon->addons;
+                        if($addonData){
+                            $subtotal += $addonData->amount_recurring;  
                         }
-                        if($addon->taxable){
-                            $stateTax += $addon->addons->amount_recurring * $rate;
+                        if($addonData->taxable){
+                            $stateTax += $addonData->amount_recurring * $rate;
                         }
                     }
                 }
