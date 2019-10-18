@@ -377,9 +377,9 @@ class OrderController extends BaseController
 
     public function get_company(Request $request)
     {
-        $apiKey = $request->Authorization;
+        // $apiKey = $request->Authorization;
         // $businessVerification = Company::where('api_key',$apiKey)->first()->business_verification;
-        return Company::where('api_key', $apiKey)->first();
+        return \Request::get('company');
     }
 
     
