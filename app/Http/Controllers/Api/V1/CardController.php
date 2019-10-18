@@ -132,6 +132,7 @@ class CardController extends BaseController implements ConstantInterface
         $request->email               =  $card->customer->email;
         
         return $request;
+        
     
     }
 

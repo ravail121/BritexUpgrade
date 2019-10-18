@@ -44,7 +44,6 @@ trait EmailRecord
 
     protected function createEmailLog($order, $bizVerificationId, $emailTemplate, $body, $email, $note)
     {
-
         $data = [
             'company_id'               => $order->company_id,
             'customer_id'              => $order->customer_id,

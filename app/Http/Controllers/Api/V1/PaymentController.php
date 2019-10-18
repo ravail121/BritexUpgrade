@@ -310,6 +310,7 @@ class PaymentController extends BaseController implements ConstantInterface
     public function paymentFailed(Request $request)
     {
         $customer = Customer::whereId($request->id)->with('company')->first();
+        $request->headers->set('authorization', $customer->company->api_key);
         event(new PaymentFailed($customer));
     }
 }

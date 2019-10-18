@@ -70,13 +70,11 @@ class InvoiceController extends BaseController implements ConstantInterface
      * @return Response
      */
     public function oneTimeInvoice(Request $request)
-    {
+    {     
         $msg = '';
         $order = Order::where('hash', $request->hash ?: $request->order_hash)->first();
-      
+ 
         $path = SystemGlobalSetting::first()->upload_path;
-        $fileSavePath = $path.'/uploads/'.$order->company_id.'/invoice-pdf/';
-
         if ($request->data_to_invoice && !$request->status == 'Without Payment') {
             
             $invoice = $request->data_to_invoice;
@@ -187,28 +185,16 @@ class InvoiceController extends BaseController implements ConstantInterface
      */
     public function get(Request $request)
     {
-        $path = SystemGlobalSetting::first()->upload_path;
-        $fileSavePath = $path.'/uploads/invoice-pdf/';
-        
-        if($request->refundInvoiceId){
-        }else{
-            $order = Order::hash($request->order_hash)->first();
+        if ($request->order_hash) {
+            $order = Order::where('hash', $request->order_hash)->first();
+            return $this->generateInvoice($order, false, $request);
+        } elseif ($request->invoice_hash) {
+            $decryptedId = pack("H*",$request->invoice_hash);
+            $invoiceId   = substr($decryptedId, strpos($decryptedId, "=") + 1);
+            $invoice = Invoice::find($invoiceId);
+            $transactionNumber = $invoice->refundLog ? $invoice->refundLog->transaction_num : null;
+            return $this->generateRefundInvoice($invoice, $transactionNumber, true);
         }
-        return $this->generateInvoice($order);
-    }
-
-    public function downloadInvoice($companyId, Request $request)
-    {
-            if ($request->order_hash) {
-                $order = Order::where('hash', $request->order_hash)->first();
-                return $this->generateInvoice($order, false, $request);
-            } elseif ($request->invoice_hash) {
-                $decryptedId = pack("H*",$request->invoice_hash);
-                $invoiceId   = substr($decryptedId, strpos($decryptedId, "=") + 1);
-                $invoice = Invoice::find($invoiceId);
-                $transactionNumber = $invoice->refundLog ? $invoice->refundLog->transaction_num : null;
-                return $this->generateRefundInvoice($invoice, $transactionNumber, true);
-            }
         return 'Sorry, invoice not found.';
     }
 

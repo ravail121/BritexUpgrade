@@ -299,7 +299,7 @@ class SubscriptionController extends BaseController
     protected function validateAddonData($request)
     {
         return $this->validate_input($request->all(), [
-                'api_key'          => 'required|string',
+                // 'api_key'          => 'required|string',
                 'order_id'         => 'required|numeric',
                 'subscription_id'  => 'required|numeric',
                 'addon_id'         => 'required|numeric',

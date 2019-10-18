@@ -131,7 +131,7 @@ class CouponController extends Controller
     public function ifAddedByCustomer($request, $coupon)
     {
         $order  = Order::find($request->order_id);
-        $customer = Customer::where('hash', $request->hash)->first();
+        $customer = Customer::find($request->customer_id);
         OrderCoupon::updateOrCreate([
             'order_id' => $order->id,
             'coupon_id' => $coupon->id

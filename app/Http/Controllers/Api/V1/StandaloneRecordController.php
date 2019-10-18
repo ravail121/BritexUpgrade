@@ -29,7 +29,7 @@ class StandaloneRecordController extends BaseController
     public function __construct()
     {
         $this->rules = [
-            'api_key'     => 'required|string',
+            // 'api_key'     => 'required|string',
             'customer_id' => 'required|numeric',
             'order_id'    => 'required|numeric',
         ];
