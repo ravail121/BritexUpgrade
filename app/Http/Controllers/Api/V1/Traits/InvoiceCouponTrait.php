@@ -16,6 +16,7 @@ trait InvoiceCouponTrait
     {
         if (isset($couponData['code'])) {
             $couponToProcess   = Coupon::where('code', $couponData['code'])->first();
+            if (!$couponToProcess) { return ['error' => 'Invalid coupon code']; }
             //store coupon in invoice_items.
             if ($couponData['amount']) {
                 $order->invoice->invoiceItem()->create(

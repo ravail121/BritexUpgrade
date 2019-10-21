@@ -70,7 +70,7 @@ class InvoiceController extends BaseController implements ConstantInterface
      * @return Response
      */
     public function oneTimeInvoice(Request $request)
-    {     
+    {
         $msg = '';
         $order = Order::where('hash', $request->hash ?: $request->order_hash)->first();
  
@@ -83,7 +83,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $subscription = Subscription::find($invoice['subscription_id'][0]);
 
                 if($subscription->upgrade_downgrade_status){
-                    $arrayData = ['order_id' => $request->order_id, 'customer_id' => $request->customer_id];
+                    $arrayData = ['order_id' => $order->id, 'customer_id' => $request->customer_id];
                     $updateCustomerDates = $this->updateCustomerDates((object) $arrayData);
                     $invoiceItem  = $this->changeSubcriptionInvoiceItem($subscription, $request->auto_generated_order);
                 }else{
@@ -98,7 +98,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 
             }
             if(isset($invoice['same_subscription_id'])){
-                $invoiceItem  = $this->samePlanUpgradeInvoiceItem($invoice['same_subscription_id'], $request->order_id, $request->auto_generated_order);
+                $invoiceItem  = $this->samePlanUpgradeInvoiceItem($invoice['same_subscription_id'], $order->id, $request->auto_generated_order);
             }
             if (isset($invoice['customer_standalone_device_id'])) {
                

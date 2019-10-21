@@ -96,15 +96,7 @@ class RegenerateInvoiceController extends Controller
             return 'Api error: missing subscriptions data';
         }
         $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');
-        try {
-            if (file_exists($fileSavePath.$order->hash.'.pdf')) {
-                @unlink($fileSavePath.$order->hash.'.pdf');
-            }
-            $generatePdf->save($fileSavePath.$order->hash.'.pdf');
-            event(new InvoiceGenerated($order, $generatePdf));
-        } catch (Exception $e) {
-            \Log::info('Pdf Save Error: '.$e->getMessage());
-        }
+        event(new InvoiceGenerated($order, $generatePdf));
     }
 
     protected function regenerateAmount($subscriptionIds, $customer, $invoice)
