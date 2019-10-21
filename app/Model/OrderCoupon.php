@@ -26,6 +26,14 @@ class OrderCoupon extends Model
     {
         return $this->belongsTo('App\Model\Coupon');
     }
+
+    public static function boot() {
+        parent::boot();
+
+        static::deleting(function($coupon) {
+            $coupon->orderCouponProduct()->delete();
+        });
+    }
     
 
 }

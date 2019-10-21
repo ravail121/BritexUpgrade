@@ -15,7 +15,6 @@ use App\Model\Subscription;
 use App\Events\InvoiceGenerated;
 use App\Events\UpgradeDowngradeInvoice;
 use Carbon\Carbon;
-use App\Model\SystemGlobalSetting;
 use App\Model\PendingCharge;
 use App\Model\Customer;
 use App\Model\CreditToInvoice;
@@ -173,7 +172,7 @@ trait InvoiceTrait
                 $ifUpgradeOrDowngradeInvoice = $this->ifUpgradeOrDowngradeInvoice($order);
                 if ($ifUpgradeOrDowngradeInvoice['upgrade_downgrade_status']) {
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'ifUpgradeOrDowngradeInvoice'));
-                    event(new UpgradeDowngradeInvoice($order, $generatePdf));
+                    $request && $mail ? event(new UpgradeDowngradeInvoice($order, $generatePdf)) : null;
                     // $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash);
                     return $generatePdf->download('Invoice.pdf');
                 } else {
@@ -192,7 +191,7 @@ trait InvoiceTrait
 
             // $this->saveInvoiceFile($generatePdf, $fileSavePath.$order->hash); // To save the generated pdf
 
-            $request && $mail ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
+            !$ifUpgradeOrDowngradeInvoice && $request && $mail ? event(new InvoiceGenerated($order, $generatePdf)) : null; // To send the generated pdf via email
 
             return $generatePdf->download('Invoice.pdf'); //To trigger the old generate and download logic
 

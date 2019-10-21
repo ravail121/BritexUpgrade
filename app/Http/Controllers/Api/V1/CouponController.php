@@ -353,4 +353,10 @@ class CouponController extends Controller
         $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['ADDON'], $addon->id, $coupon->amount, $addonDiscount, $og->id);
         return ['discount' => $addonDiscount, 'products' => $orderCouponProduct];
     }
+
+    public function removeCoupon(Request $request)
+    {
+        $order = Order::find($request->order_id);
+        $order->orderCoupon->delete();
+    }
 }

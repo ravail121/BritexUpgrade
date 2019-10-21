@@ -88,7 +88,7 @@
                                             @endisset
                                         @else 
                                             @isset ($ifUpgradeOrDowngradeInvoice['plan_data']['amount'])
-                                                {{ 
+                                               $ {{ 
                                                     number_format ($ifUpgradeOrDowngradeInvoice['plan_data']['amount'], 2)
                                                 }}
                                             @endisset
@@ -125,7 +125,7 @@
                                         <td>
                                             @foreach ($ifUpgradeOrDowngradeInvoice['addon_data'] as $addon)
                                                 <a>
-                                                    <div style='margin-left: 10px;'>{{ $addon['name']}}</div>
+                                                    <div style='margin-left: 10px;'>{{ $addon['name']}} <span>{{  !$addon['amount'] ? '(Removed)' : '(Added)' }}</span> </div>
                                                 </a>
                                             @endforeach
                                         </td>

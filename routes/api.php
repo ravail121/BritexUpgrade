@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Model\Customer;
+use App\Model\Order;
+use App\Events\UpgradeDowngradeInvoice;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,13 +27,8 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-    $customer = Customer::find('359');
-    $leftCredits = $customer->creditsNotAppliedCompletely;
-    $amount = $leftCredits->sum('amount');
-    foreach ($leftCredits as $credit) {
-        $amount -= $credit->usedOnInvoices->sum('amount');
-    }
-    dd($amount);
+  $order = Order::find('17095');
+  event(new UpgradeDowngradeInvoice($order, "65915"));
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
@@ -195,6 +191,10 @@ Route::middleware('APIToken')->group(function () {
         Route::post('/add-coupon', [
           'as' => 'api.coupon.addCoupon'  ,
           'uses' => 'CouponController@addCoupon'  
+        ]);
+        Route::post('/remove-coupon', [
+          'as' => 'api.coupon.addCoupon'  ,
+          'uses' => 'CouponController@removeCoupon'  
         ]);
 
       });
@@ -565,7 +565,7 @@ Route::middleware('APIToken')->group(function () {
         ]);
 
         //NEW API 
-        Route::post('/check-plan',[
+        Route::post('/change-plan',[
           'as'   => 'api.check.Plan',
           'uses' => 'PlanController@checkPlan',
         ]);

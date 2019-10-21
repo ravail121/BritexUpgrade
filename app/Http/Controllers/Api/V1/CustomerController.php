@@ -327,8 +327,7 @@ class CustomerController extends BaseController
 	/**
 	 * Validates the data
 	 * 
-	 * @param  array      $data
-	 * @return Response   validation response
+	 * @param  array      $data   validation response
 	 */
 	protected function validateUpdate($data) 
 	{

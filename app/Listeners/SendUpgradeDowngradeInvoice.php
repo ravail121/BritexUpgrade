@@ -66,8 +66,10 @@ class SendUpgradeDowngradeInvoice
 
         if($subscription->upgrade_downgrade_status == "for-upgrade"){
             $subscriptionsChanged = '<p>'.$subscription->phone_number.' Upgraded from  <b>'.$subscription->oldPlan->name.'</b> to <b>'.$subscription->plans->name.'</b> plan</p>';
-        }else{
+        }elseif (isset($subscription->newPlanDetail->name)){
             $subscriptionsChanged = '<p>'.$subscription->phone_number.' Downgrade from  <b>'.$subscription->plans->name.'</b> to <b>'.$subscription->newPlanDetail->name.'</b>  plan</p>';
+        } else {
+            $subscriptionsChanged = '<p> Addon changes processed </p>';
         }
 
 
