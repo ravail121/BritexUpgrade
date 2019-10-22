@@ -176,7 +176,7 @@ trait InvoiceTrait
                     $request && $mail ? event(new UpgradeDowngradeInvoice($order, $generatePdf)) : null;
                     return $generatePdf->download('Invoice.pdf');
                 } else {
-                    return View('templates/onetime-invoice', compact('data'));
+                    // return View('templates/onetime-invoice', compact('data'));
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
                 }
             } else {   
@@ -185,7 +185,7 @@ trait InvoiceTrait
                 if (!$subscriptions) {
                     return 'Api error: missing subscriptions data';
                 }
-                return View('templates/monthly-invoice', compact('data', 'subscriptions'));
+                // return View('templates/monthly-invoice', compact('data', 'subscriptions'));
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                        
             }
 
