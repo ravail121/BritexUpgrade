@@ -583,14 +583,6 @@ Route::middleware('APIToken')->group(function () {
         });
       }); 
 
-
-    //HELPER FUNCTIONS
-    Route::post('/save-invoice', [
-       'as'=>'api.invoice.save',
-       'uses'=> 'Helper\SaveInvoiceController@saveInvoice',
-    ]);
-
-
       //Route::get('/confirm','BizVerificationController@confirm');
       
 }); //APIToken middleware

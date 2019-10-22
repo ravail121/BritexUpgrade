@@ -152,65 +152,6 @@ trait UsaEpayTransaction
         return $data;
     }
 
-    /**
-     * This function charges now card without order which is done by admin
-     * from admin portal
-     * inserts data to credits and customer_credit_cards table
-     * 
-     * @param  Order     $order
-     * @param  Request   $request
-     * @return Response
-     */
-
-    protected function transactionSuccessfulWithoutOrder($request, $tran)
-    {
-        $credit = $this->createCredits($request, $tran, $request->description);
-        $tranAmount = $tran->amount;
-        $invoices = Invoice::where([
-            ['customer_id', $request->customer_id],
-            ['status', Invoice::INVOICESTATUS['open']]
-        ])->get();
-
-        $date = Carbon::today()->subDays(31)->endOfDay();
-        $closedInvoice = Invoice::where([
-            ['customer_id', $request->customer_id],
-            ['status', Invoice::INVOICESTATUS['closed&upaid']]
-        ])->whereBetween('start_date', [$date, Carbon::today()->startOfDay()])->get()->last();
-
-        if($closedInvoice){
-            $invoices->push($closedInvoice);
-        }
-        if(isset($invoices[0]) && $invoices[0]){
-            foreach ($invoices as $key => $invoice) {
-                if($invoice->total_due == $tranAmount){
-                    $this->updateCredit(1 ,$credit);
-                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
-                    $this->updateInvoice($invoice ,0, Invoice::INVOICESTATUS['closed&paid']);
-
-                    break;
-                }else if($invoice->total_due < $tranAmount){
-                    $this->updateCredit(0 ,$credit);
-                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $invoice->total_due);
-                    $tranAmount -= $invoice->total_due;
-                    $this->updateInvoice($invoice ,0, Invoice::INVOICESTATUS['closed&paid']);
-
-                }else if($invoice->total_due > $tranAmount){
-                    $this->updateCredit(1 ,$credit);
-                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
-                    $leftAmount = $invoice->total_due - $tranAmount;
-                    $this->updateInvoice($invoice ,$leftAmount, $invoice->status);
-
-                    break;
-                }
-            }
-        $this->accountSuspendedAccount( $request->customer_id);
-        }
-
-        $response = response()->json(['success' => true, 'transaction' => $tran]);
-
-        return $response;
-    }
-
     protected function accountSuspendedAccount($customerId)
     {
         $customer = Customer::find($customerId);
@@ -304,12 +245,25 @@ trait UsaEpayTransaction
      * @param  int  $order_id
      * @return Response
      */
-    protected function createPaymentLogs($order, $tran, $response, $card = null)
+    protected function createPaymentLogs($order, $tran, $response, $card = null, $invoice = null)
     {
+        $orderId = null;
+        $invoiceId = 0;
+
+        if($order){
+            $customerId = $order->customer_id;
+            $orderId = $order->id;
+        }elseif ($invoice) {
+            $customerId = $invoice['customer_id'];
+            $invoiceId = $invoice['id'];
+        }else{
+            $customerId = null;
+        }
+
         return PaymentLog::create([
-            'customer_id'            => $order->customer_id, 
-            'order_id'               => $order->id,
-            // 'invoice_id'             => $order->invoice_id, 
+            'customer_id'            => $customerId, 
+            'order_id'               => $orderId,
+            'invoice_id'             => $invoiceId,
             'transaction_num'        => $tran->refnum, 
             'processor_customer_num' => $tran->authcode, 
             'status'                 => $response,
@@ -331,7 +285,7 @@ trait UsaEpayTransaction
      * it recives order instance but in cade admin does manual payment it recives Request unstance
      * @return Response
      */
-    protected function createCredits($data, $tran, $invoice)
+    protected function createCredits($data, $tran)
     {
         $creditData = [
             'customer_id' => $data->customer_id,

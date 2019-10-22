@@ -20,6 +20,7 @@ class Credit extends Model
         'account_level',
         'subscription_id',
         'staff_id',
+        'invoice_id',
         'order_id'
     ];
 
