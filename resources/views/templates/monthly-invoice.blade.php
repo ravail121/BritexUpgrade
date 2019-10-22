@@ -376,10 +376,10 @@
 </html>
 
 
-@include('templates.test-statement')
+@include('templates.account-charges')
 
 @if (count($subscriptions))
     @foreach ($subscriptions as $index => $subscription)
-        @include('templates.test-statement-2-monthly')
+        @include('templates.monthly-subscription-details')
     @endforeach
 @endif

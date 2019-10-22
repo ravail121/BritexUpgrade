@@ -371,4 +371,12 @@ class Invoice extends Model implements ConstantInterface
         return 'NA';
     }
 
+    public static function onlyAddonItems($id)
+    {
+        $invoice = Invoice::find($id);
+        $plans = $invoice->invoiceItem->where('type', self::InvoiceItemTypes['plan_charges'])->count();
+        $addons = $invoice->invoiceItem->where('type', self::InvoiceItemTypes['feature_charges'])->count();
+        return !$plans && $addons ? true : false;
+    }
+
 }

@@ -68,7 +68,7 @@ class SendAccountPastDueMail
             }
 
             $subscriptionList .='<tr>
-                                    <td>'.$subscription->phone_number.'</td>
+                                    <td>'.$subscription->phone_number_formatted.'</td>
                                     <td>'.$subscription->plan->name.'</td>
                                     <td>'.$addon.'</td>
                                 </tr>';

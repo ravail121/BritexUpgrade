@@ -167,4 +167,5 @@ class InvoiceItem extends Model implements ConstantInterface
         return $query->where('type', self::TYPES['coupon']);
     }
 
+
 }
