@@ -23,7 +23,7 @@ class AddFieldsToCompanyTable extends Migration
             $table->string('address_line_2')->after('address_line_1')->nullable();
             $table->string('city')->after('address_line_2')->nullable();
             $table->string('state')->after('city')->nullable();
-            $table->Integer('zip')->after('state')->nullable();
+            $table->string('zip')->after('state')->nullable();
             $table->string('usaepay_api_key')->after('zip')->nullable();
             $table->string('usaepay_username')->after('usaepay_api_key')->nullable();
             $table->string('usaepay_password')->after('usaepay_username')->nullable();

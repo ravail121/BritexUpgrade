@@ -55,6 +55,7 @@ trait EmailRecord
             'bcc'                      => $emailTemplate->bcc,
             'body'                     => $body,
             'notes'                    => $note,
+            'staff_id'                 => $order->staff_id ?: null,
         ];
 
         $emailLog = EmailLog::create($data);

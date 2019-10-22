@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use PDF;
 use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\PaymentLog;
+use App\Model\InvoiceItem;
+use App\Events\InvoiceEmail;
 use Illuminate\Http\Request;
 use App\Events\InvoiceAutoPaid;
 use App\Model\CustomerCreditCard;
@@ -150,10 +153,9 @@ class CardController extends BaseController implements ConstantInterface
                 }
           
             } else {
+                $this->response = $this->transactionFail($order, $this->tran);
                 if($request->without_order){
-                    return response()->json(['message' => 'Card  ' . $this->tran->result . ', Because '. $this->tran->error, 'transaction' => $this->tran]);
-                }else{
-                    $this->response = $this->transactionFail($order, $this->tran);
+                    return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
                 }
             }
         } else {
@@ -311,6 +313,132 @@ class CardController extends BaseController implements ConstantInterface
                 \Log::info($e->getMessage().' on line '.$e->getLine().' in CardController');
             }
         }
+    }
+
+    /**
+     * This function charges now card without order which is done by admin
+     * from admin portal
+     * inserts data to credits and customer_credit_cards table
+     * 
+     * @param  Order     $order
+     * @param  Request   $request
+     * @return Response
+     */
+
+    protected function transactionSuccessfulWithoutOrder($request, $tran)
+    {
+        $credit = $this->createCredits($request, $tran);
+        $invoice = $this->processCreditInvoice($request, $tran, $credit);
+
+        $this->payUnpaiedInvoice($tran, $request, $credit);
+        
+
+        $response = response()->json(['success' => true, 'transaction' => $tran]);
+
+        return $response;
+    }
+
+    protected function payUnpaiedInvoice($tran, $request, $credit)
+    {
+        $tranAmount = $tran->amount;
+        $invoices = Invoice::where([
+            ['customer_id', $request->customer_id],
+            ['status', Invoice::INVOICESTATUS['open']]
+        ])->get();
+
+        $date = Carbon::today()->subDays(31)->endOfDay();
+        $closedInvoice = Invoice::where([
+            ['customer_id', $request->customer_id],
+            ['status', Invoice::INVOICESTATUS['closed&upaid']]
+        ])->whereBetween('start_date', [$date, Carbon::today()->startOfDay()])->get()->last();
+
+        if($closedInvoice){
+            $invoices->push($closedInvoice);
+        }
+        if(isset($invoices[0]) && $invoices[0]){
+            foreach ($invoices as $key => $invoice) {
+                if($invoice->total_due == $tranAmount){
+                    $this->updateCredit(1 ,$credit);
+                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
+                    $this->updateInvoice($invoice ,0, Invoice::INVOICESTATUS['closed&paid']);
+
+                    break;
+                }else if($invoice->total_due < $tranAmount){
+                    $this->updateCredit(0 ,$credit);
+                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $invoice->total_due);
+                    $tranAmount -= $invoice->total_due;
+                    $this->updateInvoice($invoice ,0, Invoice::INVOICESTATUS['closed&paid']);
+
+                }else if($invoice->total_due > $tranAmount){
+                    $this->updateCredit(1 ,$credit);
+                    $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
+                    $leftAmount = $invoice->total_due - $tranAmount;
+                    $this->updateInvoice($invoice ,$leftAmount, $invoice->status);
+                    break;
+                }
+            }
+        $this->accountSuspendedAccount($request->customer_id);
+        }
+    }
+
+    protected function processCreditInvoice($data, $tran, $credit)
+    {
+        $card = CustomerCreditCard::find($data['credit_card_id']);
+        $customer = Customer::find($card->customer_id);
+        $invoice = [
+            'staff_id'                  => $data->staff_id ?: null,
+            'customer_id'               =>  $card->customer_id,
+            'type'                      =>  '2',
+            'start_date'                =>  $customer->billing_start,
+            'end_date'                  =>  $customer->billing_end,
+            'status'                    =>  '2',
+            'subtotal'                  =>  $data['amount'],
+            'total_due'                 =>  '0',
+            'prev_balance'              => '0',
+            'payment_method'            => '1',
+            'notes'                     => '',
+            'due_date'                  =>  Carbon::parse($customer->billing_start)->subDays(1),
+            'business_name'             => $customer->company_name,
+            'billing_fname'             => $customer->fname,
+            'billing_lname'             => $customer->lname,
+            'billing_address_line_1'    => $card->billing_address1,
+            'billing_address_line_2'    => $card->billing_address2,
+            'billing_city'              => $card->billing_city,
+            'billing_state'             => $card->billing_state_id,
+            'billing_zip'               => $card->billing_zip,
+            'shipping_fname'            => $customer->shipping_fname,
+            'shipping_lname'            => $customer->shipping_lname,
+            'shipping_address_line_1'   => $customer->shipping_address1,
+            'shipping_address_line_2'   => $customer->shipping_address2,
+            'shipping_city'             => $customer->shipping_city,
+            'shipping_state'            => $customer->shipping_state_id,
+            'shipping_zip'              => $customer->shipping_zip,
+            
+        ];
+
+        $newInvoice = Invoice::create($invoice);
+        $credit->update(['invoice_id' => $newInvoice->id]);
+
+        $invoiceItem = [
+            'invoice_id'     => $newInvoice->id,
+            'product_type'   => $data['payment_type']?: 'Manual Payment',
+            'type'           => '9',
+            'subscription_id'=> $data['subscription_id'],
+            'start_date'     => Carbon::today(),
+            'description'    => $data['description']?: 'Manual Payment',
+            'amount'         => $data['amount'],
+            'taxable'        => '0',
+        ];
+
+        $newInvoiceItem = InvoiceItem::create($invoiceItem);
+        $paymentLog = $this->createPaymentLogs(null, $tran, 1, $card, $newInvoice);
+        if($data['payment_type'] == 'Custom Charge'){
+            $invoice = $newInvoice;
+            $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
+            event(new InvoiceEmail($invoice, $pdf, 'custom-charge'));
+        }
+
+        return $newInvoice;
     }
 }
 
