@@ -546,7 +546,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                         'subscription_id' => $subscription->id,
                         'invoice_id'      => $order->invoice_id,
                         'start_date'      => $order->invoice->start_date,
-                        'description'     => self::DESCRIPTION,
+                        'description'     => self::ADDON_TYPE,
                     ];
 
                     $invoiceItem = InvoiceItem::create($array);
@@ -750,7 +750,7 @@ class InvoiceController extends BaseController implements ConstantInterface
     {
         foreach ($orderGroups as $orderGroup) {
             $subscription = Subscription::find($orderGroup['subscription']['id']);
-            if(!($type == 'samePlan')){
+            if(!($type == 'sameplan')){
                 if($type == "for-upgrade"){
                     $description = 'Upgrade from '.$subscription['old_plan_id'].' to '.$subscription['plan_id'];
                 }else{
@@ -776,7 +776,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'subscription_id' => $subscription['id'],
                     'product_type'    => self::ADDON_TYPE,
                     'amount'          => 0,
-                    'type'            => 1,
+                    'type'            => 2,
                     'start_date'      => $invoice->start_date,
                     'description'     => "removal-scheduled",
                 ];

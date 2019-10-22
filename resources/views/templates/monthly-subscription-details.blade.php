@@ -63,69 +63,51 @@
                                 <td>Plans:</td>
                                 <td>
                                     <a>
-                                        @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                            @isset ($subscription->plan->name)
-                                                {{ $subscription->plan->name }}
-                                            @endisset
-                                        @else
-                                            @if ($ifUpgradeOrDowngradeInvoice['plan_data']['old_plan'])
-                                                Upgrade from <b>{{ $ifUpgradeOrDowngradeInvoice['plan_data']['old_plan'] }}</b>
-                                                to <b>{{$ifUpgradeOrDowngradeInvoice['plan_data']['name']}}</b>
-                                            @elseif ($ifUpgradeOrDowngradeInvoice['plan_data']['new_plan'])
-                                                Downgrade from <b>{{ $ifUpgradeOrDowngradeInvoice['plan_data']['name'] }}</b>
-                                                to <b> {{ $ifUpgradeOrDowngradeInvoice['plan_data']['new_plan'] }} </b>
-                                            @endif
-                                        @endif
+                                        @isset ($subscription->plan->name)
+                                            {{ $subscription->plan->name }}
+                                        @endisset
                                     </a>
                                 </td>
                                 <td class="right">
                                     <a>
-                                        @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                            @isset ($subscription->plan)
-                                                $ {{ 
-                                                    number_format ($subscription->calculateChargesForAllproducts([1], $data['invoice']->id, $subscription->id), 2)
-                                                }}
-                                            @endisset
-                                        @else 
-                                            @isset ($ifUpgradeOrDowngradeInvoice['plan_data']['amount'])
-                                               $ {{ 
-                                                    number_format ($ifUpgradeOrDowngradeInvoice['plan_data']['amount'], 2)
-                                                }}
-                                            @endisset
-                                        @endif
+                                        @isset ($subscription->plan)
+                                            $ {{ 
+                                                number_format ($subscription->calculateChargesForAllproducts([1], $data['invoice']->id, $subscription->id), 2)
+                                            }}
+                                        @endisset
                                     </a>
                                 </td>
                             </tr>
                             <tr>
                                 @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                    @if(isset($subscription->subscriptionAddon) && count($subscription->subscriptionAddon->whereNotIn('status', 'removed')))
+                                    @if(isset($subscription->subscriptionAddon) && count($subscription->billableSubscriptionAddons))
                                         <td>Features:</td>
                                         <td style='position: absolute; top: 360px;'>
-                                            @foreach ($subscription->subscriptionAddon->whereNotIn('status', 'removed') as $item)
+                                            @foreach ($subscription->billableSubscriptionAddons as $item)
                                                 <a>
                                                     @if ($subscription->getAddonData($item, $data['invoice']->id))
-                                                        <div style='margin-left: 10px;'>{{$subscription->getAddonData($item, $data['invoice']->id)['name']}}</div>
+                                                        {{$subscription->getAddonData($item, $data['invoice']->id)['name']}}
                                                     @endif
-                                                </a>
+                                                </a> <br>
                                             @endforeach
                                         </td>
                                         <td class="right">
-                                            @foreach ($subscription->subscriptionAddon->whereNotIn('status', 'removed') as $item) 
+                                            @foreach ($subscription->billableSubscriptionAddons as $item) 
                                                 <a>
                                                     @if ($subscription->getAddonData($item, $data['invoice']->id))
-                                                        <div> $ {{ number_format ($subscription->getAddonData($item, $data['invoice']->id)['amount'], 2) }} </div>
+                                                        $ {{ number_format ($subscription->getAddonData($item, $data['invoice']->id)['amount'], 2) }}
                                                     @endif
-                                                </a>
+                                                </a> <br>
                                             @endforeach
                                         </td>
                                     @endif
                                 @else
-                                    @if (isset($ifUpgradeOrDowngradeInvoice) && count($ifUpgradeOrDowngradeInvoice['addon_data']))
+                                    @if (count($ifUpgradeOrDowngradeInvoice['addon_data']))
                                         <td>Features:</td>
                                         <td>
                                             @foreach ($ifUpgradeOrDowngradeInvoice['addon_data'] as $addon)
                                                 <a>
-                                                    <div style='margin-left: 10px;'>{{ $addon['name']}} <span>{{  !$addon['amount'] ? '(Removed)' : '(Added)' }}</span> </div>
+                                                    <div style='margin-left: 10px;'>{{ $addon['name']}}</div>
                                                 </a>
                                             @endforeach
                                         </td>
@@ -150,17 +132,11 @@
                                     <a>
                                         <strong>
                                             Total Plan Charges: $
-                                            @if (!isset($ifUpgradeOrDowngradeInvoice))
                                                 @if ($subscription->calculateChargesForAllproducts([1, 2], $data['invoice']->id, $subscription->id))
                                                     {{ number_format ( $subscription->calculateChargesForAllproducts([1, 2], $data['invoice']->id, $subscription->id), 2 ) }}
                                                 @else 
                                                     0.00  
                                                 @endif
-                                            @else 
-                                                @if ($ifUpgradeOrDowngradeInvoice['total'])
-                                                    {{ number_format($ifUpgradeOrDowngradeInvoice['total'], 2) }}
-                                                @endif
-                                            @endif
                                         </strong>
                                     </a>
                                 </td>
@@ -271,7 +247,7 @@
                                     <td>Regulatory</td>
                                     <td colspan="2" class="last"><a>$
                                         
-                                        @if ($subscription->cal_regulatory_fee)
+                                        @if($subscription->cal_regulatory_fee)
                                             {{ number_format ($subscription->calculateChargesForAllproducts([5], $data['invoice']->id, $subscription->id), 2) }}
                                         @else
                                             0.00
@@ -284,9 +260,9 @@
                                 <td>State</td>
                                 <td colspan="2" class="last"><a>$
                                     @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if ($subscription->cal_tax_rate)
+                                        @if($subscription->cal_taxes)
                                             {{ number_format ($subscription->calculateChargesForAllproducts([7], $data['invoice']->id, $subscription->id), 2) }}
-                                        @else
+                                        @else 
                                             0.00
                                         @endif
                                     @else 
@@ -303,9 +279,9 @@
                             <tr>
                                 <td colspan="3" class="right total_value"><a><strong>Total Taxes/Fees: $
                                     @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if ($subscription->cal_taxes)
+                                        @if($subscription->cal_taxes)
                                             {{ number_format ($subscription->calculateChargesForAllproducts([5, 7], $data['invoice']->id, $subscription->id), 2) }}
-                                        @else
+                                        @else 
                                             0.00
                                         @endif
                                     @else
@@ -334,14 +310,10 @@
                             <tr>
                                 <td></td>
                                 <td colspan="2" class="last total_value"><a><strong>Total Usage Charges: $
-                                    @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if ($subscription->cal_usage_charges)
+                                    @if($subscription->cal_usage_charges)
                                         {{ number_format ($subscription->calculateChargesForAllproducts([4], $data['invoice']->id, $subscription->id), 2) }}
-                                        @else
-                                            0.00
-                                        @endif
                                     @else 
-                                        0.00    
+                                        0.00
                                     @endif
                                 </strong></a></td>
                             </tr>
@@ -353,8 +325,7 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Coupons</h2>
-                            @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                @if ($subscription->cal_credits > 0)
+                                @if ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id)->count())
                                     <table>
                                         <tr>
                                             <td colspan="3">
@@ -363,18 +334,18 @@
                                         </tr>
                                     </table>
                                 @endif
-                                <table class="test">
-                                    <tr>
-                                        @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
-                                            <td>{{ $coupon['description'] }}</td>
-                                            <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
-                                        @endforeach
-                                    </tr>
-                                    <tr>
-                                        <td colspan="3"></td>
-                                    </tr>
-                                </table>
-                            @endif
+                        
+                            <table class="test">
+                                <tr>
+                                    @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
+                                        <td>{{ $coupon['description'] }}</td>
+                                        <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
+                                    @endforeach
+                                </tr>
+                                <tr>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </table>
                             <table>
                                 <tr>
                                     <td colspan="3">
@@ -387,12 +358,8 @@
                             <tr>
                                 <td><strong></strong></td>
                                 <td colspan="2" class="last total_value"><a><strong>Total Coupons: - $
-                                    @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if ($subscription->cal_credits)
-                                            {{ number_format ($subscription->calculateChargesForAllproducts([6], $data['invoice']->id, $subscription->id), 2) }}
-                                        @else
-                                            0.00
-                                        @endif
+                                    @if($subscription->cal_credits)
+                                        {{ number_format ($subscription->calculateChargesForAllproducts([6,8,10], $data['invoice']->id, $subscription->id), 2) }}
                                     @else 
                                         0.00
                                     @endif
@@ -409,33 +376,18 @@
                         <table>
                             <tr>
                                 <td>Total Line Charges 
-                                    @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if ($subscription['phone'] && $subscription['phone'] != 'Pending')
-                                            {{$subscription['phone']}}
-                                        @else 
-                                        @endif
-                                    @else 
-                                        @isset ($ifUpgradeOrDowngradeInvoice['phone'])
-                                            {{ $ifUpgradeOrDowngradeInvoice['phone'] }}
-                                        @endisset
-                                    @endif
+                                    ({{ $subscription->phone_number_formatted }})
                                 </td>
                                 <td colspan="3" class="right"> $
-                                    @if (!isset($ifUpgradeOrDowngradeInvoice))
-                                        @if (isset($subscription->cal_total_charges))
-                                            {{ 
-                                                number_format(
-                                                    $subscription->totalSubscriptionCharges($data['invoice']->id, $subscription) - 
-                                                    $subscription->totalSubscriptionDiscounts($data['invoice']->id, $subscription), 2
-                                                ) 
-                                            }}
-                                        @else
-                                            0.00
-                                        @endif
-                                    @else 
-                                        @isset ($ifUpgradeOrDowngradeInvoice['total_line'])
-                                            {{ number_format($ifUpgradeOrDowngradeInvoice['total_line'], 2) }}
-                                        @endisset
+                                    @if (isset($subscription->cal_total_charges))
+                                        {{ 
+                                            number_format(
+                                                $subscription->totalSubscriptionCharges($data['invoice']->id, $subscription) - 
+                                                $subscription->totalSubscriptionDiscounts($data['invoice']->id, $subscription), 2
+                                            ) 
+                                        }}
+                                    @else
+                                        0.00
                                     @endif
                                 </td>
                             </tr>
@@ -444,18 +396,14 @@
                 </div>
                 <div class="container">
                     <h3>Page 
-                        @if (!isset($ifUpgradeOrDowngradeInvoice))
-                            <strong> 
-                                {{$index + 3}}    
-                            </strong>/ 
-                            @if (isset($subscriptions) && count($subscriptions))
-                                {{ count($subscriptions) + 2 }}
-                            @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
-                                {{ count($data['order']->subscriptions) + 2 }}
-                            @endisset
-                        @else 
-                            <strong>3/3</strong>
-                        @endif
+                        <strong> 
+                            {{$index + 3}}    
+                        </strong>/ 
+                        @if (isset($subscriptions) && count($subscriptions))
+                            {{ count($subscriptions) + 2 }}
+                        @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
+                            {{ count($data['order']->subscriptions) + 2 }}
+                        @endisset
                     </h3>
                 </div>
                 <div style='page-break-after:always;'>&nbsp;</div>                

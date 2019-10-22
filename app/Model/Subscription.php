@@ -93,6 +93,12 @@ class Subscription extends Model
         'refund'           => 10,
     ];
 
+    const UpgradeDowngradeStatus = [
+        'downgrade' => 'downgrade-scheduled',
+        'upgrade'   => 'for-upgrade',
+        'same_plan' => 'sameplan'
+    ];
+
     public function Customer()
     {
         return $this->hasOne('App\Model\Customer', 'id');
@@ -466,5 +472,14 @@ class Subscription extends Model
         return self::STATUSFORMATED[$this->status];
     }
 
+    public function getDowngradeStatusAttribute()
+    {
+        return $this->upgrade_downgrade_status == self::UpgradeDowngradeStatus['downgrade'] ? true : false;
+    }
+
+    public function getUpgradeStatusAttribute()
+    {
+        return $this->upgrade_downgrade_status == self::UpgradeDowngradeStatus['upgrade'] ? true : false;
+    }
 
 }

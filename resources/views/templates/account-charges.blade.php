@@ -244,12 +244,16 @@
                 </div>
                 <div class="container">
                     <h3>Page <strong> 2</strong>/
-                        @if (isset($subscriptions) && count($subscriptions))
-                            {{ count($subscriptions) + 2 }}
-                        @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
-                            {{ count($data['order']->subscriptions) + 2 }}
+                        @if (!isset($planChange))
+                            @if (isset($subscriptions) && count($subscriptions))
+                                {{ count($subscriptions) + 2 }}
+                            @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
+                                {{ count($data['order']->subscriptions) + 2 }}
+                            @else 
+                            2
+                            @endif
                         @else 
-                           2
+                            3
                         @endif
                     </h3>
                 </div>

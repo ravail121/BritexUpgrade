@@ -26,15 +26,17 @@
                                         <td width="20px"></td>
                                         <td class="detail">{{ $data['invoice']->id }}</td>
                                     </tr>
-                                    <?php 
+                                    <?php
                                         $downgradeInvoice = false;
-                                        $upgradeInvoce = false;
-                                        if (isset($ifUpgradeOrDowngradeInvoice)) {
-                                            $downgradeInvoice = $ifUpgradeOrDowngradeInvoice['plan_data']['new_plan'];
-                                            $upgradeInvoce = $ifUpgradeOrDowngradeInvoice['plan_data']['old_plan'];
+                                        $samePlan = false;
+                                        if (isset($planChange['subscription']) && $planChange['subscription']->downgrade_status) {
+                                            $downgradeInvoice = true;
+                                        }
+                                        if (isset($planChange['subscription']) && $planChange['same_plan']) {
+                                            $samePlan = true;
                                         }
                                     ?>
-                                    @if (!$downgradeInvoice) 
+                                    @if (!$downgradeInvoice && !$samePlan)
                                         <tr>
                                             <td>Period Beginning</td>
                                             <td width="20px"></td>
@@ -50,9 +52,15 @@
                                             <td width="20px"></td>
                                             <td class="detail">@date($data['order']->formatDate($data['invoice']->due_date))</td>
                                         </tr>
-                                    @else 
+                                    @else
                                         <tr>
-                                            <td>Downgrade Date</td>
+                                            <td>
+                                                @if ($downgradeInvoice) 
+                                                    Downgrade Date
+                                                @elseif ($samePlan)
+                                                    Subscription Change Date
+                                                @endif
+                                            </td>
                                             <td width="20px"></td>
                                             <td class="detail">@date($data['order']->formatDate($data['invoice']->created_at))</td>
                                         </tr>
@@ -76,12 +84,16 @@
                         </div>
                         <div style='position:absolute; right:15px; margin: auto; top: 65px; border-color: transparent; box-shadow:none;' class="bill_info">
                             <h2>
-                                @if (!$downgradeInvoice && !$upgradeInvoce)
+                                @if (isset($planChange['subscription']))
+                                    @if ($planChange['subscription']->downgrade_status)
+                                        Downgrade on
+                                    @elseif ($planChange['subscription']->upgrade_status)
+                                        Upgrade on
+                                    @elseif ($planChange['same_plan'])
+                                        Subscription change on
+                                    @endif
+                                @else 
                                     Bill for
-                                @elseif ($downgradeInvoice)
-                                    Downgrade on
-                                @elseif ($upgradeInvoce)
-                                    Upgrade on
                                 @endif
                             </h2>
                             <h3 style='margin-top: 10px;'>{{ $data['invoice']->dateFormatForInvoice($data['invoice']->created_at) }}</h3>
@@ -244,7 +256,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            @if (!isset($ifUpgradeOrDowngradeInvoice))
+                            @if (!isset($planChange))
                                 <tr class="tfootQ">
                                     <td>Account Charges</td>
                                     <td>$ 0.00</td>
@@ -284,9 +296,8 @@
                                 @if (count($data['order']->subscriptions))
                                     @foreach ($data['order']->subscriptions as $index => $subscription)
                                         <tr>
-                                                
                                             <td>@isset ($subscription->phone_number) 
-                                                    {{ $data['order']->phoneNumberFormatted($subscription->phone_number) }}
+                                                    {{ $subscription->phone_number_formatted }}
                                                 @else
                                                     Pending
                                                 @endisset
@@ -337,8 +348,8 @@
                                 @endif
                             @else
                                 <tr>            
-                                    <td>@if ($upgradeInvoce || $downgradeInvoice)
-                                            {{ $ifUpgradeOrDowngradeInvoice['phone'] }}
+                                    <td>@if ($planChange['subscription']->upgrade_downgrade_status)
+                                            {{ $planChange['subscription']->phone_number_formatted }}
                                         @endif
                                     </td>
                                     <td>$ {{ number_format($data['invoice']->cal_plan_charges, 2) }}
@@ -362,7 +373,7 @@
                                     </div>
                                 </td>
                             </tr>
-                            @if (!isset($ifUpgradeOrDowngradeInvoice))
+                            @if (!isset($planChange))
                                 <tr class="tfootQ">
                                     <td><b>Total</b></td>
                                     <td><b>$ 
@@ -422,10 +433,14 @@
                 </div>
                 <div style='text-align:center; margin-top: 35px; margin-bottom: 35px;' class="container">
                     <p>Page <strong> 1</strong>/
-                        @if (count($data['order']->subscriptions))
-                            {{ count($data['order']->subscriptions) + 2 }}
+                        @if (!isset($planChange))
+                            @if (count($data['order']->subscriptions))
+                                {{ count($data['order']->subscriptions) + 2 }}
+                            @else 
+                                1
+                            @endif
                         @else 
-                            1
+                            3
                         @endif
                     </p>
                 </div>
@@ -436,13 +451,13 @@
 
 </html>
 
-@include('templates.test-statement')
-@if (count($data['order']->subscriptions))
+@include('templates.account-charges')
+@if (!isset($planChange['subscription']))
     @foreach ($data['order']->subscriptions as $index => $subscription)
-        
-        @include('templates.test-statement-2')
-
+        @include('templates.order-subscription-details')
     @endforeach
-@elseif (isset($ifUpgradeOrDowngradeInvoice))
-    @include('templates.test-statement-2')
+@else 
+    @if ($planChange['subscription'])
+        @include('templates.plan-change')
+    @endif
 @endif

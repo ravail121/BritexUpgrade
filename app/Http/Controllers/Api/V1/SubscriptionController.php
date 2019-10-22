@@ -96,7 +96,7 @@ class SubscriptionController extends BaseController
             'upgrade_downgrade_status'  => 'required',
         ]);
         $subscription = Subscription::find($data['id']);
-        if(!($data['upgrade_downgrade_status'] == "samePlan")){ 
+        if(!($data['upgrade_downgrade_status'] == "sameplan")){ 
             $data['upgrade_downgrade_date_submitted'] = Carbon::now();
             if($data['upgrade_downgrade_status'] == "downgrade-scheduled"){
                 $data['downgrade_date'] = Carbon::parse($subscription->customerRelation->billing_end)->addDays(1); 

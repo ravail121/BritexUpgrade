@@ -51,6 +51,8 @@ class SendUpgradeDowngradeInvoice
             'id' => $order->allOrderGroup->first()->subscription_id,
         ])->with('oldPlan', 'newPlanDetail', 'plans')->first();
 
+        $subscription['phone_number'] = $subscription->phone_number_formatted;
+
         $dataRow = [
             'customer'     => $customer,
             'order'        => $order,
