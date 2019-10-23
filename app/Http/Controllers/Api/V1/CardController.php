@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use PDF;
 use Carbon\Carbon;
 use App\Model\Order;
+use App\Model\Credit;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\PaymentLog;
@@ -254,7 +255,6 @@ class CardController extends BaseController implements ConstantInterface
     public function autoPayInvoice()
     {
         $date = Carbon::today()->addDays(1);
-
         $customers = Customer::where([
             ['billing_end', '<=', $date], ['auto_pay', Customer::AUTO_PAY['enable']
         ]])->with('unpaidMounthlyInvoice')->get()->toArray();
@@ -330,7 +330,7 @@ class CardController extends BaseController implements ConstantInterface
         $credit = $this->createCredits($request, $tran);
         $invoice = $this->processCreditInvoice($request, $tran, $credit);
 
-        $this->payUnpaiedInvoice($tran, $request, $credit);
+        $this->payUnpaiedInvoice($tran->amount, $request, $credit);
         
 
         $response = response()->json(['success' => true, 'transaction' => $tran]);
@@ -338,9 +338,14 @@ class CardController extends BaseController implements ConstantInterface
         return $response;
     }
 
-    protected function payUnpaiedInvoice($tran, $request, $credit)
+    public function payCreditToInvoice(Request $request)
     {
-        $tranAmount = $tran->amount;
+        $credit = Credit::find($request->creditId);
+        $this->payUnpaiedInvoice($credit->amount, $credit, $credit);
+    }
+
+    protected function payUnpaiedInvoice($tranAmount, $request, $credit)
+    {
         $invoices = Invoice::where([
             ['customer_id', $request->customer_id],
             ['status', Invoice::INVOICESTATUS['open']]
