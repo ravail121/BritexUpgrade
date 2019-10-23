@@ -451,6 +451,11 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'CardController@primaryCard',
         ]);
 
+        Route::post('/pay-unpaied-invoice',[
+          'as'   => 'api.pay.unpaied.invoice',
+          'uses' => 'CardController@payCreditToInvoice',
+        ]);
+
       });
 
 
