@@ -116,7 +116,7 @@
                                 <td></td>
                                 <td colspan="2" class="last total_value">
                                     <a>
-                                        @if ($subscription->calculateChargesForAllproducts([1, 2], $data['invoice']->id, $subscription->id) > 0 && $subscription->customerRelation->advancePaidInvoiceOfNextMonth)
+                                        @if ($subscription->calculateChargesForAllproducts([1, 2], $data['invoice']->id, $subscription->id) > 0 && $subscription->customerRelation->advancePaidInvoiceOfNextMonth->count())
                                             <small>(Next month charges included)</small>
                                         @endif
                                         <strong>

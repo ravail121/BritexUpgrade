@@ -119,12 +119,18 @@ class CouponController extends Controller
             ]);
             return ['success' => 'Multiline coupon added'];
         } else {
-            SubscriptionCoupon::create([
-                'subscription_id' => $subscription->id,
-                'coupon_id' => $coupon->id,
-                'cycles_remaining' => $coupon->num_cycles
-            ]);
-            return ['success' => 'Subscription coupon added'];
+            $alreadyUsed = SubscriptionCoupon::where('subscription_id', $subscription->id)->where('coupon_id', $coupon->id);
+            if ($alreadyUsed->count()) {
+                $alreadyUsed->increment('cycles_remaining', $coupon->num_cycles);
+                return ['success' => 'Coupon already used, remaining usage updated'];
+            } else {
+                SubscriptionCoupon::create([
+                    'subscription_id' => $subscription->id,
+                    'coupon_id' => $coupon->id,
+                    'cycles_remaining' => $coupon->num_cycles
+                ]);
+                return ['success' => 'Subscription coupon added'];
+            }
         }
     }
 

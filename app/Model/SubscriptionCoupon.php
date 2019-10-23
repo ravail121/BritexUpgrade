@@ -18,6 +18,6 @@ class SubscriptionCoupon extends Model
     public function coupon()
     {
         return $this->belongsTo('App\Model\Coupon');
-    }    
+    }
 
 }

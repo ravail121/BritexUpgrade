@@ -379,4 +379,19 @@ class Invoice extends Model implements ConstantInterface
         return !$plans && $addons ? true : false;
     }
 
+    public static function boot()
+    {
+        parent::boot();
+        static::deleting(function($invoice) {
+            $invoice->order()->delete();
+            $invoice->invoiceItem()->delete();
+            $invoice->creditsToInvoice()->delete();
+        });
+    }
+
+    public function withSubscription()
+    {
+        return $this->invoiceItem()->withSubscription();
+    }
+
 }

@@ -32,7 +32,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ProcessController@processSubscriptions')->daily();
 
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\RegenerateInvoiceController@regenerateInvoice')->dailyAt('00:01');
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice')->dailyAt('00:01');
 
         $schedule->call('App\Http\Controllers\Api\V1\CardController@autoPayInvoice')->dailyAt('00:01');
         

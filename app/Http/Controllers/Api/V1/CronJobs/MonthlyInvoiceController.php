@@ -56,7 +56,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         
         foreach ($customers as $customer) {
             try {
-                $this->processMonthlyInvoice($customer, $request);
+                $this->processMonthlyInvoice($customer, $request, true);
             } catch (Exception $e) {
                 \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
             }
@@ -65,7 +65,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $this->respond($this->response);
     }
 
-    public function processMonthlyInvoice($customer, $request)
+    public function processMonthlyInvoice($customer, $request, $mail = true)
     {
         if ($customer->billableSubscriptions->count()) {
 
@@ -116,11 +116,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $order       = Order::where('invoice_id', $invoice->id)->first();
     
                 $request->headers->set('authorization', $order->company->api_key);
-    
-                $invoiceSavePath = SystemGlobalSetting::first()->upload_path;
                 
                 // $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
-                $this->generateInvoice($order, true, $request);
+                $this->generateInvoice($order, $mail, $request);
 
             } else {
                 \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Monthly Invoice Generation skipped");
@@ -398,6 +396,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             } elseif ($billableSubscription->status_active_and_upgrade_downgrade_status) {
                 $plan     = $billableSubscription->newPlanDetail;
                 $planData = $this->getPlanData($plan);
+                $data['description'] = "(Billable Subscription) {$plan->description}";
 
             } else {
                 \Log::error(">>>>>>>>>> Subscription status not met in Monthly Invoice for subscription.id = {$billableSubscription} <<<<<<<<<<<<");
@@ -524,6 +523,41 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             'taxable'     => $plan->taxable,
         ];
         
+    }
+
+    public function regenerateInvoice(Request $request)
+    {
+        $customers = Customer::invoicesForRegeneration(); // Customers with open and unpaid invoice and gap between today and billing_end is <=5 days.
+        foreach ($customers as $customer) {
+            $latestUnpaidInvoice = $customer->openAndUnpaidInvoices()->orderBy('id', 'desc')->first(); // Get latest open unpaid invoice
+            $latestPaidInvoice   = false;
+            if ($customer->paidOneTimeInvoice->count()) {
+                $invoice = $customer->paidOneTimeInvoice()->orderBy('id', 'desc')->first(); // Get latest paid order invoice
+                if ($invoice->withSubscription) {
+                    $latestPaidInvoice = $invoice;
+                }
+            }
+            if (isset($latestPaidInvoice->id) && isset($latestUnpaidInvoice->id) && $latestPaidInvoice->id > $latestUnpaidInvoice->id) { // If latest order invoice was made after latest open unpaid invoice
+                $this->regenerateCoupons($latestUnpaidInvoice->couponUsed); // Regenerate used coupons (add to cycles remaining)
+                $regenerateInvoice = $this->processMonthlyInvoice($customer, $request, false); // Regenerate monthly invoice
+                $updatedLatestUnpaidInvoice = $customer->openAndUnpaidInvoices()->orderBy('id', 'desc')->first(); // Get latest generated monthly invoice
+                if ($updatedLatestUnpaidInvoice->id > $latestPaidInvoice->id) { // Confirm latest monthly invoice->id is greater than old monthly invoice
+                    $creditsUsed = $latestUnpaidInvoice->creditsToInvoice->sum('amount');
+                    $latestUnpaidInvoice->creditsToInvoice()->update(['invoice_id' => $updatedLatestUnpaidInvoice->id]); // Update invoice id of used credits
+                    $latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
+                    $updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
+                    $this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
+                }
+            }
+        }
+    }
+
+    protected function regenerateCoupons($usedCoupons)
+    {
+        foreach ($usedCoupons as $coupon) {
+            $coupon->finiteSubscriptionCoupon->count() ? $coupon->finiteSubscriptionCoupon->increment('cycles_remaining') : null;
+            $coupon->finiteCustomerCoupon->count() ? $coupon->finiteCustomerCoupon->increment('cycles_remaining') : null;
+        }
     }
 
 }
