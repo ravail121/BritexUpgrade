@@ -188,7 +188,6 @@ trait InvoiceTrait
                 // return View('templates/monthly-invoice', compact('data', 'subscriptions'));
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                        
             }
-
             !isset($planChange) && $request && $mail ? event(new InvoiceGenerated($order, $generatePdf)) : null;
             return $generatePdf->download('Invoice.pdf');
         } else {
@@ -283,9 +282,9 @@ trait InvoiceTrait
                     'same_plan' => $samePlan,
                     'next_month_charges' => $nextMonthInvoice->count()
                 ];
-            } else {
-                return false;
             }
+        } else {
+            return false;
         }
         
     }
