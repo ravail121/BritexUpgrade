@@ -163,8 +163,7 @@ trait InvoiceTrait
     }
 
     public function generateInvoice($order, $mail = false, $request = null)
-    {\Log::info($mail);
-        \Log::info($request);
+    {
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
@@ -189,7 +188,6 @@ trait InvoiceTrait
                 // return View('templates/monthly-invoice', compact('data', 'subscriptions'));
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                        
             }
-\Log::info('gg');
             !isset($planChange) && $request && $mail ? event(new InvoiceGenerated($order, $generatePdf)) : null;
             return $generatePdf->download('Invoice.pdf');
         } else {
