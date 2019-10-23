@@ -29,7 +29,11 @@
                             <tr>
                                 <td width="75%">Subscriber Detail</td>
                                 <td width="25%" colspan="3" class="right">
-                                    {{-- phone --}}
+                                        @if($planChange['subscription']->phone_number_formatted && $planChange['subscription']->phone_number_formatted != 'NA')
+                                            {{ $planChange['subscription']->phone_number_formatted }}
+                                        @else 
+                                            (Pending)
+                                        @endif
                                 </td>
                             </tr>
                         </table>
@@ -273,10 +277,10 @@
                         <table>
                             <tr>
                                 <td>Total Line Charges 
-                                        @if ($planChange['subscription']->phone_number_formatted)
+                                        @if ($planChange['subscription']->phone_number_formatted && $planChange['subscription']->phone_number_formatted != 'NA')
                                             {{ $planChange['subscription']->phone_number_formatted }}
                                         @else 
-                                            Pending
+                                            (Pending)
                                         @endif
                                 </td>
                                 <td colspan="3" class="right"> $

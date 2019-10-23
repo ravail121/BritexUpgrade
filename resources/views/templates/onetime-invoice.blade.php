@@ -297,7 +297,7 @@
                                     @foreach ($data['order']->subscriptions as $index => $subscription)
                                         <tr>
                                             <td>@isset ($subscription->phone_number) 
-                                                    {{ $subscription->phone_number_formatted }}
+                                                    {{ $subscription->phone_number_formatted != 'NA' ? $subscription->phone_number_formatted : "Pending" }}
                                                 @else
                                                     Pending
                                                 @endisset
@@ -349,7 +349,7 @@
                             @else
                                 <tr>            
                                     <td>@if ($planChange['subscription']->upgrade_downgrade_status)
-                                            {{ $planChange['subscription']->phone_number_formatted }}
+                                            {{ $planChange['subscription']->phone_number_formatted != 'NA' ? $planChange['subscription']->phone_number_formatted : "Pending" }}
                                         @endif
                                     </td>
                                     <td>$ {{ number_format($data['invoice']->cal_plan_charges, 2) }}

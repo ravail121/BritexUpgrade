@@ -167,5 +167,28 @@ class InvoiceItem extends Model implements ConstantInterface
         return $query->where('type', self::TYPES['coupon']);
     }
 
+    public function customerCoupon()
+    {   
+        return $this->hasMany('App\Model\CustomerCoupon', 'coupon_id', 'product_id')->where('customer_id', $this->invoice->customer_id); // Should only be used with invoice->usedCoupon
+    }
 
+    public function subscriptionCoupon()
+    {   
+        return $this->belongsTo('App\Model\SubscriptionCoupon', 'subscription_id', 'subscription_id'); // Should only be used with invoice->usedCoupon
+    }
+
+    public function finiteSubscriptionCoupon()
+    {
+        return $this->subscriptionCoupon()->where('cycles_remaining', '!=', -1);
+    }
+
+    public function finiteCustomerCoupon()
+    {
+        return $this->customerCoupon()->where('cycles_remaining', '!=', -1);
+    }
+
+    public function scopeWithSubscription($query)
+    {
+        return $query->where('type', self::TYPES['plan_charges']);
+    }
 }

@@ -69,7 +69,12 @@ trait InvoiceCouponTrait
 
             if ($multiline) {
                 $data['customer_id'] = $order->invoice->customer_id;
-                CustomerCoupon::create($data);
+                $alreadyUsed = CustomerCoupon::where('coupon_id', $coupon->id)->where('customer_id', $data['customer_id']);
+                if ($alreadyUsed) {
+                    $alreadyUsed->increment('cycles_remaining', $coupon->num_cycles);
+                } else {
+                    CustomerCoupon::create($data);
+                }
             } else {
                 $subscriptionIds = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['coupon'])->pluck('subscription_id')->toArray();
                 foreach ($subscriptionIds as $id) {

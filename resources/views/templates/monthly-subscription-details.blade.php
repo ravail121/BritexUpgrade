@@ -63,9 +63,15 @@
                                 <td>Plans:</td>
                                 <td>
                                     <a>
-                                        @isset ($subscription->plan->name)
-                                            {{ $subscription->plan->name }}
-                                        @endisset
+                                        @if ($subscription->upgrade_downgrade_status == 'downgrade-scheduled')
+                                            @isset ($subscription->newPlanDetail->name)
+                                                {{ $subscription->newPlanDetail->name }}
+                                            @endisset
+                                        @else
+                                            @isset ($subscription->plan->name)
+                                                {{ $subscription->plan->name }}
+                                            @endisset
+                                        @endif
                                     </a>
                                 </td>
                                 <td class="right">

@@ -250,19 +250,19 @@ trait InvoiceTrait
     {
         $subscriptionId = $order->invoice->invoiceItem->pluck('subscription_id');
         if ($subscriptionId->count()) {
-            $subscription = Subscription::find($subscriptionId[0]);
-            $addonsChange  = $subscription->subscriptionAddon->whereIn('status', ['for-adding', 'removed', 'removal-scheduled']);
-            $addonsInvoiceItem = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['feature_charges']);
-            $addonsRemoved = $addonsInvoiceItem->filter(function($addon) {
-                return !$addon->amount;
-            });
-            $addonsAdded = $addonsInvoiceItem->filter(function($addon) {
-                return $addon->amount;
-            });
-            $customer = $subscription->customerRelation;
-            $nextMonthInvoice = $customer->advancePaidInvoiceOfNextMonth;
             $samePlan = Invoice::onlyAddonItems($order->invoice->id);
-            if ($subscription->upgrade_downgrade_status || $samePlan) {
+            $subscription = Subscription::find($subscriptionId[0]);
+            if ($subscription && $subscription->upgrade_downgrade_status || $samePlan) {
+                $addonsChange  = $subscription->subscriptionAddon->whereIn('status', ['for-adding', 'removed', 'removal-scheduled']);
+                $addonsInvoiceItem = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['feature_charges']);
+                $addonsRemoved = $addonsInvoiceItem->filter(function($addon) {
+                    return !$addon->amount;
+                });
+                $addonsAdded = $addonsInvoiceItem->filter(function($addon) {
+                    return $addon->amount;
+                });
+                $customer = $subscription->customerRelation;
+                $nextMonthInvoice = $customer->advancePaidInvoiceOfNextMonth;
                 $addonsRemoved = $addonsRemoved ? $addonsRemoved->pluck('product_id')->toArray() : false;
                 $newAddons   = $addonsAdded ? $addonsAdded->pluck('amount', 'product_id')->toArray() : false;
                 $addons = [];

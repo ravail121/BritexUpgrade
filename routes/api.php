@@ -3,6 +3,10 @@
 use Illuminate\Http\Request;
 use App\Model\Order;
 use App\Events\UpgradeDowngradeInvoice;
+use App\Model\Customer;
+use App\Model\Invoice;
+use App\Model\InvoiceItem;
+use App\Model\SubscriptionCoupon;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,8 +31,7 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-  $order = Order::find('17095');
-  event(new UpgradeDowngradeInvoice($order, "65915"));
+  Customer::find(1237)->advancePaidInvoiceOfNextMonth;
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
@@ -48,7 +51,7 @@ Route::get('/cron-jobs-monthly-invoice', [
 
 Route::get('/cron-jobs-regenerate-invoice', [
   'as'=>'api.cron.regenerate.invoice',
-  'uses'=> 'Api\V1\CronJobs\RegenerateInvoiceController@regenerateInvoice',
+  'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice',
 ]);
 
 

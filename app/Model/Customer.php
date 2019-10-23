@@ -245,6 +245,11 @@ class Customer extends Authenticatable
         return $this->invoice()->onetime();
     }
 
+    public function paidOneTimeInvoice()
+    {
+        return $this->orderInvoice()->where('status', Invoice::INVOICESTATUS['closed&paid']);
+    }
+
     public static function shouldBeGeneratedNewInvoices()
     {
         $today     = self::currentDate();
