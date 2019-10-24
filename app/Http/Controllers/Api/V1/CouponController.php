@@ -11,9 +11,7 @@ use Carbon\Carbon;
 use Exception;
 use App\Model\Customer;
 use App\Model\Subscription;
-use App\Model\SubscriptionCoupon;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
-use App\Model\CustomerCoupon;
 
 class CouponController extends Controller
 {
@@ -72,9 +70,13 @@ class CouponController extends Controller
         }
     }
 
-    protected function isApplicable($order, $customer, $coupon)
+    protected function isApplicable($order, $customer, $coupon, $admin = false)
     {
-        $totalSubscriptions = !$order ? 0 : $order->allOrderGroup->where('plan_id', '!=', null)->count() + $customer->billableSubscriptionsForCoupons->count();
+        if ($admin) {
+            $totalSubscriptions = $customer->billableSubscriptionsForCoupons->count();
+        } else {
+            $totalSubscriptions = $order->allOrderGroup->where('plan_id', '!=', null)->count() + $customer->billableSubscriptionsForCoupons->count();
+        }
         if ($coupon['multiline_min'] && $totalSubscriptions < $coupon['multiline_min']) {
             $this->failedResponse = 'Min subscriptions required: '.$coupon['multiline_min'];
             return false;
@@ -108,30 +110,11 @@ class CouponController extends Controller
     {
         $subscription = Subscription::find($request->subscription_id);
         $customer = $subscription->customerRelation;
-        if (!$this->isApplicable(false, $customer, $coupon)) {
+        if (!$this->isApplicable(false, $customer, $coupon, true)) {
             return ['error' => $this->failedResponse];
         }
-        if ($this->ifMultiline($coupon)) {
-            CustomerCoupon::create([
-                'customer_id' => $customer->id,
-                'coupon_id' => $coupon->id,
-                'cycles_remaining'  => $coupon->num_cycles
-            ]);
-            return ['success' => 'Multiline coupon added'];
-        } else {
-            $alreadyUsed = SubscriptionCoupon::where('subscription_id', $subscription->id)->where('coupon_id', $coupon->id);
-            if ($alreadyUsed->count()) {
-                $alreadyUsed->increment('cycles_remaining', $coupon->num_cycles);
-                return ['success' => 'Coupon already used, remaining usage updated'];
-            } else {
-                SubscriptionCoupon::create([
-                    'subscription_id' => $subscription->id,
-                    'coupon_id' => $coupon->id,
-                    'cycles_remaining' => $coupon->num_cycles
-                ]);
-                return ['success' => 'Subscription coupon added'];
-            }
-        }
+        $insert = $this->insertIntoTables($coupon, $customer->id, [$subscription->id], true);
+        return ['success' => $insert];
     }
 
     public function ifAddedByCustomer($request, $coupon)
@@ -142,9 +125,9 @@ class CouponController extends Controller
             'order_id' => $order->id,
             'coupon_id' => $coupon->id
         ]);
-        $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order) : 0;
-        $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order) : 0;
-        $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order) : 0;                
+        $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order, $customer->stateTax->rate) : 0;
+        $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $customer->stateTax->rate) : 0;
+        $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $customer->stateTax->rate) : 0;                
         
         if ($this->isApplicable($order, $customer, $coupon)) {
             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
@@ -159,7 +142,7 @@ class CouponController extends Controller
         }
     }
 
-    protected function appliedToAll($coupon, $order)
+    protected function appliedToAll($coupon, $order, $tax)
     {
         $isPercentage       = $coupon->fixed_or_perc == 2 ? true : false;
         $multilineRestrict  = $coupon->multiline_restrict_plans ? $coupon->multilinePlanTypes->pluck('plan_type')->toArray() : null;
@@ -169,47 +152,47 @@ class CouponController extends Controller
         foreach ($order->allOrderGroup as $og) {
             // device charges
             if ($og->device_id) {
-                $deviceCharge   = $og->plan_id ? $og->device->amount_w_plan : $og->device->amount;
-                $totalDiscount  += $deviceCharge;
-                $deviceDiscount = number_format($isPercentage ? $deviceCharge * $coupon->amount / 100 : $coupon->amount, 2);
-                $orderCouponProduct[] = $deviceDiscount ? $this->orderCouponProducts(self::SPECIFIC_TYPES['DEVICE'], $og->device_id, $coupon->amount, $deviceDiscount, $og->id) : [];
-                $deviceDiscount ? $countItems++ : null;
+                $deviceData = $this->couponForDevice($og, $isPercentage, $coupon, $tax);
+                if (!$deviceData['discount'] || $deviceData['discount'] == 0) continue;
+                $totalDiscount += $deviceData['discount'];
+                $orderCouponProduct[] = $deviceData['products'];
+                $deviceData['discount'] ? $countItems++ : null;
             }
             // plan charges
             if ($og->plan_id) {
-                $planCharge     = $og->plan_prorated_amt ?: $og->plan->amount_recurring;
-                $planDiscount   = number_format($isPercentage ? $planCharge * $coupon->amount / 100 : $coupon->amount, 2);
                 if ($multilineRestrict && in_array($og->plan->type, $multilineRestrict) || !$multilineRestrict) {
-                    $totalDiscount  += $planDiscount ? $planCharge : 0;
-                    $orderCouponProduct[] = $planDiscount ? $this->orderCouponProducts(self::SPECIFIC_TYPES['PLAN'], $og->plan_id, $coupon->amount, $planDiscount, $og->id) : [];
-                    $planDiscount ? $countItems++ : null;
+                    $planData = $this->couponForPlans($og, $isPercentage, $coupon, $tax);
+                    if ($planData['discount'] == 0 || !$planData['discount']) continue;
+                    $totalDiscount += $planData['discount'];
+                    $orderCouponProduct[] = $planData['products'];
+                    $planData['discount'] ? $countItems++ : null;
                 }
             }
             // sim charges
             if ($og->sim_id) {
-                $simCharge      = $og->plan_id ? $og->sim->amount_w_plan : $og->sim->amount_alone; 
-                $totalDiscount += $simCharge;
-                $simDiscount    = number_format($isPercentage ? $simCharge * $coupon->amount / 100 : $coupon->amount, 2);
-                $orderCouponProduct[] = $simDiscount ? $this->orderCouponProducts(self::SPECIFIC_TYPES['SIM'], $og->sim_id, $coupon->amount, $simDiscount, $og->id) : [];
-                $simDiscount ? $countItems++ : null;
+                $simData = $this->couponForSims($og, $isPercentage, $coupon, $tax);
+                if ($simData['discount'] == 0 || !$simData['discount']) continue;
+                $totalDiscount += $simData['discount'];
+                $orderCouponProduct[] = $simData['products'];
+                $simData['discount'] ? $countItems++ : null;
             }
             // addon charges
             if ($og->plan_id) {
                 foreach ($og->addons as $addon) {
-                    $addonCharge = $order->addonProRate($addon->id) ?: $addon->amount_recurring;
-                    $totalDiscount += $addonCharge;
-                    $addonDiscount = number_format($isPercentage ? $addonCharge * $coupon->amount / 100 : $coupon->amount, 2);
-                    $orderCouponProduct[] = $addonDiscount ? $this->orderCouponProducts(self::SPECIFIC_TYPES['ADDON'], $addon->id, $coupon->amount, $addonDiscount, $og->id) : [];
-                    $addonDiscount ? $countItems++ : null;
+                    $addonData = $this->couponForAddons($order, $addon, $isPercentage, $coupon, $og, $tax);
+                    if ($addonData['discount'] == 0 || !$addonData['discount']) continue;
+                    $totalDiscount += $addonData['discount'];
+                    $orderCouponProduct[] = $addonData['products'];
+                    $addonData['discount'] ? $countItems++ : null;
                 }
             }
         }
-        $total = $isPercentage ? $totalDiscount * $coupon->amount / 100 : $coupon->amount * $countItems;
+        $total = $isPercentage ? $totalDiscount : $coupon->amount * $countItems;
         isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
-        return (['total' => number_format($total, 2), 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : []]);
+        return (['total' => str_replace(',', '', number_format($total, 2)), 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : []]);
     }
 
-    protected function appliedToTypes($couponMain, $order)
+    protected function appliedToTypes($couponMain, $order, $tax)
     {
         $isPercentage       = $couponMain->fixed_or_perc == 2 ? true : false;
         $multilineRestrict  = $couponMain->multiline_restrict_plans ? $couponMain->multilinePlanTypes->pluck('plan_type')->toArray() : null;
@@ -219,7 +202,7 @@ class CouponController extends Controller
             foreach ($order->allOrderGroup as $og) {
                 // For Device types
                 if ($coupon->type == self::SPECIFIC_TYPES['DEVICE'] && $og->device_id) {
-                    $deviceData = $this->couponForDevice($og, $isPercentage, $coupon);
+                    $deviceData = $this->couponForDevice($og, $isPercentage, $coupon, $tax);
                     if (!$deviceData['discount'] || $deviceData['discount'] == 0) continue;
                     $totalDiscount += $deviceData['discount'];
                     $orderCouponProduct[] = $deviceData['products'];
@@ -228,14 +211,14 @@ class CouponController extends Controller
                 if ($coupon->type == self::SPECIFIC_TYPES['PLAN'] && $og->plan_id) {
                     if ($multilineRestrict && !in_array($og->plan->type, $multilineRestrict)) continue;
                     if ($coupon->sub_type && $og->plan->type != $coupon->sub_type) continue;
-                    $planData = $this->couponForPlans($og, $order, $isPercentage, $coupon);
+                    $planData = $this->couponForPlans($og, $isPercentage, $coupon, $tax);
                     if ($planData['discount'] == 0 || !$planData['discount']) continue;
                     $totalDiscount += $planData['discount'];
                     $orderCouponProduct[] = $planData['products'];
                 }
                 // For Sim types
                 if ($coupon['type'] == self::SPECIFIC_TYPES['SIM'] && $og->sim_id) {
-                    $simData = $this->couponForSims($og, $isPercentage, $coupon);
+                    $simData = $this->couponForSims($og, $isPercentage, $coupon, $tax);
                     if ($simData['discount'] == 0 || !$simData['discount']) continue;
                     $totalDiscount += $simData['discount'];
                     $orderCouponProduct[] = $simData['products'];
@@ -243,8 +226,7 @@ class CouponController extends Controller
                 //For Addon types
                 if ($coupon['type'] == self::SPECIFIC_TYPES['ADDON'] && $og->addons->count()) {
                     foreach ($og->addons as $addon) {
-                        if ($addon->id != $coupon->product_id) continue;
-                        $addonData = $this->couponForAddons($order, $addon, $isPercentage, $coupon, $og);
+                        $addonData = $this->couponForAddons($order, $addon, $isPercentage, $coupon, $og, $tax);
                         if ($addonData['discount'] == 0 || !$addonData['discount']) continue;
                         $totalDiscount += $addonData['discount'];
                         $orderCouponProduct[] = $addonData['products'];
@@ -253,10 +235,10 @@ class CouponController extends Controller
             }
         }
         isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
-        return (['total' => $totalDiscount, 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : []]);
+        return (['total' => str_replace(',', '', $totalDiscount), 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : []]);
     }
 
-    protected function appliedToProducts($couponMain, $order)
+    protected function appliedToProducts($couponMain, $order, $tax)
     {
         $isPercentage       = $couponMain['fixed_or_perc'] == 2 ? true : false;
         $multilineRestrict  = $couponMain['multiline_restrict_plans'] == 1 ? $couponMain->multilinePlanTypes->pluck('plan_type')->toArray() : null;
@@ -267,21 +249,21 @@ class CouponController extends Controller
                 // For plans
                 if ($coupon->product_type == self::SPECIFIC_TYPES['PLAN'] && $coupon->product_id == $og->plan_id) {
                     if ($multilineRestrict && !in_array($og->plan->type, $multilineRestrict)) continue;
-                    $planData = $this->couponForPlans($og, $order, $isPercentage, $coupon);
+                    $planData = $this->couponForPlans($og, $isPercentage, $coupon, $tax);
                     if ($planData['discount'] == 0 || !$planData['discount']) continue;
                     $totalDiscount += $planData['discount'];
                     $orderCouponProduct[] = $planData['products'];
                 }
                 // For devices
                 if ($coupon->product_type == self::SPECIFIC_TYPES['DEVICE'] && $coupon->product_id == $og->device_id) {
-                    $deviceData = $this->couponForDevice($og, $isPercentage, $coupon);
+                    $deviceData = $this->couponForDevice($og, $isPercentage, $coupon, $tax);
                     if (!$deviceData['discount'] || $deviceData['discount'] == 0) continue;
                     $totalDiscount += $deviceData['discount'];
                     $orderCouponProduct[] = $deviceData['products'];
                 }
                 // For Sims
                 if ($coupon->product_type == self::SPECIFIC_TYPES['SIM'] && $coupon->product_id == $og->sim_id) {
-                    $simData = $this->couponForSims($og, $isPercentage, $coupon);
+                    $simData = $this->couponForSims($og, $isPercentage, $coupon, $tax);
                     if ($simData['discount'] == 0 || !$simData['discount']) continue;
                     $totalDiscount += $simData['discount'];
                     $orderCouponProduct[] = $simData['products'];
@@ -290,7 +272,7 @@ class CouponController extends Controller
                 if ($coupon->product_type == self::SPECIFIC_TYPES['ADDON'] && $og->addons->count()) {
                     foreach ($og->addons as $addon) {
                         if ($addon->id != $coupon->product_id) continue;
-                        $addonData = $this->couponForAddons($order, $addon, $isPercentage, $coupon, $og);
+                        $addonData = $this->couponForAddons($order, $addon, $isPercentage, $coupon, $og, $tax);
                         if ($addonData['discount'] == 0 || !$addonData['discount']) continue;
                         $totalDiscount += $addonData['discount'];
                         $orderCouponProduct[] = $addonData['products'];
@@ -299,7 +281,7 @@ class CouponController extends Controller
             }
         }
         isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
-        return (['total' => $totalDiscount, 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : []]);
+        return (['total' => str_replace(',', '', $totalDiscount), 'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : []]);
     }
 
     protected function orderCouponProducts($productType, $productId, $couponAmount, $discount, $orderGroupId)
@@ -327,34 +309,40 @@ class CouponController extends Controller
         }
     }
 
-    protected function couponForDevice($og, $isPercentage, $coupon)
+    protected function couponForDevice($og, $isPercentage, $coupon, $tax)
     {
         $deviceAmount = $og->plan_id ? $og->device->amount_w_plan : $og->device->amount;
+        $deviceAmount += $og->device->taxable ? $deviceAmount * $tax / 100 : 0;
         $deviceDiscount = number_format($isPercentage ? $coupon->amount * $deviceAmount / 100 : $coupon->amount, 2);
         $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['DEVICE'], $og->device_id, $coupon->amount, $deviceDiscount, $og->id);
         return ['discount' => $deviceDiscount, 'products' => $orderCouponProduct];
     }
 
-    protected function couponForPlans($og, $order, $isPercentage, $coupon)
+    protected function couponForPlans($og, $isPercentage, $coupon, $tax)
     {
-        $planAmount = $order->planProRate($og->plan_id) ?: $og->plan->amount_recurring;
+        $planAmount = $og->plan_prorated_amt ?: $og->plan->amount_recurring;
+        $planAmount += $og->plan->amount_onetime ?: 0;
+        $planAmount += $og->plan->taxable && $tax ? $planAmount * $tax / 100 : 0;
+        $planAmount += $og->plan->getRegualtoryAmount($og->plan->id, $planAmount);
         $planDiscount = number_format($isPercentage ? $coupon->amount * $planAmount / 100 : $coupon->amount, 2);
         $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['PLAN'], $og->plan_id, $coupon->amount, $planDiscount, $og->id);
         return ['discount' => $planDiscount, 'products' => $orderCouponProduct];
     }
 
-    protected function couponForSims($og, $isPercentage, $coupon)
+    protected function couponForSims($og, $isPercentage, $coupon, $tax)
     {
         $simAmount = $og->plan_id ? $og->sim->amount_w_plan : $og->sim->amount_alone;
+        $simAmount += $og->sim->taxable ? $simAmount * $tax / 100 : 0;
         $simDiscount =  number_format($isPercentage ? $coupon->amount * $simAmount / 100 : $coupon->amount, 2);
         $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['SIM'], $og->sim_id, $coupon->amount, $simDiscount, $og->id);
         return ['discount' => $simDiscount, 'products' => $orderCouponProduct];
     }
     
     
-    protected function couponForAddons($order, $addon, $isPercentage, $coupon, $og)
+    protected function couponForAddons($order, $addon, $isPercentage, $coupon, $og, $tax)
     {
         $addonAmount = $order->addonProRate($addon->id) ?: $addon->amount_recurring;
+        $addonAmount += $addon->taxable ? $addonAmount * $tax / 100 : 0;
         $addonDiscount  = number_format($isPercentage ? $coupon->amount * $addonAmount / 100 : $coupon->amount, 2);
         $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['ADDON'], $addon->id, $coupon->amount, $addonDiscount, $og->id);
         return ['discount' => $addonDiscount, 'products' => $orderCouponProduct];

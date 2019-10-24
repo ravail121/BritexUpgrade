@@ -7,6 +7,7 @@ use App\Model\Customer;
 use App\Model\Invoice;
 use App\Model\InvoiceItem;
 use App\Model\SubscriptionCoupon;
+use App\Model\Plan;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +32,7 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-  Customer::find(1237)->advancePaidInvoiceOfNextMonth;
+  return Plan::find(2)->getRegualtoryAmount(2);
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
