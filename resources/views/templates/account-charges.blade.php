@@ -203,7 +203,7 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Coupons</h2>
-                            @if ($data['order']->invoice->cal_credits > 0)
+                            @if ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', null)->count())
                                 <table>
                                     <tr>
                                         <td colspan="3">
