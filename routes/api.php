@@ -2,13 +2,7 @@
 
 use Illuminate\Http\Request;
 use App\Model\Order;
-use App\Events\UpgradeDowngradeInvoice;
-use App\Model\Customer;
-use App\Model\Invoice;
-use App\Model\InvoiceItem;
-use App\Model\SubscriptionCoupon;
-use App\Model\Plan;
-
+use App\Events\InvoiceGenerated;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -32,7 +26,8 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-  return Plan::find(2)->getRegualtoryAmount(2);
+  $order = Order::find('6360');
+  event(new InvoiceGenerated($order, "TEST"));
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
