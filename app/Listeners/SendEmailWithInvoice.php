@@ -41,7 +41,7 @@ class SendEmailWithInvoice
      * @param  BusinessVerificationCreated  $event
      * @return void
      */
-    public function handle(InvoiceGenerated $event)
+    public function handle($event)
     {
 
         $customerOrder = Order::whereId($event->order->id)->with('customer', 'invoice')->first();
@@ -73,7 +73,7 @@ class SendEmailWithInvoice
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
             
-            Notification::route('mail', $email)->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
+            Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
         }        
     }
 }
