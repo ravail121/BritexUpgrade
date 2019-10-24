@@ -54,37 +54,42 @@ trait InvoiceCouponTrait
                     'num_uses' => $numUses + 1
                 ]);
             }
-            $this->insertIntoTables($order);
+            $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
         }
     }
 
-    protected function insertIntoTables($order)
+    public function insertIntoTables($coupon, $customerId, $subscriptionIds, $admin = false)
     {
-        $coupon        = Coupon::find($order->orderCoupon->coupon_id);
         $multiline     = $this->ifMultiline($coupon);
         if ($coupon->num_cycles != 1) {
-
-            $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $coupon->num_cycles - 1;
-            $data['coupon_id']   = $order->orderCoupon->coupon_id;
-
+            $numCycles = $admin ? $coupon->num_cycles : $coupon->num_cycles - 1;
+            $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
+            $data['coupon_id']   = $coupon->id;
             if ($multiline) {
-                $data['customer_id'] = $order->invoice->customer_id;
+                $data['customer_id'] = $customerId;
                 $alreadyUsed = CustomerCoupon::where('coupon_id', $coupon->id)->where('customer_id', $data['customer_id']);
-                if ($alreadyUsed) {
-                    $alreadyUsed->increment('cycles_remaining', $coupon->num_cycles);
+                if ($alreadyUsed->count()) {
+                    $alreadyUsed->increment('cycles_remaining', $numCycles);
+                    $response = 'Coupon already used, remaining cycles added';
                 } else {
                     CustomerCoupon::create($data);
+                    $response = 'Coupon added';
                 }
             } else {
-                $subscriptionIds = $order->invoice->invoiceItem->where('type', InvoiceItem::TYPES['coupon'])->pluck('subscription_id')->toArray();
                 foreach ($subscriptionIds as $id) {
-                    if ($id) {
+                    $alreadyUsed = SubscriptionCoupon::where('coupon_id', $coupon->id)->where('subscription_id', $id);
+                    if ($alreadyUsed->count()) {
+                        $alreadyUsed->increment('cycles_remaining', $numCycles);
+                        $response = 'Coupon already used, remaining cycles added';
+                    } else {
                         $data['subscription_id'] = $id;
                         SubscriptionCoupon::create($data);
+                        $response = 'Coupon added';
                     }
                 }
             }
         }
+        return $response;
     }
 
     // Functions for monthly invoices
