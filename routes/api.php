@@ -2,11 +2,7 @@
 
 use Illuminate\Http\Request;
 use App\Model\Order;
-use App\Events\UpgradeDowngradeInvoice;
-use App\Model\Customer;
-use App\Model\Invoice;
-use App\Model\InvoiceItem;
-use App\Model\SubscriptionCoupon;
+use App\Events\InvoiceGenerated;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +27,8 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-  Customer::find(1237)->advancePaidInvoiceOfNextMonth;
+    $order = Order::find('6360');
+    event(new InvoiceGenerated($order, "TEST"));
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){

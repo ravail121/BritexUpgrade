@@ -6,27 +6,15 @@ use Config;
 use Notification;
 use Carbon\Carbon;
 use App\Model\Order;
-use App\Model\Company;
 use App\Model\EmailTemplate;
-use App\Events\InvoiceGenerated;
+use App\Listeners\EmailLayout;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\EmailWithAttachment;
-use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
+use App\Support\Configuration\MailConfiguration;
 
 class SendEmailWithInvoice
 {
-    use InvoiceTrait;
-    const SIM_TYPE    = 'sim';
-    const PLAN_TYPE   = 'plan';
-    const ADDON_TYPE  = 'addon';
-    const DEVICE_TYPE = 'device';
-    const DESCRIPTION = 'Activation Fee';
-    const SHIPPING    = 'Shipping Fee';
-    const ONETIME     = 3;
-    const TAXES       = 7;
-    const COUPONS     = 6;
-
-    use Notifiable;
+    use Notifiable, MailConfiguration, EmailLayout;
 
     /**
      * Date-Time variable
@@ -56,7 +44,7 @@ class SendEmailWithInvoice
     public function handle(InvoiceGenerated $event)
     {
 
-        $customerOrder = Order::find($event->order->id);
+        $customerOrder = Order::whereId($event->order->id)->with('customer', 'invoice')->first();
         $pdf           = $event->pdf;
         
         $configurationSet = $this->setMailConfiguration($customerOrder);
@@ -67,9 +55,11 @@ class SendEmailWithInvoice
         }
 
         $customer = $customerOrder->customer;
-        $dataRow['customer'] = $customer;
-
-        $emailTemplate = '';
+        $dataRow = [
+            'customer' =>  $customer,
+            'order'    =>  $customerOrder,
+            'invoice'  =>  $customerOrder->invoice
+        ];
 
         if ($customerOrder->invoice->type == 2) {
             $emailTemplates      = EmailTemplate::where('company_id', $customerOrder->company_id)->where('code', 'one-time-invoice')->get();
@@ -81,58 +71,9 @@ class SendEmailWithInvoice
         $note = 'Invoice Link- '.route('api.invoice.download', $customerOrder->company_id).'?order_hash='.$customerOrder->hash;
 
         foreach ($emailTemplates as $key => $emailTemplate) {
-            if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
-                $email = $emailTemplate->to;
-            }else{
-                $email = $customer->email;
-            }
-
-            $names = array();
-            $column = preg_match_all('/\[(.*?)\]/s', $emailTemplate->body, $names);
-            $table = null;
-            $replaceWith = null;
-
-            foreach ($names[1] as $key => $name) {
-                $dynamicField = explode("__",$name);
-                if($table != $dynamicField[0]){
-                    if(isset($dataRow[$dynamicField[0]])){
-                        $data = $dataRow[$dynamicField[0]]; 
-                        $table = $dynamicField[0];
-                    }else{
-                        unset($names[0][$key]);
-                        continue;
-                    }
-                }
-                $replaceWith[$key] = $data->{$dynamicField[1]} ?: $names[0][$key];
-            }
-
-            $body = $emailTemplate->body($names[0], $replaceWith);
-
-            Notification::route('mail', $email)->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $body, $email, $note));
+            $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+            
+            Notification::route('mail', $email)->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
         }        
     }
-
-
-    /**
-     * This method sets the Configuration of the Mail according to the Company
-     * 
-     * @param Order $order
-     * @return boolean
-     */
-    protected function setMailConfiguration($order)
-    {
-        $company = Company::find($order->company_id);
-        $config = [
-            'driver'   => $company->smtp_driver,
-            'host'     => $company->smtp_host,
-            'port'     => $company->smtp_port,
-            'username' => $company->smtp_username,
-            'password' => $company->smtp_password,
-        ];
-        
-        Config::set('mail',$config);
-        return false;
-    }
-
-    
 }
