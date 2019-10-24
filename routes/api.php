@@ -27,8 +27,7 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-    $order = Order::find('6360');
-    event(new InvoiceGenerated($order, "TEST"));
+
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){

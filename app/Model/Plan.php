@@ -44,4 +44,17 @@ class Plan extends Model
      return $this->belongsToMany('App\Model\PlanToAddon');
     }
 
+    public static function getRegualtoryAmount($id, $planAmount)
+    {
+        $plan = self::find($id);
+        if ($plan->regulatory_fee_amount) {
+            if ($plan->regulatory_fee_type == self::REGULATORY_FEE_TYPES['percentage_of_plan_cost']) {
+                return $plan->regulatory_fee_amount * $planAmount / 100;
+            } else {
+                return $plan->regulatory_fee_amount;
+            }
+        }
+        return 0;
+    }
+
 }

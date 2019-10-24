@@ -203,6 +203,26 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Coupons</h2>
+                            @if ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', null)->count())
+                                <table>
+                                    <tr>
+                                        <td colspan="3">
+                                            <div class="sepratorline"></div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            @endif
+                            <table class="test">
+                                <tr>
+                                    @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', null) as $coupon)
+                                        <td>{{ $coupon['description'] }}</td>
+                                        <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
+                                    @endforeach
+                                </tr>
+                                <tr>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </table>
                             <div class="sepratorline dark"></div>
                         </div>
                         <table class="test table-padding">
