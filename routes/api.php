@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use App\Model\Order;
-use App\Events\UpgradeDowngradeInvoice;
+use App\Events\InvoiceGenerated;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,8 +27,8 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-  $order = Order::find('17095');
-  event(new UpgradeDowngradeInvoice($order, "65915"));
+    $order = Order::find('6360');
+    event(new InvoiceGenerated($order, "TEST"));
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){

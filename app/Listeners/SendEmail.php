@@ -53,34 +53,9 @@ class SendEmail
         $emailTemplates = EmailTemplate::where('company_id', $order->company_id)->where('code', 'biz-verification-submitted')->get();
 
         foreach ($emailTemplates as $key => $emailTemplate) {
-            if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
-                $email = $emailTemplate->to;
-            }else{
-                $email = $businessVerification->email;
-            }
+            $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            $names = array();
-            $column = preg_match_all('/\[(.*?)\]/s', $emailTemplate->body, $names);
-            $table = null;
-            $replaceWith = null;
-
-            foreach ($names[1] as $key => $name) {
-                $dynamicField = explode("__",$name);
-                if($table != $dynamicField[0]){
-                    if(isset($dataRow[$dynamicField[0]])){
-                        $data = $dataRow[$dynamicField[0]]; 
-                        $table = $dynamicField[0];
-                    }else{
-                        unset($names[0][$key]);
-                        continue;
-                    }
-                }
-                $replaceWith[$key] = $data->{$dynamicField[1]} ?: $names[0][$key];
-            }
-
-            $body = $emailTemplate->body($names[0], $replaceWith);
-
-            Notification::route('mail', $email)->notify(new SendEmails($order, $emailTemplate, $businessVerification->id, $body, $email));
+            Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $businessVerification->id, $row['body'], $row['email']));
         }
    
     }
