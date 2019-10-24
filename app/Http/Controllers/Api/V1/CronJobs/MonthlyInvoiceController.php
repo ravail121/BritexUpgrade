@@ -555,8 +555,8 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     protected function regenerateCoupons($usedCoupons)
     {
         foreach ($usedCoupons as $coupon) {
-            $coupon->finiteSubscriptionCoupon->count() ? $coupon->finiteSubscriptionCoupon->increment('cycles_remaining') : null;
-            $coupon->finiteCustomerCoupon->count() ? $coupon->finiteCustomerCoupon->increment('cycles_remaining') : null;
+            isset($coupon->finiteSubscriptionCoupon) && $coupon->finiteSubscriptionCoupon->count() ? $coupon->finiteSubscriptionCoupon->increment('cycles_remaining') : null;
+            isset($coupon->finiteCustomerCoupon) && $coupon->finiteCustomerCoupon->count() ? $coupon->finiteCustomerCoupon->increment('cycles_remaining') : null;
         }
     }
 
