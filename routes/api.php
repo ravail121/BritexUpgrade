@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use App\Model\Order;
 use App\Events\InvoiceGenerated;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -26,8 +27,7 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-  $order = Order::find('6360');
-  event(new InvoiceGenerated($order, "TEST"));
+
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
