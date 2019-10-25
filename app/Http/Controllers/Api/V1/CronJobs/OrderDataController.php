@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class OrderDataController extends BaseController
 {
-    public function order($orderID = null) {
+    public function order($orderID = null, Request $request) {
         
         if($orderID){
             $orders = Order::where('id', $orderID)->get();
@@ -51,7 +51,7 @@ class OrderDataController extends BaseController
                         if(!$boxdetail){
                             continue;
                         }
-                        $this->updateOrderDetails($boxdetail, $boxes);
+                        $this->updateOrderDetails($boxdetail, $boxes, $request);
                     }
                 }
             }
@@ -87,12 +87,11 @@ class OrderDataController extends BaseController
         
     }
 
-    public function updateOrderDetails($boxdetail, $boxes)
+    public function updateOrderDetails($boxdetail, $boxes, $request)
     {
         if($boxes['tracking_number'] != null){
             $subString = substr($boxdetail['part_number'], 0, 3);
             $partNumId = subStr($boxdetail['part_number'], 4);
-            $request = new Request;
 
             if($subString == 'SUB') {
                 $table = Subscription::whereId($partNumId)->with('customer.company', 'device', 'sim')->first();
@@ -105,12 +104,14 @@ class OrderDataController extends BaseController
                         'device_imei'  => $boxdetail['pick_location'],
                         'sim_card_num' => $boxdetail['code'],
                     ]);
-                    $request->headers->set('authorization', $table->customer->company->api_key);
+                    $table['customer'] = $table->customerRelation;
+
+                    $request->headers->set('authorization', $table->customerRelation->company->api_key);
                     event(new ShippingNumber($boxes['tracking_number'], $table));
                     event(new SubcriptionStatusChanged($table->id));
                 }
             } elseif($subString == 'DEV') {
-                $table = CustomerStandaloneDevice::whereId($partNumId)->with('device')->first();
+                $table = CustomerStandaloneDevice::whereId($partNumId)->with('device', 'customer.company')->first();
                 if($table){
                     $table->update([
                         'status'       => CustomerStandaloneDevice::STATUS['complete'],
@@ -122,7 +123,7 @@ class OrderDataController extends BaseController
                     event(new ShippingNumber($boxes['tracking_number'], $table));
                 } 
             } elseif($subString == 'SIM') {
-                $table = CustomerStandaloneSim::whereId($partNumId)->with('sim')->first();
+                $table = CustomerStandaloneSim::whereId($partNumId)->with('sim', 'customer.company')->first();
                 if($table){
                     $table->update([
                         'status'       => CustomerStandaloneSim::STATUS['complete'],

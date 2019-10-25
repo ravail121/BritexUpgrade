@@ -39,7 +39,7 @@ class SendMailForShippingNumber
         $trackingNumber = $event->trackingNumber;
         $table = $event->table;
         $customer = $table->customer;
-        
+
         $dataRow = [
             'customer'    => $table->customer,
         ];
