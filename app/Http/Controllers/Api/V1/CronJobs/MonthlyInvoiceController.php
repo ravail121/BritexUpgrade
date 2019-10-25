@@ -11,8 +11,6 @@ use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\InvoiceItem;
 use Illuminate\Http\Request;
-use App\Events\MonthlyInvoice;
-use App\Model\SystemGlobalSetting;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;

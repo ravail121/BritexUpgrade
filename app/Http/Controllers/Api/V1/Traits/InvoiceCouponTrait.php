@@ -71,24 +71,28 @@ trait InvoiceCouponTrait
                 $alreadyUsed = CustomerCoupon::where('coupon_id', $coupon->id)->where('customer_id', $data['customer_id']);
                 if ($alreadyUsed->count()) {
                     $alreadyUsed->increment('cycles_remaining', $numCycles);
-                    $response = 'Coupon already used, remaining cycles added';
+                    $response = $data['cycles_remaining'] === -1 ? 'Infinite coupon already used' : 'Coupon already used, remaining cycles added';
+                    $response = ['success' => $response];
                 } else {
                     CustomerCoupon::create($data);
-                    $response = 'Coupon added';
+                    $response =['success' => 'Coupon added'];
                 }
             } else {
                 foreach ($subscriptionIds as $id) {
                     $alreadyUsed = SubscriptionCoupon::where('coupon_id', $coupon->id)->where('subscription_id', $id);
                     if ($alreadyUsed->count()) {
                         $alreadyUsed->increment('cycles_remaining', $numCycles);
-                        $response = 'Coupon already used, remaining cycles added';
+                        $response = $data['cycles_remaining'] === -1 ? 'Infinite coupon already used' : 'Coupon already used, remaining cycles added';
+                        $response = ['success' => $response];
                     } else {
                         $data['subscription_id'] = $id;
                         SubscriptionCoupon::create($data);
-                        $response = 'Coupon added';
+                        $response = ['success' => 'Coupon added'];
                     }
                 }
             }
+        } else {
+            $response = ['error' => 'Cannot add a one time coupon!'];
         }
         return $response;
     }

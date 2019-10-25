@@ -114,7 +114,7 @@ class CouponController extends Controller
             return ['error' => $this->failedResponse];
         }
         $insert = $this->insertIntoTables($coupon, $customer->id, [$subscription->id], true);
-        return ['success' => $insert];
+        return $insert;
     }
 
     public function ifAddedByCustomer($request, $coupon)
@@ -125,9 +125,10 @@ class CouponController extends Controller
             'order_id' => $order->id,
             'coupon_id' => $coupon->id
         ]);
-        $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order, $customer->stateTax->rate) : 0;
-        $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $customer->stateTax->rate) : 0;
-        $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $customer->stateTax->rate) : 0;                
+        $stateTax = isset($customer->stateTax->rate) ? $customer->stateTax->rate : 0;
+        $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order, $stateTax) : 0;
+        $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $stateTax) : 0;
+        $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $stateTax) : 0;                
         
         if ($this->isApplicable($order, $customer, $coupon)) {
             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];

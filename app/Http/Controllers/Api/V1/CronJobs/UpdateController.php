@@ -48,6 +48,10 @@ class UpdateController extends MonthlyInvoiceController
         foreach ($customers as $customer) {
             try {
                 if ($customer->today_greater_than_billing_end) {
+                    $ifMonthlyInvoice = $customer->monthlyInvoicesOfCurrentCycle->count();
+                    if (!$ifMonthlyInvoice) {
+                        $this->processMonthlyInvoice($customer, $request, true);
+                    }
                     $customer->update([
                         'billing_start' => $customer->add_day_to_billing_end,
                         'billing_end'   => $customer->add_month_to_billing_end,
