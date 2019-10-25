@@ -27,7 +27,7 @@ class CouponController extends Controller
     protected $failedResponse;
     
     public function addCoupon(Request $request)
-    {\Log::info($request);
+    {
         try {
             $coupon = Coupon::where('code', $request->code)->first();
             if (!$this->couponIsValid($coupon)) {
