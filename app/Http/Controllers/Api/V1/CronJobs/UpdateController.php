@@ -47,14 +47,15 @@ class UpdateController extends MonthlyInvoiceController
 
         foreach ($customers as $customer) {
             try {
-                $ifMonthlyInvoice = $customer->monthlyInvoicesOfCurrentCycle->count();
-                if ($ifMonthlyInvoice) {
-                    if ($customer->today_greater_than_billing_end) {
-                        $customer->update([
-                            'billing_start' => $customer->add_day_to_billing_end,
-                            'billing_end'   => $customer->add_month_to_billing_end,
-                        ]);
+                if ($customer->today_greater_than_billing_end) {
+                    $ifMonthlyInvoice = $customer->monthlyInvoicesOfCurrentCycle->count();
+                    if (!$ifMonthlyInvoice) {
+                        $this->processMonthlyInvoice($customer, $request, true);
                     }
+                    $customer->update([
+                        'billing_start' => $customer->add_day_to_billing_end,
+                        'billing_end'   => $customer->add_month_to_billing_end,
+                    ]);
                 }
             } catch (Exception $e) {
                 \Log::info($e->getMessage(). ', From: UpdateController@updateCustomerDates: '.$e->getLine().', Possible issue from customer with id of '.$customer->id);
