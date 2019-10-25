@@ -21,7 +21,7 @@ class OrderController extends BaseController
     public function order($orderID = null)
     {
         if($orderID){
-            $orders = Order::where('id', '6368')->get();
+            $orders = Order::where('id', $orderID)->get();
         }else{
             $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem', 'payLog')->whereHas('subscriptions', function(Builder $subscription) {
                 $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);

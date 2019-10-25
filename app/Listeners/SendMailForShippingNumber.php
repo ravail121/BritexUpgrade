@@ -38,7 +38,8 @@ class SendMailForShippingNumber
     {
         $trackingNumber = $event->trackingNumber;
         $table = $event->table;
-
+        $customer = $table->customer;
+        
         $dataRow = [
             'customer'    => $table->customer,
         ];
@@ -66,7 +67,7 @@ class SendMailForShippingNumber
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            $row['body'] = $this->addFieldsToBody(['[product_name]','[tracking_num]'], [$productName, $trackingNum], $row['body']);
+            $row['body'] = $this->addFieldsToBody(['[product_name]','[tracking_num]'], [$productName, $trackingNumber], $row['body']);
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

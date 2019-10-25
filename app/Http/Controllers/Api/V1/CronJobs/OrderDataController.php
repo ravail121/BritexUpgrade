@@ -7,6 +7,7 @@ use Exception;
 use App\Model\Order;
 use GuzzleHttp\Client;
 use App\Model\Subscription;
+use Illuminate\Http\Request;
 use App\Events\ShippingNumber;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
@@ -19,7 +20,7 @@ class OrderDataController extends BaseController
     public function order($orderID = null) {
         
         if($orderID){
-            $orders = Order::where('id', '6368')->get();
+            $orders = Order::where('id', $orderID)->get();
         }else{
             $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
                 $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
@@ -91,9 +92,10 @@ class OrderDataController extends BaseController
         if($boxes['tracking_number'] != null){
             $subString = substr($boxdetail['part_number'], 0, 3);
             $partNumId = subStr($boxdetail['part_number'], 4);
+            $request = new Request;
 
             if($subString == 'SUB') {
-                $table = Subscription::whereId($partNumId)->with('customer', 'device', 'sim')->first();
+                $table = Subscription::whereId($partNumId)->with('customer.company', 'device', 'sim')->first();
                 if($table){
                     $date = Carbon::today();
                     $table->update([
@@ -103,6 +105,7 @@ class OrderDataController extends BaseController
                         'device_imei'  => $boxdetail['pick_location'],
                         'sim_card_num' => $boxdetail['code'],
                     ]);
+                    $request->headers->set('authorization', $table->customer->company->api_key);
                     event(new ShippingNumber($boxes['tracking_number'], $table));
                     event(new SubcriptionStatusChanged($table->id));
                 }
@@ -115,6 +118,7 @@ class OrderDataController extends BaseController
                         'tracking_num' => $boxes['tracking_number'],
                         'device_imei'  => $boxdetail['pick_location'],
                     ]);
+                    $request->headers->set('authorization', $table->customer->company->api_key);
                     event(new ShippingNumber($boxes['tracking_number'], $table));
                 } 
             } elseif($subString == 'SIM') {
@@ -126,6 +130,7 @@ class OrderDataController extends BaseController
                         'tracking_num' => $boxes['tracking_number'],
                         'sim_card_num' => $boxdetail['code'],
                     ]);
+                    $request->headers->set('authorization', $table->customer->company->api_key);
                     event(new ShippingNumber($boxes['tracking_number'], $table));
                 }
             }
