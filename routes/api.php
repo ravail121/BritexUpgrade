@@ -42,7 +42,7 @@ Route::get('test-email', function(Illuminate\Http\Request $request){
 // 
 Route::get('/auto-pay', [
     'as'=>'api.cron.autopay.invoice',
-    'uses'=> 'App\Http\Controllers\Api\V1\CardController@autoPayInvoice',
+    'uses'=> 'Api\V1\CardController@autoPayInvoice',
 ]);
 
 Route::get('/cron-jobs-monthly-invoice', [

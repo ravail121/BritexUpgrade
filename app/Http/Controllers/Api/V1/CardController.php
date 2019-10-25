@@ -252,7 +252,7 @@ class CardController extends BaseController implements ConstantInterface
     }
 
 
-    public function autoPayInvoice()
+    public function autoPayInvoice(Request $request)
     {
         $date = Carbon::today()->addDays(1);
         $customers = Customer::where([
@@ -264,7 +264,6 @@ class CardController extends BaseController implements ConstantInterface
         ]])->with('unpaidAndClosedMounthlyInvoice')->get()->toArray();
 
         $customers = array_merge($customers, $customersB);
-        $request = new Request;
 
         foreach ($customers as $key => $customer) {
             try {
