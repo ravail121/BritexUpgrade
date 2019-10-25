@@ -409,4 +409,9 @@ class Customer extends Authenticatable
         }
         return $invoices;
     }
+
+    public function monthlyInvoicesOfCurrentCycle()
+    {
+        return $this->invoice()->openAndUnpaid()->whereDate('start_date', '>', Carbon::parse($this->billing_end)->addDays(1));
+    }
 }
