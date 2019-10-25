@@ -16,17 +16,21 @@ use Illuminate\Database\Eloquent\Builder;
 
 class OrderDataController extends BaseController
 {
-    public function order() {
+    public function order($orderID = null) {
         
-        $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
-            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
+        if($orderID){
+            $orders = Order::where('id', '6368')->get();
+        }else{
+            $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
+                $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
 
-        })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
-            $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
-            
-        })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
-            $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
-        })->with('company')->take(30);
+            })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
+                $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
+                
+            })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
+                $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
+            })->with('company')->take(30);
+        }
         
 
         foreach ($orders as $order) {

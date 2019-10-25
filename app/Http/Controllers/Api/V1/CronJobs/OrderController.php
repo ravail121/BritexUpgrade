@@ -18,17 +18,20 @@ use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
 
 class OrderController extends BaseController
 {
-    public function order()
+    public function order($orderID = null)
     {
-        $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem', 'payLog')->whereHas('subscriptions', function(Builder $subscription) {
-            $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
-        })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
-            $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
-        })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
-            $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
-        })->with('company')->get();
+        if($orderID){
+            $orders = Order::where('id', '6368')->get();
+        }else{
+            $orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem', 'payLog')->whereHas('subscriptions', function(Builder $subscription) {
+                $subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
+            })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
+                $standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
+            })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
+                $standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
+            })->with('company')->get();
+        }
 
-        // $orders = Order::where('id', '6172')->get();
 
         try {
             foreach ($orders as $orderKey => $order) {
