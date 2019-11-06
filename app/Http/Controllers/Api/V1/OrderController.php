@@ -182,7 +182,7 @@ class OrderController extends BaseController
         }
 
         if (isset($data['customer_hash'])) {
-            $customer = Customer::hash($data['customer_hash']);
+            $customer = Customer::whereHash($data['customer_hash'])->first();
             if ($customer) {
                 $order->update(['customer_id' => $customer->id]);
                 $paidMonthlyInvoice = isset($data['paid_monthly_invoice'])? $data['paid_monthly_invoice'] : null;
