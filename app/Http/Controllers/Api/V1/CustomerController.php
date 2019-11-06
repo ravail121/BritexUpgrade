@@ -331,8 +331,12 @@ class CustomerController extends BaseController
 	 */
 	protected function validateUpdate($data) 
 	{
-		$id = $data['id'];
+		$id = null;
+		if(isset($data['id'])){
+			$id = $data['id'];	
+		}
 		return $this->validate_input($data, [
+				'id'				=> 'required',
 				'fname'             => 'sometimes|required',
 				'lname'             => 'sometimes|required',
 				'email'             => 'sometimes|required|unique:customer,email,'.$id,
