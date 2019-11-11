@@ -412,6 +412,6 @@ class Customer extends Authenticatable
 
     public function monthlyInvoicesOfCurrentCycle()
     {
-        return $this->invoice()->openAndUnpaid()->whereDate('start_date', '>', Carbon::parse($this->billing_end));
+        return $this->invoice()->monthly()->whereDate('start_date', '>', Carbon::parse($this->billing_end));
     }
 }
