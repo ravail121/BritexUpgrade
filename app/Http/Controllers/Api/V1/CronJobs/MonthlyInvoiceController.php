@@ -166,22 +166,22 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
         $taxPercentage = ($customer->stateTax->rate)/100;
         
-        $taxableBillableSubscriptionInvoiceItems = $billableSubscriptionInvoiceItems->where('taxable', true)->all();
-        
+        // $taxableBillableSubscriptionInvoiceItems = $billableSubscriptionInvoiceItems->where('taxable', true)->all();
+        $taxableBillableSubscriptionInvoiceItems = $invoice->invoiceItem->where('taxable', true);
         // For each plan/subscription
         // Calculate total of plan + feature, one-time or usage charges
         // and apply tax on it
-        foreach($taxableBillableSubscriptionInvoiceItems as $taxableBillableSubscriptionInvoiceItem){
+        foreach($taxableBillableSubscriptionInvoiceItems as $invoiceItem){
 
-            $amount = ($taxableBillableSubscriptionInvoiceItem
-                            ->subscriptionDetail
-                            ->invoiceItemOfTaxableServices
-                            ->where('invoice_id', $invoice->id)
-                            ->pluck('amount')->sum()
-                        ) * $taxPercentage;
-
+            // $amount = ($invoiceItem
+            //                 ->subscriptionDetail
+            //                 ->invoiceItemOfTaxableServices
+            //                 ->where('invoice_id', $invoice->id)
+            //                 ->pluck('amount')->sum()
+            //             ) * $taxPercentage;
+            $amount = $invoiceItem->amount * $taxPercentage;
             $data = [
-                'subscription_id' => $taxableBillableSubscriptionInvoiceItem->subscription_id,
+                'subscription_id' => $invoiceItem->subscription_id,
                 'product_type'    => '',
                 'product_id'      => null,
                 'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
@@ -553,8 +553,16 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     protected function regenerateCoupons($usedCoupons)
     {
         foreach ($usedCoupons as $coupon) {
-            isset($coupon->finiteSubscriptionCoupon) && $coupon->finiteSubscriptionCoupon->count() ? $coupon->finiteSubscriptionCoupon->increment('cycles_remaining') : null;
-            isset($coupon->finiteCustomerCoupon) && $coupon->finiteCustomerCoupon->count() ? $coupon->finiteCustomerCoupon->increment('cycles_remaining') : null;
+            if (isset($coupon->finiteSubscriptionCoupon)) {
+                foreach ($coupon->finiteSubscriptionCoupon as $c) {
+                    $c->increment('cycles_remaining');
+                }
+            }
+            if (isset($coupon->finiteCustomerCoupon)) {
+                foreach ($coupon->finiteCustomerCoupon as $c) {
+                    $c->increment('cycles_remaining');
+                }
+            }
         }
     }
 
