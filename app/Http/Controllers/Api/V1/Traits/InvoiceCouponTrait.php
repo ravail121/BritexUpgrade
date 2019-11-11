@@ -258,12 +258,14 @@ trait InvoiceCouponTrait
         }
         foreach ($addonProducts as $product) {
             foreach ($addons as $a) {
-                $addon = $a->addon;
-                $addonAmount = $addon->amount_recurring;
-                $amount[] = $isPercentage ? $product->amount * $addonAmount / 100 : $product->amount;
-                if ($addon->taxable) {
-                    $itemTax  = $addonAmount * $tax / 100;
-                    $amount[] = $isPercentage ? $addonAmount * $itemTax / 100 : 0;
+                if ($a->addon_id == $product->product_id) {
+                    $addon = $a->addon;
+                    $addonAmount = $addon->amount_recurring;
+                    $amount[] = $isPercentage ? $product->amount * $addonAmount / 100 : $product->amount;
+                    if ($addon->taxable) {
+                        $itemTax  = $addonAmount * $tax / 100;
+                        $amount[] = $isPercentage ? $product->amount * $itemTax / 100 : 0;
+                    }
                 }
             }
         }
