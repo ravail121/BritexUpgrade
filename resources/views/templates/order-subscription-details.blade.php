@@ -83,7 +83,7 @@
                             <tr>
                                 @if(isset($subscription->subscriptionAddon) && count($subscription->subscriptionAddon->whereNotIn('status', 'removed')))
                                     <td>Features:</td>
-                                    <td style='position: absolute; top: 360px;'>
+                                    <td>
                                         @foreach ($subscription->subscriptionAddon->whereNotIn('status', 'removed') as $item)
                                             <a>
                                                 @if ($subscription->getAddonData($item, $data['invoice']->id))
@@ -291,7 +291,6 @@
                                     @endif
                                 </strong></a></td>
                             </tr>
-                           
                         </table>
                     </div>
                 </div>
@@ -309,12 +308,12 @@
                                 </table>
                             @endif
                             <table class="test">
-                                <tr>
-                                    @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
+                                @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
+                                    <tr>
                                         <td>{{ $coupon['description'] }}</td>
                                         <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
-                                    @endforeach
-                                </tr>
+                                    </tr>
+                                @endforeach
                                 <tr>
                                     <td colspan="3"></td>
                                 </tr>

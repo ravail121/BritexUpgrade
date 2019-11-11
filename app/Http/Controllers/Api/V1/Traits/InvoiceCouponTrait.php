@@ -26,7 +26,7 @@ trait InvoiceCouponTrait
                         'product_type'    => $this->ifMultiline($couponToProcess) ? Coupon::TYPES['customer_coupon'] : Coupon::TYPES['subscription_coupon'],
                         'product_id'      => $couponToProcess->id,
                         'type'            => InvoiceItem::TYPES['coupon'],
-                        'description'     => $couponToProcess->code. '('.$couponToProcess->name.')',
+                        'description'     => $couponToProcess->code,
                         'amount'          => $couponData['amount'],
                         'start_date'      => $order->invoice->start_date,
                         'taxable'         => self::TAX_FALSE,
@@ -62,37 +62,20 @@ trait InvoiceCouponTrait
     public function insertIntoTables($coupon, $customerId, $subscriptionIds, $admin = false)
     {
         $multiline     = $this->ifMultiline($coupon);
-        if ($coupon->num_cycles != 1) {
-            $numCycles = $admin ? $coupon->num_cycles : $coupon->num_cycles - 1;
-            $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
-            $data['coupon_id']   = $coupon->id;
-            if ($multiline) {
-                $data['customer_id'] = $customerId;
-                $alreadyUsed = CustomerCoupon::where('coupon_id', $coupon->id)->where('customer_id', $data['customer_id']);
-                if ($alreadyUsed->count()) {
-                    $alreadyUsed->increment('cycles_remaining', $numCycles);
-                    $response = $data['cycles_remaining'] === -1 ? 'Infinite coupon already used' : 'Coupon already used, remaining cycles added';
-                    $response = ['success' => $response];
-                } else {
-                    CustomerCoupon::create($data);
-                    $response =['success' => 'Coupon added'];
-                }
-            } else {
-                foreach ($subscriptionIds as $id) {
-                    $alreadyUsed = SubscriptionCoupon::where('coupon_id', $coupon->id)->where('subscription_id', $id);
-                    if ($alreadyUsed->count()) {
-                        $alreadyUsed->increment('cycles_remaining', $numCycles);
-                        $response = $data['cycles_remaining'] === -1 ? 'Infinite coupon already used' : 'Coupon already used, remaining cycles added';
-                        $response = ['success' => $response];
-                    } else {
-                        $data['subscription_id'] = $id;
-                        SubscriptionCoupon::create($data);
-                        $response = ['success' => 'Coupon added'];
-                    }
-                }
-            }
+        $numCycles = $admin ? $coupon->num_cycles : $coupon->num_cycles - 1;
+        $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
+        $data['coupon_id']   = $coupon->id;
+        if ($multiline) {
+            $data['customer_id'] = $customerId;
+            CustomerCoupon::create($data);
+            $response =['success' => 'Coupon added'];
         } else {
-            $response = ['error' => 'Cannot add a one time coupon!'];
+            foreach ($subscriptionIds as $id) {
+                $alreadyUsed = SubscriptionCoupon::where('coupon_id', $coupon->id)->where('subscription_id', $id);
+                $data['subscription_id'] = $id;
+                SubscriptionCoupon::create($data);
+                $response = ['success' => 'Coupon added'];
+            }
         }
         return $response;
     }
@@ -129,7 +112,7 @@ trait InvoiceCouponTrait
                             'product_type'    => '',
                             'product_id'      => $coupon->id,
                             'type'            => InvoiceItem::TYPES['coupon'],
-                            'description'     => $coupon->code. '('.$coupon->name.')',
+                            'description'     => $coupon->code,
                             'amount'          => str_replace(',', '',number_format($amount, 2)),
                             'start_date'      => $invoice->start_date,
                             'taxable'         => self::TAX_FALSE,
@@ -172,16 +155,17 @@ trait InvoiceCouponTrait
         }
         $addons = $subscription->subscriptionAddon;
         $amount = [0];
+        $tax = isset($subscription->customerRelation->stateTax->rate) ? $subscription->customerRelation->stateTax->rate : 0;
         if($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']){
             $planTypes  = $coupon->couponProductPlanTypes;
             $addonTypes = $coupon->couponProductAddonTypes;
-            $amount[]   = $this->couponProductTypesAmount($planTypes, $plan, $coupon, $addonTypes, $addons, $subscription->customerRelation->stateTax->rate);
+            $amount[]   = $this->couponProductTypesAmount($planTypes, $plan, $coupon, $addonTypes, $addons, $tax);
         } elseif($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT']){
             $planProducts   = $coupon->couponPlanProducts;
             $addonProducts  = $coupon->couponAddonProducts;
-            $amount[]       = $this->couponProductsAmount($planProducts, $plan, $coupon, $addonProducts, $addons, $subscription->customerRelation->stateTax->rate); 
+            $amount[]       = $this->couponProductsAmount($planProducts, $plan, $coupon, $addonProducts, $addons, $tax); 
         } else {
-            $amount[] = $this->couponAllTypesAmount($plan, $coupon, $addons);
+            $amount[] = $this->couponAllTypesAmount($plan, $coupon, $addons, $tax);
         }
 
         return array_sum($amount);
@@ -215,7 +199,7 @@ trait InvoiceCouponTrait
                     'product_type'    => '',
                     'product_id'      => $coupon->id,
                     'type'            => InvoiceItem::TYPES['coupon'],
-                    'description'     => $coupon->code. '('.$coupon->name.')',
+                    'description'     => $coupon->code,
                     'amount'          => str_replace(',', '', number_format($amount, 2)),
                     'start_date'      => $invoice->start_date,
                     'taxable'         => self::TAX_FALSE,
@@ -242,7 +226,7 @@ trait InvoiceCouponTrait
                     $planTax  = $plan->taxable ? $plan->amount_recurring * $tax / 100 : 0;
                     $planRegulatory = $plan->getRegualtoryAmount($plan->id, $plan->amount_recurring);
                     $amount[] = $planTax && $isPercentage ? $planTax * $planType->amount / 100 : 0;
-                    $amount[] = $planRegulatory ?: 0;
+                    $amount[] = $planRegulatory && $isPercentage ? $planType->amount * $planRegulatory / 100 : 0;
                 }
             }
         }
@@ -252,7 +236,10 @@ trait InvoiceCouponTrait
                 $addon = $a->addon;
                 $addonAmount = $addon->amount_recurring;
                 $amount[] = $isPercentage ? $addonType->amount * $addonAmount / 100 : $addonType->amount;
-                $amount[] = $addon->taxable && $isPercentage ? $addonAmount * $tax / 100 : 0;
+                if ($addon->taxable) {
+                    $itemTax  = $addonAmount * $tax / 100;
+                    $amount[] = $isPercentage ? $addonType->amount * $itemTax / 100 : 0;
+                }
             }
         }
         return array_sum($amount);
@@ -264,13 +251,12 @@ trait InvoiceCouponTrait
         $isPercentage = $coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage'] ? true : false;
         foreach ($planProducts as $product) {
             if ($plan) {
-
                 if ($product->product_id == $plan->id) {
                     $amount[] = $isPercentage ? $product->amount * $plan->amount_recurring / 100 : $product->amount;
                     $planTax  = $plan->taxable ? $plan->amount_recurring * $tax / 100 : 0;
                     $planRegulatory = $plan->getRegualtoryAmount($plan->id, $plan->amount_recurring);
                     $amount[] = $planTax && $isPercentage ? $planTax * $product->amount / 100 : 0;
-                    $amount[] = $planRegulatory ?: 0;
+                    $amount[] = $planRegulatory && $isPercentage ? $planRegulatory * $product->amount / 100 : 0;
                 }
             }
         }
@@ -279,24 +265,34 @@ trait InvoiceCouponTrait
                 $addon = $a->addon;
                 $addonAmount = $addon->amount_recurring;
                 $amount[] = $isPercentage ? $product->amount * $addonAmount / 100 : $product->amount;
-                $amount[] = $addon->taxable && $isPercentage ? $addonAmount * $tax / 100 : 0;
+                if ($addon->taxable) {
+                    $itemTax  = $addonAmount * $tax / 100;
+                    $amount[] = $isPercentage ? $addonAmount * $itemTax / 100 : 0;
+                }
             }
         }
-
         return array_sum($amount);
     }
 
-    public function couponAllTypesAmount($plan, $coupon, $addons)
+    public function couponAllTypesAmount($plan, $coupon, $addons, $tax)
     {
         $amount = [0];
         $isPercentage = $coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage'] ? true : false;
         if ($plan) {
-            $amount[]     = $isPercentage ? $coupon->amount * $plan->amount_recurring / 100 : $coupon->amount;
+            $amount[] = $isPercentage ? $coupon->amount * $plan->amount_recurring / 100 : $coupon->amount;
+            $planTax  = $plan->taxable ? $plan->amount_recurring * $tax / 100 : 0;
+            $planRegulatory = $plan->getRegualtoryAmount($plan->id, $plan->amount_recurring);
+            $amount[] = $isPercentage ? $planTax * $coupon->amount / 100 : 0;
+            $amount[] = $planRegulatory && $isPercentage ? $planRegulatory * $coupon->amount / 100 : 0;
         }
         foreach ($addons as $addon) {
             if ($addon->addon_id) {
                 $addonAmount = Addon::find($addon->addon_id)->amount_recurring;
                 $amount[] = $isPercentage ? $coupon->amount * $addonAmount / 100 : $coupon->amount;
+                if ($addon->taxable) {
+                    $itemTax  = $addonAmount * $tax / 100;
+                    $amount[] = $isPercentage ? $addonAmount * $itemTax / 100 : 0;
+                }
             }
         }
         return array_sum($amount);
