@@ -131,13 +131,6 @@ trait InvoiceCouponTrait
     {
         $isApplicable  = true;
         $multilineMin = $coupon->multiline_min;
-            if($coupon->multiline_restrict_plans){
-                $supportedPlanTypes = $coupon->multilinePlanTypes->pluck('plan_type');
-                foreach ($subscriptions as $sub) {
-                    $supportedPlanTypes->contains($sub->plan->type) ? $sub['restricted_type'] = 1 : $sub['restricted_type'] = 0;
-                }
-            }
-
         $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
         if($coupon->multiline_max){
             $isApplicable = $isApplicable && $subscriptions->count() <= $coupon->multiline_max;
@@ -148,13 +141,15 @@ trait InvoiceCouponTrait
 
     private function couponAmount($subscription, $coupon)
     {
-        if (isset($subscription->restricted_type)) {
-            $plan =  $subscription->restricted_type ? $subscription->plan : null;
-        } else {
-            $plan = $subscription->plan;
-        }
-        $addons = $subscription->subscriptionAddon;
         $amount = [0];
+        if ($coupon->multiline_restrict_plans) {
+            $supportedPlanTypes = $coupon->multilinePlanTypes->pluck('plan_type');
+            if (!$supportedPlanTypes->contains($subscription->plan->type)) {
+                return array_sum($amount);
+            }
+        } 
+        $plan = $subscription->plan;
+        $addons = $subscription->subscriptionAddon;
         $tax = isset($subscription->customerRelation->stateTax->rate) ? $subscription->customerRelation->stateTax->rate : 0;
         if($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']){
             $planTypes  = $coupon->couponProductPlanTypes;
@@ -175,13 +170,14 @@ trait InvoiceCouponTrait
     public function customerSubscriptionCoupons($invoice, $subscriptions)
     {
         foreach($subscriptions as $subscription){
-            
+
             $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
 
             // Subscription doesnot has any coupons
             if(!$subscriptionCouponRedeemable) continue;
 
             foreach ($subscriptionCouponRedeemable as $subscriptionCoupon) {
+                
                 $coupon = $subscriptionCoupon->coupon;
 
                 if($subscriptionCoupon->cycles_remaining == 0) continue;
@@ -206,7 +202,7 @@ trait InvoiceCouponTrait
                 ]);
 
                 if ($subscriptionCoupon['cycles_remaining'] > 0) {
-                    $subscriptionCoupon->update(['cycles_remaining' => $subscriptionCoupon['cycles_remaining'] - 1]);
+                    $subscriptionCoupon->decrement('cycles_remaining');
                 }
             }
 
