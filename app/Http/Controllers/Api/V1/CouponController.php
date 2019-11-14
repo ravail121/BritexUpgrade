@@ -202,7 +202,7 @@ class CouponController extends Controller
         foreach ($couponMain->couponProductTypes as $coupon) {
             foreach ($order->allOrderGroup as $og) {
                 // For Device types
-                if ($multilineRestrict && !in_array($og->plan->type, $multilineRestrict)) continue;
+                if (isset($og->plan->type) && $multilineRestrict && !in_array($og->plan->type, $multilineRestrict)) continue;
                 if ($coupon->type == self::SPECIFIC_TYPES['DEVICE'] && $og->device_id) {
                     $deviceData = $this->couponForDevice($og, $isPercentage, $coupon, $tax);
                     if (!$deviceData['discount'] || $deviceData['discount'] == 0) continue;
