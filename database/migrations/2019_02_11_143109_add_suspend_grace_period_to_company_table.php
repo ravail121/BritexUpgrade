@@ -14,7 +14,7 @@ class AddSuspendGracePeriodToCompanyTable extends Migration
     public function up()
     {
         Schema::table('company', function (Blueprint $table) {
-            $table->integer('suspend_grace_period')->after('smtp_password')->default(14);
+            $table->integer('suspend_grace_period')->after('smtp_password')->default(30);
         });
     }
 
