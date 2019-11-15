@@ -65,6 +65,7 @@ class SendEmailWithPasswordHash
             'port'     => $company->smtp_port,
             'username' => $company->smtp_username,
             'password' => $company->smtp_password,
+            'encryption' => 'ssl'
         ];
 
         Config::set('mail',$config);
