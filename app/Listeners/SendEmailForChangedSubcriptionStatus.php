@@ -56,12 +56,9 @@ class SendEmailForChangedSubcriptionStatus
         $addonsName = $addons->implode(',');
 
         $configurationSet = $this->setMailConfigurationById($dataRow['customer']['company_id']);
-
         if ($configurationSet) {
             return false;
         }
-
-        $order = Order::where('customer_id', $dataRow['customer']['id'])->first();
 
         $emailTemplates = EmailTemplate::where('company_id', $dataRow['customer']['company_id'])
         ->where('code', self::STATUS_CODE[$subscription->status])
@@ -72,23 +69,7 @@ class SendEmailForChangedSubcriptionStatus
 
             $row['body'] = $this->addFieldsToBody(['[addon__name]'], [$addonsName], $row['body']);
 
-            Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $dataRow['customer']['business_verification_id'] , $row['body'], $row['email']));
+            Notification::route('mail', $row['email'])->notify(new SendEmails($dataRow['customer'], $emailTemplate, $dataRow['customer']['business_verification_id'] , $row['body'], $row['email']));
         }
-
-    }
-
-    public function setMailConfigurationById($companyId)
-    {
-        $company = Company::find($companyId);
-        $config = [
-            'driver'   => $company->smtp_driver,
-            'host'     => $company->smtp_host,
-            'port'     => $company->smtp_port,
-            'username' => $company->smtp_username,
-            'password' => $company->smtp_password,
-        ];
-
-        Config::set('mail',$config);
-        return false;
     }
 }
