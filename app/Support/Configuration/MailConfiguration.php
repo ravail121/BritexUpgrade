@@ -22,7 +22,23 @@ trait MailConfiguration
             'port'     => $company->smtp_port,
             'username' => $company->smtp_username,
             'password' => $company->smtp_password,
-            'encryption' => 'ssl'
+            'encryption' => $company->smtp_encryption,
+        ];
+
+        Config::set('mail',$config);
+        return false;
+    }
+
+    public function setMailConfigurationById($companyId)
+    {
+        $company = Company::find($companyId);
+        $config = [
+            'driver'   => $company->smtp_driver,
+            'host'     => $company->smtp_host,
+            'port'     => $company->smtp_port,
+            'username' => $company->smtp_username,
+            'password' => $company->smtp_password,
+            'encryption' => $company->smtp_encryption,
         ];
 
         Config::set('mail',$config);

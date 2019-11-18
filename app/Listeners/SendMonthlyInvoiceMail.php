@@ -98,6 +98,7 @@ class SendMonthlyInvoiceMail
             'port'     => $company->smtp_port,
             'username' => $company->smtp_username,
             'password' => $company->smtp_password,
+            'encryption' => $company->smtp_encryption,
         ];
 
         Config::set('mail',$config);

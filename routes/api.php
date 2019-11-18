@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Model\Order;
-use App\Events\InvoiceGenerated;
+use App\Events\SubcriptionStatusChanged;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +26,7 @@ $config = [
 Config::set('mail',$config);
 
 Route::get('test', function(){
-
+    event(new SubcriptionStatusChanged('6'));
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
