@@ -40,30 +40,31 @@ class CustomerPlanController extends BaseController
 
     private function getSubscriptionPriceDetails($subscriptions, $rate)
     {
+        $subscriptions = $subscriptions->whereIn('status', [
+                  'active', 'shipping', 'for-activation']);
+
         $subtotal = $stateTax = $regulatoryFee = 0;
         $rate = $rate/100;
 
         foreach ($subscriptions as $key => $subscription) {
-            if($subscription->status == Subscription::STATUS['active']){
-                $subtotal += $subscription->plan->amount_recurring;
-                if($subscription->plan->taxable){
-                    $stateTax += $subscription->plan->amount_recurring * $rate;
-                }
-                if($subscription->plan->regulatory_fee_type == "1"){
-                    $regulatoryFee += $subscription->plan->regulatory_fee_amount;
-                }else{
-                    $regulatoryFee += $subscription->plan->amount_recurring * ($subscription->plan->regulatory_fee_amount/100 );
-                }
+            $subtotal += $subscription->plan->amount_recurring;
+            if($subscription->plan->taxable){
+                $stateTax += $subscription->plan->amount_recurring * $rate;
+            }
+            if($subscription->plan->regulatory_fee_type == "1"){
+                $regulatoryFee += $subscription->plan->regulatory_fee_amount;
+            }else{
+                $regulatoryFee += $subscription->plan->amount_recurring * ($subscription->plan->regulatory_fee_amount/100 );
+            }
 
-                if( isset($subscription->subscriptionAddonNotRemoved[0]) ){
-                    foreach ($subscription->subscriptionAddonNotRemoved as $addon) {
-                        $addonData = $addon->addons;
-                        if($addonData){
-                            $subtotal += $addonData->amount_recurring;  
-                        }
-                        if($addonData->taxable){
-                            $stateTax += $addonData->amount_recurring * $rate;
-                        }
+            if( isset($subscription->subscriptionAddonNotRemoved[0]) ){
+                foreach ($subscription->subscriptionAddonNotRemoved as $addon) {
+                    $addonData = $addon->addons;
+                    if($addonData){
+                        $subtotal += $addonData->amount_recurring;  
+                    }
+                    if($addonData->taxable){
+                        $stateTax += $addonData->amount_recurring * $rate;
                     }
                 }
             }

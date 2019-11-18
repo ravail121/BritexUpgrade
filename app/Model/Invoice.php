@@ -73,6 +73,7 @@ class Invoice extends Model implements ConstantInterface
         return $this->calAmount($invoiceItems);
     }
 
+
     public function getCalTaxesAttribute()
     {
         $invoiceItems = $this->invoiceItem()->taxes()->get();
@@ -392,6 +393,11 @@ class Invoice extends Model implements ConstantInterface
     public function withSubscription()
     {
         return $this->invoiceItem()->withSubscription();
+    }
+    
+    public function refundInvoiceItem()
+    {
+        return $this->invoiceItem()->refundItem();
     }
 
 }

@@ -83,4 +83,9 @@ class Credit extends Model
         return $this->hasMany('App\Model\CreditToInvoice', 'credit_id', 'id');
     }
 
+    public function invoice()
+    {
+        return $this->belongsTo('App\Model\Invoice', 'invoice_id' ,'id');
+    }
+
 }
