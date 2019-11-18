@@ -191,4 +191,9 @@ class InvoiceItem extends Model implements ConstantInterface
     {
         return $query->where('type', self::TYPES['plan_charges']);
     }
+
+    public function scopeRefundItem($query)
+    {
+        return $query->whereType('10');
+    }
 }

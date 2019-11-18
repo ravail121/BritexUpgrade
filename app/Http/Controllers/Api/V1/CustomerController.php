@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use Validator;
 use App\Model\Order;
+use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
@@ -354,63 +355,79 @@ class CustomerController extends BaseController
 		]);
 	}
 
-		public function checkEmail(Request $request)
-		{
-				$data =  $request->validate([
-						'newEmail'   => 'required',
-				]);
-				
-				if($request->hash){
-						$emailCount = Customer::where([['email' , $request->newEmail], ['company_id', \Request::get('company')->id], ['id', '!=' , $request->id]])->count();
-				}else{
-						$emailCount = Customer::where([['email' , $request->newEmail],['company_id', \Request::get('company')->id]])->count();
-				}
-
-				return $this->respond(['emailCount' => $emailCount]);
+	public function checkEmail(Request $request)
+	{
+		$data =  $request->validate([
+				'newEmail'   => 'required',
+		]);
+		
+		if($request->hash){
+				$emailCount = Customer::where([['email' , $request->newEmail], ['company_id', \Request::get('company')->id], ['id', '!=' , $request->id]])->count();
+		}else{
+				$emailCount = Customer::where([['email' , $request->newEmail],['company_id', \Request::get('company')->id]])->count();
 		}
 
-		public function checkPassword(Request $request)
-		{
-				$data =  $request->validate([
-						'hash'     => 'required',
-						'password' => 'required',
-				]);
+		return $this->respond(['emailCount' => $emailCount]);
+	}
 
-				$currentPassword = Customer::whereHash($request->hash)->first();
+	public function checkPassword(Request $request)
+	{
+		$data =  $request->validate([
+				'hash'     => 'required',
+				'password' => 'required',
+		]);
 
-				if(Hash::check($request->password, $currentPassword['password'])){
-						return $this->respond(['status' => 0]);
-				}
-				else{
-						return $this->respond(['status' => 1]);
-				}
+		$currentPassword = Customer::whereHash($request->hash)->first();
+
+		if(Hash::check($request->password, $currentPassword['password'])){
+				return $this->respond(['status' => 0]);
 		}
+		else{
+				return $this->respond(['status' => 1]);
+		}
+	}
 
-		public function customerOrder(Request $request)
-		{
-				$data =  $request->validate([
-						'hash'       => 'required',
-				]);
-				$customer = Customer::whereHash($request->hash)->first();
+	public function customerOrder(Request $request)
+	{
+		$data =  $request->validate([
+				'hash'       => 'required',
+		]);
+		$customer = Customer::whereHash($request->hash)->first();
 
-				$customerDetails = Customer::with('creditAmount','invoice.order','orders.allOrderGroup.plan', 'orders.allOrderGroup.device','orders.allOrderGroup.sim','orders.allOrderGroup.order_group_addon.addon','orders.invoice', 'invoice.invoiceItem')->find($customer['id'])->toArray();
+		$customerDetails = Customer::with('creditAmount.invoice','orders.allOrderGroup.plan', 'orders.allOrderGroup.device','orders.allOrderGroup.sim','orders.allOrderGroup.order_group_addon.addon','orders.invoice', 'invoice.invoiceItem')->find($customer['id'])->toArray();
 
-				foreach ($customerDetails['orders'] as $key => $order) {
-					
-						foreach ($order['all_order_group'] as $orderGroupKey => $orderGroup) {
-								if($orderGroup['plan']){
-										$customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['plan']['subscription'] = Subscription::where([['plan_id', $orderGroup['plan']['id']],['order_id', $order['id']]])->first(); 
-								}
-								if($orderGroup['device']){
-										$customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['device']['customer_standalone_device'] = CustomerStandaloneDevice::where([['device_id', $orderGroup['device']['id']],['order_id', $order['id']]])->first(); 
-								}
-								if($orderGroup['sim']){
-										$customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['sim']['customer_standalone_sim'] = CustomerStandaloneSim::where([['sim_id', $orderGroup['sim']['id']],['order_id', $order['id']]])->first(); 
-								}
+		$customerDetails['invoice'] = $this->getInvoiceData($customerDetails['id']);
+
+		foreach ($customerDetails['orders'] as $key => $order) {
+			
+				foreach ($order['all_order_group'] as $orderGroupKey => $orderGroup) {
+						if($orderGroup['plan']){
+								$customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['plan']['subscription'] = Subscription::where([['plan_id', $orderGroup['plan']['id']],['order_id', $order['id']]])->first(); 
+						}
+						if($orderGroup['device']){
+								$customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['device']['customer_standalone_device'] = CustomerStandaloneDevice::where([['device_id', $orderGroup['device']['id']],['order_id', $order['id']]])->first(); 
+						}
+						if($orderGroup['sim']){
+								$customerDetails['orders'][$key]['all_order_group'][$orderGroupKey]['sim']['customer_standalone_sim'] = CustomerStandaloneSim::where([['sim_id', $orderGroup['sim']['id']],['order_id', $order['id']]])->first(); 
 						}
 				}
-				
-				return $this->respond($customerDetails);
 		}
+		
+		return $this->respond($customerDetails);
+	}
 
+	public function getInvoiceData($customerId)
+    {
+        return Invoice::whereCustomerId($customerId)
+            ->with('order', 'refundInvoiceItem')
+            ->where( function( $query ){
+                $query->where(function( $subQuery ){
+                    $subQuery->has('order');
+                })
+                ->orWhere(function( $subQuery ){
+                    $subQuery->has('refundInvoiceItem');
+                });
+            }
+        )->get();    	
+    }
 }
