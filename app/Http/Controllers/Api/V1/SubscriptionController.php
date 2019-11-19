@@ -405,4 +405,17 @@ class SubscriptionController extends BaseController
         return $errorMessage;
     }
 
+    public function updateSubLabel(Request $request)
+    {
+        $data['label'] = $request->label;
+        $data['id'] = $request->id;
+
+        $subcriptions = Subscription::find($request->id);
+        $update = $subcriptions->update(['label' => $request->label]);
+
+        if($update){
+            return $subcriptions;
+        }
+    }
+
 }
