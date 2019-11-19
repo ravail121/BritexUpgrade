@@ -42,6 +42,7 @@ class Subscription extends Model
       'shipping_date',
       'order_num',
       'sent_to_readycloud',
+      'label'
     ];
 
     protected $dates = [

@@ -583,6 +583,11 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'SubscriptionController@updateSubscription',
         ]);
 
+        Route::post('/update-sub-label',[
+          'as'   => 'api.Subscription.label',
+          'uses' => 'SubscriptionController@updateSubLabel',
+        ]);
+
         Route::group([],function(){
           Route::post('/update-port',[
             'as'   => 'api.update.port',
