@@ -114,8 +114,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 $order       = Order::where('invoice_id', $invoice->id)->first();
     
                 $request->headers->set('authorization', $order->company->api_key);
-                
-                // $fileSavePath = $invoiceSavePath.'/uploads/'.$order->company->id.'/invoice-pdf/';
+ 
                 $this->generateInvoice($order, $mail, $request);
 
             } else {
@@ -366,6 +365,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         $invoiceItems = collect();
         
         foreach ($billableSubscriptions as $billableSubscription) {
+            $subDescription = isset($billableSubscription->plan->description) ? $billableSubscription->plan->description : null;
             $data = [
                 'subscription_id' => $billableSubscription->id,
                 'product_type'    => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['plan'],
@@ -516,9 +516,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     private function getPlanData($plan)
     {
         return [
-            'product_id'  => $plan->id,
-            'amount'      => $plan->amount_recurring,  // ToDo: CONFIRM THIS FIRST
-            'taxable'     => $plan->taxable,
+            'product_id'  => isset($plan->id) ? $plan->id : null,
+            'amount'      => isset($plan->amount_recurring) ? $plan->amount_recurring : 0,  // ToDo: CONFIRM THIS FIRST
+            'taxable'     => isset($plan->taxable) ? $plan->taxable : 0,
         ];
         
     }

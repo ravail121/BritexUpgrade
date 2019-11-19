@@ -9,7 +9,7 @@
 </head>
 
 <body>
-    <div style='margin-bottom:500px;' class="wrapper">
+    <div style='margin-bottom:500px;' class="wrapper" >
         <div class="container" style="width: 100%; float: none; margin: 0px auto;">
             <div style='position:relative;top:100px;' class="boxmain">
                 <div class="head" style="padding: 0px 0px 0px;">
@@ -453,9 +453,13 @@
 
 @include('templates.account-charges')
 @if (!isset($planChange['subscription']))
-    @foreach ($data['order']->subscriptions as $index => $subscription)
+    @if ($data['order']->subscriptions->count())
+        @foreach ($data['order']->subscriptions as $index => $subscription)
+            @include('templates.order-subscription-details')
+        @endforeach
+    @else 
         @include('templates.order-subscription-details')
-    @endforeach
+    @endif
 @else 
     @if ($planChange['subscription'])
         @include('templates.plan-change')
