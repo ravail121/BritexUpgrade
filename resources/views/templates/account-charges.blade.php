@@ -24,9 +24,9 @@
 
         <div class="container">
             <div class="account">
-                    <div class="table-padding">
-                        <h2>Payments / Credits</h2>
-                    </div>
+                <div class="table-padding">
+                    <h2>Payments / Credits</h2>
+                </div>
             </div>
         </div>
 
@@ -37,23 +37,24 @@
                         <table class="test table-padding">
                             <tbody>
                                 <tr>
-                                    <td>
-                                        @isset ($data['order']->credits->first()->date)
-                                            Payment on 
-                                                {{ str_replace('-', '/', $data['order']->formatDate($data['order']->credits->first()->date)) }} 
-                                            with 
-                                                {{ count($data['invoice']->creditToInvoice) ? $data['invoice']->creditToInvoice->first()->credit->description : '' }}
-                                        @else
-                                            Payment
-                                        @endisset
-                                    </td>
-                                    <td colspan="2" class="last"><a>$
-                                        @if (($data['order']->credits->sum('amount')))
-                                            {{ number_format($data['order']->credits->sum('amount'), 2) }}
-                                        @else 
-                                            0.00
-                                        @endif
-                                    </a></td>
+                                    @if ($data['credits']->count())
+                                        @foreach ($data['credits'] as $c)
+                                            <td>
+                                                Payment on
+                                                {{ str_replace('-', '/', $data['order']->formatDate($c->credit->date)) }} 
+                                                with
+                                                {{ ucwords(str_replace('-', ' ', $c->credit->description)) }}
+                                            </td>
+                                            <td colspan="2" class="last"><a>$
+                                                @if ($c->amount)
+                                                    {{ number_format($c->amount, 2) }}
+                                                @endif
+                                            </a></td>
+                                        @endforeach
+                                    @else
+                                        <td>Payment</td>
+                                        <td colspan="2" class="last"><a>$ 0.00</a></td>
+                                    @endif
                                 </tr>
                                 @if(count($data['order']->credits))
                                     <tr>
@@ -270,7 +271,7 @@
                             @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
                                 {{ count($data['order']->subscriptions) + 2 }}
                             @else 
-                            2
+                            3
                             @endif
                         @else 
                             3

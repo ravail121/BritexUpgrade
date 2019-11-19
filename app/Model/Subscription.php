@@ -236,7 +236,7 @@ class Subscription extends Model
         return $query
                 ->whereIn('status', [
                   'active', 'shipping', 'for-activation'])
-                ->whereNotIn('phone_number', ['', 'null'])
+                // ->whereNotIn('phone_number', ['', 'null'])
                 ->notSuspendedOrClosed()
                 ->notScheduledForSuspensionOrClosure();
     }

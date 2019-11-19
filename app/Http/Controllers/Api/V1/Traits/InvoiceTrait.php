@@ -199,14 +199,16 @@ trait InvoiceTrait
     public function dataForInvoice($order)
     {                                    
         $invoice = [
-            'order'                         =>   $order,
-            'invoice'                       =>   $order->invoice,
-                                                 //Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
-            'standalone_items'              =>   Invoice::find($order->invoice_id)->invoiceItem->where('subscription_id', null),
-            'previous_bill'                 =>   $this->previousBill($order)
+            'order'                         =>  $order,
+            'invoice'                       =>  $order->invoice,
+                                                //Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
+            'standalone_items'              =>  Invoice::find($order->invoice_id)->invoiceItem->where('subscription_id', null),
+            'previous_bill'                 =>  $this->previousBill($order),
+            'credits'                       =>  $order->invoice->creditsToInvoice
         ];
         return $invoice;
     }
+
 
     public function subscriptionData($order)
     {
@@ -384,6 +386,7 @@ trait InvoiceTrait
             !$stopMail ? event(new SendRefundInvoice($paymentLog, $invoice, $pdf)) : null;
             return $pdf->download('Invoice.pdf');
         }
+
         $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
         
         return $pdf->download('Invoice.pdf');

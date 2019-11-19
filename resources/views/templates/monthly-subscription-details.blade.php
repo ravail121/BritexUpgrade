@@ -31,6 +31,8 @@
                                 <td width="25%" colspan="3" class="right">
                                     @isset ($subscription->phone_number)
                                         {{ $data['order']->phoneNumberFormatted($subscription->phone_number) }}
+                                    @else 
+                                        (Pending)
                                     @endisset 
                                 </td>
                             </tr>
@@ -382,7 +384,11 @@
                         <table>
                             <tr>
                                 <td>Total Line Charges 
-                                    ({{ $subscription->phone_number_formatted }})
+                                    @if ($subscription->phone_number_formatted != 'NA')
+                                        {{ $subscription->phone_number_formatted }}
+                                    @else
+                                        (Pending)
+                                    @endif
                                 </td>
                                 <td colspan="3" class="right"> $
                                     @if (isset($subscription->cal_total_charges))
