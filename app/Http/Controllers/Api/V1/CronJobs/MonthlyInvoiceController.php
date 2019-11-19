@@ -371,7 +371,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 'product_type'    => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['plan'],
                 'type'            => InvoiceItem::INVOICE_ITEM_TYPES['plan_charges'],
                 'start_date'      => $invoice->start_date,
-                'description'     => "(Billable Subscription) {}",
+                'description'     => "(Billable Subscription) {$billableSubscription->plan->description}",
                 // Values added below
                 'product_id'      => '',
                 'amount'          => '',
