@@ -170,7 +170,6 @@ class InvoiceController extends BaseController implements ConstantInterface
         }
 
         $this->generateInvoice($order, true, $request);
-
         return [
             'status' => $this->respond($msg), 
             'invoice_items_total' => number_format($order->invoice->cal_total_charges, 2)
