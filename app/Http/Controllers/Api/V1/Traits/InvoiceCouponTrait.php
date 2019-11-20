@@ -65,13 +65,13 @@ trait InvoiceCouponTrait
         $numCycles = $admin ? $coupon->num_cycles : $coupon->num_cycles - 1;
         $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
         $data['coupon_id']   = $coupon->id;
+        $coupon->increment('num_uses');
         if ($multiline) {
             $data['customer_id'] = $customerId;
             CustomerCoupon::create($data);
             $response =['success' => 'Coupon added'];
         } else {
             foreach ($subscriptionIds as $id) {
-                $alreadyUsed = SubscriptionCoupon::where('coupon_id', $coupon->id)->where('subscription_id', $id);
                 $data['subscription_id'] = $id;
                 SubscriptionCoupon::create($data);
                 $response = ['success' => 'Coupon added'];

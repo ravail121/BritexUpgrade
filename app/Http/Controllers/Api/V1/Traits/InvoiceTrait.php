@@ -19,6 +19,7 @@ use App\Model\Customer;
 use App\Model\CreditToInvoice;
 use App\Model\PaymentRefundLog;
 use App\Events\SendRefundInvoice;
+use Exception;
 
 trait InvoiceTrait
 {
@@ -189,6 +190,12 @@ trait InvoiceTrait
                 $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');                        
             }
             !isset($planChange) && $request && $mail ? event(new InvoiceGenerated($order, $generatePdf)) : null;
+            try {
+
+            } catch (Exception $e) {
+                \Log::info($e->getMessage());
+                return 'Order placed but invoice was not generated, please try again later.';
+            }
             return $generatePdf->download('Invoice.pdf');
         } else {
             return 'Sorry, we could not find the details for your invoice';
