@@ -110,6 +110,10 @@ class CouponController extends Controller
     {
         $subscription = Subscription::find($request->subscription_id);
         $customer = $subscription->customerRelation;
+        if ($subscription->subscriptionCoupon->where('coupon_id', $coupon->id)->count()) {
+            $this->failedResponse = 'Coupon already used for this subscription';
+            return ['error' => $this->failedResponse];
+        }
         if (!$this->isApplicable(false, $customer, $coupon, true)) {
             return ['error' => $this->failedResponse];
         }
