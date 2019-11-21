@@ -366,7 +366,7 @@ trait UsaEpayTransaction
                     'billing_zip'      => $request->billing_zip,
                 ]);
                 $customer = Customer::find($order->customer_id);
-                if($request->auto_pay){
+                if($request->order_hash && $request->auto_pay){
                     $customer->update(['auto_pay' => '1']);
                 }else{
                     $customer->update(['auto_pay' => '0']);
