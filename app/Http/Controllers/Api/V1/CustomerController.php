@@ -246,7 +246,7 @@ class CustomerController extends BaseController
 				if($request->paid_monthly_invoice){
 					$date = Carbon::today()->addDays(6)->endOfDay();
 		            $invoice = Invoice::where([
-		                ['customer_id', $user[0]->id],
+		                ['customer_id', $customer->id],
 		                ['status', Invoice::INVOICESTATUS['closed&paid'] ],
 		                ['type', Invoice::TYPES['monthly']]
 		            ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->where('start_date', '!=', Carbon::today())->first();
