@@ -122,4 +122,14 @@ class CustomerPlanController extends BaseController
     {
         return number_format((float)$amount, 2, '.', '');
     }
+
+    public function checkNumber(Request $request)
+    {
+        $count = Subscription::where([
+            ['phone_number', $request->number_to_port],
+            ['status', '!=', 'closed'],
+        ])->count();
+
+        return ['count' => $count];
+    }
 }

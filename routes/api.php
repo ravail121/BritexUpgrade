@@ -532,6 +532,11 @@ Route::middleware('APIToken')->group(function () {
           'uses' => 'CustomerPlanController@get',
         ]);
 
+        Route::get('check-number',[
+          'as'   => 'api.check.number',
+          'uses' => 'CustomerPlanController@checkNumber',
+        ]);
+
         Route::get('customer-current-invoice',[
           'as'   => 'api.customer.invoice',
           'uses' =>'InvoiceController@invoiceDetail',
