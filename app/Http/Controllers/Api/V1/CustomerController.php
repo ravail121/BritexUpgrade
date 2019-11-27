@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Validator;
+use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Invoice;
 use App\Model\Customer;
@@ -242,8 +243,17 @@ class CustomerController extends BaseController
 		if ($request->hash) {
 			$customer = Customer::where(['hash' => $request->hash])->first();
 			if ($customer) {
-				$msg = $this->respond($customer);
+				if($request->paid_monthly_invoice){
+					$date = Carbon::today()->addDays(6)->endOfDay();
+		            $invoice = Invoice::where([
+		                ['customer_id', $user[0]->id],
+		                ['status', Invoice::INVOICESTATUS['closed&paid'] ],
+		                ['type', Invoice::TYPES['monthly']]
+		            ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->where('start_date', '!=', Carbon::today())->first();
 
+		            $customer['paid_monthly_invoice'] = $invoice ? 1: 0;
+				}
+				$msg = $this->respond($customer);
 			} else {
 				$msg = $this->respond(['error' => 'customer not found']);
 
