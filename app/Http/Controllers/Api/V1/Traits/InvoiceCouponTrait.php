@@ -55,7 +55,7 @@ trait InvoiceCouponTrait
                     'num_uses' => $numUses + 1
                 ]);
             }
-            $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
+            return $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
         }
     }
 
@@ -68,13 +68,13 @@ trait InvoiceCouponTrait
         $coupon->increment('num_uses');
         if ($multiline) {
             $data['customer_id'] = $customerId;
-            CustomerCoupon::create($data);
-            $response =['success' => 'Coupon added'];
+            $couponAdded = CustomerCoupon::create($data);
+            $response =['success' => 'Coupon added', 'id' => $couponAdded->id];
         } else {
             foreach ($subscriptionIds as $id) {
                 $data['subscription_id'] = $id;
-                SubscriptionCoupon::create($data);
-                $response = ['success' => 'Coupon added'];
+                $couponAdded = SubscriptionCoupon::create($data);
+                $response = ['success' => 'Coupon added', 'id' => $couponAdded->id];
             }
         }
         return $response;
@@ -109,8 +109,8 @@ trait InvoiceCouponTrait
 
                         $invoice->invoiceItem()->create([
                             'subscription_id' => $subscription->id,
-                            'product_type'    => '',
-                            'product_id'      => $coupon->id,
+                            'product_type'    => 'Customer Coupon',
+                            'product_id'      => $customerCoupon->id,
                             'type'            => InvoiceItem::TYPES['coupon'],
                             'description'     => $coupon->code,
                             'amount'          => str_replace(',', '',number_format($amount, 2)),
@@ -192,8 +192,8 @@ trait InvoiceCouponTrait
 
                 $invoice->invoiceItem()->create([
                     'subscription_id' => $subscription->id,
-                    'product_type'    => '',
-                    'product_id'      => $coupon->id,
+                    'product_type'    => 'Subscription Coupon',
+                    'product_id'      => $subscriptionCoupon->id,
                     'type'            => InvoiceItem::TYPES['coupon'],
                     'description'     => $coupon->code,
                     'amount'          => str_replace(',', '', number_format($amount, 2)),

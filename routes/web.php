@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
-
+use App\Model\CouponProduct;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -23,4 +23,8 @@ Route::get('/', function (Request $request) {
     return  response()->json([
       'message' => 'BriteX Backend !!'
     ], 200);
+});
+
+Route::get('/test', function() {
+  return CouponProduct::find(110)->device;
 });
