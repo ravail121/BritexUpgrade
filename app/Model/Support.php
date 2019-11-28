@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Support extends Model
 {
-    protected $table = 'support'  ;
+    protected $table = 'faq'  ;
     
 	protected $fillable =[ 'category_id', 'question', 'description' ];
 
