@@ -196,4 +196,20 @@ class InvoiceItem extends Model implements ConstantInterface
     {
         return $query->whereType('10');
     }
+
+    public function coupon()
+    {
+        return $this->hasOne('App\Model\Coupon', 'id', 'product_id');
+    }
+
+    public function customerCouponData()
+    {   
+        return $this->hasOne('App\Model\CustomerCoupon', 'id', 'product_id')->where('customer_id', $this->invoice->customer_id); // Should only be used with invoice->usedCoupon
+    }
+
+    public function subscriptionCouponData()
+    {   
+        return $this->hasOne('App\Model\SubscriptionCoupon', 'id', 'product_id'); // Should only be used with invoice->usedCoupon
+    }
+
 }

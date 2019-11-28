@@ -346,7 +346,31 @@
                             <table class="test">
                                 @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
                                     <tr>        
-                                        <td>{{ $coupon['description'] }}</td>
+                                        <td>{{ $coupon['description'] }}
+                                            <span>
+                                                @if ($coupon->product_type == 'Customer Coupon')
+                                                    @isset($coupon->customerCouponData->cycles_remaining)
+                                                        @if ($coupon->customerCouponData->cycles_remaining == -1)
+                                                            (Infinite Cycles)
+                                                        @elseif ($coupon->customerCouponData->cycles_remaining == 0)
+                                                            (Last Cycle)
+                                                        @else
+                                                            ({{ $coupon->customerCouponData->cycles_remaining }} {{ $coupon->customerCouponData->cycles_remaining > 1 ? ' Cycles' : ' Cycle' }} remaining)  
+                                                        @endif
+                                                    @endisset
+                                                @elseif ($coupon->product_type == 'Subscription Coupon')
+                                                    @isset($coupon->subscriptionCouponData->cycles_remaining)
+                                                        @if ($coupon->subscriptionCouponData->cycles_remaining == -1)
+                                                            (Infinite Cycles)
+                                                        @elseif ($coupon->subscriptionCouponData->cycles_remaining == 0)
+                                                            (Last Cycle)
+                                                        @else
+                                                            ({{ $coupon->subscriptionCouponData->cycles_remaining }} {{ $coupon->subscriptionCouponData->cycles_remaining > 1 ? ' Cycles' : ' Cycle' }} remaining)  
+                                                        @endif
+                                                    @endisset
+                                                @endif
+                                            </span>
+                                        </td>
                                         <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
                                     </tr>
                                 @endforeach

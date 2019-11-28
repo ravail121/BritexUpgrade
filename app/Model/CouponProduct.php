@@ -36,4 +36,26 @@ class CouponProduct extends Model
     {
         return $query->where('product_type', self::PRODUCT_TYPES['addon']);
     }
+
+    public function scopeDeviceType($query)
+    {
+        return $this->where('product_type', 2);
+    }
+
+    public function device()
+    {
+        return $this->hasOne('App\Model\Device', 'id', 'product_id');
+    }
+    public function plan()
+    {
+        return $this->hasOne('App\Model\Plan', 'id', 'product_id');
+    }
+    public function sim()
+    {
+        return $this->hasOne('App\Model\Sim', 'id', 'product_id');
+    }
+    public function addon()
+    {
+        return $this->hasOne('App\Model\Addon', 'id', 'product_id');
+    }
 }

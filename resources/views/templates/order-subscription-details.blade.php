@@ -325,12 +325,24 @@
                             @endif
                             <table class="test">
                                 @if (isset($subscription))
-                                @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
-                                    <tr>
-                                        <td>{{ $coupon['description'] }}</td>
-                                        <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
-                                    </tr>
-                                @endforeach
+                                    @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', $subscription->id) as $coupon)
+                                        <tr>
+                                            <td>{{ $coupon['description'] }} 
+                                                <span> 
+                                                    @if ($coupon->coupon)
+                                                        @if ($coupon->coupon->num_cycles == 0)
+                                                            (Infinite Cycles)
+                                                        @elseif ($coupon->coupon->num_cycles == 1)
+                                                            (One time coupon)
+                                                        @elseif ($coupon->coupon->num_cycles > 1)
+                                                            ({{ $coupon->coupon->num_cycles - 1 }}{{ $coupon->coupon->num_cycles - 1 == 1 ? ' cycle' : ' cycles'}} remaining)
+                                                        @endif
+                                                    @endif
+                                                </span> 
+                                            </td>
+                                            <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
+                                        </tr>
+                                    @endforeach
                                 @endif
                                 <tr>
                                     <td colspan="3"></td>
