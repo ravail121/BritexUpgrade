@@ -18,22 +18,22 @@ class SupportController extends Controller
 
     public function get(Request $request)
     {
-		$categories = Category::all();
-
-		$support = Support::all();
+		$company    = \Request::get('company');
+		$categories = Category::where('company_id', $company->id)->get();
+		$categoriesId = $categories->pluck('id');
+		$support = Support::whereIn('category_id', $categoriesId)->get();
 
 		$this->content['categories'] = $categories;
-
 		$this->content['support'] = $support;   
 
 		return response()->json($this->content); 	
-		}
+	}
 		
-		public function sendEmail(Request $request)
-		{
-			$data = $request->all();
-			$company    = \Request::get('company');
-			$request->headers->set('authorization', $company->api_key);
-			return event(new SupportEmail($data));
-		}
+	public function sendEmail(Request $request)
+	{
+		$data = $request->all();
+		$company    = \Request::get('company');
+		$request->headers->set('authorization', $company->api_key);
+		return event(new SupportEmail($data));
+	}
 }
