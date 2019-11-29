@@ -408,7 +408,6 @@ class CreateOrderTable extends Migration
             $table->tinyinteger('associate_with_device');
             $table->tinyinteger('affilate_credit')->default('1');
             $table->timestamps();
-
            });
 
            Schema::create('device_to_plan',function(Blueprint $table){
