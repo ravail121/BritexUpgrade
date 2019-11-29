@@ -40,6 +40,9 @@ class CouponController extends Controller
     {
         try {
             $coupon = Coupon::where('code', $request->code)->first();
+            if ($request->only_details) {
+                return ['coupon_amount_details' => $this->checkEligibleProducts($coupon)];
+            }
             if (!$this->couponIsValid($coupon)) {
                 return ['error' => $this->failedResponse];
             }
@@ -136,9 +139,7 @@ class CouponController extends Controller
         $order  = Order::find($request->order_id);
         $customer = Customer::find($request->customer_id);
         $couponEligibleFor = $this->checkEligibleProducts($coupon);
-        // if ($request->only_details) {
-        //     return ['coupon_amount_details' => $couponEligibleFor];
-        // }
+
         OrderCoupon::updateOrCreate([
             'order_id' => $order->id,
             'coupon_id' => $coupon->id
