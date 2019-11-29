@@ -12,6 +12,7 @@ use Exception;
 use App\Model\Customer;
 use App\Model\Subscription;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
+use App\Model\Plan;
 
 class CouponController extends Controller
 {
@@ -39,7 +40,32 @@ class CouponController extends Controller
     public function addCoupon(Request $request)
     {
         try {
+            // Request from cart plans
+            if ($request->for_plans) {
+                $codes = [];
+                foreach ($request->data_for_plans as $data) {
+                    if ($data['coupon_id']) {
+                        $coupon = Coupon::find($data['coupon_id']);
+                        $codes[] = [
+                            'coupon' => [
+                                'info' => $this->checkEligibleProducts($coupon),
+                                'code'    => $coupon->code
+                            ],
+                            'order_group_id' => $data['order_group_id'],
+                            'plan'  => Plan::find($data['plan_id'])->name
+                        ];
+                    }
+                }
+                return ['coupon_data' => $codes];
+            }
+
+            // Request from cart tooltip
             $coupon = Coupon::where('code', $request->code)->first();
+            if ($request->only_details) {
+                return ['coupon_amount_details' => $this->checkEligibleProducts($coupon)];
+            }
+
+            // Regulator textbox request
             if (!$this->couponIsValid($coupon)) {
                 return ['error' => $this->failedResponse];
             }
@@ -48,6 +74,7 @@ class CouponController extends Controller
             } else {
                 return $this->ifAddedByCustomer($request, $coupon);
             }
+
         } catch (Exception $e) {
             \Log::info($e->getMessage().' on line number: '.$e->getLine().' in CouponController');
             return [ 'total' => 0,'error' => 'Server error' ];
@@ -136,9 +163,7 @@ class CouponController extends Controller
         $order  = Order::find($request->order_id);
         $customer = Customer::find($request->customer_id);
         $couponEligibleFor = $this->checkEligibleProducts($coupon);
-        // if ($request->only_details) {
-        //     return ['coupon_amount_details' => $couponEligibleFor];
-        // }
+
         OrderCoupon::updateOrCreate([
             'order_id' => $order->id,
             'coupon_id' => $coupon->id
