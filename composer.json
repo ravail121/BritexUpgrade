@@ -16,7 +16,6 @@
         "laravel/tinker": "~1.0",
         "nesbot/carbon": "1.36.2",
         "rap2hpoutre/laravel-log-viewer": "^1.1",
-        "symfony/psr-http-message-bridge": "^1.2",
         "laravelcollective/remote": "~5.0"
     },
     "require-dev": {
