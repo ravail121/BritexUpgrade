@@ -28,9 +28,3 @@ Route::get('/', function (Request $request) {
 Route::get('/test', function() {
   return CouponProduct::find(110)->device;
 });
-
-Route::get('/git-pull', 'PullController@gitPull')->name('git.pull');
-
-Route::get('/test-pull', function (){
-    return 'TEST PULL';
-});
