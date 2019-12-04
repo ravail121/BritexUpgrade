@@ -30,3 +30,7 @@ Route::get('/test', function() {
 });
 
 Route::get('/git-pull', 'PullController@gitPull')->name('git.pull');
+
+Route::get('/test-pull', function (){
+    return 'TEST PULL';
+});
