@@ -13,7 +13,7 @@ class PasswordReset extends Model
      * @var array
      */
     protected $fillable = [
-        'email', 'token',
+        'email', 'token', 'company_id',
     ];
 
     public $timestamps = false;

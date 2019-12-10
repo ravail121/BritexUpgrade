@@ -54,9 +54,10 @@ class ForgotPasswordController extends BaseController
     {
         $hash = sha1(time());
         $user = [
-                'email' => $email,
-                'token' => $hash
-            ];
+            'email'      => $email,
+            'token'      => $hash,
+            'company_id' => \Request::get('company')->id,
+        ];
 
         PasswordReset::create($user);
         event(new ForgotPassword($user));
@@ -66,17 +67,29 @@ class ForgotPasswordController extends BaseController
 
     public function resetPassword(Request $request)
     {
-        $data=$request->validate([
+        $data = $request->validate([
             'token'      => 'required',
             'password'   => 'required|min:6',
         ]);
+        $companyId = \Request::get('company')->id;
 
-        $email=PasswordReset::whereToken($data['token'])->first();
+        $passwordReset = PasswordReset::where([
+            'token' => $data['token'],
+            'company_id' => $companyId,
+        ])->first();
 
-        if(isset($email['email'])){
+        if(isset($passwordReset['email'])){
             $password['password'] = bcrypt($data['password']);
-            Customer::whereEmail($email['email'])->update($password);
-            PasswordReset::whereEmail($email['email'])->delete();
+            Customer::where([
+                'email' => $passwordReset['email'],
+                'company_id' => $companyId
+            ])->update($password);
+
+            PasswordReset::where([
+                'token' => $data['token'],
+                'company_id' => $companyId,
+            ])->delete();
+            
         }else{
             return $this->respond('Sorry Reset Password is no longer valid');
         }
