@@ -46,6 +46,7 @@ class SendEmailToRemindInvoiceAutoPaid
         }
 
         $dataRow['customer'] = $customer;
+        $dataRow['invoice'] = $customers['mounthlyInvoice'];
 
         $emailTemplates = EmailTemplate::where('company_id', $customer['company_id'])
         ->where('code', 'auto-pay-success')

@@ -270,7 +270,8 @@ class InvoiceController extends BaseController
 			if($customerInvoice->status == Invoice::INVOICESTATUS['closed&upaid']){
 				$pastDue = $customerInvoice->total_due;
 			}
-			$total = ($charges - $payment) + $pastDue;
+			// $total = ($charges - $payment) + $pastDue;
+			$total =  $customerInvoice->total_due;
 
 			if($total < 0){
 				$total = 0;
