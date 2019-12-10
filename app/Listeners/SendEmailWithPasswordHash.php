@@ -38,9 +38,12 @@ class SendEmailWithPasswordHash
     {
         $user = $event->user;
 
-        $customer = Customer::where('email', $user['email'])->first();
+        $customer = Customer::where([
+            'email' => $user['email'],
+            'company_id' => $user['company_id'],
+        ])->first();
+
         $configurationSet = $this->setMailConfiguration($customer['company_id']);
-        $user['company_id'] = $customer['company_id'];
 
         if ($configurationSet) {
             return false;
