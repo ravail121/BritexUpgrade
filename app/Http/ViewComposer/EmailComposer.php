@@ -10,12 +10,11 @@ class EmailComposer
 {    
     public function compose(View $view)
     {
-        $apiKey  = request()->header('authorization');
-        \Log::info($apiKey);
-        \Log::info('Test');
-
-        $company = Company::whereApiKey($apiKey)->first();
-        \Log::info($company);
+        $company = \Request::get('company');
+        if(! isset($company->id)){
+            $apiKey  = request()->header('authorization');
+            $company = Company::whereApiKey($apiKey)->first();
+        }
 
         $view->with(
             [
