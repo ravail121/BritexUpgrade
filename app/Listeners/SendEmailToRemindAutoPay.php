@@ -42,7 +42,10 @@ class SendEmailToRemindAutoPay
             return false;
         }
 
-        $dataRow['customer'] = $customer;
+        $dataRow = [
+            'customer' => $customer,
+            'invoice'  => $invoice
+        ];
 
         $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)
         ->where('code', 'auto-pay-reminder')
