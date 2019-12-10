@@ -2,7 +2,6 @@
 
 namespace App\Http\ViewComposer;
 
-use App\Model\Order;
 use App\Model\Company;
 use Illuminate\View\View;
 use App\Services\Cart\CartResponse;
@@ -11,9 +10,12 @@ class EmailComposer
 {    
     public function compose(View $view)
     {
-        $orderHash  = request()->header('authorization');
+        $apiKey  = request()->header('authorization');
+        \Log::info($apiKey);
+        \Log::info('Test');
 
-        $company = Company::whereApiKey($orderHash)->first();
+        $company = Company::whereApiKey($apiKey)->first();
+        \Log::info($company);
 
         $view->with(
             [
