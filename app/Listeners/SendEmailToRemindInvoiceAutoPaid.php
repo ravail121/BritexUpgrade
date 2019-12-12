@@ -57,7 +57,7 @@ class SendEmailToRemindInvoiceAutoPaid
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            $row['body'] = $this->addFieldsToBody('[total_amount_due]', $customers['mounthlyInvoice']['subtotal'], $row['body']);
+            $row['body'] = $this->addFieldsToBody('[total_amount_due]', $customers['mounthlyInvoice']['total_due'], $row['body']);
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }
