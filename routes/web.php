@@ -26,5 +26,5 @@ Route::get('/', function (Request $request) {
 });
 
 Route::get('/test', function() {
-  return CouponProduct::find(110)->device;
+    return "TEST";
 });
