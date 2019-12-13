@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $invoice->customer->company->name }}</title>
-    <link href="{{ $invoice->customer->company->url }}/public/pdf/css/82style.css" type="text/css" rel="stylesheet">
+    <link href="{{ $invoice->customer->company->url }}/pdf/css/82style.css" type="text/css" rel="stylesheet">
 
 </head>
 

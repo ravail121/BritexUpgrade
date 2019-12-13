@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $data['order']->company->name }}</title>
-    <link href="{{ $data['order']->company->url }}/public/pdf/css/82style.css" type="text/css" rel="stylesheet">
+    <link href="{{ $data['order']->company->url }}/pdf/css/82style.css" type="text/css" rel="stylesheet">
 
 </head>
 
