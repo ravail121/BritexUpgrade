@@ -177,7 +177,7 @@ trait InvoiceTrait
                     $request && $mail ? event(new UpgradeDowngradeInvoice($order, $generatePdf)) : null;
                     return $generatePdf->download('Invoice.pdf');
                 } else {
-                    // return View('templates/onetime-invoice', compact('data'));
+                    return View('templates/onetime-invoice', compact('data'));
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
                 }
             } else {   

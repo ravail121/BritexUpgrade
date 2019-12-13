@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Teltik</title>
-    <link href="https://teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
+    <title>{{ $invoice->customer->company->name }}</title>
+    <link href="{{ $invoice->customer->company->url }}/public/pdf/css/82style.css" type="text/css" rel="stylesheet">
 
 </head>
 
