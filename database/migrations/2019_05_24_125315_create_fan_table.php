@@ -15,7 +15,7 @@ class CreateFanTable extends Migration
     {
         Schema::create('fan', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('number');
+            $table->bigInteger('number');
             $table->timestamps();
         });
     }
