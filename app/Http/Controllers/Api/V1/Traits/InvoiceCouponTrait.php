@@ -66,10 +66,11 @@ trait InvoiceCouponTrait
         $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
         $data['coupon_id']   = $coupon->id;
         $coupon->increment('num_uses');
+        $response = null;
         if ($multiline) {
             $data['customer_id'] = $customerId;
             $couponAdded = CustomerCoupon::create($data);
-            $response =['success' => 'Coupon added', 'id' => $couponAdded->id];
+            $response = ['success' => 'Coupon added', 'id' => $couponAdded->id];
         } else {
             foreach ($subscriptionIds as $id) {
                 $data['subscription_id'] = $id;
@@ -79,6 +80,7 @@ trait InvoiceCouponTrait
         }
         return $response;
     }
+    
 
     // Functions for monthly invoices
     public function customerAccountCoupons($customer, $invoice)

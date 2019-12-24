@@ -178,7 +178,8 @@ class CouponController extends Controller
             return [
                 'total' => $total, 
                 'code' => $coupon->code, 
-                'coupon_type' => $coupon->class, 
+                'coupon_type' => $coupon->class,
+                'percentage' => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to' => [
                     'applied_to_all'        => $appliedToAll['applied_to'],
                     'applied_to_types'      => $appliedToTypes['applied_to'],

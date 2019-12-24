@@ -43,6 +43,14 @@ class Coupon extends Model
         'multiline_restrict_plans',
     ];
 
+    const PRODUCT_TYPE = [
+        'plan'    => '1',
+        'device'  => '2',
+        'sim'     => '3',
+        'addon'   => '4'
+    ];
+
+
     public function customerCoupon()
     {
         return $this->hasMany('App\Model\CustomerCoupon');

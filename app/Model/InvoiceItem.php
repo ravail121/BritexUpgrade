@@ -22,7 +22,9 @@ class InvoiceItem extends Model implements ConstantInterface
 
     const PRODUCT_TYPE = [
         'device'  => 'device',
-        'sim'     => 'sim'
+        'sim'     => 'sim',
+        'plan'    => 'plan',
+        'addon'   => 'addon'
     ];
 
     protected $table = 'invoice_item';
