@@ -57,7 +57,7 @@ class CreateOrderTable extends Migration
             $table->increments('id');
             $table->text('name');
             $table->integer('number');
-            $table->integer('billing_day');
+            $table->date('billing_day');
             $table->timestamps();
         });
         
