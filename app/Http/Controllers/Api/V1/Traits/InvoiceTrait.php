@@ -19,6 +19,7 @@ use App\Model\Customer;
 use App\Model\CreditToInvoice;
 use App\Model\PaymentRefundLog;
 use App\Events\SendRefundInvoice;
+use App\Model\Coupon;
 use Exception;
 
 trait InvoiceTrait
@@ -64,15 +65,17 @@ trait InvoiceTrait
     }
     
 
-    public function addTaxesToSubscription($subscription, $invoice, $isTaxable)
+    public function addTaxesToSubscription($subscription, $invoice, $isTaxable, $coupon)
     {
-        
         $taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
-
         if ($taxPercentage > 0) {
             $taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
-            $taxesWithSubscriptions = $taxableItems->sum('amount');
-            if ($taxesWithSubscriptions > 0) {
+
+            $taxAmount = $taxableItems->sum('amount');
+            if ($coupon) {
+                $taxAmount = $this->couponTax($taxableItems, $coupon);
+            }
+            if ($taxAmount > 0) {
                 $subscription->invoiceItemDetail()->create(
                     [
                         'invoice_id'   => $invoice->id,
@@ -81,7 +84,7 @@ trait InvoiceTrait
                         'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                         'start_date'   => $invoice->start_date,
                         'description'  => "(Taxes)",
-                        'amount'       => number_format($taxPercentage * $taxesWithSubscriptions, 2),
+                        'amount'       => number_format($taxPercentage * $taxAmount, 2),
                         'taxable'      => $isTaxable,            
                     ]
                 );
@@ -89,8 +92,9 @@ trait InvoiceTrait
         }
     }
 
-    public function addTaxesToStandalone($orderId, $isTaxable, $item)
+    public function addTaxesToStandalone($orderId, $isTaxable, $item, $coupon = null)
     {
+
         $invoice = Order::find($orderId)->invoice;
         $taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
         
@@ -98,10 +102,13 @@ trait InvoiceTrait
             $taxesWithoutSubscriptions  = $invoice->invoiceItem
                                             ->where('subscription_id', null)
                                             ->where('product_type', $item)
-                                            ->where('taxable', 1)
-                                            ->sum('amount');
-                                            
-            if ($taxesWithoutSubscriptions > 0) {
+                                            ->where('taxable', 1);
+            $taxAmount =  $taxesWithoutSubscriptions->sum('amount');
+            if ($coupon) {
+                $taxAmount = $this->couponTax($taxesWithoutSubscriptions, $coupon);
+            }
+            
+            if ($taxAmount > 0) {
                 $invoice->invoiceItem()->create(
                     [
                         'invoice_id'   => $invoice->id,
@@ -111,7 +118,7 @@ trait InvoiceTrait
                         'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                         'start_date'   => $invoice->start_date,
                         'description'  => "(Taxes)",
-                        'amount'       => number_format($taxPercentage * $taxesWithoutSubscriptions, 2),
+                        'amount'       => number_format($taxPercentage * $taxAmount, 2),
                         'taxable'      => $isTaxable,    
                     ]
                 );
@@ -397,6 +404,61 @@ trait InvoiceTrait
         $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
         
         return $pdf->download('Invoice.pdf');
+    }
+
+    protected function couponTax($items, $coupon)
+    {
+        $amount = [0];
+        if ($coupon) {
+            foreach ($items as $item) {
+                if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device']) {
+                    $itemType = Coupon::PRODUCT_TYPE['device'];
+                } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['sim']) {
+                    $itemType = Coupon::PRODUCT_TYPE['sim'];
+                } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['plan']) {
+                    $itemType = Coupon::PRODUCT_TYPE['plan'];
+                } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['addon']) {
+                    $itemType = Coupon::PRODUCT_TYPE['addon'];
+                }
+                $amount[] = $this->getCouponPrice($coupon, $item, $itemType)['amount'];
+                $eligible_products[] = $this->getCouponPrice($coupon, $item, $itemType)['eligible_product'];
+            }
+        }
+        $eligibleIds = [];
+        foreach ($eligible_products as $ep) {
+            foreach ($ep as $id) {
+                $eligibleIds[] = $id;
+            }
+        }
+        $amount[] = $items->whereNotIn('id', $eligibleIds)->sum('amount');
+        
+        return array_sum($amount);
+    }
+
+    protected function getCouponPrice($couponData, $item, $itemType)
+    {
+        $type       = $couponData['coupon_type'];
+        if ($type == 1) { // Applied to all
+            $appliedTo = $couponData['applied_to']['applied_to_all'];
+        } elseif ($type == 2) { // Applied to types
+            $appliedTo = $couponData['applied_to']['applied_to_types'];
+        } elseif ($type == 3) { // Applied to products
+            $appliedTo = $couponData['applied_to']['applied_to_products'];
+        }
+        if (count($appliedTo)) {
+            foreach ($appliedTo as $product) {
+                if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
+                    if ($itemType == Coupon::PRODUCT_TYPE['plan']) {
+                        $amount[] = Plan::find($item->product_id)->amount_onetime;
+                    }
+                    return [
+                        'amount' => $item->amount - $product['discount'],
+                        'eligible_product' => [$item->id]
+                    ];
+                }
+            }
+        }
+        return ['amount' => 0, 'eligible_product' => []];
     }
 
 }
