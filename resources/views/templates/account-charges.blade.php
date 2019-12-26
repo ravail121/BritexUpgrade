@@ -204,7 +204,10 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Coupons</h2>
-                            @if ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', null)->count())
+                            <?php
+                                $coupons = $data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', null);
+                            ?>
+                            @if ($coupons->count())
                                 <table>
                                     <tr>
                                         <td colspan="3">
@@ -214,12 +217,12 @@
                                 </table>
                             @endif
                             <table class="test">
-                                <tr>
-                                    @foreach ($data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', null) as $coupon)
+                                @foreach ($coupons as $coupon)
+                                    <tr>
                                         <td>{{ $coupon['description'] }}</td>
                                         <td colspan="3" class="right"> $&nbsp;{{ number_format($coupon['amount'], 2) }} </td>
-                                    @endforeach
-                                </tr>
+                                    </tr>
+                                @endforeach
                                 <tr>
                                     <td colspan="3"></td>
                                 </tr>
