@@ -231,8 +231,8 @@ class CustomerController extends BaseController
 	 */
 	public function customerDetails(Request $request)
 	{
+		$company = \Request::get('company');
 		if ($request->tax_id) {
-			$company = \Request::get('company');
 			$rate = Tax::where('state', $request->tax_id)
 						->where('company_id', $company->id)
 						->pluck('rate')
@@ -253,6 +253,7 @@ class CustomerController extends BaseController
 
 		            $customer['paid_monthly_invoice'] = $invoice ? 1: 0;
 				}
+				$customer['company'] = $company;
 				$msg = $this->respond($customer);
 			} else {
 				$msg = $this->respond(['error' => 'customer not found']);
