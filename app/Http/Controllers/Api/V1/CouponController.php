@@ -117,14 +117,14 @@ class CouponController extends Controller
             $cartSubscriptions      = $order->allOrderGroup->where('plan_id', '!=', null);
             $totalSubscriptions     = $accountSubscriptions->count() + $cartSubscriptions->count();
 
-            $autoAddCoupon      = Plan::where('auto_add_coupon_id', $coupon->id);        
-            if ($autoAddCoupon->count()) {
-                $eligibleOrder = $this->ifAutoAdd($autoAddCoupon, $order->allOrderGroup);
-                if (!$eligibleOrder) {
-                    $this->failedResponse = 'Coupon not available';
-                    return false;
-                }
-            }
+            // $autoAddCoupon      = Plan::where('auto_add_coupon_id', $coupon->id);        
+            // if ($autoAddCoupon->count()) {
+            //     $eligibleOrder = $this->ifAutoAdd($autoAddCoupon, $order->allOrderGroup);
+            //     if (!$eligibleOrder) {
+            //         $this->failedResponse = 'Coupon not available';
+            //         return false;
+            //     }
+            // }
             $multilineRestrict  = $coupon->multiline_restrict_plans ? $coupon->multilinePlanTypes->pluck('plan_type')->toArray() : null;
             if ($multilineRestrict) {
                 $totalIds = array_merge($accountSubscriptions->pluck('plan_id')->toArray(), $cartSubscriptions->pluck('plan_id')->toArray());
