@@ -449,7 +449,9 @@ class CouponController extends Controller
     public function removeCoupon(Request $request)
     {
         $order = Order::find($request->order_id);
-        $order->orderCoupon->delete();
+        if (isset($order->orderCoupon->id)) {
+            $order->orderCoupon->delete();
+        }
     }
 
     public function checkEligibleProducts($coupon) 

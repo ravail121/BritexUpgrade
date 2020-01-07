@@ -73,7 +73,10 @@ trait InvoiceTrait
 
             $taxAmount = $taxableItems->sum('amount');
             if ($coupon) {
-                $taxAmount = $this->couponTax($taxableItems, $coupon);
+                $taxData = $this->couponTax($taxableItems, $coupon);
+                if ($taxData) {
+                    $taxAmount = $taxData;
+                } // If coupon tax amount = 0, use original.
             }
             if ($taxAmount > 0) {
                 $subscription->invoiceItemDetail()->create(
@@ -420,8 +423,9 @@ trait InvoiceTrait
                 } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['addon']) {
                     $itemType = Coupon::PRODUCT_TYPE['addon'];
                 }
-                $amount[] = $this->getCouponPrice($coupon, $item, $itemType)['amount'];
-                $eligible_products[] = $this->getCouponPrice($coupon, $item, $itemType)['eligible_product'];
+                $couponTaxData = $this->getCouponPrice($coupon, $item, $itemType);
+                $amount[] = $couponTaxData['amount'];
+                $eligible_products[] = $couponTaxData['eligible_product'];
             }
         }
         $eligibleIds = [];
@@ -438,19 +442,17 @@ trait InvoiceTrait
     protected function getCouponPrice($couponData, $item, $itemType)
     {
         $type       = $couponData['coupon_type'];
+
         if ($type == 1) { // Applied to all
-            $appliedTo = $couponData['applied_to']['applied_to_all'];
+            $appliedTo = isset($couponData['applied_to']['applied_to_all']) ? $couponData['applied_to']['applied_to_all'] : [];
         } elseif ($type == 2) { // Applied to types
-            $appliedTo = $couponData['applied_to']['applied_to_types'];
+            $appliedTo = isset($couponData['applied_to']['applied_to_types']) ? $couponData['applied_to']['applied_to_types'] : [];
         } elseif ($type == 3) { // Applied to products
-            $appliedTo = $couponData['applied_to']['applied_to_products'];
+            $appliedTo = isset($couponData['applied_to']['applied_to_products']) ? $couponData['applied_to']['applied_to_products'] : [];
         }
         if (count($appliedTo)) {
             foreach ($appliedTo as $product) {
                 if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
-                    if ($itemType == Coupon::PRODUCT_TYPE['plan']) {
-                        $amount[] = Plan::find($item->product_id)->amount_onetime;
-                    }
                     return [
                         'amount' => $item->amount - $product['discount'],
                         'eligible_product' => [$item->id]
