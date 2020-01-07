@@ -368,14 +368,26 @@ class SubscriptionController extends BaseController
             $errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
 
             if(!$errorMessage){
-                $subcription->update([
-                   'sim_card_num' => $simNumber,
-                ]);
+                $this->updateRecord($subcription, $simNumber, $subcription->sim_card_num);
+
                 return $this->respond(['success' => 1]);
             }
 
             return $this->respond(['message' => $errorMessage]);
         }
+    }
+
+    protected function updateRecord($subcription, $simNumber, $OldsimCardNum)
+    {
+        $subcription->update([
+           'sim_card_num' => $simNumber,
+        ]);
+
+        CustomerNote::create([
+            'staff_id' => 0,
+            'text'     => 'Customer changed SIM on '.$subcription->phone_number.' from '.$OldsimCardNum.' to '.$simNumber,
+            'date'     => Carbon::now(),
+        ]);
     }
 
     protected function getSimNumber($phoneNumber, $sim_number, $customerId)
