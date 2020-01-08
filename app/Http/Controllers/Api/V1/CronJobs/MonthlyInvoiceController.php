@@ -87,15 +87,15 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     
                 $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
     
-                $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
-    
                 // Add Coupons
                 $couponAccount = $this->customerAccountCoupons($customer, $invoice);
     
                 $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
-                    
+
+                $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
+
                 $monthlyCharges = $invoice->cal_total_charges;
-    
+
                 //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
                 $subtotal = str_replace(',', '',number_format($monthlyCharges + $totalPendingCharges, 2));
     
@@ -162,42 +162,38 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     public function addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems)
     {
         $taxes = collect();
-
         $taxPercentage = ($customer->stateTax->rate)/100;
-        
-        // $taxableBillableSubscriptionInvoiceItems = $billableSubscriptionInvoiceItems->where('taxable', true)->all();
-        $taxableBillableSubscriptionInvoiceItems = $invoice->invoiceItem->where('taxable', true);
-        // For each plan/subscription
-        // Calculate total of plan + feature, one-time or usage charges
-        // and apply tax on it
-        foreach($taxableBillableSubscriptionInvoiceItems as $invoiceItem){
+        $amount = [0];
+        $taxData = [];
+        $taxableItems = $invoice->invoiceItem->where('taxable', true);
+        $taxableSubscriptionIds = array_unique($taxableItems->pluck('subscription_id')->toArray());
 
-            // $amount = ($invoiceItem
-            //                 ->subscriptionDetail
-            //                 ->invoiceItemOfTaxableServices
-            //                 ->where('invoice_id', $invoice->id)
-            //                 ->pluck('amount')->sum()
-            //             ) * $taxPercentage;
-            $amount = $invoiceItem->amount * $taxPercentage;
+        foreach ($taxableSubscriptionIds as $subId) {
+            $itemAmount = $taxableItems->where('subscription_id', $subId)->sum('amount');
+            if (count($this->taxDiscount)) {
+                foreach ($this->taxDiscount as $id => $taxDiscount) {
+                    if ($id == $subId) {
+                        $itemAmount -= array_sum($taxDiscount);
+                    }
+                }
+            }
+            $itemAmount = $itemAmount * $taxPercentage;
             $data = [
-                'subscription_id' => $invoiceItem->subscription_id,
+                'subscription_id' => $subId,
                 'product_type'    => '',
                 'product_id'      => null,
                 'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
                 'start_date'      => $invoice->start_date,
                 'description'     => '(Taxes)',
-                'amount'          => number_format($amount, 2),
+                'amount'          => number_format($itemAmount, 2),
                 'taxable'         => self::TAX_FALSE
             ];
 
             $taxes->push(
                 $invoice->invoiceItem()->create($data)
-            );
-
+            );  
         }
-
         return $taxes;
-        
     }
 
     protected function insertOrder($invoice)
