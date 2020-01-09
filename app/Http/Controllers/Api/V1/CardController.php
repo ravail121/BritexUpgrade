@@ -64,8 +64,6 @@ class CardController extends BaseController implements ConstantInterface
             $card->last4      = $card->last_four;
             $card->info       = $card->card_info;
         }
-
-
         return $this->respond($customerCreditCard);
     }
 

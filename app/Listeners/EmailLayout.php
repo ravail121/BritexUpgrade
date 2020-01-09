@@ -2,7 +2,7 @@
 
 namespace App\Listeners;
 
-
+use Carbon\Carbon;
 use App\Model\EmailTemplate;
 
 trait EmailLayout 
@@ -44,6 +44,14 @@ trait EmailLayout
     public function addFieldsToBody($fields, $data, $body)
     {
        return str_replace($fields, $data, $body);
+    }
+
+    public function getDateFormated($date)
+    {
+        if($date){
+            return Carbon::parse($date)->format('m/d/Y');   
+        }
+        return 'NA';
     }
 
 }
