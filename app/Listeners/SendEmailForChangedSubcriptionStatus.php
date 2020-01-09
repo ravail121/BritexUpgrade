@@ -46,6 +46,9 @@ class SendEmailForChangedSubcriptionStatus
         $subscriptionId = $event->subscriptionId;
         
         $subscription = Subscription::where('id', $subscriptionId)->with('customerRelation', 'plans')->first();
+        $subscription['phone_number'] = $subscription->phoneNumberFormatted;
+        $subscription['suspended_date'] = $this->getDateFormated($subscription['suspended_date']);
+        $subscription['closed_date'] = $this->getDateFormated($subscription['closed_date']);
         
         $dataRow = [
             'subscription' => $subscription,
