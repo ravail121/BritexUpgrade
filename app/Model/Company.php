@@ -71,4 +71,9 @@ class Company extends Model
 
         return $number;
     }
+
+    public function carrier()
+    {
+        return $this->belongsToMany('App\Model\Carrier', 'company_to_carrier', 'company_id', 'carrier_id');
+    }
 }

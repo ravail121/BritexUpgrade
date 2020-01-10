@@ -231,7 +231,7 @@ class CustomerController extends BaseController
 	 */
 	public function customerDetails(Request $request)
 	{
-		$company = \Request::get('company');
+		$company = \Request::get('company')->load('carrier');
 		if ($request->tax_id) {
 			$rate = Tax::where('state', $request->tax_id)
 						->where('company_id', $company->id)

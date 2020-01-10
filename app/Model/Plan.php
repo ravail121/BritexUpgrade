@@ -41,7 +41,7 @@ class Plan extends Model
 
     public function planToAddon()
     {
-     return $this->belongsToMany('App\Model\PlanToAddon');
+        return $this->belongsToMany('App\Model\PlanToAddon');
     }
 
     public static function getRegualtoryAmount($id, $planAmount)
@@ -55,6 +55,11 @@ class Plan extends Model
             }
         }
         return 0;
+    }
+
+    public function carrier()
+    {
+        return $this->belongsTo('App\Model\Carrier');
     }
 
 }

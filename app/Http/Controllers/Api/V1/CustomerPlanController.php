@@ -31,7 +31,7 @@ class CustomerPlanController extends BaseController
     }
 
     public function getSubscriptions($customer){
-    	$subscriptions = Subscription::with('plan', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
+    	$subscriptions = Subscription::with('plan.carrier', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
         $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer->tax->rate);
 
