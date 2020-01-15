@@ -9,6 +9,7 @@ use App\Model\Order;
 use GuzzleHttp\Client;
 use App\Model\Customer;
 use App\Model\PlanToAddon;
+use App\Model\CustomerNote;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
@@ -366,7 +367,6 @@ class SubscriptionController extends BaseController
         foreach ($subcriptions as $key => $subcription) {
 
             $errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
-
             if(!$errorMessage){
                 $this->updateRecord($subcription, $simNumber, $subcription->sim_card_num);
 
@@ -387,6 +387,7 @@ class SubscriptionController extends BaseController
             'staff_id' => 0,
             'text'     => 'Customer changed SIM on '.$subcription->phone_number.' from '.$OldsimCardNum.' to '.$simNumber,
             'date'     => Carbon::now(),
+            'customer_id' => $subcription->customer_id,
         ]);
     }
 
