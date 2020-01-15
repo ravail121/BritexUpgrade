@@ -352,7 +352,7 @@ class SubscriptionController extends BaseController
         $simNumber = preg_replace('/[^0-9]/', '', $request->sim_num);
         $length = strlen($simNumber);
         if($length >20 || $length < 19){
-            return $this->respond(['details' => ["Invalid Sim Number"]], 400);
+            return $this->respond(['message' => "Invalid SIM Number"]);
         } 
         
         $subcriptions = Subscription::where([
