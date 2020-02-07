@@ -6,6 +6,9 @@ use Carbon\Carbon;
 use Exception;
 use App\Model\Order;
 use GuzzleHttp\Client;
+
+use App\Http\Modules\ReadyCloud;
+
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\ShippingNumber;
@@ -62,12 +65,7 @@ class OrderDataController extends BaseController
     public function getOrderData($orderNum, $readyCloudApiKey)
     {
         try {
-            $client = new Client();
-            # first get org url
-            $api_url = env('READY_CLOUD_URL'); 
-            $response = $client->request('GET', $api_url."?bearer_token=".$readyCloudApiKey);
-            $url = json_decode($response->getBody())->results[0]->url;
-
+            $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
             $url = env('READY_CLOUD_BASE_URL').$url."orders/".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
 
             

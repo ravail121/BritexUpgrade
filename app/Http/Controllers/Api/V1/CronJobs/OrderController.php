@@ -6,6 +6,9 @@ use Exception;
 use App\Model\Tax;
 use App\Model\Order;
 use GuzzleHttp\Client;
+
+use App\Http\Modules\ReadyCloud;
+
 use App\Model\Invoice;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
@@ -38,6 +41,7 @@ class OrderController extends BaseController
                 $readyCloudApiKey = $order->company->readycloud_api_key;
                 if($readyCloudApiKey == null){ continue; }
                 \Log::info($order->id);
+                \Log::info($order);
 
                 $subscriptionRow = array();
                 $standAloneDeviceRow = array();
@@ -62,6 +66,7 @@ class OrderController extends BaseController
                 }
                 $row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
                     $apiData = $this->data($order, $row);
+                    \Log::info($apiData);
 
                     $response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
                     if($response->getStatusCode() == 201) {
@@ -250,14 +255,8 @@ class OrderController extends BaseController
     public function SentToReadyCloud($data, $readyCloudApiKey)
     {
 
-        $client = new Client();
-        # first get org url
-        $api_url = env('READY_CLOUD_URL') ;
-        $response = $client->request('GET', $api_url."?bearer_token=".$readyCloudApiKey);
-        $url = json_decode($response->getBody())->results[0]->url;
-
+        $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
         $url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
-        \Log::info($url);
         $response = $client->request('POST', $url, [
             'headers' => ['Content-type' => 'application/json'],
             'body' => $data
@@ -265,4 +264,5 @@ class OrderController extends BaseController
 
         return $response;
     }
+
 }
