@@ -457,7 +457,7 @@ class CouponController extends Controller
     public function checkEligibleProducts($coupon) 
     {
         $planRestriciton = [];
-        $isPercentage    = $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'] ? '%' : '$';
+        $isPercentage    = $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'] ? true : false;
         if ($coupon->multiline_restrict_plans && $coupon->multilinePlanTypes->count()) {
             foreach ($coupon->multilinePlanTypes as $type) {
                 if ($type->plan_type == self::PLAN_TYPE['Voice']) {
@@ -470,19 +470,22 @@ class CouponController extends Controller
         
         $planRestriciton = count($planRestriciton) ? implode(', ',$planRestriciton) : false;
         if ($coupon->class == Coupon::CLASSES['APPLIES_TO_ALL']) {
+            $amount = $isPercentage == false ? '$'.$coupon->amount : $coupon->amount.'%';
             return [
                 'details'            => implode('<br>', [
-                    $coupon->amount. $isPercentage. ' off on all products',
+                    $amount. ' off on all products',
                     $planRestriciton ? 'Plan restriction :'.$planRestriciton : null
                 ])
             ];
         } elseif ($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']) {
             $couponTypes = $coupon->couponProductTypes;
             foreach ($couponTypes as $type) {
-                $plans[]   = $type->type == self::SPECIFIC_TYPES['PLAN']   ? $type->amount. $isPercentage. ' off on plans'   : '';
-                $devices[] = $type->type == self::SPECIFIC_TYPES['DEVICE'] ? $type->amount. $isPercentage. ' off on devices' : '';
-                $sims[]    = $type->type == self::SPECIFIC_TYPES['SIM']    ? $type->amount. $isPercentage. ' off on sims'    : '';
-                $addons[]  = $type->type == self::SPECIFIC_TYPES['ADDON']  ? $type->amount. $isPercentage. ' off on addons'  : '';
+                $amount = $type->amount;
+                $type_amount =  $isPercentage == false ? '$'.$amount : $amount.'%';
+                $plans[]   = $type->type == self::SPECIFIC_TYPES['PLAN']   ? $type_amount.' off on plans'   : '';
+                $devices[] = $type->type == self::SPECIFIC_TYPES['DEVICE'] ? $type_amount.' off on devices' : '';
+                $sims[]    = $type->type == self::SPECIFIC_TYPES['SIM']    ? $type_amount.' off on sims'    : '';
+                $addons[]  = $type->type == self::SPECIFIC_TYPES['ADDON']  ? $type_amount.' off on addons'  : '';
             }
             return [
                 'details' => implode('<br>', array_filter(
@@ -499,10 +502,12 @@ class CouponController extends Controller
         } elseif ($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT']) {
             $couponProducts = $coupon->couponProducts;
             foreach ($couponProducts as $product) {
-                $plans[]   = $product->product_type == self::SPECIFIC_TYPES['PLAN']   ? $product->amount. $isPercentage. ' off on plan '. $product->plan->name   : '';
-                $devices[] = $product->product_type == self::SPECIFIC_TYPES['DEVICE'] ? $product->amount. $isPercentage. ' off on device '. $product->device->name : '';
-                $sims[]    = $product->product_type == self::SPECIFIC_TYPES['SIM']    ? $product->amount. $isPercentage. ' off on sim '. $product->sim->name    : '';
-                $addons[]  = $product->product_type == self::SPECIFIC_TYPES['ADDON']  ? $product->amount. $isPercentage. ' off on addon '. $product->addon->name  : '';
+                $amount = $product->amount;
+                $amount =  $isPercentage == false ? '$'.$amount : $amount.'%';
+                $plans[]   = $product->product_type == self::SPECIFIC_TYPES['PLAN']   ? $amount.' off on plan '. $product->plan->name   : '';
+                $devices[] = $product->product_type == self::SPECIFIC_TYPES['DEVICE'] ? $amount. ' off on device '. $product->device->name : '';
+                $sims[]    = $product->product_type == self::SPECIFIC_TYPES['SIM']    ? $amount. ' off on sim '. $product->sim->name    : '';
+                $addons[]  = $product->product_type == self::SPECIFIC_TYPES['ADDON']  ? $amount. ' off on addon '. $product->addon->name  : '';
             }
             return [
                 'details' => implode('<p></p><br>', array_filter(

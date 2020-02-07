@@ -36,6 +36,9 @@ class OrderController extends BaseController
         try {
             foreach ($orders as $orderKey => $order) {
                 $readyCloudApiKey = $order->company->readycloud_api_key;
+                if($readyCloudApiKey == null){ continue; }
+                \Log::info($order->id);
+
                 $subscriptionRow = array();
                 $standAloneDeviceRow = array();
                 $standAloneSimRow = array();
@@ -248,7 +251,14 @@ class OrderController extends BaseController
     {
 
         $client = new Client();
-        $response = $client->request('POST', env('READY_CLOUD_URL').$readyCloudApiKey, [
+        # first get org url
+        $api_url = env('READY_CLOUD_URL') ;
+        $response = $client->request('GET', $api_url."?bearer_token=".$readyCloudApiKey);
+        $url = json_decode($response->getBody())->results[0]->url;
+
+        $url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
+        \Log::info($url);
+        $response = $client->request('POST', $url, [
             'headers' => ['Content-type' => 'application/json'],
             'body' => $data
         ]);

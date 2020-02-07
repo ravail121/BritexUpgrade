@@ -63,8 +63,15 @@ class OrderDataController extends BaseController
     {
         try {
             $client = new Client();
+            # first get org url
+            $api_url = env('READY_CLOUD_URL'); 
+            $response = $client->request('GET', $api_url."?bearer_token=".$readyCloudApiKey);
+            $url = json_decode($response->getBody())->results[0]->url;
+
+            $url = env('READY_CLOUD_BASE_URL').$url."orders/".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
+
             
-            $response = $client->request('GET', env('READY_CLOUD_URL').$readyCloudApiKey.'&primary_id=BX-'.$orderNum);
+            $response = $client->request('GET', $url);
 
             return collect(json_decode($response->getBody(), true));
 
