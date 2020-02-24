@@ -257,6 +257,7 @@ class OrderController extends BaseController
 
         $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
         $url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
+        $client = new Client();
         $response = $client->request('POST', $url, [
             'headers' => ['Content-type' => 'application/json'],
             'body' => $data

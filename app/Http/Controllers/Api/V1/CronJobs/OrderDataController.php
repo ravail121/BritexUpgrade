@@ -68,7 +68,7 @@ class OrderDataController extends BaseController
             $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
             $url = env('READY_CLOUD_BASE_URL').$url."orders/".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
 
-            
+            $client = new Client();
             $response = $client->request('GET', $url);
 
             return collect(json_decode($response->getBody(), true));
