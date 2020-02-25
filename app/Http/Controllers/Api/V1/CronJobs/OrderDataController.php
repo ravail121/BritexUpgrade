@@ -38,6 +38,7 @@ class OrderDataController extends BaseController
         
 
         foreach ($orders as $order) {
+            
             $readyCloudApiKey = $order->company->readycloud_api_key;
             $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey);
             if($orderData && isset($orderData['results'][0])){
@@ -66,7 +67,7 @@ class OrderDataController extends BaseController
     {
         try {
             $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
-            $url = env('READY_CLOUD_BASE_URL').$url."orders/".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
+            $url = env('READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
 
             $client = new Client();
             $response = $client->request('GET', $url);
