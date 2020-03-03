@@ -41,21 +41,23 @@ class OrderDataController extends BaseController
             
             $readyCloudApiKey = $order->company->readycloud_api_key;
             $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey);
-            if($orderData && isset($orderData['results'][0])){
-                foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
+            if($orderData){
+                if($orderData && isset($orderData['results'][0])){
+                    foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
 
-                    $boxesUrl = $orderDataValue['url']; 
+                        $boxesUrl = $orderDataValue['url']; 
 
-                    $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
-                    if(!$boxes){
-                         continue;
-                    }
-                    foreach ($boxes['items'] as $key => $box) {
-                        $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
-                        if(!$boxdetail){
-                            continue;
+                        $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
+                        if(!$boxes){
+                             continue;
                         }
-                        $this->updateOrderDetails($boxdetail, $boxes, $request);
+                        foreach ($boxes['items'] as $key => $box) {
+                            $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
+                            if(!$boxdetail){
+                                continue;
+                            }
+                            $this->updateOrderDetails($boxdetail, $boxes, $request);
+                        }
                     }
                 }
             }
@@ -75,7 +77,10 @@ class OrderDataController extends BaseController
             return collect(json_decode($response->getBody(), true));
 
         }catch (Exception $e) {
-            \Log::error($e->getMessage());
+            $msg = 'ReadyCloud exception: '.$e->getMessage();
+            \Log::info($msg);
+            return false;
+
         }
     }
 

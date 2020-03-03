@@ -69,13 +69,16 @@ class OrderController extends BaseController
                     \Log::info($apiData);
 
                     $response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
-                    if($response->getStatusCode() == 201) {
-                        $order->subscriptions()->update(['sent_to_readycloud' => 1]);
-                        $order->standAloneDevices()->update(['processed' => 1]);
-                        $order->standAloneSims()->update(['processed' => 1]);
-                    } else {
-                            return $this->respond(['message' => 'Something went wrong!']);
+                    if($response){
+                        if($response->getStatusCode() == 201) {
+                            $order->subscriptions()->update(['sent_to_readycloud' => 1]);
+                            $order->standAloneDevices()->update(['processed' => 1]);
+                            $order->standAloneSims()->update(['processed' => 1]);
+                        } else {
+                                return $this->respond(['message' => 'Something went wrong!']);
+                        }
                     }
+                    
             }            
         }catch (Exception $e) {
             \Log::error($e->getMessage());
@@ -255,15 +258,21 @@ class OrderController extends BaseController
     public function SentToReadyCloud($data, $readyCloudApiKey)
     {
 
-        $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
-        $url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
-        $client = new Client();
-        $response = $client->request('POST', $url, [
-            'headers' => ['Content-type' => 'application/json'],
-            'body' => $data
-        ]);
+        try{
+            $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
+            $url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
+            $client = new Client();
+            $response = $client->request('POST', $url, [
+                'headers' => ['Content-type' => 'application/json'],
+                'body' => $data
+            ]);
 
-        return $response;
+            return $response;
+        } catch (Exception $e) {
+            $msg = 'ReadyCloud exception: '.$e->getMessage();
+            \Log::info($msg);
+            return false;
+        }
     }
 
 }
