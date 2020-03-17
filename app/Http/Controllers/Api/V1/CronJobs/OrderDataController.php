@@ -38,7 +38,7 @@ class OrderDataController extends BaseController
         
 
         foreach ($orders as $order) {
-            
+            \Log::info("Getting readycloud data for : ".$order["order_num"]);
             $readyCloudApiKey = $order->company->readycloud_api_key;
             $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey);
             if($orderData){
@@ -70,7 +70,6 @@ class OrderDataController extends BaseController
         try {
             $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
             $url = env('READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
-
             $client = new Client();
             $response = $client->request('GET', $url);
 
@@ -87,14 +86,15 @@ class OrderDataController extends BaseController
     public function getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey)
     {
         $client = new Client();
-    try {
-        $response = $client->request('GET', env('READY_CLOUD_BASE_URL').$boxesUrl.'?bearer_token='.$readyCloudApiKey);
-        return collect(json_decode($response->getBody(), true));
+        try {
+            $url = env('READY_CLOUD_BASE_URL').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
+            $response = $client->request('GET', $url);
+            return collect(json_decode($response->getBody(), true));
 
-    }catch (Exception $e) {
-        \Log::error($e->getMessage());
-    }
-    return null;     
+        }catch (Exception $e) {
+            \Log::error($e->getMessage());
+        }
+        return null;     
         
     }
 

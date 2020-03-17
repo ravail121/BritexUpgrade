@@ -40,8 +40,7 @@ class OrderController extends BaseController
             foreach ($orders as $orderKey => $order) {
                 $readyCloudApiKey = $order->company->readycloud_api_key;
                 if($readyCloudApiKey == null){ continue; }
-                \Log::info($order->id);
-                \Log::info($order);
+                \Log::info([$order->id, $order->order_num]);
 
                 $subscriptionRow = array();
                 $standAloneDeviceRow = array();
