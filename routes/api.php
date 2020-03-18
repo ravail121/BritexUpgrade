@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use App\Events\SubcriptionStatusChanged;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -27,6 +26,11 @@ Config::set('mail',$config);
 
 Route::get('test', function(){
     event(new SubcriptionStatusChanged('6'));
+});
+
+Route::get('/test-cc', function(){
+
+
 });
 
 Route::get('test-email', function(Illuminate\Http\Request $request){
