@@ -298,6 +298,7 @@ class CardController extends BaseController implements ConstantInterface
                         }else{
                             $request->headers->set('authorization', $invoice->order->company->api_key);
                             event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
+                            $paymentLog = $this->createPaymentLogs($invoice->order, $this->tran, 0, $card);
                         }
                         
                         PaymentLog::where('order_id', $invoice->order->id)->update(['invoice_id' => $invoice->id ]);

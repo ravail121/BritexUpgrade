@@ -28,35 +28,41 @@ class OrderDataController extends BaseController
             $orders = Order::whereHas('subscriptions', function(Builder $subscription) {
                 $subscription->where([['status', 'shipping'],['sent_to_readycloud', 1]])->whereNull('tracking_num');
 
+            })->whereHas('company', function(Builder $company){
+                $company->whereNotNull('readycloud_api_key');
+
             })->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
                 $standAloneDevice->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');        
                 
             })->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
                 $standAloneSim->where([['status', 'shipping'],['processed', 1]])->whereNull('tracking_num');
-            })->with('company')->take(30);
+            })->with('company')->orderBy('order_num', 'desc')->take(25)->get();
         }
         
+        \Log::info(array("Readycloud Tracking Fetch...", $orders->count()));
 
         foreach ($orders as $order) {
-            \Log::info("Getting readycloud data for : ".$order["order_num"]);
             $readyCloudApiKey = $order->company->readycloud_api_key;
-            $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey);
-            if($orderData){
-                if($orderData && isset($orderData['results'][0])){
-                    foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
+            if($readyCloudApiKey ){
+                \Log::info("Getting readycloud data for : ".$order["order_num"]);
+                $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey);
+                if($orderData){
+                    if($orderData && isset($orderData['results'][0])){
+                        foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
 
-                        $boxesUrl = $orderDataValue['url']; 
+                            $boxesUrl = $orderDataValue['url']; 
 
-                        $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
-                        if(!$boxes){
-                             continue;
-                        }
-                        foreach ($boxes['items'] as $key => $box) {
-                            $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
-                            if(!$boxdetail){
-                                continue;
+                            $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
+                            if(!$boxes){
+                                 continue;
                             }
-                            $this->updateOrderDetails($boxdetail, $boxes, $request);
+                            foreach ($boxes['items'] as $key => $box) {
+                                $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
+                                if(!$boxdetail){
+                                    continue;
+                                }
+                                $this->updateOrderDetails($boxdetail, $boxes, $request);
+                            }
                         }
                     }
                 }
@@ -103,18 +109,22 @@ class OrderDataController extends BaseController
         if($boxes['tracking_number'] != null){
             $subString = substr($boxdetail['part_number'], 0, 3);
             $partNumId = subStr($boxdetail['part_number'], 4);
+            $date = Carbon::today();
 
+            $pick_location = $boxdetail['pick_location'];
             if($subString == 'SUB') {
                 $table = Subscription::whereId($partNumId)->with('customer.company', 'device', 'sim')->first();
                 if($table){
-                    $date = Carbon::today();
-                    $table->update([
+                    $table_data = [
                         'status'       => 'for-activation',
                         'shipping_date'=> $date,
                         'tracking_num' => $boxes['tracking_number'],
-                        'device_imei'  => $boxdetail['pick_location'],
                         'sim_card_num' => $boxdetail['code'],
-                    ]);
+                    ];
+                    if (strlen($pick_location) > 0){
+                        $table_data['device_imei'] = $pick_location;
+                    }
+                    $table->update($table_data);
                     $table['customer'] = $table->customerRelation;
 
                     $request->headers->set('authorization', $table->customerRelation->company->api_key);
@@ -124,12 +134,15 @@ class OrderDataController extends BaseController
             } elseif($subString == 'DEV') {
                 $table = CustomerStandaloneDevice::whereId($partNumId)->with('device', 'customer.company')->first();
                 if($table){
-                    $table->update([
+                    $table_data = [
                         'status'       => CustomerStandaloneDevice::STATUS['complete'],
                         'shipping_date'=> $date,
-                        'tracking_num' => $boxes['tracking_number'],
-                        'device_imei'  => $boxdetail['pick_location'],
-                    ]);
+                        'tracking_num' => $boxes['tracking_number']
+                    ];
+                    if (strlen($pick_location) > 0){
+                        $table_data['device_imei'] = $pick_location;
+                    }
+                    $table->update($table_data);
                     $request->headers->set('authorization', $table->customer->company->api_key);
                     event(new ShippingNumber($boxes['tracking_number'], $table));
                 } 
