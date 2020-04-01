@@ -12,6 +12,7 @@ class Subscription extends Model
     protected $fillable = [
       'order_id',
       'customer_id',
+      'company_id',
       'plan_id',
       'phone_number',
       'status',
@@ -103,6 +104,11 @@ class Subscription extends Model
     public function Customer()
     {
         return $this->hasOne('App\Model\Customer', 'id');
+    }
+
+    public function company()
+    {
+        return $this->hasOne('App\Model\Company', 'id', 'company_id');
     }
 
     public function sim()

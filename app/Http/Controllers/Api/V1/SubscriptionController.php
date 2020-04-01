@@ -197,6 +197,7 @@ class SubscriptionController extends BaseController
         return [
             'order_id'                         =>  $request->order_id,
             'customer_id'                      =>  $order->customer_id,
+            'company_id'                       =>  $order->customer->company_id,
             'order_num'                        =>  $order->order_num,
             'plan_id'                          =>  $request->plan_id,
             'status'                           =>  $request->status,
