@@ -101,10 +101,14 @@ trait UsaEpayTransaction
            }
 
         }
-        $defaultData['key'] = \Request::get('company') ?\Request::get('company')->usaepay_api_key : $order->company->usaepay_api_key;
+        if($request->usesandbox){
+            $defaultData['key'] = $request->key;
+            $defaultData['usesandbox'] = $request->usesandbox;
+        }else{
+            $defaultData['key'] = \Request::get('company') ?\Request::get('company')->usaepay_api_key : $order->company->usaepay_api_key;
         
-        $defaultData['usesandbox'] = \Request::get('company') ?\Request::get('company')->usaepay_live_formatted : $order->company->usaepay_live_formatted;
-        
+            $defaultData['usesandbox'] = \Request::get('company') ?\Request::get('company')->usaepay_live_formatted : $order->company->usaepay_live_formatted;
+        }
         
         return $defaultData;
    }

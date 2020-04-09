@@ -295,6 +295,13 @@ class CardController extends BaseController implements ConstantInterface
                             'order_hash'    => $order_hash,
                         ]);
 
+                        if($invoice->order == null){
+                            $request->replace([
+                                'key' => $invoice->customer->company->usaepay_api_key,
+                                'usesandbox' => $invoice->customer->company->usaepay_live_formatted,
+                            ]);
+                        }
+
                         $response = $this->chargeCard($request);
                         if(isset($response->getData()->success) && $response->getData()->success =="true") {
                             $invoice->update([
