@@ -289,18 +289,18 @@ class CardController extends BaseController implements ConstantInterface
                             $api_key = $invoice->order->company->api_key;
                         }
 
-                        $request->replace([
+                        $request_params = array(
                             'credit_card_id' => $card->id,
                             'amount'         => $customer['mounthlyInvoice']['total_due'],
-                            'order_hash'    => $order_hash,
-                        ]);
+                            'order_hash'    => $order_hash
+                        );
 
                         if($invoice->order == null){
-                            $request->replace([
-                                'key' => $invoice->customer->company->usaepay_api_key,
-                                'usesandbox' => $invoice->customer->company->usaepay_live_formatted,
-                            ]);
+                            $request_params['key'] = $invoice->customer->company->usaepay_api_key;
+                            $request_params['usesandbox'] = $invoice->customer->company->usaepay_live_formatted;
                         }
+
+                        $request->replace($request_params);
 
                         $response = $this->chargeCard($request);
                         if(isset($response->getData()->success) && $response->getData()->success =="true") {
@@ -314,7 +314,14 @@ class CardController extends BaseController implements ConstantInterface
                             $customer->account_suspended ? $customer->update(['account_suspended' => 0]) && event(new AccountUnsuspended($customer)) : null;
                         }else{
                             $request->headers->set('authorization', $api_key);
-                            event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
+                            $message = $response;
+                            try{
+                                $message = $response->getData()->message;
+                            }catch(Exception $e){
+
+                            }
+                            
+                            event(new FailToAutoPaidInvoice($customer, $message));
                             $paymentLog = $this->createPaymentLogs($invoice->order, $this->tran, 0, $card, $invoice);
                         }
                         

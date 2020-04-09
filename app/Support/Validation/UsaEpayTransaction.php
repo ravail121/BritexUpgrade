@@ -101,7 +101,7 @@ trait UsaEpayTransaction
            }
 
         }
-        if($request->usesandbox){
+        if($request->key){
             $defaultData['key'] = $request->key;
             $defaultData['usesandbox'] = $request->usesandbox;
         }else{
