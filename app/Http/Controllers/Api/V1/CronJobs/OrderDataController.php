@@ -67,6 +67,7 @@ class OrderDataController extends BaseController
                     }
                 }
             }
+            usleep(5000000);
         }
         return $this->respond(['message' => 'Tracking Number Updated Sucessfully']); 
     }

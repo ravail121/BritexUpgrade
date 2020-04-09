@@ -264,6 +264,7 @@ class CardController extends BaseController implements ConstantInterface
         $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
+            \Log::info(array($customer["id"], $customer["email"]));
             try {
                 if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
 
@@ -279,11 +280,19 @@ class CardController extends BaseController implements ConstantInterface
 
                     if($card){
                         $invoice = Invoice::where('id', $customer['mounthlyInvoice']['id'])->with('order')->first();
+                        \Log::info($invoice);
+
+                        $order_hash = "";
+                        $api_key = $invoice->customer->company->api_key;
+                        if($invoice->order){
+                            $order_hash = $invoice->order->hash;
+                            $api_key = $invoice->order->company->api_key;
+                        }
 
                         $request->replace([
                             'credit_card_id' => $card->id,
                             'amount'         => $customer['mounthlyInvoice']['total_due'],
-                            'order_hash'    => $invoice->order->hash,
+                            'order_hash'    => $order_hash,
                         ]);
 
                         $response = $this->chargeCard($request);
@@ -292,18 +301,21 @@ class CardController extends BaseController implements ConstantInterface
                                 'status' => Invoice::INVOICESTATUS['closed'],
                                 'total_due' => 0
                             ]);
-                            $request->headers->set('authorization', $invoice->order->company->api_key);
+                            $request->headers->set('authorization', $api_key);
                             event(new InvoiceAutoPaid($customer));
+                            \Log::info("AutoPaid for customer ".$customer['id']);
                             $customer->account_suspended ? $customer->update(['account_suspended' => 0]) && event(new AccountUnsuspended($customer)) : null;
                         }else{
-                            $request->headers->set('authorization', $invoice->order->company->api_key);
+                            $request->headers->set('authorization', $api_key);
                             event(new FailToAutoPaidInvoice($customer, $response->getData()->message));
-                            $paymentLog = $this->createPaymentLogs($invoice->order, $this->tran, 0, $card);
+                            $paymentLog = $this->createPaymentLogs($invoice->order, $this->tran, 0, $card, $invoice);
                         }
                         
-                        PaymentLog::where('order_id', $invoice->order->id)->update(['invoice_id' => $invoice->id ]);
+                        if($invoice->order){
+                            PaymentLog::where('order_id', $invoice->order->id)->update(['invoice_id' => $invoice->id ]);
+                        }
                     }else{
-                        $request->headers->set('authorization', $invoice->order->company->api_key);
+                        $request->headers->set('authorization', $api_key);
                         event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));
                     }
                 }
