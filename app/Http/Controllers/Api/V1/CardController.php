@@ -255,16 +255,18 @@ class CardController extends BaseController implements ConstantInterface
         $date = Carbon::today()->addDays(1);
         $customers = Customer::where([
             ['billing_end', '<=', $date], ['auto_pay', Customer::AUTO_PAY['enable']
-        ]])->with('unpaidMounthlyInvoice')->get()->toArray();
+        ]])->with('unpaidMounthlyInvoice', 'company')->get()->toArray();
 
         $customersB = Customer::where([
             ['billing_start', '=', Carbon::today()], ['auto_pay', Customer::AUTO_PAY['enable']
-        ]])->with('unpaidAndClosedMounthlyInvoice')->get()->toArray();
+        ]])->with('unpaidAndClosedMounthlyInvoice', 'company')->get()->toArray();
 
         $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
             \Log::info(array($customer["id"], $customer["email"]));
+            $api_key = $customer["company"]["api_key"];
+            
             try {
                 if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
 
@@ -283,7 +285,6 @@ class CardController extends BaseController implements ConstantInterface
                         \Log::info($invoice);
 
                         $order_hash = "";
-                        $api_key = $invoice->customer->company->api_key;
                         if($invoice->order){
                             $order_hash = $invoice->order->hash;
                             $api_key = $invoice->order->company->api_key;

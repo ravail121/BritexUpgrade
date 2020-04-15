@@ -31,7 +31,7 @@ trait EmailLayout
                         continue;
                     }
                 }
-                $replaceWith[$key] = $data->{$dynamicField[1]} ?: $names[0][$key];
+                $replaceWith[$key] = isset($data->{$dynamicField[1]})?$data->{$dynamicField[1]}:$names[0][$key];
             }
         $body = $emailTemplate->body($names[0], $replaceWith);
 
