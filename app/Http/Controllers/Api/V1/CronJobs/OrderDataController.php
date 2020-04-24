@@ -41,8 +41,17 @@ class OrderDataController extends BaseController
         
         \Log::info(array("Readycloud Tracking Fetch...", $orders->count()));
 
+        $keyUrls=[];
         foreach ($orders as $order) {
             $readyCloudApiKey = $order->company->readycloud_api_key;
+            
+            if(array_key_exists($readyCloudApiKey, $keyUrls)){
+                $url = $keyUrls[$readyCloudApiKey];
+            }else{
+                $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
+                $keyUrls[$readyCloudApiKey] = $url;
+            }
+            
             if($readyCloudApiKey ){
                 \Log::info("Getting readycloud data for : ".$order["order_num"]);
                 $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey);
@@ -72,10 +81,9 @@ class OrderDataController extends BaseController
         return $this->respond(['message' => 'Tracking Number Updated Sucessfully']); 
     }
 
-    public function getOrderData($orderNum, $readyCloudApiKey)
+    public function getOrderData($orderNum, $readyCloudApiKey, $url)
     {
         try {
-            $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
             $url = env('READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
             $client = new Client();
             $response = $client->request('GET', $url);
