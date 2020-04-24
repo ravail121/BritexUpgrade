@@ -54,8 +54,10 @@
                                     </span></p>
                                 @endif
                                 <p><span>{{ $data['order']->customer->full_name }},</span></p>
-                                <p><span>{{ $data['order']->customer->shipping_address1 }}</span></p>
-                                <p><span>{{ $data['order']->customer->zip_address }}</span></p>
+                              {{--  <p><span>{{ $data['order']->customer->shipping_address1 }}</span></p>
+                                <p><span>{{ $data['order']->customer->zip_address }}</span></p>--}}
+                                    <p><span>{{ $data['order']->customer->billing_address1 }}</span></p>
+                                    <p><span>{{ $data['order']->customer->billing_address2 }}</span></p>
                             </div>
                         </div>
                         
