@@ -76,12 +76,12 @@ class OrderDataController extends BaseController
                     }
                 }
             }
-            usleep(5000000);
+            usleep(config('readyCloud.ready_cloud_wait_time_in_seconds')*1000000);
         }
         return $this->respond(['message' => 'Tracking Number Updated Sucessfully']); 
     }
 
-    public function getOrderData($orderNum, $readyCloudApiKey, $url)
+    public function getOrderData($orderNum, $readyCloudApiKey, $url = "/")
     {
         try {
             $url = env('READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
