@@ -415,9 +415,9 @@ class CardController extends BaseController implements ConstantInterface
     public function processCreditInvoice($data, $tran, $credit)
     {
         // do not create invoice for Manaual Payment and Empty Payment(Default value )
-        if($data->get("payment_type") == "Manual Payment" || isEmpty($data->get("payment_type"))) {
-            return  null;
-        }
+//        if($data->get("payment_type") == "Manual Payment" || isEmpty($data->get("payment_type"))) {
+//            return  null;
+//        }
         $card = CustomerCreditCard::find($data['credit_card_id']);
         $customer = Customer::find($card->customer_id);
         $invoice = [
