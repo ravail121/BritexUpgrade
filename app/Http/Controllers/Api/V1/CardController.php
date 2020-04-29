@@ -265,6 +265,7 @@ class CardController extends BaseController implements ConstantInterface
 
         foreach ($customers as $key => $customer) {
             \Log::info(array($customer["id"], $customer["email"]));
+            if($customer["account_suspended"] == 1){ continue; }
             $api_key = $customer["company"]["api_key"];
             
             try {
