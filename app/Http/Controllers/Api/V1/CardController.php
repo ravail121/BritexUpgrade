@@ -474,7 +474,9 @@ class CardController extends BaseController implements ConstantInterface
 
             return $newInvoice;
         }
-        $paymentLog = $this->createPaymentLogs(null, $tran, 1, $card, null);
+        $order = new Order();
+        $order->customer_id = $card->customer_id;
+        $paymentLog = $this->createPaymentLogs($order, $tran, 1, $card, null);
         return null;
     }
 }
