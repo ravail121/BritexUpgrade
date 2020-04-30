@@ -94,16 +94,17 @@ class CardController extends BaseController implements ConstantInterface
 
     /**
      * [chargeCard description]
-     * 
      * @param  Request $request
      * @return Response
      */
     public function chargeCard(Request $request)
     {
+
         $validation = $this->validateData($request);
         if ($validation) {
             return $this->respondError($validation);
         }
+
         $this->setConstantData($request);
 
         $creditCard = CustomerCreditCard::find($request->credit_card_id);
@@ -414,66 +415,67 @@ class CardController extends BaseController implements ConstantInterface
 
     public function processCreditInvoice($data, $tran, $credit)
     {
-        // do not create invoice for Manaual Payment and Empty Payment(Default value )
-//        if($data->get("payment_type") == "Manual Payment" || isEmpty($data->get("payment_type"))) {
-//            return  null;
-//        }
         $card = CustomerCreditCard::find($data['credit_card_id']);
         $customer = Customer::find($card->customer_id);
-        $invoice = [
-            'staff_id'                  => $data->staff_id ?: null,
-            'customer_id'               =>  $card->customer_id,
-            'type'                      =>  '2',
-            'start_date'                =>  $customer->billing_start,
-            'end_date'                  =>  $customer->billing_end,
-            'status'                    =>  '2',
-            'subtotal'                  =>  $data['amount'],
-            'total_due'                 =>  '0',
-            'prev_balance'              => '0',
-            'payment_method'            => '1',
-            'notes'                     => '',
-            'due_date'                  =>  Carbon::parse($customer->billing_start)->subDays(1),
-            'business_name'             => $customer->company_name,
-            'billing_fname'             => $customer->fname,
-            'billing_lname'             => $customer->lname,
-            'billing_address_line_1'    => $card->billing_address1,
-            'billing_address_line_2'    => $card->billing_address2,
-            'billing_city'              => $card->billing_city,
-            'billing_state'             => $card->billing_state_id,
-            'billing_zip'               => $card->billing_zip,
-            'shipping_fname'            => $customer->shipping_fname,
-            'shipping_lname'            => $customer->shipping_lname,
-            'shipping_address_line_1'   => $customer->shipping_address1,
-            'shipping_address_line_2'   => $customer->shipping_address2,
-            'shipping_city'             => $customer->shipping_city,
-            'shipping_state'            => $customer->shipping_state_id,
-            'shipping_zip'              => $customer->shipping_zip,
-            
-        ];
+        // create invoice other than payment_type is "Manual Payment"
+        if($data->get('payment_type') != 'Manual Payment') {
+            $invoice = [
+                'staff_id' => $data->staff_id ?: null,
+                'customer_id' => $card->customer_id,
+                'type' => '2',
+                'start_date' => $customer->billing_start,
+                'end_date' => $customer->billing_end,
+                'status' => '2',
+                'subtotal' => $data['amount'],
+                'total_due' => '0',
+                'prev_balance' => '0',
+                'payment_method' => '1',
+                'notes' => '',
+                'due_date' => Carbon::parse($customer->billing_start)->subDays(1),
+                'business_name' => $customer->company_name,
+                'billing_fname' => $customer->fname,
+                'billing_lname' => $customer->lname,
+                'billing_address_line_1' => $card->billing_address1,
+                'billing_address_line_2' => $card->billing_address2,
+                'billing_city' => $card->billing_city,
+                'billing_state' => $card->billing_state_id,
+                'billing_zip' => $card->billing_zip,
+                'shipping_fname' => $customer->shipping_fname,
+                'shipping_lname' => $customer->shipping_lname,
+                'shipping_address_line_1' => $customer->shipping_address1,
+                'shipping_address_line_2' => $customer->shipping_address2,
+                'shipping_city' => $customer->shipping_city,
+                'shipping_state' => $customer->shipping_state_id,
+                'shipping_zip' => $customer->shipping_zip,
 
-        $newInvoice = Invoice::create($invoice);
-        $credit->update(['invoice_id' => $newInvoice->id]);
+            ];
 
-        $invoiceItem = [
-            'invoice_id'     => $newInvoice->id,
-            'product_type'   => $data['payment_type']?: 'Manual Payment',
-            'type'           => '9',
-            'subscription_id'=> $data['subscription_id'],
-            'start_date'     => Carbon::today(),
-            'description'    => $data['description']?: 'Manual Payment',
-            'amount'         => $data['amount'],
-            'taxable'        => '0',
-        ];
+            $newInvoice = Invoice::create($invoice);
+            $credit->update(['invoice_id' => $newInvoice->id]);
 
-        $newInvoiceItem = InvoiceItem::create($invoiceItem);
-        $paymentLog = $this->createPaymentLogs(null, $tran, 1, $card, $newInvoice);
-        if($data['payment_type'] == 'Custom Charge'){
-            $invoice = $newInvoice;
-            $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
-            event(new InvoiceEmail($invoice, $pdf, 'custom-charge'));
+            $invoiceItem = [
+                'invoice_id' => $newInvoice->id,
+                'product_type' => $data['payment_type'] ?: 'Manual Payment',
+                'type' => '9',
+                'subscription_id' => $data['subscription_id'],
+                'start_date' => Carbon::today(),
+                'description' => $data['description'] ?: 'Manual Payment',
+                'amount' => $data['amount'],
+                'taxable' => '0',
+            ];
+
+            $newInvoiceItem = InvoiceItem::create($invoiceItem);
+            $paymentLog = $this->createPaymentLogs(null, $tran, 1, $card, $newInvoice);
+            if ($data['payment_type'] == 'Custom Charge') {
+                $invoice = $newInvoice;
+                $pdf = PDF::loadView('templates/custom-charge-invoice', compact('invoice'));
+                event(new InvoiceEmail($invoice, $pdf, 'custom-charge'));
+            }
+
+            return $newInvoice;
         }
-
-        return $newInvoice;
+        $paymentLog = $this->createPaymentLogs(null, $tran, 1, $card, null);
+        return null;
     }
 }
 
