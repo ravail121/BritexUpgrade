@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Model\PaymentLog;
+use App\Services\Payment\UsaEpay;
 use Tests\TestCase;
 use App\Http\Controllers\Api\V1\CardController;
 class ManualPaymentTest extends TestCase
@@ -11,56 +13,28 @@ class ManualPaymentTest extends TestCase
      *
      * @return void
      */
-//    public function testCreditCardIdFieldRequired() {
-//        $cardData = [
-//            'credit_card_id' => 31,
-//            'payment_type' => 'Manual Payment',
-//            'amount' => '10',
-//            "without_order" => 1
-//        ];
-//        $request = request();
-//        $request->replace($cardData);
-//        $controller = app(CardController::class);
-//        // processCreditInvoice function create invoice so called directly
-//        $data = $controller->processCreditInvoice($request, null, null);
-//        $this->assertNull($data, 'No invoice created');
-//        $cardData = [
-//            'credit_card_id' => '',
-//            'payment_type' => 'Manual Payment',
-//            'amount' => '100',
-//            "without_order" => 1
-//        ];
-//
-//        $response = $this->post('/api/charge-card', $cardData,['token' => 'W19bR6gCPkHnr9ckN1znQphN8CUKQodlhXDroydDl1yYCOFqst8zV20VInKs']);
-//
-//
-//        $response->assertStatus(400);
-//        dd($response);
-//        $this->assertEquals('The credit card id field is required.', $response->json("errors")["credit_card_id"][0]);
-//    }
-
-//    public function testAmountIdFieldRequired() {
-//        $cardData = [
-//            'credit_card_id' => '31',
-//            'payment_type' => 'Manual Payment',
-//            'amount' => '',
-//            "without_order" => 1
-//        ];
-//        $response = $this->get('/api/charge-card', $cardData);
-//        $response->assertStatus(422);
-//        $this->assertEquals('The amount field is required.', $response->json("errors")["amount"][0]);
-//    }
-//
-//    public function testManaulTesting()
-//    {
-//
-//        $cardData = [
-//            'credit_card_id' => '31',
-//            'payment_type' => 'Manual Payment',
-//            'amount' => 100,
-//            "without_order" => 1
-//        ];
-//        $response = $this->get('/api/charge-card', $cardData);
-//    }
+    public function testManualPaymentLog() {
+        $cardData = [
+            'credit_card_id' => 31,
+            'payment_type' => 'Manual Payment',
+            'amount' => '10.00',
+            "without_order" => 1
+        ];
+        $request = request();
+        $request->replace($cardData);
+        $trans = new UsaEpay();
+        $trans->refnum = rand(100000000,100000000000);
+        $trans->error = 'Approved';
+        $trans->exp = '';
+        $trans->amount = $cardData['amount'];
+        $controller = app(CardController::class);
+        // processCreditInvoice function create invoice so called directly
+        $data = $controller->processCreditInvoice($request, $trans, null);
+        $this->assertNull($data, 'No invoice created');
+        $paymentLog = PaymentLog::where('transaction_num', $trans->refnum)->first();
+        $this->assertNotNull($paymentLog, "Payment log has been maintained");
+        $this->assertEquals($paymentLog->error, $trans->error);
+        $this->assertEquals($paymentLog->amount, $trans->amount);
+    }
 
 }
