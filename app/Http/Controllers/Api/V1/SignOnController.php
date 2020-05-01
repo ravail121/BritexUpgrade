@@ -34,7 +34,10 @@ class SignOnController extends BaseController
             $customer = Customer::where('company_id', $companyId)->whereEmail($data['email'])->first();
         }
 
-        if($customer->company_id != $companyId){
+        if(!isset($customer)) {
+            return $this->respondError('Invalid Customer ID');
+        }
+        else if($customer->company_id !== $companyId){
             return $this->respondError("Invalid Company ID");
         }
 

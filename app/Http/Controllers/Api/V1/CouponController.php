@@ -501,6 +501,10 @@ class CouponController extends Controller
             ];
         } elseif ($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT']) {
             $couponProducts = $coupon->couponProducts;
+            $plans   = [];
+            $devices = [];
+            $sims   = [];
+            $addons = [];
             foreach ($couponProducts as $product) {
                 $amount = $product->amount;
                 $amount =  $isPercentage == false ? '$'.$amount : $amount.'%';
@@ -509,6 +513,7 @@ class CouponController extends Controller
                 $sims[]    = $product->product_type == self::SPECIFIC_TYPES['SIM']    ? $amount. ' off on sim '. $product->sim->name    : '';
                 $addons[]  = $product->product_type == self::SPECIFIC_TYPES['ADDON']  ? $amount. ' off on addon '. $product->addon->name  : '';
             }
+
             return [
                 'details' => implode('<p></p><br>', array_filter(
                     [
