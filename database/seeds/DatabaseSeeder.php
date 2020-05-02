@@ -15,5 +15,6 @@ class DatabaseSeeder extends Seeder
         // $this->call(SystemGlobalSettingTableSeeder::class);
         // $this->call(DefaultImeiTableSeeder::class);
         // $this->call(StaffTableSeeder::class);
+        $this->call(EduSeeder::class);
     }
 }
