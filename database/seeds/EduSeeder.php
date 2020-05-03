@@ -69,7 +69,7 @@ class EduSeeder extends Seeder
                     'amount_onetime' => 0,
                     'regulatory_fee_type' => 1,
                     'regulatory_fee_amount' => 1,
-                    'sim_required' => 1,
+                    'sim_required' => 0,
                     'taxable' => 1,
                     'show' => 1,
                     'sku' => 'D',
