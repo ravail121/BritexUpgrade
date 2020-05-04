@@ -418,7 +418,7 @@ class CardController extends BaseController implements ConstantInterface
         $card = CustomerCreditCard::find($data['credit_card_id']);
         $customer = Customer::find($card->customer_id);
         // create invoice other than payment_type is "Manual Payment"
-        if($data->get('payment_type') != 'Manual Payment') {
+        if($data->get('payment_type') != 'xxxxxxManual Payment') {
             $invoice = [
                 'staff_id' => $data->staff_id ?: null,
                 'customer_id' => $card->customer_id,
