@@ -84,6 +84,7 @@ class OrderDataController extends BaseController
     {
         try {
             $url = config('readyCloud.ready_cloud_base_url').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
+            \Log::info($url);
             $client = new Client();
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
@@ -100,7 +101,7 @@ class OrderDataController extends BaseController
     {
         $client = new Client();
         try {
-            $url = config(readyCloud.ready_cloud_base_url).$boxesUrl.'?bearer_token='.$readyCloudApiKey;
+            $url = config('readyCloud.ready_cloud_base_url').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
 
