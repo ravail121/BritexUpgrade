@@ -84,10 +84,10 @@ class OrderDataController extends BaseController
     public function getOrderData($orderNum, $readyCloudApiKey, $url = "/")
     {
         try {
-            $url = env('READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
+            $url = config('readyCloud.ready_cloud_base_url').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
             $client = new Client();
             $response = $client->request('GET', $url);
-
+            dd(collect(json_decode($response->getBody(), true)));
             return collect(json_decode($response->getBody(), true));
 
         }catch (Exception $e) {
@@ -102,7 +102,7 @@ class OrderDataController extends BaseController
     {
         $client = new Client();
         try {
-            $url = env('READY_CLOUD_BASE_URL').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
+            $url = config(readyCloud.ready_cloud_base_url).$boxesUrl.'?bearer_token='.$readyCloudApiKey;
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
 
