@@ -51,28 +51,36 @@ class OrderDataController extends BaseController
                 $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
                 $keyUrls[$readyCloudApiKey] = $url;
             }
-            
+            \Log::info($readyCloudApiKey."--".$order["order_num"]);
             if($readyCloudApiKey ){
                 \Log::info("Getting readycloud data for : ".$order["order_num"]);
                 $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey, $url);
                 if($orderData){
-                    if($orderData && isset($orderData['results'][0])){
-                        foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
-                            $boxesUrl = $orderDataValue['url'];
-                            $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
-                            if(!$boxes){
-                                 continue;
-                            }
-                            foreach ($boxes['items'] as $key => $box) {
-                                $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
-                                if(!$boxdetail){
-                                    continue;
+                    try{
+                        if($orderData && isset($orderData['results'][0])){
+                            foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
+                                $boxesUrl = $orderDataValue['url'];
+                                $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
+                                if(!$boxes){
+                                     continue;
                                 }
-                                dd($boxdetail);
-                                $this->updateOrderDetails($boxdetail, $boxes, $request);
+                                foreach ($boxes['items'] as $key => $box) {
+                                    $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
+                                    if(!$boxdetail){
+                                        continue;
+                                    }
+                                    $this->updateOrderDetails($boxdetail, $boxes, $request);
+                                }
                             }
                         }
+                        \Log::info("done");
+                    }catch (Exception $e) {
+                        $msg = 'exception: '.$e->getMessage();
+                        \Log::info($msg);
+                        continue;
+
                     }
+
                 }
             }
             usleep(config('readyCloud.ready_cloud_wait_time_in_seconds')*1000000);
@@ -84,7 +92,7 @@ class OrderDataController extends BaseController
     {
         try {
             $url = config('readyCloud.ready_cloud_base_url').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
-            \Log::info($url);
+            //\Log::info($url);
             $client = new Client();
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
@@ -102,6 +110,7 @@ class OrderDataController extends BaseController
         $client = new Client();
         try {
             $url = config('readyCloud.ready_cloud_base_url').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
+            \Log::info($url);
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
 
