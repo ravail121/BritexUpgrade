@@ -65,12 +65,12 @@ class OrderDataController extends BaseController
                             if(!$boxes){
                                  continue;
                             }
-                            dd($boxes);
                             foreach ($boxes['items'] as $key => $box) {
                                 $boxdetail = $this->getOrderBoxesOrItemsData($box['url'], $readyCloudApiKey);
                                 if(!$boxdetail){
                                     continue;
                                 }
+                                dd($boxdetail);
                                 $this->updateOrderDetails($boxdetail, $boxes, $request);
                             }
                         }
