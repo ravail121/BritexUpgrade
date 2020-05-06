@@ -58,9 +58,7 @@ class OrderDataController extends BaseController
                 if($orderData){
                     if($orderData && isset($orderData['results'][0])){
                         foreach ($orderData['results'][0]['boxes'] as $orderDataValue) {
-
-                            $boxesUrl = $orderDataValue['url']; 
-
+                            $boxesUrl = $orderDataValue['url'];
                             $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
                             if(!$boxes){
                                  continue;
@@ -88,7 +86,6 @@ class OrderDataController extends BaseController
             $url = config('readyCloud.ready_cloud_base_url').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
             $client = new Client();
             $response = $client->request('GET', $url);
-            dd(collect(json_decode($response->getBody(), true)));
             return collect(json_decode($response->getBody(), true));
 
         }catch (Exception $e) {
