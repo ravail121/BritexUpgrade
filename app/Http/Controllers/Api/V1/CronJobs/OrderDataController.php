@@ -62,6 +62,7 @@ class OrderDataController extends BaseController
                             $boxesUrl = $orderDataValue['url']; 
 
                             $boxes = $this->getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey);
+                            dd($boxes);
                             if(!$boxes){
                                  continue;
                             }
