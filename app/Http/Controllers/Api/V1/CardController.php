@@ -453,13 +453,21 @@ class CardController extends BaseController implements ConstantInterface
             $newInvoice = Invoice::create($invoice);
             $credit->update(['invoice_id' => $newInvoice->id]);
 
+            $type = '9';
+            $product_type = $data['payment_type'] ?: 'Manual Payment';
+            $description = $data['description'] ?: 'Manual Payment';
+            if ($data['payment_type'] == 'Custom Charge') {
+                $product_type = '';
+                $type = '3';
+            }
+
             $invoiceItem = [
                 'invoice_id' => $newInvoice->id,
-                'product_type' => $data['payment_type'] ?: 'Manual Payment',
-                'type' => '9',
+                'product_type' => $product_type,
+                'type' => $type,
                 'subscription_id' => $data['subscription_id'],
                 'start_date' => Carbon::today(),
-                'description' => $data['description'] ?: 'Manual Payment',
+                'description' => $description,
                 'amount' => $data['amount'],
                 'taxable' => '0',
             ];
