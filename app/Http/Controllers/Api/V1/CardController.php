@@ -99,7 +99,6 @@ class CardController extends BaseController implements ConstantInterface
      */
     public function chargeCard(Request $request)
     {
-
         $validation = $this->validateData($request);
         if ($validation) {
             return $this->respondError($validation);
@@ -295,7 +294,8 @@ class CardController extends BaseController implements ConstantInterface
                         $request_params = array(
                             'credit_card_id' => $card->id,
                             'amount'         => $customer['mounthlyInvoice']['total_due'],
-                            'order_hash'    => $order_hash
+                            'order_hash'    => $order_hash,
+                            'staff_id'      => 0
                         );
 
                         if($invoice->order == null){
