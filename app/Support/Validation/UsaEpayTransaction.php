@@ -59,6 +59,7 @@ trait UsaEpayTransaction
        $tran->amount      = $request->amount;
        $tran->invoice     = $request->invoice;
        $tran->cardholder  = $request->payment_card_holder;
+       $tran->custid      = $request->customer_id;
        $tran->street      = $request->shipping_address1;
        $tran->zip         = $request->zip;
        $tran->isrecurring = $request->isrecurring;
