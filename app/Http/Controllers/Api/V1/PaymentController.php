@@ -6,6 +6,7 @@ use PDF;
 use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Credit;
+use App\Model\CreditToInvoice;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
@@ -225,7 +226,7 @@ class PaymentController extends BaseController implements ConstantInterface
         if($this->tran->Process()) {
             $status = PaymentRefundLog::STATUS['success'];
             $amount = $this->tran->amount;
-            $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request->staff_id);
+            $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);
             if($invoice){
                 $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
                 $msg = "success";
@@ -267,16 +268,22 @@ class PaymentController extends BaseController implements ConstantInterface
         ]);
     }
 
-    protected function createRefundInvoice($invoiceId, $amount, $staffId)
+    protected function createRefundInvoice($invoiceId, $amount, $request)
     {
+        $total_due = self::DEFAULT_DUE;
+        $credit = $request->credit;
+        if($credit == '0'){
+            $total_due = $amount;
+        }
+
         $invoiceData = Invoice::find($invoiceId)->toArray();
         if($invoiceData){
             unset ($invoiceData['id'], $invoiceData['created_at'], $invoiceData['updated_at']);
             $invoiceData['type']         = Invoice::TYPES['one-time'];
             $invoiceData['status']       = self::DEFAULT_VALUE;
-            $invoiceData['staff_id']     = $staffId;
+            $invoiceData['staff_id']     = $request->staff_id;
             $invoiceData['subtotal']     = $amount;
-            $invoiceData['total_due']    = self::DEFAULT_DUE;
+            $invoiceData['total_due']    = $total_due;
             $invoiceData['prev_balance'] = self::DEFAULT_DUE;
             return Invoice::create($invoiceData);
         }
@@ -284,7 +291,7 @@ class PaymentController extends BaseController implements ConstantInterface
 
     protected function createRefundCredit($invoice, $amount, $staffId)
     {
-        return Credit::create([  
+        $credit =  Credit::create([  
             'customer_id'       =>  $invoice->customer_id,
             'amount'            =>  $amount,
             'type'              =>  '2',
@@ -293,6 +300,16 @@ class PaymentController extends BaseController implements ConstantInterface
             'description'       =>  'refund-credit',
             'staff_id'          =>  $staffId,
         ]);
+
+
+        CreditToInvoice::create([
+            'credit_id'     => $credit->id,
+            'invoice_id'    => $invoice->id,
+            'amount'        => $amount,
+            'description'   => "{$invoice->subtotal} applied on invoice id {$invoice->id}",
+        ]);
+
+        return $credit;
     }
 
     public function createRefundInvoiceItem($invoice, $amount, $type)
