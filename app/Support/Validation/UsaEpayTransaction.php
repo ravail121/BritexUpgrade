@@ -311,12 +311,6 @@ trait UsaEpayTransaction
             $creditData ['order_id'] = $data->id;
         }
 
-        // if ($data['payment_type'] == 'Custom Charge') {
-        //     $creditData["applied_to_invoice"] = 1;
-        //     // add to creditoinvoice
-
-        // }
-
         $credit = Credit::create($creditData);
 
         // Some attributes are set via default() method

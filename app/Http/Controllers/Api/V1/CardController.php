@@ -459,6 +459,14 @@ class CardController extends BaseController implements ConstantInterface
             if ($data['payment_type'] == 'Custom Charge') {
                 $product_type = '';
                 $type = '3';
+                $credit->update(['applied_to_invoice' => 1]);
+                // Add to credit_to_invoice table
+                $credit->usedOnInvoices()->create([
+                    'invoice_id'    => $newInvoice->id,
+                    'amount'        => $newInvoice->subtotal,
+                    'description'   => "{$newInvoice->subtotal} applied on invoice id {$newInvoice->id}",
+                ]);
+
             }
 
             $invoiceItem = [

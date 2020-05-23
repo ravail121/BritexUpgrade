@@ -223,25 +223,30 @@ class PaymentController extends BaseController implements ConstantInterface
         $paymentLog = PaymentLog::where('transaction_num' , $data['refnum'])->first();
         $customer   = Customer::find($paymentLog->customer_id);
         $request->headers->set('authorization', $customer->company->api_key);
+        $msg = "failed";
         if($this->tran->Process()) {
-            $status = PaymentRefundLog::STATUS['success'];
-            $amount = $this->tran->amount;
-            $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);
-            if($invoice){
-                $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
-                $msg = "success";
-                if($request->credit == '1'){
-                    $credit = $this->createRefundCredit($invoice, $this->tran->amount, $request->staff_id );
-                    $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['manual', 'Manual-Credit']);
-                    if(!$credit){
-                       $msg = "Refund Processed but fail to add credits"; 
+            try{
+                $status = PaymentRefundLog::STATUS['success'];
+                $amount = $this->tran->amount;
+                $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);
+                if($invoice){
+                    $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
+                    $msg = "success";
+                    if($request->credit == '1'){
+                        $credit = $this->createRefundCredit($invoice, $this->tran->amount, $request->staff_id );
+                        $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['manual', 'Manual-Credit']);
+                        if(!$credit){
+                           $msg = "Refund Processed but fail to add credits"; 
+                        }
                     }
+                }else{
+                    $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
                 }
-            }else{
-                $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
+                $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice->id);
+                $this->generateRefundInvoice($invoice, $paymentLog, false);
+            }catch(Exception $ex){
+                $msg = $ex->getMessage();
             }
-            $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice->id);
-            $this->generateRefundInvoice($invoice, $paymentLog, false);
         }else {
             
             $status = PaymentRefundLog::STATUS['fail'];
@@ -250,6 +255,7 @@ class PaymentController extends BaseController implements ConstantInterface
             // failed Mail event if want
         }
 
+        \Log::info(["refund finished.", $data['refnum'], $msg]);
         return $this->respond([
             'paymentRefundLog'=> $paymentRefundLog,
             'message' => $msg
@@ -293,6 +299,7 @@ class PaymentController extends BaseController implements ConstantInterface
     {
         $credit =  Credit::create([  
             'customer_id'       =>  $invoice->customer_id,
+            'applied_to_invoice'=>  1,
             'amount'            =>  $amount,
             'type'              =>  '2',
             'date'              =>  Carbon::now(),
