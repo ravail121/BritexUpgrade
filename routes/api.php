@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use App\Events\SubcriptionStatusChanged;
+use App\Scripts\TestEye4Fraud;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,7 +30,9 @@ Route::get('test', function(){
 });
 
 Route::get('/test-cc', function(){
-
+ 
+  // $cc = new TestEye4Fraud();
+  // $cc->test();
 
 });
 

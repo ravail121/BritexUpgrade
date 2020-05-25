@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use App\Events\PaymentFailed;
 use App\Model\PaymentRefundLog;
 use App\Services\Payment\UsaEpay;
+use App\Services\Eye4Fraud;
 use App\Model\CustomerCreditCard;
 use App\Model\SystemGlobalSetting;
 use App\Http\Controllers\Controller;
@@ -100,7 +101,29 @@ class PaymentController extends BaseController implements ConstantInterface
                     'date_processed' => Carbon::today()
                 ]);
 
-                PaymentLog::where('order_id', $order->id)->update(['invoice_id' => $invoice->id]);
+                $paymentLog = PaymentLog::where('order_id', $order->id);
+                $paymentLog->update(['invoice_id' => $invoice->id]);
+
+                /* start send to Ey4Fraud */
+                if($order->company_id == 3){
+                    try{
+                        $has_device = false;
+                        foreach ($order->allOrderGroup as $og) {
+                            if($og->device_id > 0){
+                                $has_device = true;
+                                break;
+                            }
+                        }
+                        if($has_device){
+                            $response = Eye4Fraud::send_order($order, $creditCard, $paymentLog->first());
+                            $success = true;
+                        }
+                    }catch(Exception $err){
+                        \Log::info(["Eye4Fraud error ", $err]);
+                    }
+                }
+                /* end send to Ey4Fraud */
+
             } else {
                 $msg = $this->respond([
                     'invoice' => 'Failed to generate invoice.'
