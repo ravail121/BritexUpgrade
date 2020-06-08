@@ -251,8 +251,15 @@ class PaymentController extends BaseController implements ConstantInterface
             try{
                 $status = PaymentRefundLog::STATUS['success'];
                 $amount = $this->tran->amount;
-                $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);
+                $invoice = null;
+                $invoice_id = null;
+                try{
+                    $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);  
+                }catch(\Exception $ex){
+
+                }
                 if($invoice){
+                    $invoice_id = $invoice->id;
                     $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
                     $msg = "success";
                     if($request->credit == '1'){
@@ -262,13 +269,15 @@ class PaymentController extends BaseController implements ConstantInterface
                            $msg = "Refund Processed but fail to add credits"; 
                         }
                     }
+                    $this->generateRefundInvoice($invoice, $paymentLog, false);
                 }else{
                     $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
                 }
-                $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice->id);
-                $this->generateRefundInvoice($invoice, $paymentLog, false);
-            }catch(Exception $ex){
+
+                $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice_id);
+            }catch(\Exception $ex){
                 $msg = $ex->getMessage();
+                \Log::info(["refund error", $msg]);
             }
         }else {
             
@@ -305,16 +314,20 @@ class PaymentController extends BaseController implements ConstantInterface
             $total_due = $amount;
         }
 
-        $invoiceData = Invoice::find($invoiceId)->toArray();
+        $invoiceData = Invoice::find($invoiceId);
         if($invoiceData){
-            unset ($invoiceData['id'], $invoiceData['created_at'], $invoiceData['updated_at']);
-            $invoiceData['type']         = Invoice::TYPES['one-time'];
-            $invoiceData['status']       = self::DEFAULT_VALUE;
-            $invoiceData['staff_id']     = $request->staff_id;
-            $invoiceData['subtotal']     = $amount;
-            $invoiceData['total_due']    = $total_due;
-            $invoiceData['prev_balance'] = self::DEFAULT_DUE;
-            return Invoice::create($invoiceData);
+            $invoiceData = $invoiceData->toArray();
+            if($invoiceData){
+                unset ($invoiceData['id'], $invoiceData['created_at'], $invoiceData['updated_at']);
+                $invoiceData['type']         = Invoice::TYPES['one-time'];
+                $invoiceData['status']       = self::DEFAULT_VALUE;
+                $invoiceData['staff_id']     = $request->staff_id;
+                $invoiceData['subtotal']     = $amount;
+                $invoiceData['total_due']    = $total_due;
+                $invoiceData['prev_balance'] = self::DEFAULT_DUE;
+                return Invoice::create($invoiceData);
+
+            }
         }
     }
 
