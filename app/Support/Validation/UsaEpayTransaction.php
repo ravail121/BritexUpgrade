@@ -9,6 +9,7 @@ use App\Model\Coupon;
 use App\Model\Credit;
 use App\Model\Invoice;
 use App\Model\Customer;
+use App\Model\CustomerLog;
 use App\Model\PaymentLog;
 use App\Model\OrderCoupon;
 use App\Model\Subscription;
@@ -198,6 +199,7 @@ trait UsaEpayTransaction
         $customer->update([
             'account_suspended' => 0,
         ]);
+        CustomerLog::create( array("customer_id"=>$customer->id, "content"=> "Account UnSuspended" ) );
         event(new AccountUnsuspended($customer));
     }
 

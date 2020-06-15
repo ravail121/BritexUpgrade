@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\CronJobs;
 
 use Carbon\Carbon;
 use App\Model\Invoice;
+use App\Model\CustomerLog;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\AccountSuspended;
@@ -32,6 +33,8 @@ class ProcessController extends BaseController
                 $pendingMonthlyInvoice->update(['status' => Invoice::STATUS['closed_and_unpaid']]);
 
                 $customer->update(['account_suspended' => true]);
+
+                CustomerLog::create( array("customer_id"=>$customer->id, "content"=> "Account Suspended" ) );
 
                 $subscriptions = $customer->nonClosedSubscriptions->load('plan', 'subscriptionAddonNotRemoved');
 

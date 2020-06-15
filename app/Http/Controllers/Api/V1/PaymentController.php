@@ -247,6 +247,7 @@ class PaymentController extends BaseController implements ConstantInterface
         $customer   = Customer::find($paymentLog->customer_id);
         $request->headers->set('authorization', $customer->company->api_key);
         $msg = "failed";
+        $paymentRefundLog = array();
         if($this->tran->Process()) {
             try{
                 $status = PaymentRefundLog::STATUS['success'];
