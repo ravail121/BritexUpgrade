@@ -400,4 +400,9 @@ class Invoice extends Model implements ConstantInterface
         return $this->invoiceItem()->refundItem();
     }
 
+    public function scopeCustomerInvoice($query)
+    {
+        return $query->has('customer');
+    }
+
 }

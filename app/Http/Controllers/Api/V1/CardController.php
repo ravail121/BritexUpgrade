@@ -259,58 +259,64 @@ class CardController extends BaseController implements ConstantInterface
 
         $customersB = Customer::where([
             ['billing_start', '=', Carbon::today()], ['auto_pay', Customer::AUTO_PAY['enable']
-        ]])->with('unpaidAndClosedMounthlyInvoice', 'company')->get()->toArray();
+        ]])->with('unpaidAndClosedMounthlyInvoice', 'company') ;
 
         $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
-            \Log::info(array($customer["id"], $customer["email"]));
-            if($customer["account_suspended"] == 1){ continue; }
+            $customer_obj = Customer::find($customer["id"])
+            $amount_due = $customer_obj->credits_count;
+            \Log::info(array("autopaying...", $customer["id"], $customer["email"], $amount_due));
+            //if($customer["account_suspended"] == 1){ continue; }
             $api_key = $customer["company"]["api_key"];
             
             try {
-                if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
+                // if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
+                if($amount_due){
 
-                    if(isset($customer['unpaid_mounthly_invoice'][0])){
-                        $customer['mounthlyInvoice'] = $customer['unpaid_mounthly_invoice'][0]; 
-                    }else{
-                        $customer['mounthlyInvoice'] = $customer['unpaid_and_closed_mounthly_invoice'][0];
-                    }
+                    // if(isset($customer['unpaid_mounthly_invoice'][0])){
+                    //     $customer['mounthlyInvoice'] = $customer['unpaid_mounthly_invoice'][0]; 
+                    // }else{
+                    //     $customer['mounthlyInvoice'] = $customer['unpaid_and_closed_mounthly_invoice'][0];
+                    // }
 
                     $card = CustomerCreditCard::where(
                         'customer_id', $customer['id']
                     )->orderBy('default', 'desc')->first();
 
                     if($card){
-                        $invoice = Invoice::where('id', $customer['mounthlyInvoice']['id'])->with('order')->first();
-                        \Log::info($invoice);
+                        // $invoice = Invoice::where('id', $customer['mounthlyInvoice']['id'])->with('order')->first();
+                        // \Log::info($invoice);
 
                         $order_hash = "";
-                        if($invoice->order){
-                            $order_hash = $invoice->order->hash;
-                            $api_key = $invoice->order->company->api_key;
-                        }
+                        // if($invoice->order){
+                        //     $order_hash = $invoice->order->hash;
+                        //     $api_key = $invoice->order->company->api_key;
+                        // }
 
                         $request_params = array(
                             'credit_card_id' => $card->id,
-                            'amount'         => $customer['mounthlyInvoice']['total_due'],
+                            'amount'         => $amount_due,
                             'order_hash'    => $order_hash,
-                            'staff_id'      => 0
+                            'staff_id'      => 0,
+
+                            'key'           => $customer_obj->company->usaepay_api_key,
+                            'usesandbox'    => $customer_obj->company->usaepay_live_formatted
                         );
 
-                        if($invoice->order == null){
-                            $request_params['key'] = $invoice->customer->company->usaepay_api_key;
-                            $request_params['usesandbox'] = $invoice->customer->company->usaepay_live_formatted;
-                        }
+                        // if($invoice->order == null){
+                        //     $request_params['key'] = $invoice->customer->company->usaepay_api_key;
+                        //     $request_params['usesandbox'] = $invoice->customer->company->usaepay_live_formatted;
+                        // }
 
                         $request->replace($request_params);
 
                         $response = $this->chargeCard($request);
                         if(isset($response->getData()->success) && $response->getData()->success =="true") {
-                            $invoice->update([
-                                'status' => Invoice::INVOICESTATUS['closed'],
-                                'total_due' => 0
-                            ]);
+                            // $invoice->update([
+                            //     'status' => Invoice::INVOICESTATUS['closed'],
+                            //     'total_due' => 0
+                            // ]);
                             $request->headers->set('authorization', $api_key);
                             event(new InvoiceAutoPaid($customer));
                             \Log::info("AutoPaid for customer ".$customer['id']);
@@ -325,12 +331,15 @@ class CardController extends BaseController implements ConstantInterface
                             }
                             
                             event(new FailToAutoPaidInvoice($customer, $message));
-                            $paymentLog = $this->createPaymentLogs($invoice->order, $this->tran, 0, $card, $invoice);
+                            $order = new Order();
+                            $order->customer_id = $customer['id'];
+                            $paymentLog = $this->createPaymentLogs($order, $this->tran, 0, $card, null);
+                            \Log::info("AutoPaid Failed for customer ".$customer['id']);
                         }
                         
-                        if($invoice->order){
-                            PaymentLog::where('order_id', $invoice->order->id)->update(['invoice_id' => $invoice->id ]);
-                        }
+                        // if($invoice->order){
+                        //     PaymentLog::where('order_id', $invoice->order->id)->update(['invoice_id' => $invoice->id ]);
+                        // }
                     }else{
                         $request->headers->set('authorization', $api_key);
                         event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));
@@ -419,8 +428,14 @@ class CardController extends BaseController implements ConstantInterface
         $customer = Customer::find($card->customer_id);
         // create invoice other than payment_type is "Manual Payment"
         if(!empty($data->get('payment_type')) && $data->get('payment_type') != 'Manual Payment') {
+            $staff_id = $data->staff_id;
+            if($staff_id || $staff_id == 0){
+
+            }else{
+                $staff_id = null;
+            }
             $invoice = [
-                'staff_id' => $data->staff_id ?: null,
+                'staff_id' => $staff_id,
                 'customer_id' => $card->customer_id,
                 'type' => '2',
                 'start_date' => $customer->billing_start,

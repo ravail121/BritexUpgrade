@@ -61,7 +61,8 @@ class Customer extends Authenticatable
     ];
 
     protected $appends = [
-        'auto_pay_status'
+        'auto_pay_status',
+        'credits_count'
     ];
 
     public function company()
@@ -414,4 +415,23 @@ class Customer extends Authenticatable
     {
         return $this->invoice()->monthly()->whereDate('start_date', '>', Carbon::parse($this->billing_end));
     }
+
+    public function getAmountDueAttribute()
+    {
+        $amountDue = $this->nonCreditInvoice() - $this->credit->sum('amount');
+        return number_format((float)$amountDue, 2, '.', '');
+    }
+
+    public function getCreditsCountAttribute()
+    {
+        return abs($this->amount_due);
+    }
+
+    public function nonCreditInvoice()
+    {
+        $orderAmount = $this->invoice()->customerInvoice()->sum('subtotal');
+        $refundAmount = 0;
+        return $orderAmount + $refundAmount;
+    }
+
 }
