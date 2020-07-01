@@ -259,13 +259,19 @@ class CardController extends BaseController implements ConstantInterface
 
         $customersB = Customer::where([
             ['billing_start', '=', Carbon::today()], ['auto_pay', Customer::AUTO_PAY['enable']
-        ]])->with('unpaidAndClosedMounthlyInvoice', 'company') ;
+        ]])->with('unpaidAndClosedMounthlyInvoice', 'company')->get()->toArray();
 
         $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
-            $customer_obj = Customer::find($customer["id"])
-            $amount_due = $customer_obj->credits_count;
+            if($customer["id"] != 1332) { continue; } // for debug
+            $customer_obj = Customer::find($customer["id"]);
+            $amount_due = $customer_obj->amount_due;
+            $customer['mounthlyInvoice'] = array('total_due' => $amount_due, 'subtotal' => $amount_due);
+            if($amount_due <= 0){
+                continue;
+                \Log::info(array("skipping autopaying...", $customer["id"], $customer["email"], $amount_due));
+            }
             \Log::info(array("autopaying...", $customer["id"], $customer["email"], $amount_due));
             //if($customer["account_suspended"] == 1){ continue; }
             $api_key = $customer["company"]["api_key"];
@@ -329,6 +335,8 @@ class CardController extends BaseController implements ConstantInterface
                             }catch(Exception $e){
 
                             }
+
+                            \Log::info($message);
                             
                             event(new FailToAutoPaidInvoice($customer, $message));
                             $order = new Order();
