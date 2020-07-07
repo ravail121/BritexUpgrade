@@ -301,6 +301,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     protected function getInvoiceData($customer)
     {
         return [
+            'staff_id'                => 5,
             'customer_id'             => $customer->id,
             'type'                    => self::INVOICE_TYPES['monthly'],
             'status'                  => self::STATUS['pending_payment'],

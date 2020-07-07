@@ -264,7 +264,7 @@ class CardController extends BaseController implements ConstantInterface
         $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
-	\Log::info(array("running autopay for:", $customer["id"]));
+	       \Log::info(array("running autopay for:", $customer["id"]));
 //            if($customer["id"] != 87 ) { continue; } // for debug
             $customer_obj = Customer::find($customer["id"]);
             $amount_due = $customer_obj->amount_due;
@@ -302,12 +302,12 @@ class CardController extends BaseController implements ConstantInterface
                         // }
 
                         $request_params = array(
-			    'customer_id'   => $customer_obj->id,
+			                'customer_id'   => $customer_obj->id,
                             'credit_card_id' => $card->id,
                             'amount'         => $amount_due,
                             'order_hash'    => $order_hash,
-                            'staff_id'      => 0,
-		      	    'without_order' => true,
+                            'staff_id'      => 5,
+		      	            'without_order' => true,
                             'key'           => $customer_obj->company->usaepay_api_key,
                             'usesandbox'    => $customer_obj->company->usaepay_live_formatted
                         );
@@ -435,7 +435,7 @@ class CardController extends BaseController implements ConstantInterface
         // create invoice other than payment_type is "Manual Payment"
         if(!empty($data->get('payment_type')) && $data->get('payment_type') != 'Manual Payment') {
             $staff_id = $data->staff_id;
-            if($staff_id || $staff_id == 0){
+            if($staff_id){
 
             }else{
                 $staff_id = null;
