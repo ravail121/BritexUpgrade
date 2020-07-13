@@ -29,6 +29,11 @@ class PaymentRefundLog extends Model
         return $this->belongsTo('App\Model\PaymentLog', 'payment_log_id')->orderBy('id', 'desc');
     }
 
+     public function invoice()
+    {
+        return $this->belongsTo('App\Model\Invoice', 'invoice_id')->orderBy('id', 'desc');
+    }
+
     public function getCreatedAtFormattedAttribute()
     {
         if($this->created_at){
@@ -37,3 +42,4 @@ class PaymentRefundLog extends Model
         return 'NA';
     }
 }
+

@@ -24,7 +24,7 @@
                                     <tr>
                                         <td>Invoice No.</td>
                                         <td width="20px"></td>
-                                        <td class="detail">{{ $paymentRefundLog->paymentLog->invoice->id }}</td>
+                                        <td class="detail">{{ $paymentRefundLog->invoice->id }}</td>
                                     </tr>
                                     <tr>
                                         <td>Original Charge Date</td>

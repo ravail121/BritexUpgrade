@@ -73,9 +73,9 @@ class OrderDataController extends BaseController
                                 }
                             }
                         }
-                        \Log::info("Got RC data for : ".$order["order_num"]);
+                        //\Log::info("Got RC data for : ".$order["order_num"]);
                     }catch (Exception $e) {
-                        $msg = 'exception: '.$e->getMessage();
+                        $msg = 'RC get ex for : order#-'.$order["order_num"]." - " .$e->getMessage();
                         \Log::info($msg);
                         continue;
 
@@ -179,3 +179,4 @@ class OrderDataController extends BaseController
         }
     }
 }
+

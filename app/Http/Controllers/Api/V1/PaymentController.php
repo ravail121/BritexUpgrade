@@ -270,12 +270,15 @@ class PaymentController extends BaseController implements ConstantInterface
                            $msg = "Refund Processed but fail to add credits"; 
                         }
                     }
-                    $this->generateRefundInvoice($invoice, $paymentLog, false);
+                    $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice_id);
+                    try{
+                        $this->generateRefundInvoice($invoice, $paymentLog, false);
+                    }catch(Exception $ex){
+                        \Log::info(["refund generate refund invoice error ", $msg]);
+                    }
                 }else{
                     $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
                 }
-
-                $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice_id);
             }catch(\Exception $ex){
                 $msg = $ex->getMessage();
                 \Log::info(["refund error", $msg]);
@@ -375,4 +378,5 @@ class PaymentController extends BaseController implements ConstantInterface
         event(new PaymentFailed($customer));
     }
 }
+
 
