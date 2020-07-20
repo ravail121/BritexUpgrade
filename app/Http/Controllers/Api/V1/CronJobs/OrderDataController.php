@@ -48,8 +48,13 @@ class OrderDataController extends BaseController
             if(array_key_exists($readyCloudApiKey, $keyUrls)){
                 $url = $keyUrls[$readyCloudApiKey];
             }else{
-                $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
-                $keyUrls[$readyCloudApiKey] = $url;
+                try{
+                    $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
+                    $keyUrls[$readyCloudApiKey] = $url;
+                }catch(Exception $e){
+                    continue;
+                }
+                
             }
            // \Log::info($readyCloudApiKey."--".$order["order_num"]);
             if($readyCloudApiKey ){

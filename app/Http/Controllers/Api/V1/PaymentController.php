@@ -234,13 +234,13 @@ class PaymentController extends BaseController implements ConstantInterface
 
     public function processRefund(Request $request)
     {
+	\Log::info("refund api called");
         $data = $request->validate([
             'refnum'     => 'required',
             'amount'     => 'required|numeric',
             'credit'     => 'required',
             'staff_id'   => 'required',
         ]); 
-        
         $this->setConstantData($request);
         $this->tran = $this->setUsaEpayDataForRefund($this->tran, $request);
         $paymentLog = PaymentLog::where('transaction_num' , $data['refnum'])->first();
@@ -248,6 +248,7 @@ class PaymentController extends BaseController implements ConstantInterface
         $request->headers->set('authorization', $customer->company->api_key);
         $msg = "failed";
         $paymentRefundLog = array();
+//	\Log::info(array("refund","a"));
         if($this->tran->Process()) {
             try{
                 $status = PaymentRefundLog::STATUS['success'];
@@ -257,6 +258,7 @@ class PaymentController extends BaseController implements ConstantInterface
                 try{
                     $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);  
                 }catch(\Exception $ex){
+//		 \Log::info(array("refund b","invoice unable to create", $ex));
 
                 }
                 if($invoice){
