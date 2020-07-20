@@ -256,7 +256,8 @@ class PaymentController extends BaseController implements ConstantInterface
                 $invoice = null;
                 $invoice_id = null;
                 try{
-                    $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);  
+                    $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);
+                    sleep(1);
                 }catch(\Exception $ex){
 //		 \Log::info(array("refund b","invoice unable to create", $ex));
 
@@ -264,6 +265,7 @@ class PaymentController extends BaseController implements ConstantInterface
                 if($invoice){
                     $invoice_id = $invoice->id;
                     $InvoiceItem = $this->createRefundInvoiceItem($invoice, $this->tran->amount, ['refund', 'Refund']);
+                    sleep(1);
                     $msg = "success";
                     if($request->credit == '1'){
                         $credit = $this->createRefundCredit($invoice, $this->tran->amount, $request->staff_id );
@@ -380,5 +382,4 @@ class PaymentController extends BaseController implements ConstantInterface
         event(new PaymentFailed($customer));
     }
 }
-
 
