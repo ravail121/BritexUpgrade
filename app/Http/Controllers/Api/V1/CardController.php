@@ -17,6 +17,7 @@ use App\Events\InvoiceAutoPaid;
 use App\Model\CustomerCreditCard;
 use App\Services\Payment\UsaEpay;
 use App\Events\FailToAutoPaidInvoice;
+use App\Events\AccountUnsuspended;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 
@@ -143,7 +144,6 @@ class CardController extends BaseController implements ConstantInterface
         $order = Order::where('customer_id', $request->customer_id)->first();
         if ($order) {
             $this->tran = $this->setUsaEpayData($this->tran, $request, $command);
-
             if($this->tran->Process()) {
                 if($request->without_order){
                     $this->response = $this->transactionSuccessfulWithoutOrder($request, $this->tran);
@@ -264,7 +264,8 @@ class CardController extends BaseController implements ConstantInterface
         $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
-            if($customer["id"] != 1332) { continue; } // for debug
+	\Log::info(array("running autopay for:", $customer["id"]));
+//            if($customer["id"] != 87 ) { continue; } // for debug
             $customer_obj = Customer::find($customer["id"]);
             $amount_due = $customer_obj->amount_due;
             $customer['mounthlyInvoice'] = array('total_due' => $amount_due, 'subtotal' => $amount_due);
@@ -301,11 +302,12 @@ class CardController extends BaseController implements ConstantInterface
                         // }
 
                         $request_params = array(
+			    'customer_id'   => $customer_obj->id,
                             'credit_card_id' => $card->id,
                             'amount'         => $amount_due,
                             'order_hash'    => $order_hash,
                             'staff_id'      => 0,
-
+		      	    'without_order' => true,
                             'key'           => $customer_obj->company->usaepay_api_key,
                             'usesandbox'    => $customer_obj->company->usaepay_live_formatted
                         );
@@ -316,9 +318,8 @@ class CardController extends BaseController implements ConstantInterface
                         // }
 
                         $request->replace($request_params);
-
                         $response = $this->chargeCard($request);
-                        if(isset($response->getData()->success) && $response->getData()->success =="true") {
+                        if(isset($response->getData()->original->success) && $response->getData()->original->success =="true") {
                             // $invoice->update([
                             //     'status' => Invoice::INVOICESTATUS['closed'],
                             //     'total_due' => 0
@@ -326,7 +327,7 @@ class CardController extends BaseController implements ConstantInterface
                             $request->headers->set('authorization', $api_key);
                             event(new InvoiceAutoPaid($customer));
                             \Log::info("AutoPaid for customer ".$customer['id']);
-                            $customer->account_suspended ? $customer->update(['account_suspended' => 0]) && event(new AccountUnsuspended($customer)) : null;
+                            $customer_obj->account_suspended ? $customer_obj->update(['account_suspended' => 0]) && event(new AccountUnsuspended($customer)) : null;
                         }else{
                             $request->headers->set('authorization', $api_key);
                             $message = $response;
@@ -373,12 +374,9 @@ class CardController extends BaseController implements ConstantInterface
     {
         $credit = $this->createCredits($request, $tran);
         $invoice = $this->processCreditInvoice($request, $tran, $credit);
-
         $this->payUnpaiedInvoice($tran->amount, $request, $credit);
-        
 
         $response = response()->json(['success' => true, 'transaction' => $tran]);
-
         return $response;
     }
 
