@@ -281,14 +281,15 @@ class PaymentController extends BaseController implements ConstantInterface
                         \Log::info(["refund generate refund invoice error ", $msg]);
                     }
                 }else{
-                    $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
+                    $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice_id);
+                    $msg = "success";
                 }
             }catch(\Exception $ex){
                 $msg = $ex->getMessage();
                 \Log::info(["refund error", $msg]);
             }
         }else {
-            
+
             $status = PaymentRefundLog::STATUS['fail'];
             $msg = $this->tran->error;
             $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status);
