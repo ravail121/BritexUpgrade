@@ -234,13 +234,13 @@ class PaymentController extends BaseController implements ConstantInterface
 
     public function processRefund(Request $request)
     {
-	\Log::info("refund api called");
         $data = $request->validate([
             'refnum'     => 'required',
             'amount'     => 'required|numeric',
             'credit'     => 'required',
             'staff_id'   => 'required',
         ]); 
+        
         $this->setConstantData($request);
         $this->tran = $this->setUsaEpayDataForRefund($this->tran, $request);
         $paymentLog = PaymentLog::where('transaction_num' , $data['refnum'])->first();
@@ -248,7 +248,6 @@ class PaymentController extends BaseController implements ConstantInterface
         $request->headers->set('authorization', $customer->company->api_key);
         $msg = "failed";
         $paymentRefundLog = array();
-//	\Log::info(array("refund","a"));
         if($this->tran->Process()) {
             try{
                 $status = PaymentRefundLog::STATUS['success'];
@@ -259,8 +258,7 @@ class PaymentController extends BaseController implements ConstantInterface
                     $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);
                     sleep(1);
                 }catch(\Exception $ex){
-//		 \Log::info(array("refund b","invoice unable to create", $ex));
-
+                    \Log::info(array("refund b","invoice unable to create", $ex));
                 }
                 if($invoice){
                     $invoice_id = $invoice->id;
@@ -281,15 +279,14 @@ class PaymentController extends BaseController implements ConstantInterface
                         \Log::info(["refund generate refund invoice error ", $msg]);
                     }
                 }else{
-                    $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status, $invoice_id);
-                    $msg = "success";
+                    $msg = "Refund Processed Invoice not Created because Old Invoice not Found";
                 }
             }catch(\Exception $ex){
                 $msg = $ex->getMessage();
                 \Log::info(["refund error", $msg]);
             }
         }else {
-
+            
             $status = PaymentRefundLog::STATUS['fail'];
             $msg = $this->tran->error;
             $paymentRefundLog = $this->createPaymentRefundLog($paymentLog, $status);
