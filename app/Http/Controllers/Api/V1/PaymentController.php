@@ -244,6 +244,7 @@ class PaymentController extends BaseController implements ConstantInterface
         $this->setConstantData($request);
         $this->tran = $this->setUsaEpayDataForRefund($this->tran, $request);
         $paymentLog = PaymentLog::where('transaction_num' , $data['refnum'])->first();
+        \Log::info(["pl", $data, $paymentLog->customer_id, $paymentLog->invoice_id ]);
         $customer   = Customer::find($paymentLog->customer_id);
         $request->headers->set('authorization', $customer->company->api_key);
         $msg = "failed";
@@ -255,7 +256,7 @@ class PaymentController extends BaseController implements ConstantInterface
                 $invoice = null;
                 $invoice_id = null;
                 try{
-                    $invoice = $this->createRefundInvoice($paymentLog->invoice_id, $amount, $request);
+                    $invoice = $this->createRefundInvoice($customer->id, $amount, $request);
                     sleep(1);
                 }catch(\Exception $ex){
                     \Log::info(array("refund b","invoice unable to create", $ex));
@@ -312,29 +313,42 @@ class PaymentController extends BaseController implements ConstantInterface
         ]);
     }
 
-    protected function createRefundInvoice($invoiceId, $amount, $request)
+    protected function createRefundInvoice($customer_id, $amount, $request)
     {
         $total_due = self::DEFAULT_DUE;
         $credit = $request->credit;
         if($credit == '0'){
             $total_due = $amount;
         }
-
-        $invoiceData = Invoice::find($invoiceId);
-        if($invoiceData){
-            $invoiceData = $invoiceData->toArray();
-            if($invoiceData){
-                unset ($invoiceData['id'], $invoiceData['created_at'], $invoiceData['updated_at']);
-                $invoiceData['type']         = Invoice::TYPES['one-time'];
-                $invoiceData['status']       = self::DEFAULT_VALUE;
-                $invoiceData['staff_id']     = $request->staff_id;
-                $invoiceData['subtotal']     = $amount;
-                $invoiceData['total_due']    = $total_due;
-                $invoiceData['prev_balance'] = self::DEFAULT_DUE;
-                return Invoice::create($invoiceData);
-
-            }
-        }
+        $invoiceData = [
+            'type' => Invoice::TYPES['one-time'],
+            'status' => self::DEFAULT_VALUE,
+            'staff_id' => $request->staff_id,
+            'subtotal' => $amount,
+            'total_due' => $total_due,
+            'prev_balance' => self::DEFAULT_DUE,
+            'start_date' => $this->carbon->toDateString(),
+            'end_date' => $this->carbon->toDateString(),
+            'due_date' => $this->carbon->toDateString(),
+            'payment_method' => '',
+            'notes'=>'',
+            'billing_fname'=>'',
+            'billing_lname'=>'',
+            'billing_address_line_1'=>'',
+            'billing_city'=>'',
+            'billing_state'=>'',
+            'billing_zip'=>'',
+            'shipping_fname'=>'',
+            'shipping_lname'=>'',
+            'shipping_address_line_1'=>'',
+            'shipping_city'=>'',
+            'shipping_state'=>'',
+            'shipping_zip'=>'',
+            'customer_id'  => $customer_id,
+        ];
+        //\Log::info($invoiceData);
+        return Invoice::create($invoiceData);
+        
     }
 
     protected function createRefundCredit($invoice, $amount, $staffId)
