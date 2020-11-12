@@ -609,5 +609,12 @@ Route::middleware('APIToken')->group(function () {
       }); 
 
       //Route::get('/confirm','BizVerificationController@confirm');
-      
+
+    Route::group(['namespace' => '\Api\V1'],function() {
+        Route::get('/subscription-by-phone-number', [
+            'as' => 'api.Subscription.phone',
+            'uses' => 'SubscriptionController@getSubscriptionByPhoneNumber',
+        ]);
+    });
+
 }); //APIToken middleware

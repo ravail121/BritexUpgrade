@@ -432,4 +432,23 @@ class SubscriptionController extends BaseController
         }
     }
 
+    public function getSubscriptionByPhoneNumber(Request $request)
+    {
+        $company_id = $request->get('company')->id;
+        $validation = $this->validate_input($request->all(), ["phone_number"    => 'required|numeric',]);
+        if ($validation) {
+            return $validation;
+        }
+        $subscription = Subscription::where('phone_number', $request->phone_number)
+            ->where('company_id', $company_id)
+            ->where('status', 'active')
+            ->orderBy('id', 'desc')->select('id as subscription_id')->first();
+        if(!$subscription){
+            $data['subscription_id'] = 0;
+        }else{
+            $data['subscription_id'] = $subscription['subscription_id'];
+        }
+        return $data;
+    }
+
 }
