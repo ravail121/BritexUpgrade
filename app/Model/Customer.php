@@ -18,7 +18,11 @@ class Customer extends Authenticatable
         'disable'    =>  0,
         'enable'     =>  1,
     ];
-    
+
+    protected $hidden = [
+        'password',
+    ];
+
     protected $table = 'customer'; 
     protected $fillable = [
         'hash',  
