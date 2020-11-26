@@ -44,12 +44,21 @@ class CustomerController extends BaseController
 			}
 			return false;
 		}
+        $company_id = $request->get('company')->id;
+        $customer_id = $request->get('customer_id');
+        $query = Customer::where('company_id', $company_id)->where('email', $request->post('email'));
+        if($customer_id){
+            $query->where('id', '!=', $customer_id);
+        }
+        if($query->exists()){
+            return $this->respond(['error' => 'Email address already exists.']);
+        }
 		if ($request->customer_id) {
 				if($request->fname){
 
 						$customer = $this->updateCustomer($request);
 
-						return $this->respond(['success' => true, 'customer' => $customer]);          
+						return $this->respond(['success' => true, 'customer' => $customer]);
 				}
 
 				$order = $this->updateOrder($request);
