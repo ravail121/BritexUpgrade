@@ -2,43 +2,71 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Model\Coupon;
-use App\Model\OrderCoupon;
-use App\Model\Order;
-use Carbon\Carbon;
-use Exception;
-use App\Model\Customer;
-use App\Model\Subscription;
-use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
-use App\Model\Plan;
 
+use Exception;
+use Carbon\Carbon;
+use App\Model\Plan;
+use App\Model\Order;
+use App\Model\Coupon;
+use App\Model\Customer;
+use App\Model\OrderCoupon;
+use App\Model\Subscription;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
+
+/**
+ * Class CouponController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class CouponController extends Controller
 {
     use InvoiceCouponTrait;
 
-    const SPECIFIC_TYPES = [
+	/**
+	 *
+	 */
+	const SPECIFIC_TYPES = [
         'PLAN'      =>  1,
         'DEVICE'    =>  2,
         'SIM'       =>  3,
         'ADDON'     =>  4
     ];
 
-    const FIXED_PERC_TYPES = [
+	/**
+	 *
+	 */
+	const FIXED_PERC_TYPES = [
         'fixed'      => 1,
         'percentage' => 2
     ];
 
-    const PLAN_TYPE = [
+	/**
+	 *
+	 */
+	const PLAN_TYPE = [
         'Voice'     => 1,
         'Data'      => 2
     ];
 
-    protected $failedResponse;
-    protected $totalTaxableAmount = [0];
+	/**
+	 * @var
+	 */
+	protected $failedResponse;
 
-    public function addCoupon(Request $request)
+	/**
+	 * @var int[]
+	 */
+	protected $totalTaxableAmount = [0];
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return array|array[]|string[]|null
+	 */
+	public function addCoupon(Request $request)
     {
         try {
             // Request from cart plans
@@ -49,11 +77,11 @@ class CouponController extends Controller
                         $coupon = Coupon::find($data['coupon_id']);
                         $codes[] = [
                             'coupon' => [
-                                'info' => $this->checkEligibleProducts($coupon),
-                                'code'    => $coupon->code
+                                'info'      => $this->checkEligibleProducts($coupon),
+                                'code'      => $coupon->code
                             ],
-                            'order_group_id' => $data['order_group_id'],
-                            'plan'  => Plan::find($data['plan_id'])->name
+                            'order_group_id'    => $data['order_group_id'],
+                            'plan'              => Plan::find($data['plan_id'])->name
                         ];
                     }
                 }
@@ -66,10 +94,19 @@ class CouponController extends Controller
                 return ['coupon_amount_details' => $this->checkEligibleProducts($coupon)];
             }
 
+	        $order_id = $request->input('order_id');
             // Regulator textbox request
             if (!$this->couponIsValid($coupon)) {
-                return ['error' => $this->failedResponse];
+	            return ['error' => $this->failedResponse];
             }
+
+	        /**
+	         * Check if the coupon are stackable
+	         */
+            if(!$this->couponAreStackableAndUnused($coupon, $order_id)){
+	            return ['error' => $this->failedResponse];
+            }
+
             if ($request->subscription_id) {
                 return $this->ifAddedFromAdmin($request, $coupon);
             } else {
@@ -78,11 +115,19 @@ class CouponController extends Controller
 
         } catch (Exception $e) {
             \Log::info($e->getMessage().' on line number: '.$e->getLine().' in CouponController');
-            return [ 'total' => 0,'error' => 'Server error' ];
+            return [
+            	'total' => 0,
+	            'error' => 'Server error'
+            ];
         }    
     }
 
-    protected function couponIsValid($coupon) 
+	/**
+	 * @param $coupon
+	 *
+	 * @return bool
+	 */
+	protected function couponIsValid($coupon)
     {
         if (!$coupon || $coupon['company_id'] != \Request::get('company')->id) {
             $this->failedResponse = 'Coupon is invalid';
@@ -108,7 +153,15 @@ class CouponController extends Controller
         }
     }
 
-    protected function isApplicable($order, $customer, $coupon, $admin = false)
+	/**
+	 * @param       $order
+	 * @param       $customer
+	 * @param       $coupon
+	 * @param false $admin
+	 *
+	 * @return bool
+	 */
+	protected function isApplicable($order, $customer, $coupon, $admin = false)
     {
         if ($admin) {
             $totalSubscriptions = $customer->billableSubscriptionsForCoupons->count();
@@ -151,7 +204,12 @@ class CouponController extends Controller
         return $this->couponCanBeUsed($coupon);
     }
 
-    protected function couponCanBeUsed($coupon)
+	/**
+	 * @param $coupon
+	 *
+	 * @return bool
+	 */
+	protected function couponCanBeUsed($coupon)
     {
         $today              = Carbon::now();
         $couponStartDate    = $coupon->start_date ? Carbon::parse($coupon->start_date) : null;
@@ -169,7 +227,13 @@ class CouponController extends Controller
         return true;
     }
 
-    public function ifAddedFromAdmin($request, $coupon)
+	/**
+	 * @param $request
+	 * @param $coupon
+	 *
+	 * @return array|string[]|null
+	 */
+	public function ifAddedFromAdmin($request, $coupon)
     {
         $subscription = Subscription::find($request->subscription_id);
         $customer = $subscription->customerRelation;
@@ -184,15 +248,21 @@ class CouponController extends Controller
         return $insert;
     }
 
-    public function ifAddedByCustomer($request, $coupon)
+	/**
+	 * @param $request
+	 * @param $coupon
+	 *
+	 * @return array
+	 */
+	public function ifAddedByCustomer($request, $coupon)
     {
         $order  = Order::find($request->order_id);
         $customer = Customer::find($request->customer_id);
         $couponEligibleFor = $this->checkEligibleProducts($coupon);
         
         OrderCoupon::updateOrCreate([
-            'order_id' => $order->id,
-            'coupon_id' => $coupon->id
+            'order_id'      => $order->id,
+            'coupon_id'     => $coupon->id
         ]);
         $stateTax = isset($customer->stateTax->rate) ? $customer->stateTax->rate : 0;
         $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order, $stateTax) : 0;
@@ -202,30 +272,39 @@ class CouponController extends Controller
         if ($this->isApplicable($order, $customer, $coupon)) {
             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
             return [
-                'total' => $total, 
-                'code' => $coupon->code,
-                'coupon_type' => $coupon->class,
-                'percentage' => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
-                'applied_to' => [
+                'total'                 => $total,
+                'code'                  => $coupon->code,
+                'coupon_type'           => $coupon->class,
+                'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
+                'applied_to'            => [
                     'applied_to_all'        => $appliedToAll['applied_to'],
                     'applied_to_types'      => $appliedToTypes['applied_to'],
                     'applied_to_products'   => $appliedToProducts['applied_to'],
                 ],
                 'coupon_amount_details' => $couponEligibleFor,
-                'coupon_tax' => number_format(array_sum($this->totalTaxableAmount), 2) * $stateTax / 100
+                'coupon_tax'            => number_format(array_sum($this->totalTaxableAmount), 2) * $stateTax / 100,
+	            'is_stackable'          => $coupon->stackable
             ];
         } else {
             return ['error' => $this->failedResponse];
         }
     }
 
-    protected function appliedToAll($coupon, $order, $tax)
+	/**
+	 * @param $coupon
+	 * @param $order
+	 * @param $tax
+	 *
+	 * @return array
+	 */
+	protected function appliedToAll($coupon, $order, $tax)
     {
         $isPercentage       = $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'];
         $multilineRestrict  = $coupon->multiline_restrict_plans ? $coupon->multilinePlanTypes->pluck('plan_type')->toArray() : null;
         $countItems         = 0;
         $totalDiscount      = 0;
         $orderGroups        = $order->allOrderGroup;
+	    $orderCouponProduct = [];
         
         foreach ($orderGroups as $og) {
             // plan charges
@@ -264,7 +343,7 @@ class CouponController extends Controller
             }
         }
         $total = $isPercentage ? $totalDiscount : $coupon->amount * $countItems;
-        isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
+        $orderCouponProduct ? $this->orderCoupon($orderCouponProduct, $order) : null;
         return ([
             'total'      => str_replace(',', '', number_format($total, 2)), 
             'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : [],
@@ -272,7 +351,14 @@ class CouponController extends Controller
         ]);
     }
 
-    protected function appliedToTypes($couponMain, $order, $tax)
+	/**
+	 * @param $couponMain
+	 * @param $order
+	 * @param $tax
+	 *
+	 * @return array
+	 */
+	protected function appliedToTypes($couponMain, $order, $tax)
     {
         $isPercentage       = $couponMain->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'];
         $multilineRestrict  = $couponMain->multiline_restrict_plans ? $couponMain->multilinePlanTypes->pluck('plan_type')->toArray() : null;
@@ -319,9 +405,9 @@ class CouponController extends Controller
         }
         isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
         return ([
-            'total' => str_replace(',', '', $totalDiscount),
-            'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : [],
-            'amount'    => [
+            'total'         => str_replace(',', '', $totalDiscount),
+            'applied_to'    => isset($orderCouponProduct) ? $orderCouponProduct : [],
+            'amount'        => [
                 'plan'  => isset($amountForPlans) ? $amountForPlans : 0,
                 'device'=> isset($amountForDevices) ? $amountForDevices : 0,
                 'sims'  => isset($amountForSims) ? $amountForSims : 0,
@@ -330,7 +416,14 @@ class CouponController extends Controller
         ]);
     }
 
-    protected function appliedToProducts($couponMain, $order, $tax)
+	/**
+	 * @param $couponMain
+	 * @param $order
+	 * @param $tax
+	 *
+	 * @return array
+	 */
+	protected function appliedToProducts($couponMain, $order, $tax)
     {
         $isPercentage       = $couponMain['fixed_or_perc'] == self::FIXED_PERC_TYPES['percentage'];
         $multilineRestrict  = $couponMain['multiline_restrict_plans'] == 1 ? $couponMain->multilinePlanTypes->pluck('plan_type')->toArray() : null;
@@ -373,12 +466,21 @@ class CouponController extends Controller
         }
         isset($orderCouponProduct) ? $this->orderCoupon($orderCouponProduct, $order) : null;
         return ([
-            'total' => str_replace(',', '', $totalDiscount),
-            'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : [],
+            'total'         => str_replace(',', '', $totalDiscount),
+            'applied_to'    => isset($orderCouponProduct) ? $orderCouponProduct : [],
         ]);
     }
 
-    protected function orderCouponProducts($productType, $productId, $couponAmount, $discount, $orderGroupId)
+	/**
+	 * @param $productType
+	 * @param $productId
+	 * @param $couponAmount
+	 * @param $discount
+	 * @param $orderGroupId
+	 *
+	 * @return array
+	 */
+	protected function orderCouponProducts($productType, $productId, $couponAmount, $discount, $orderGroupId)
     {
         return [
             'order_product_type'    => $productType,
@@ -389,21 +491,37 @@ class CouponController extends Controller
         ];
     }
 
-    protected function orderCoupon($data, $order)
+	/**
+	 * @param $data
+	 * @param $order
+	 */
+	protected function orderCoupon($data, $order)
     {
-        $order->orderCoupon->orderCouponProduct()->delete();
-        if (count($data) && isset($order->orderCoupon)) {
-            foreach ($data as $product) {
-                $order->orderCoupon->orderCouponProduct()->create([
-                    'order_product_type'    => $product['order_product_type'],
-                    'order_product_id'      => $product['order_product_id'],
-                    'amount'                => $product['amount']
-                ]);
-            }
-        }
+	    $orderCoupons = $order->orderCoupon;
+	    foreach($orderCoupons as $orderCoupon) {
+		    $orderCoupon->orderCouponProduct()->delete();
+		    if (count($data)) {
+			    foreach ($data as $product) {
+				    $orderCoupon->orderCouponProduct()->create([
+					    'order_product_type'    => $product['order_product_type'],
+					    'order_product_id'      => $product['order_product_id'],
+					    'amount'                => $product['amount']
+				    ]);
+			    }
+		    }
+	    }
+
     }
 
-    protected function couponForDevice($og, $isPercentage, $coupon, $tax)
+	/**
+	 * @param $og
+	 * @param $isPercentage
+	 * @param $coupon
+	 * @param $tax
+	 *
+	 * @return array
+	 */
+	protected function couponForDevice($og, $isPercentage, $coupon, $tax)
     {
         $deviceAmount = $og->plan_id ? $og->device->amount_w_plan : $og->device->amount;
         // $deviceAmount += $og->device->taxable ? $deviceAmount * $tax / 100 : 0;
@@ -413,7 +531,15 @@ class CouponController extends Controller
         return ['discount' => $deviceDiscount, 'products' => $orderCouponProduct];
     }
 
-    protected function couponForPlans($og, $isPercentage, $coupon, $tax)
+	/**
+	 * @param $og
+	 * @param $isPercentage
+	 * @param $coupon
+	 * @param $tax
+	 *
+	 * @return array
+	 */
+	protected function couponForPlans($og, $isPercentage, $coupon, $tax)
     {
         $planAmount = $og->plan_prorated_amt ?: $og->plan->amount_recurring;
         $planAmount += $og->plan->amount_onetime ?: 0;
@@ -425,7 +551,15 @@ class CouponController extends Controller
         return ['discount' => $planDiscount, 'products' => $orderCouponProduct];
     }
 
-    protected function couponForSims($og, $isPercentage, $coupon, $tax)
+	/**
+	 * @param $og
+	 * @param $isPercentage
+	 * @param $coupon
+	 * @param $tax
+	 *
+	 * @return array
+	 */
+	protected function couponForSims($og, $isPercentage, $coupon, $tax)
     {
         $simAmount = $og->plan_id ? $og->sim->amount_w_plan : $og->sim->amount_alone;
         // $simAmount += $og->sim->taxable ? $simAmount * $tax / 100 : 0;
@@ -434,9 +568,19 @@ class CouponController extends Controller
         $this->totalTaxableAmount[] = $og->sim->taxable ? $simAmount - $simDiscount: 0;
         return ['discount' => $simDiscount, 'products' => $orderCouponProduct];
     }
-    
-    
-    protected function couponForAddons($order, $addon, $isPercentage, $coupon, $og, $tax)
+
+
+	/**
+	 * @param $order
+	 * @param $addon
+	 * @param $isPercentage
+	 * @param $coupon
+	 * @param $og
+	 * @param $tax
+	 *
+	 * @return array
+	 */
+	protected function couponForAddons($order, $addon, $isPercentage, $coupon, $og, $tax)
     {
         $addonAmount = $order->addonProRate($addon->id) ?: $addon->amount_recurring;
         // $addonAmount += $addon->taxable ? $addonAmount * $tax / 100 : 0;
@@ -446,15 +590,30 @@ class CouponController extends Controller
         return ['discount' => $addonDiscount, 'products' => $orderCouponProduct];
     }
 
-    public function removeCoupon(Request $request)
+	/**
+	 * @param Request $request
+	 */
+	public function removeCoupon(Request $request)
     {
-        $order = Order::find($request->order_id);
-        if (isset($order->orderCoupon->id)) {
-            $order->orderCoupon->delete();
-        }
+    	try {
+		    $order = Order::find($request->order_id);
+		    $couponCode = $request->get('coupon_code');
+		    $coupon = Coupon::where('code', $couponCode)->first();
+		    $couponToRemove = $order->orderCoupon->where('coupon_id', $coupon->id)->first();
+		    return $couponToRemove ? ['status' => $couponToRemove->delete()] : ['status' => false];
+	    } catch(Exception $e) {
+		    \Log::info( $e->getMessage() . ' on line number: ' . $e->getLine() . ' in CouponController remove' );
+		    return ['status' => false];
+	    }
+
     }
 
-    public function checkEligibleProducts($coupon) 
+	/**
+	 * @param $coupon
+	 *
+	 * @return array
+	 */
+	public function checkEligibleProducts($coupon)
     {
         $planRestriciton = [];
         $isPercentage    = $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'] ? true : false;
@@ -529,7 +688,13 @@ class CouponController extends Controller
         }
     }
 
-    protected function ifAutoAdd($autoAddCoupon, $orderGroups)
+	/**
+	 * @param $autoAddCoupon
+	 * @param $orderGroups
+	 *
+	 * @return bool
+	 */
+	protected function ifAutoAdd($autoAddCoupon, $orderGroups)
     {
         if ($autoAddCoupon->count()) {
             $eligiblePlans = $autoAddCoupon->pluck('id')->toArray();
@@ -544,6 +709,47 @@ class CouponController extends Controller
             }
         }
         return true;
+    }
+
+	/**
+	 * Check if the coupon in the order are stackable or used
+	 * @param $coupon
+	 * @param $order_id
+	 *
+	 * @return bool
+	 */
+    protected function couponAreStackableAndUnused( $coupon, $order_id )
+    {
+	    if($coupon->stackable !== 1) {
+		    $this->failedResponse = "Coupon {$coupon->code} is not stackable. If you still wish to add this coupon, remove the existing coupons and try again";
+			return false;
+	    }
+	    $notStackableCouponCode = '';
+	    $alreadyUsedCouponCode = '';
+		$order = Order::find($order_id);
+		$orderCoupons = $order->orderCoupon;
+
+	    foreach ($orderCoupons as $orderCoupon ) {
+	    	if($orderCoupon->coupon_id === $coupon->id){
+			    $alreadyUsedCouponCode = $coupon->code;
+			    break;
+		    }
+			if($orderCoupon->coupon->stackable !== 1){
+				$notStackableCouponCode = $orderCoupon->code;
+				break;
+			}
+	    }
+	    if($alreadyUsedCouponCode){
+		    $this->failedResponse = "Coupon $alreadyUsedCouponCode is already used.";
+		    return false;
+	    }
+
+	    if($notStackableCouponCode){
+		    $this->failedResponse = "Coupon $notStackableCouponCode is not stackable. If you still wish to add this coupon, remove the existing coupons and try again";
+			return false;
+	    }
+
+	    return true;
     }
 
 }

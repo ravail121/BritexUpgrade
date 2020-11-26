@@ -4,30 +4,55 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class OrderCoupon
+ *
+ * @package App\Model
+ */
 class OrderCoupon extends Model
 {
-    protected $table = 'order_coupon';
 
-    protected $fillable = [
-        'order_id', 'coupon_id'
+	/**
+	 * @var string
+	 */
+	protected $table = 'order_coupon';
+
+	/**
+	 * @var string[]
+	 */
+	protected $fillable = [
+        'order_id',
+		'coupon_id'
     ];
 
-    public function order()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function order()
     {
         return $this->belongsTo('App\Model\Order');
     }
 
-    public function orderCouponProduct()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function orderCouponProduct()
     {
         return $this->hasMany('App\Model\OrderCouponProduct', 'order_coupon_id', 'id');
     }
 
-    public function coupon()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function coupon()
     {
         return $this->belongsTo('App\Model\Coupon');
     }
 
-    public static function boot() {
+	/**
+	 *
+	 */
+	public static function boot() {
         parent::boot();
 
         static::deleting(function($coupon) {

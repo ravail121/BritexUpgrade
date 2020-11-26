@@ -7,15 +7,47 @@ use App\Model\Plan;
 use App\Model\Addon;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class Order
+ *
+ * @package App\Model
+ */
 class Order extends Model
 {
-    protected $table = 'order';
 
-    protected $fillable = [
-        'active_group_id', 'active_subscription_id', 'order_num', 'status', 'invoice_id', 'hash', 'company_id', 'customer_id', 'date_processed' ,'shipping_fname','shipping_lname', 'shipping_address1', 'shipping_address2', 'shipping_city', 'shipping_state_id', 'shipping_zip'
+	/**
+	 * @var string
+	 */
+	protected $table = 'order';
+
+	/**
+	 * @var string[]
+	 */
+	protected $fillable = [
+        'active_group_id',
+		'active_subscription_id',
+		'order_num',
+		'status',
+		'invoice_id',
+		'hash',
+		'company_id',
+		'customer_id',
+		'date_processed',
+		'shipping_fname',
+		'shipping_lname',
+		'shipping_address1',
+		'shipping_address2',
+		'shipping_city',
+		'shipping_state_id',
+		'shipping_zip'
     ];
 
-    public function isOrder($order)
+	/**
+	 * @param $order
+	 *
+	 * @return bool
+	 */
+	public function isOrder($order)
     {
         if (isset($order->invoice)) {
             if ($order->invoice->type === 2) {
@@ -24,85 +56,143 @@ class Order extends Model
         } 
     }
 
-    public function order_group(){
+	/**
+	 * @return mixed
+	 */
+	public function order_group(){
     	return $this->belongsTo('App\Model\OrderGroup')->withTrashed();
     }
 
-    public function bizVerification()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function bizVerification()
     {
         return $this->hasOne(BusinessVerification::class);
     }
 
-    public function OG()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function OG()
     {
         return $this->hasOne('App\Model\OrderGroup', 'id', 'active_group_id');
     }
 
-    public function scopeHash($query, $hash)
+	/**
+	 * @param $query
+	 * @param $hash
+	 *
+	 * @return mixed
+	 */
+	public function scopeHash($query, $hash)
     {
         return $query->where('hash', $hash);
     }
 
-    public function customer()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function customer()
     {
         return $this->hasOne('App\Model\Customer', 'id', 'customer_id');
     }
-    public function company()
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function company()
     {
         return $this->hasOne('App\Model\Company', 'id', 'company_id');
     }
 
-    public function invoice()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function invoice()
     {
         return $this->belongsTo('App\Model\Invoice', 'invoice_id' ,'id');
     }
 
-    public function orderCoupon()
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function orderCoupon()
     {
-        return $this->hasOne('App\Model\OrderCoupon', 'order_id', 'id');
+        return $this->hasMany('App\Model\OrderCoupon', 'order_id', 'id');
     }
 
-    public function payLog()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function payLog()
     {
         return $this->hasOne('App\Model\PaymentLog', 'order_id', 'id');
     }
 
-    public function paymentLog()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function paymentLog()
     {
         return $this->belongsTo(PaymentLog::class);
     }
 
-    public function orderGroup()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function orderGroup()
     {
         return $this->belongsTo('App\Model\OrderGroup', 'id', 'order_id');
     }
 
-    public function allOrderGroup()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function allOrderGroup()
     {
         return $this->hasMany('App\Model\OrderGroup', 'order_id', 'id');
     }
 
-    public function subscriptions()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function subscriptions()
     {
         return $this->hasMany('App\Model\Subscription', 'order_id', 'id');
     }
 
-    public function standAloneDevices()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function standAloneDevices()
     {
         return $this->hasMany('App\Model\CustomerStandaloneDevice', 'order_id', 'id');
     }
 
-    public function standAloneSims()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function standAloneSims()
     {
         return $this->hasMany('App\Model\CustomerStandaloneSim', 'order_id', 'id');
     }
 
-    public function scopecompleteOrders($query)
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
+	public function scopecompleteOrders($query)
     {
         return $query->where('status', '1');
     }
 
-    public function getCompareDatesAttribute()
+	/**
+	 * @return bool
+	 */
+	public function getCompareDatesAttribute()
     {
         $today     = Carbon::today();
         $startDate = Carbon::parse($this->customer->billing_start);
@@ -111,21 +201,36 @@ class Order extends Model
     }
 
 
-    public function planProRate($planId)
+	/**
+	 * @param $planId
+	 *
+	 * @return float|int
+	 */
+	public function planProRate($planId)
     {
         $plan = Plan::find($planId);
         $amount = $plan->amount_recurring;
         return $this->calProRatedAmount($amount);
     }
 
-    public function addonProRate($addonId)
+	/**
+	 * @param $addonId
+	 *
+	 * @return float|int
+	 */
+	public function addonProRate($addonId)
     {
         $addon = Addon::find($addonId);
         $amount = $addon->amount_recurring;
         return $this->calProRatedAmount($amount);
     }
 
-    public function calProRatedAmount($amount)
+	/**
+	 * @param $amount
+	 *
+	 * @return float|int
+	 */
+	public function calProRatedAmount($amount)
     {
         $today     = Carbon::today();
         $startDate = Carbon::parse($this->customer->billing_start);
@@ -137,32 +242,58 @@ class Order extends Model
         return (($numberOfDaysLeft + 1)/($totalNumberOfDays + 1))*$amount;
     }
 
-    public function credits()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function credits()
     {
         return $this->hasMany('App\Model\Credit', 'order_id', 'id');
     }
 
-    public function getCreatedAtAttribute($value)
+	/**
+	 * @param $value
+	 *
+	 * @return string
+	 */
+	public function getCreatedAtAttribute($value)
     {
         return Carbon::parse($value)->format('M-d-Y h:i A');
     }
 
-    public function getCreatedAtFormatAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCreatedAtFormatAttribute()
     {
         return Carbon::parse($this->created_at)->format('Y-m-d\Th:i\Z');
     }
 
-    public static function oldCredits($order)
+	/**
+	 * @param $order
+	 *
+	 * @return mixed
+	 */
+	public static function oldCredits($order)
     {
         return $order->invoice->creditsToInvoice->where('credit_id', '!=', $order->credits->first()->id)->sum('amount');
     }
 
-    public static function formatDate($date)
+	/**
+	 * @param $date
+	 *
+	 * @return string
+	 */
+	public static function formatDate($date)
     {
         return Carbon::parse($date)->format('m/d/Y');
     }
 
-    public static function phoneNumberFormatted($number)
+	/**
+	 * @param $number
+	 *
+	 * @return string|string[]|null
+	 */
+	public static function phoneNumberFormatted($number)
     {
         $number = preg_replace("/[^\d]/","",$number);
     

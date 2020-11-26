@@ -4,15 +4,33 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class OrderCouponProduct
+ *
+ * @package App\Model
+ */
 class OrderCouponProduct extends Model
 {
-    // table new
-    // TEST COMMENT
-    protected $table = 'order_coupon_product';
 
-    protected $fillable = ['order_coupon_id', 'order_product_type', 'order_product_id', 'amount'];
+	/**
+	 * @var string
+	 */
+	protected $table = 'order_coupon_product';
 
-    public function orderCoupon()
+	/**
+	 * @var string[]
+	 */
+	protected $fillable = [
+    	'order_coupon_id',
+	    'order_product_type',
+	    'order_product_id',
+	    'amount'
+    ];
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function orderCoupon()
     {
         return $this->belongsTo('App\Model\OrderCoupon');
     }
