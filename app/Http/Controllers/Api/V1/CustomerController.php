@@ -46,6 +46,11 @@ class CustomerController extends BaseController
 		}
         $company_id = $request->get('company')->id;
         $customer_id = $request->get('customer_id');
+
+        if(!Order::whereHash($request->order_hash)->whereCompanyId($company_id)->exists()){
+            return $this->respond(['error' => 'Order Hash is not valid for the company']);
+        }
+
         $query = Customer::where('company_id', $company_id)->where('email', $request->post('email'));
         if($customer_id){
             $query->where('id', '!=', $customer_id);
@@ -53,7 +58,7 @@ class CustomerController extends BaseController
         if($query->exists()){
             return $this->respond(['error' => 'Email address already exists.']);
         }
-		if ($request->customer_id) {
+        if ($request->customer_id) {
 				if($request->fname){
 
 						$customer = $this->updateCustomer($request);
