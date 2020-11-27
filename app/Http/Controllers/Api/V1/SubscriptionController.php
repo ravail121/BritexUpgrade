@@ -55,7 +55,7 @@ class SubscriptionController extends BaseController
                 return $this->respond(['subscription_id' => $subscription->id]);
             }
             return $this->respond(['same_subscription_id' => $subscription->id]);
-        }else{
+        } else {
 
             $validation = $this->validateSim($request);
             if ($validation) {

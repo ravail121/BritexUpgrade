@@ -12,31 +12,55 @@ use App\Model\Plan;
 
 trait InvoiceCouponTrait
 {
+
+	/**
+	 * @var array
+	 */
     protected $taxDiscount = [];
-    // Functions for orders
+
+	/**
+	 * Functions for orders
+	 * @param      $couponData
+	 * @param      $order
+	 * @param null $subscription
+	 *
+	 * @return string[]
+	 */
     public function storeCoupon($couponData, $order, $subscription = null)
     {
         if (isset($couponData['code'])) {
-            $couponToProcess   = Coupon::where('code', $couponData['code'])->first();
-            if (!$couponToProcess) { return ['error' => 'Invalid coupon code']; }
-            //store coupon in invoice_items.
-            if ($couponData['amount']) {
-                $order->invoice->invoiceItem()->create(
-                    [
-                        'subscription_id' => $subscription ? $subscription->id : 0,
-                        'product_type'    => $this->ifMultiline($couponToProcess) ? Coupon::TYPES['customer_coupon'] : Coupon::TYPES['subscription_coupon'],
-                        'product_id'      => $couponToProcess->id,
-                        'type'            => InvoiceItem::TYPES['coupon'],
-                        'description'     => $couponToProcess->code,
-                        'amount'          => $couponData['amount'],
-                        'start_date'      => $order->invoice->start_date,
-                        'taxable'         => false,
-                    ]
-                );
-            }
+	        $couponsToProcess = explode(', ', $couponData['code']);
+	        foreach ($couponsToProcess as $couponToProcess) {
+		        $couponToProcess = Coupon::where( 'code', trim($couponToProcess) )->first();
+		        if ( ! $couponToProcess ) {
+			        return [ 'error' => 'Invalid coupon code' ];
+		        }
+		        /**
+		         * store coupon in invoice_items.
+		         */
+		        if ($couponData['amount']) {
+			        $order->invoice->invoiceItem()->create(
+				        [
+					        'subscription_id' => $subscription ? $subscription->id : 0,
+					        'product_type'    => $this->ifMultiline($couponToProcess) ? Coupon::TYPES['customer_coupon'] : Coupon::TYPES['subscription_coupon'],
+					        'product_id'      => $couponToProcess->id,
+					        'type'            => InvoiceItem::TYPES['coupon'],
+					        'description'     => $couponToProcess->code,
+					        'amount'          => $couponData['amount'],
+					        'start_date'      => $order->invoice->start_date,
+					        'taxable'         => false,
+				        ]
+			        );
+		        }
+	        }
         }
     }
 
+	/**
+	 * @param $coupon
+	 *
+	 * @return bool
+	 */
     protected function ifMultiline($coupon)
     {
         if ($coupon->multiline_min || $coupon->multiline_max) {
@@ -45,21 +69,35 @@ trait InvoiceCouponTrait
         return false;
     }
 
+	/**
+	 * @param $order
+	 */
     public function updateCouponNumUses($order)
     {
         $order = Order::find($order->id);
-        $orderCoupon = $order->orderCoupon;
-        if ($orderCoupon) {
-            if ($orderCoupon->orderCouponProduct->count()) {
-                $numUses = $orderCoupon->coupon->num_uses;
-                $orderCoupon->coupon->update([
-                    'num_uses' => $numUses + 1
-                ]);
-            }
-            return $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
+        $orderCoupons = $order->orderCoupon;
+        if ($orderCoupons) {
+        	foreach($orderCoupons as $orderCoupon){
+		        if ($orderCoupon->orderCouponProduct->count()) {
+			        $numUses = $orderCoupon->coupon->num_uses;
+			        $orderCoupon->coupon->update([
+				        'num_uses' => $numUses + 1
+			        ]);
+		        }
+		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
+	        }
+            return;
         }
     }
 
+	/**
+	 * @param       $coupon
+	 * @param       $customerId
+	 * @param       $subscriptionIds
+	 * @param false $admin
+	 *
+	 * @return array|null
+	 */
     public function insertIntoTables($coupon, $customerId, $subscriptionIds, $admin = false)
     {
         $multiline     = $this->ifMultiline($coupon);
@@ -81,9 +119,13 @@ trait InvoiceCouponTrait
         }
         return $response;
     }
-    
 
-    // Functions for monthly invoices
+
+	/**
+	 * Functions for monthly invoices
+	 * @param $customer
+	 * @param $invoice
+	 */
     public function customerAccountCoupons($customer, $invoice)
     {
         $customerCouponRedeemable = $customer->customerCouponRedeemable;
@@ -130,6 +172,12 @@ trait InvoiceCouponTrait
         }
     }
 
+	/**
+	 * @param $coupon
+	 * @param $subscriptions
+	 *
+	 * @return array
+	 */
     protected function isCustomerAccountCouponApplicable($coupon, $subscriptions)
     {
         $isApplicable  = true;
@@ -142,6 +190,12 @@ trait InvoiceCouponTrait
         return [$isApplicable, $subscriptions];
     }
 
+	/**
+	 * @param $subscription
+	 * @param $coupon
+	 *
+	 * @return float|int
+	 */
     private function couponAmount($subscription, $coupon)
     {
         $amount = [0];
@@ -169,7 +223,10 @@ trait InvoiceCouponTrait
         return array_sum($amount);
     }
 
-
+	/**
+	 * @param $invoice
+	 * @param $subscriptions
+	 */
     public function customerSubscriptionCoupons($invoice, $subscriptions)
     {
         foreach($subscriptions as $subscription){
@@ -208,17 +265,25 @@ trait InvoiceCouponTrait
                     $subscriptionCoupon->decrement('cycles_remaining');
                 }
             }
-
         }
-
     }
-    
+
+	/**
+	 * @param $planTypes
+	 * @param $plan
+	 * @param $coupon
+	 * @param $addonTypes
+	 * @param $addons
+	 * @param $tax
+	 * @param $subscription
+	 *
+	 * @return float|int
+	 */
     protected function couponProductTypesAmount($planTypes, $plan, $coupon, $addonTypes, $addons, $tax, $subscription)
     {
         $amount = [0];
         $isPercentage = $coupon->fixed_or_perc == Coupon::FIXED_PERC_TYPES['percentage'] ? true : false;
         foreach ($planTypes as $planType) {
-          
             if ($plan) {
                 if ($planType->sub_type != 0 && $planType->sub_type == $plan->type || $planType->sub_type == 0) {
                     $discount = $isPercentage ? $planType->amount * $plan->amount_recurring / 100 : $planType->amount;
@@ -244,6 +309,17 @@ trait InvoiceCouponTrait
         return array_sum($amount);
     }
 
+	/**
+	 * @param $planProducts
+	 * @param $plan
+	 * @param $coupon
+	 * @param $addonProducts
+	 * @param $addons
+	 * @param $tax
+	 * @param $subscription
+	 *
+	 * @return float|int
+	 */
     protected function couponProductsAmount($planProducts, $plan, $coupon, $addonProducts, $addons, $tax, $subscription)
     {
         $amount = [0];
@@ -275,6 +351,15 @@ trait InvoiceCouponTrait
         return array_sum($amount);
     }
 
+	/**
+	 * @param $plan
+	 * @param $coupon
+	 * @param $addons
+	 * @param $tax
+	 * @param $subscription
+	 *
+	 * @return float|int
+	 */
     public function couponAllTypesAmount($plan, $coupon, $addons, $tax, $subscription)
     {
         $amount = [0];
@@ -297,7 +382,6 @@ trait InvoiceCouponTrait
                 }
             }
         }
-
         return array_sum($amount);
     }
    
