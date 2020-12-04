@@ -7,8 +7,6 @@ use App\Http\Controllers\BaseController;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Order;
-use App\Model\Company;
-use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
@@ -16,12 +14,27 @@ use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\BusinessVerification;
 
+/**
+ * Class OrderController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class OrderController extends BaseController
 {
-    public function __construct(){
+
+	/**
+	 * OrderController constructor.
+	 */
+	public function __construct(){
         $this->content = array();
     }
-    public function get(Request $request){
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function get(Request $request){
 
         $hash = $request->input('order_hash');
         $paidMonthlyInvoice = $request->input('paid_monthly_invoice');
@@ -48,26 +61,25 @@ class OrderController extends BaseController
                         'business_verification'  => null,
                         'operating_system'       => $og->operating_system,
                         'imei_number'            => $og->imei_number,
-                        'company'                => $og->order->company,
                         'customer'               => $og->customer,
                     ];
                 }
                             
                 $tmp = array(
-                        'id'                => $og->id,
-                        'sim'               => $og->sim,
-                        'sim_num'           => $og->sim_num,
-                        'sim_type'          => $og->sim_type,
-                        'plan'              => $og->plan,
-                        'addons'            => [],
-                        'porting_number'    => $og->porting_number,
-                        'area_code'         => $og->area_code,
-                        'device'            => $og->device_detail,
-                        'operating_system'  => $og->operating_system,
-                        'imei_number'       => $og->imei_number,
-                        'plan_prorated_amt' => $og->plan_prorated_amt,
-                        'subscription'      => $og->subscription,
-                    );
+                    'id'                => $og->id,
+                    'sim'               => $og->sim,
+                    'sim_num'           => $og->sim_num,
+                    'sim_type'          => $og->sim_type,
+                    'plan'              => $og->plan,
+                    'addons'            => [],
+                    'porting_number'    => $og->porting_number,
+                    'area_code'         => $og->area_code,
+                    'device'            => $og->device_detail,
+                    'operating_system'  => $og->operating_system,
+                    'imei_number'       => $og->imei_number,
+                    'plan_prorated_amt' => $og->plan_prorated_amt,
+                    'subscription'      => $og->subscription,
+                );
 
                 if(isset($paidMonthlyInvoice) && $paidMonthlyInvoice == "1" && isset($tmp['plan']['id'])){
                     if(in_array($og->plan_id, $newPlan)){
@@ -130,7 +142,13 @@ class OrderController extends BaseController
     }
 
 
-     public function find(Request $request, $id)
+	/**
+	 * @param Request $request
+	 * @param         $id
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function find(Request $request, $id)
      {
        
         $this->content = Order::find($id);
@@ -138,7 +156,12 @@ class OrderController extends BaseController
      }
 
 
-    public function post(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function post(Request $request)
     {
         $validation = Validator::make(
             $request->all(),
@@ -164,7 +187,6 @@ class OrderController extends BaseController
         }
 
         $data = $request->all();
-        //print_r($data);
 
         // check hash
         if(!isset($data['order_hash'])){
@@ -215,7 +237,13 @@ class OrderController extends BaseController
         return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);    
     }
 
-    private function insertOrderGroup($data, $order, $order_group, $paidMonthlyInvoice = 0)
+	/**
+	 * @param     $data
+	 * @param     $order
+	 * @param     $order_group
+	 * @param int $paidMonthlyInvoice
+	 */
+	private function insertOrderGroup($data, $order, $order_group, $paidMonthlyInvoice = 0)
     {
         $og_params = [];
         if(isset($data['device_id']) && $paidMonthlyInvoice == 0){
@@ -308,7 +336,12 @@ class OrderController extends BaseController
         }
     }
 
-    public function remove_from_order(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function remove_from_order(Request $request)
     {
         /*
         Delete the input order_group_id from database.  If it is set as the active group id, then set order.active_group_id=0
@@ -348,7 +381,12 @@ class OrderController extends BaseController
         return $this->respond(['details'=>'Deleted successfully'], 204);
     }
 
-    public function updateShipping(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function updateShipping(Request $request)
     {
         $data = $request->except('_url');
         $validation = Validator::make(
@@ -375,7 +413,12 @@ class OrderController extends BaseController
         return $this->respond(['message' => 'sucessfully Updated']);
     }
 
-    public function get_company(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return mixed
+	 */
+	public function get_company(Request $request)
     {
         // $apiKey = $request->Authorization;
         // $businessVerification = Company::where('api_key',$apiKey)->first()->business_verification;

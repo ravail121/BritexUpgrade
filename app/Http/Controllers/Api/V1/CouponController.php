@@ -91,20 +91,26 @@ class CouponController extends Controller
             // Request from cart tooltip
             $coupon = Coupon::where('code', $request->code)->first();
             if ($request->only_details) {
-                return ['coupon_amount_details' => $this->checkEligibleProducts($coupon)];
+                return [
+                	'coupon_amount_details' => $this->checkEligibleProducts($coupon)
+                ];
             }
 
 	        $order_id = $request->input('order_id');
             // Regulator textbox request
             if (!$this->couponIsValid($coupon)) {
-	            return ['error' => $this->failedResponse];
+	            return [
+	            	'error'     => $this->failedResponse
+	            ];
             }
 
 	        /**
 	         * Check if the coupon are stackable
 	         */
             if(!$this->couponAreStackableAndUnused($coupon, $order_id)){
-	            return ['error' => $this->failedResponse];
+	            return [
+	            	'error'     => $this->failedResponse
+	            ];
             }
 
             if ($request->subscription_id) {
@@ -114,7 +120,7 @@ class CouponController extends Controller
             }
 
         } catch (Exception $e) {
-            \Log::info($e->getMessage().' on line number: '.$e->getLine().' in CouponController');
+            \Log::info($e->getMessage() . ' on line number: '.$e->getLine() . ' in CouponController');
             return [
             	'total' => 0,
 	            'error' => 'Server error'
@@ -286,7 +292,9 @@ class CouponController extends Controller
 	            'is_stackable'          => $coupon->stackable
             ];
         } else {
-            return ['error' => $this->failedResponse];
+            return [
+            	'error'     =>  $this->failedResponse
+            ];
         }
     }
 
@@ -615,25 +623,25 @@ class CouponController extends Controller
 	 */
 	public function checkEligibleProducts($coupon)
     {
-        $planRestriciton = [];
+        $planRestriction = [];
         $isPercentage    = $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'] ? true : false;
         if ($coupon->multiline_restrict_plans && $coupon->multilinePlanTypes->count()) {
             foreach ($coupon->multilinePlanTypes as $type) {
                 if ($type->plan_type == self::PLAN_TYPE['Voice']) {
-                    $planRestriciton[] = 'Voice';
+                    $planRestriction[] = 'Voice';
                 } elseif ($type->plan_type == self::PLAN_TYPE['Data']) {
-                    $planRestriciton[] = 'Data';
+                    $planRestriction[] = 'Data';
                 }
             }
         }
         
-        $planRestriciton = count($planRestriciton) ? implode(', ',$planRestriciton) : false;
+        $planRestriction = count($planRestriction) ? implode(', ',$planRestriction) : false;
         if ($coupon->class == Coupon::CLASSES['APPLIES_TO_ALL']) {
             $amount = $isPercentage == false ? '$'.$coupon->amount : $coupon->amount.'%';
             return [
                 'details'            => implode('<br>', [
                     $amount. ' off on all products',
-                    $planRestriciton ? 'Plan restriction :'.$planRestriciton : null
+                    $planRestriction ? 'Plan restriction :'.$planRestriction : null
                 ])
             ];
         } elseif ($coupon->class == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']) {
@@ -653,7 +661,7 @@ class CouponController extends Controller
                         implode('', $devices), 
                         implode('', $sims), 
                         implode('', $addons), 
-                        $planRestriciton ? 'Plan restriction :'.$planRestriciton : null, 
+                        $planRestriction ? 'Plan restriction :'.$planRestriction : null,
                         $coupon->num_cycles ? 'Cycles: Coupon applies for '. $coupon->num_cycles. ' billing cycles' : 'Cycles: Infinite coupon'
                     ], 
                 'strlen'))
@@ -680,7 +688,7 @@ class CouponController extends Controller
                         implode(', ', array_filter($devices, 'strlen')), 
                         implode(', ', array_filter($sims, 'strlen')), 
                         implode(', ', array_filter($addons, 'strlen')), 
-                        $planRestriciton ? 'Plan restriction :'.$planRestriciton : null, 
+                        $planRestriction ? 'Plan restriction :'.$planRestriction : null,
                         $coupon->num_cycles ? 'Cycles: Coupon applies for '. $coupon->num_cycles. ' billing cycles' : 'Cycles: Infinite coupon'
                     ], 
                 'strlen'))
