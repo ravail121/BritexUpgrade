@@ -3,9 +3,8 @@
 namespace App\Model;
 
 use Carbon\Carbon;
-use App\Model\Plan;
-use App\Model\Addon;
 use Illuminate\Database\Eloquent\Model;
+
 
 /**
  * Class Order
@@ -14,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Order extends Model
 {
+
 
 	/**
 	 * @var string

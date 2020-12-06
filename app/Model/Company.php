@@ -3,6 +3,7 @@
 namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Http\Controllers\Api\V1\Traits\Excludable;
 
 /**
  * Class Company
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Company extends Model
 {
+	use Excludable;
+
 	/**
 	 *
 	 */
