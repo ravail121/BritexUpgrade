@@ -43,12 +43,13 @@ class OrderController extends BaseController
         
         if($hash){
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
-                        $query->where('hash', $hash);})->get();
+                $query->where('hash', $hash);
+            })->get();
             
             foreach($order_groups as $key => $og){
 
                 if($order == []){
-                    
+
                     $order =  [
                         "id"                     => $og->order->id,
                         "order_hash"             => $og->order->hash,
@@ -61,7 +62,43 @@ class OrderController extends BaseController
                         'business_verification'  => null,
                         'operating_system'       => $og->operating_system,
                         'imei_number'            => $og->imei_number,
-                        'company'                => $og->order->company,
+	                    /**
+	                     * @internal All the sensitive information from the company are excluded
+	                     */
+                        'company'                => $og->order->company()->exclude([
+                        	'api_key',
+							'sprint_api_key',
+	                        'smtp_driver',
+	                        'smtp_host',
+	                        'smtp_encryption',
+	                        'smtp_port',
+	                        'smtp_username',
+	                        'smtp_password',
+	                        'primary_contact_name',
+	                        'primary_contact_phone_number',
+	                        'primary_contact_email_address',
+	                        'address_line_1',
+	                        'address_line_2',
+	                        'city',
+	                        'state',
+	                        'zip',
+	                        'usaepay_api_key',
+	                        'usaepay_live',
+	                        'usaepay_username',
+	                        'usaepay_password',
+	                        'readycloud_api_key',
+	                        'readycloud_username',
+	                        'readycloud_password',
+	                        'tbc_username',
+	                        'tbc_password',
+	                        'apex_username',
+	                        'apex_password',
+	                        'premier_username',
+	                        'premier_password',
+	                        'opus_username',
+	                        'opus_password',
+	                        'goknows_api_key'
+                        ])->first(),
                         'customer'               => $og->customer,
                     ];
                 }
@@ -379,7 +416,7 @@ class OrderController extends BaseController
             $og->delete();
         }
         $order->update(['active_group_id' => 0]);
-        return $this->respond(['details'=>'Deleted successfully'], 204);
+        return $this->respond(['details' => 'Deleted successfully'], 204);
     }
 
 	/**
