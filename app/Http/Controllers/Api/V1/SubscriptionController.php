@@ -18,17 +18,26 @@ use App\Events\SubcriptionStatusChanged;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
+/**
+ * Class SubscriptionController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class SubscriptionController extends BaseController
 {
-    const DEFAULT_INT = 0;
-    use InvoiceCouponTrait;
+	use InvoiceCouponTrait;
 
-    /**
-     * Firstly validates the data and then Inserts data to subscription table
-     * 
-     * @param  Request    $request
-     * @return Response
-     */
+	/**
+	 * Default Int
+	 */
+	const DEFAULT_INT = 0;
+
+	/**
+	 * Firstly validates the data and then Inserts data to subscription table
+	 * @param Request $request
+	 *
+	 * @return Response|\Illuminate\Http\JsonResponse
+	 */
     public function createSubscription(Request $request)
     {
         $validation = $this->validateData($request);
@@ -45,12 +54,12 @@ class SubscriptionController extends BaseController
         if($request->subscription){
             $subscription = Subscription::find($request->subscription['id']);
 
-            if($request->status == "Upgrade"){
+            if($request->status === "Upgrade"){
                 $data['old_plan_id'] = $subscription->plan_id;
                 $data['upgrade_downgrade_date_submitted'] = Carbon::now();
                 $data['plan_id'] = $request->plan_id;
                 $data['upgrade_downgrade_status'] = 'for-upgrade';
-                $updateSubcription = $subscription->update($data);
+                $subscription->update($data);
 
                 return $this->respond(['subscription_id' => $subscription->id]);
             }
@@ -62,7 +71,7 @@ class SubscriptionController extends BaseController
                 return $validation;
             }
 
-            $request->status = ($request->sim_id != null || $request->device_id ) ? 'shipping' : 'for-activation' ;
+            $request->status = $request->sim_id != null || $request->device_id ? 'shipping' : 'for-activation';
            
             $insertData = $this->generateSubscriptionData($request, $order);
             $subscription = Subscription::create($insertData);
@@ -75,7 +84,7 @@ class SubscriptionController extends BaseController
             
             $request->headers->set('authorization', $request->api_key);
 
-            if($subscription['status'] == 'for-activation'){
+            if($subscription['status'] === 'for-activation' || $subscription['status'] === 'active'){
                 event(new SubcriptionStatusChanged($subscription['id']));
             }
 
@@ -83,17 +92,23 @@ class SubscriptionController extends BaseController
                 $arr = $this->generatePortData($request->porting_number, $subscription->id);
                 $port = Port::create($arr);
             }
+
             return $this->respond([
-                'success' => 1,
-                'subscription_id' => $subscription->id
+                'success'           => 1,
+                'subscription_id'   => $subscription->id
             ]);
         }
     }
 
-    public function updateSubscription(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function updateSubscription(Request $request)
     {
-        $data=$request->validate([
-            'id'  => 'required',
+        $data = $request->validate([
+            'id'                        => 'required',
             'upgrade_downgrade_status'  => 'required',
         ]);
         $subscription = Subscription::find($data['id']);
@@ -191,30 +206,32 @@ class SubscriptionController extends BaseController
 
         if ($request->sim_type == null) {
             $sim = Sim::find($request->sim_id);
-            $request->sim_type = ($sim) ? $sim->name : null ;
+            $request->sim_type = ($sim) ? $sim->name : null;
         }
 
-        return [
-            'order_id'                         =>  $request->order_id,
-            'customer_id'                      =>  $order->customer_id,
-            'company_id'                       =>  $order->customer->company_id,
-            'order_num'                        =>  $order->order_num,
-            'plan_id'                          =>  $request->plan_id,
-            'status'                           =>  $request->status,
-            'sim_id'                           =>  $request->sim_id,
-            'sim_name'                         =>  $request->sim_type,
-            'sim_card_num'                     =>  ($request->sim_num) ?: '',
-            'device_id'                        =>  $request->device_id,
-            'device_os'                        =>  ($request->operating_system) ?: '',
-            'device_imei'                      =>  ($request->imei_number) ?: '',
-            'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : self::DEFAULT_INT,
-            'requested_area_code'              =>  $request->area_code,
+        $output = [
+	        'order_id'                         =>  $request->order_id,
+	        'customer_id'                      =>  $order->customer_id,
+	        'company_id'                       =>  $order->customer->company_id,
+	        'order_num'                        =>  $order->order_num,
+	        'plan_id'                          =>  $request->plan_id,
+	        'status'                           =>  $plan && $plan->type === 4 ? 'active' : $request->status,
+	        'sim_id'                           =>  $request->sim_id,
+	        'sim_name'                         =>  $request->sim_type,
+	        'sim_card_num'                     =>  ($request->sim_num) ?: '',
+	        'device_id'                        =>  $request->device_id,
+	        'device_os'                        =>  ($request->operating_system) ?: '',
+	        'device_imei'                      =>  ($request->imei_number) ?: '',
+	        'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : self::DEFAULT_INT,
+	        'requested_area_code'              =>  $request->area_code,
         ];
+
+        if($plan && $plan->type === 4){
+	        $output['activation_date']  = Carbon::now();
+        }
+
+        return $output;
     }
-
-
-
-
 
     /**
      * Returns data as array which is to be inserted in port table
@@ -252,14 +269,13 @@ class SubscriptionController extends BaseController
     protected function validateData($request)
     {
         $validate =  $this->validate_input($request->all(), [
-                'order_id'         => 'required|numeric|exists:order,id',
-                'plan_id'          => 'required|numeric|exists:plan,id',
-                'porting_number'   => 'nullable|string',
-                'area_code'        => 'nullable|string|max:3',
-                'operating_system' => 'nullable|string',
-                'imei_number'      => 'nullable|digits_between:14,16',
-            ]
-        );
+            'order_id'         => 'required|numeric|exists:order,id',
+            'plan_id'          => 'required|numeric|exists:plan,id',
+            'porting_number'   => 'nullable|string',
+            'area_code'        => 'nullable|string|max:3',
+            'operating_system' => 'nullable|string',
+            'imei_number'      => 'nullable|digits_between:14,16',
+        ]);
         if($validate){
             return $validate;
         }
@@ -273,7 +289,12 @@ class SubscriptionController extends BaseController
     }
 
 
-    protected function validateSim($request)
+	/**
+	 * @param $request
+	 *
+	 * @return false|\Illuminate\Http\JsonResponse
+	 */
+	protected function validateSim($request)
     {
         $simNum = null;
         if($request->sim_num){
@@ -292,12 +313,12 @@ class SubscriptionController extends BaseController
 
     }
 
-    /**
-     * Validates Data of create-subscription-addon api
-     * 
-     * @param  Request        $request
-     * @return Response       validation response
-     */
+	/**
+	 * Validates Data of create-subscription-addon api
+	 * @param $request
+	 *
+	 * @return false|\Illuminate\Http\JsonResponse
+	 */
     protected function validateAddonData($request)
     {
         return $this->validate_input($request->all(), [
@@ -309,7 +330,12 @@ class SubscriptionController extends BaseController
         );
     }
 
-    public function closeSubcription(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function closeSubcription(Request $request)
     {
         $validation = $this->validate_input($request->all(), [
                 'phone_number' => 'required|numeric',
@@ -338,7 +364,12 @@ class SubscriptionController extends BaseController
         return $this->respond(['success' => 1]);
     }
 
-    public function changeSim(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function changeSim(Request $request)
     {
         $validation = $this->validate_input($request->all(), [
             "customer_id"     => 'required|numeric',
@@ -378,7 +409,12 @@ class SubscriptionController extends BaseController
         }
     }
 
-    protected function updateRecord($subcription, $simNumber, $OldsimCardNum)
+	/**
+	 * @param $subcription
+	 * @param $simNumber
+	 * @param $OldsimCardNum
+	 */
+	protected function updateRecord($subcription, $simNumber, $OldsimCardNum)
     {
         $subcription->update([
            'sim_card_num' => $simNumber,
@@ -392,7 +428,15 @@ class SubscriptionController extends BaseController
         ]);
     }
 
-    protected function getSimNumber($phoneNumber, $sim_number, $customerId)
+	/**
+	 * @param $phoneNumber
+	 * @param $sim_number
+	 * @param $customerId
+	 *
+	 * @return mixed|null
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	protected function getSimNumber($phoneNumber, $sim_number, $customerId)
     {
         $customer = Customer::find($customerId);
 
@@ -419,7 +463,12 @@ class SubscriptionController extends BaseController
         return $errorMessage;
     }
 
-    public function updateSubLabel(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return mixed
+	 */
+	public function updateSubLabel(Request $request)
     {
         $data['label'] = $request->label;
         $data['id'] = $request->id;
@@ -432,7 +481,12 @@ class SubscriptionController extends BaseController
         }
     }
 
-    public function getSubscriptionByPhoneNumber(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function getSubscriptionByPhoneNumber(Request $request)
     {
         $company_id = $request->get('company')->id;
         $validation = $this->validate_input($request->all(), ["phone_number"    => 'required|numeric',]);

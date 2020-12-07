@@ -5,11 +5,23 @@ namespace App\Model;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class CustomerStandaloneDevice
+ *
+ * @package App\Model
+ */
 class CustomerStandaloneDevice extends Model
 {
-    protected $table = 'customer_standalone_device'; 
 
-    protected $fillable = [
+	/**
+	 * @var string
+	 */
+	protected $table = 'customer_standalone_device';
+
+	/**
+	 * @var string[]
+	 */
+	protected $fillable = [
     	'customer_id',
     	'device_id',
     	'order_id',
@@ -21,16 +33,27 @@ class CustomerStandaloneDevice extends Model
         'processed',
     ];
 
-    const STATUS = [
+	/**
+	 *
+	 */
+	const STATUS = [
         'complete'    =>  'complete',
     ];
 
-    public function device()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function device()
     {
     	return $this->belongsTo('App\Model\Device',  'device_id' , 'id');
   	}
 
-    public function getShippingDateAttribute($value)
+	/**
+	 * @param $value
+	 *
+	 * @return string
+	 */
+	public function getShippingDateAttribute($value)
     {
         if (isset($value)) {
             return Carbon::parse($value)->format('M-d-Y');
@@ -38,22 +61,38 @@ class CustomerStandaloneDevice extends Model
         return "NA";
     }
 
-    public function scopeShipping($query)
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
+	public function scopeShipping($query)
     {
         return $query->where([['status', 'shipping'],['processed', 0 ]]);
     }
 
-    public function scopeShippingData($query)
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
+	public function scopeShippingData($query)
     {
         return $query->where('status', 'shipping');
     }
 
-    public function order()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function order()
     {
         return $this->belongsTo('App\Model\Order');
     }
 
-    public function customer()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function customer()
     {
         return $this->belongsTo('App\Model\Customer', 'customer_id');
     }
