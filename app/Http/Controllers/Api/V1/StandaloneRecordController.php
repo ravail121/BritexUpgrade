@@ -9,19 +9,39 @@ use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
+/**
+ * Class StandaloneRecordController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class StandaloneRecordController extends BaseController
 {
+	use InvoiceCouponTrait;
 
-    const DEFAULT_STATUS       = 'shipping';
-    const DEFAULT_TRACKING_NUM = 1;
-    const DEFAULT_PROSSED = 0;
-    use InvoiceCouponTrait;
+	/**
+	 *
+	 */
+	const DEFAULT_STATUS       = 'shipping';
 
-    public $rules;
+	/**
+	 *
+	 */
+	const DEFAULT_TRACKING_NUM = 1;
 
-    public $data;
+	/**
+	 *
+	 */
+	const DEFAULT_PROSSED = 0;
 
+	/**
+	 * @var string[]
+	 */
+	public $rules;
 
+	/**
+	 * @var
+	 */
+	public $data;
 
     /**
      * Sets default rules for all functions for validation
@@ -34,7 +54,6 @@ class StandaloneRecordController extends BaseController
             'order_id'    => 'required|numeric',
         ];
     }
-
 
 
     /**
@@ -90,9 +109,6 @@ class StandaloneRecordController extends BaseController
 
         return $this->respond(['sim_id' => $record->id]);
     }
-
-
-
 
     /**
      * Sets data as array
