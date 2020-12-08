@@ -277,6 +277,7 @@ class CouponController extends Controller
         
         if ($this->isApplicable($order, $customer, $coupon)) {
             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
+
             return [
                 'total'                 => $total,
                 'code'                  => $coupon->code,
@@ -288,7 +289,7 @@ class CouponController extends Controller
                     'applied_to_products'   => $appliedToProducts['applied_to'],
                 ],
                 'coupon_amount_details' => $couponEligibleFor,
-                'coupon_tax'            => number_format(array_sum($this->totalTaxableAmount), 2) * $stateTax / 100,
+                'coupon_tax'            => array_sum($this->totalTaxableAmount) * $stateTax / 100,
 	            'is_stackable'          => $coupon->stackable
             ];
         } else {
@@ -518,7 +519,6 @@ class CouponController extends Controller
 			    }
 		    }
 	    }
-
     }
 
 	/**
