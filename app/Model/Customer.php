@@ -23,7 +23,8 @@ class Customer extends Authenticatable
         'password',
     ];
 
-    protected $table = 'customer'; 
+    protected $table = 'customer';
+
     protected $fillable = [
         'hash',  
         'company_id',
