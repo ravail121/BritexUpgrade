@@ -615,6 +615,11 @@ Route::middleware('APIToken')->group(function () {
 			'as' => 'api.Subscription.phone',
 			'uses' => 'SubscriptionController@getSubscriptionByPhoneNumber',
 		]);
+
+		Route::get('/subscription-by-id', [
+			'as' => 'api.Subscription.id',
+			'uses' => 'SubscriptionController@getSubscriptionDetails',
+		]);
 	});
 
 }); //APIToken middleware

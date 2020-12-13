@@ -338,29 +338,44 @@ class SubscriptionController extends BaseController
 	public function closeSubcription(Request $request)
     {
         $validation = $this->validate_input($request->all(), [
-                'phone_number' => 'required|numeric',
+		        'id'            => 'required_without:phone_number|numeric',
+                'phone_number'  => 'required_without:id|numeric',
+
             ]
         );
         if ($validation) {
             return $validation;
         }
-        $subcriptions = Subscription::where([
-            ['phone_number', $request->phone_number],
-            ['status', Subscription::STATUS['active']]
-        ])->get();
+	    $subscriptions = [];
+	    $subscriptionNotFoundMessage = '';
+        if($request->has('id')){
+	        $subscriptions = Subscription::where([
+		        ['id', $request->id],
+		        ['status', Subscription::STATUS['active']]
+	        ])->get();
+	        $subscriptionNotFoundMessage = "No Active Subscription found with ". $request->id. " ID";
 
-        if(!isset($subcriptions[0])){
-            return $this->respond(['message' => "No Active Subcription found with ".$request->phone_number. " Phone Number"]);
+        } elseif ($request->has('phone_number')) {
+	        $subscriptions = Subscription::where([
+		        ['phone_number', $request->phone_number],
+		        ['status', Subscription::STATUS['active']]
+	        ])->get();
+	        $subscriptionNotFoundMessage = "No Active Subscription found with ".$request->phone_number. " Phone Number";
         }
 
-        foreach ($subcriptions as $key => $subcription) {
-            $subcription->update([
-               'status' => Subscription::STATUS['closed'],
-               'sub_status' => Subscription::SUB_STATUSES['confirm-closing'],
-               'closed_date' => Carbon::now(),
+        if(!isset($subscriptions[0])){
+            return $this->respond([
+            	'message'    => $subscriptionNotFoundMessage
             ]);
         }
 
+        foreach ($subscriptions as $key => $subscription) {
+	        $subscription->update([
+               'status'         => Subscription::STATUS['closed'],
+               'sub_status'     => Subscription::SUB_STATUSES['confirm-closing'],
+               'closed_date'    => Carbon::now(),
+            ]);
+        }
         return $this->respond(['success' => 1]);
     }
 
@@ -503,6 +518,31 @@ class SubscriptionController extends BaseController
             $data['subscription_id'] = $subscription['subscription_id'];
         }
         return $data;
+    }
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function getSubscriptionDetails(Request $request)
+	{
+		$company_id = $request->get('company')->id;
+		$validation = $this->validate_input($request->all(), ["id"    => 'required|numeric',]);
+		if ($validation) {
+			return $validation;
+		}
+		$subscription = Subscription::where('id', $request->phone_number)
+		                            ->where('company_id', $company_id)
+		                            ->where('status', 'active')
+		                            ->orderBy('id', 'desc')->select('id as subscription_id')->first();
+		if(!$subscription){
+			$data['subscription_id'] = 0;
+		}else{
+			$data['subscription_id'] = $subscription;
+		}
+		return $data;
+
     }
 
 }
