@@ -268,7 +268,7 @@ class CustomerController extends BaseController
 	 */
 	public function customerDetails(Request $request)
 	{
-		$company = $request->get('company');
+		$company = $request->get('company')->load('carrier');
 		if ($request->tax_id) {
 			$rate = Tax::where('state', $request->tax_id)
 			           ->where('company_id', $company->id)
@@ -323,7 +323,7 @@ class CustomerController extends BaseController
 					'opus_username',
 					'opus_password',
 					'goknows_api_key'
-				])->first();
+				])->with('carrier')->first();
 				$customer['company'] = $excludedCompanyInfo;
 				$msg = $this->respond($customer);
 			} else {
