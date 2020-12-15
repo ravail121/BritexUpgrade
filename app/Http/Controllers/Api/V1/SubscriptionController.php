@@ -532,16 +532,11 @@ class SubscriptionController extends BaseController
 		if ($validation) {
 			return $validation;
 		}
-		$subscription = Subscription::where('id', $request->phone_number)
+		$subscription = Subscription::where('id', $request->id)
 		                            ->where('company_id', $company_id)
 		                            ->where('status', 'active')
-		                            ->orderBy('id', 'desc')->select('id as subscription_id')->first();
-		if(!$subscription){
-			$data['subscription_id'] = 0;
-		}else{
-			$data['subscription_id'] = $subscription;
-		}
-		return $data;
+		                            ->orderBy('id', 'desc')->first();
+		return $subscription;
 
     }
 
