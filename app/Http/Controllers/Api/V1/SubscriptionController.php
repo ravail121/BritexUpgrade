@@ -528,13 +528,12 @@ class SubscriptionController extends BaseController
 	public function getSubscriptionDetails(Request $request)
 	{
 		$company_id = $request->get('company')->id;
-		$validation = $this->validate_input($request->all(), ["id"    => 'required|numeric',]);
+		$validation = $this->validate_input($request->all(), ["id"    => 'required|numeric']);
 		if ($validation) {
 			return $validation;
 		}
 		$subscription = Subscription::where('id', $request->id)
 		                            ->where('company_id', $company_id)
-		                            ->where('status', 'active')
 		                            ->orderBy('id', 'desc')->first();
 		return $subscription;
 
