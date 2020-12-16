@@ -321,8 +321,7 @@ class CustomerController extends BaseController
 					'premier_username',
 					'premier_password',
 					'opus_username',
-					'opus_password',
-					'goknows_api_key'
+					'opus_password'
 				])->with('carrier')->first();
 				$customer['company'] = $excludedCompanyInfo;
 				$msg = $this->respond($customer);
