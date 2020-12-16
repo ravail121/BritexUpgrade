@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
-use App\Model\Coupon;
-use App\Model\CustomerCoupon;
-use App\Model\InvoiceItem;
 use App\Model\Order;
-use App\Model\SubscriptionCoupon;
 use App\Model\Addon;
-use App\Model\Plan;
+use App\Model\Coupon;
+use App\Model\InvoiceItem;
+use App\Model\CustomerCoupon;
+use App\Model\SubscriptionCoupon;
 
+
+/**
+ * Trait InvoiceCouponTrait
+ *
+ * @package App\Http\Controllers\Api\V1\Traits
+ */
 trait InvoiceCouponTrait
 {
-
 	/**
 	 * @var array
 	 */
@@ -28,25 +32,24 @@ trait InvoiceCouponTrait
 	 */
     public function storeCoupon($couponData, $order, $subscription = null)
     {
-        if (isset($couponData['code'])) {
-	        $couponsToProcess = explode(', ', $couponData['code']);
-	        foreach ($couponsToProcess as $couponToProcess) {
-		        $couponToProcess = Coupon::where( 'code', trim($couponToProcess) )->first();
+        if($couponData){
+        	foreach($couponData as $coupon) {
+		        $couponToProcess = Coupon::where( 'code', $coupon['code'] )->first();
 		        if ( ! $couponToProcess ) {
 			        return [ 'error' => 'Invalid coupon code' ];
 		        }
 		        /**
 		         * store coupon in invoice_items.
 		         */
-		        if ($couponData['amount']) {
+		        if ( $coupon[ 'amount' ] ) {
 			        $order->invoice->invoiceItem()->create(
 				        [
 					        'subscription_id' => $subscription ? $subscription->id : 0,
-					        'product_type'    => $this->ifMultiline($couponToProcess) ? Coupon::TYPES['customer_coupon'] : Coupon::TYPES['subscription_coupon'],
+					        'product_type'    => $this->ifMultiline( $couponToProcess ) ? Coupon::TYPES[ 'customer_coupon' ] : Coupon::TYPES[ 'subscription_coupon' ],
 					        'product_id'      => $couponToProcess->id,
-					        'type'            => InvoiceItem::TYPES['coupon'],
+					        'type'            => InvoiceItem::TYPES[ 'coupon' ],
 					        'description'     => $couponToProcess->code,
-					        'amount'          => $couponData['amount'],
+					        'amount'          => $coupon[ 'amount' ],
 					        'start_date'      => $order->invoice->start_date,
 					        'taxable'         => false,
 				        ]
