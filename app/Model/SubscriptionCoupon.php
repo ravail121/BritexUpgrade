@@ -4,18 +4,37 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class SubscriptionCoupon
+ *
+ * @package App\Model
+ */
 class SubscriptionCoupon extends Model
 {
-    protected $table = 'subscription_coupon';
+	/**
+	 * @var string
+	 */
+	protected $table = 'subscription_coupon';
 
-    protected $fillable = [ 'subscription_id', 'coupon_id', 'cycles_remaining'];
+	/**
+	 * @var string[]
+	 */
+	protected $fillable = [ 'subscription_id', 'coupon_id', 'cycles_remaining'];
 
-  	public function scopeRedeemable($query)
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
+	public function scopeRedeemable($query)
     {
         return $query->where('cycles_remaining', '!=', 0);
     }
 
-    public function coupon()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function coupon()
     {
         return $this->belongsTo('App\Model\Coupon');
     }
