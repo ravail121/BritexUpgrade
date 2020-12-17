@@ -204,6 +204,7 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Coupons</h2>
+
                             <?php
                                 $coupons = $data['order']->invoice->invoiceItem->where('type', 6)->where('subscription_id', null);
                             ?>
