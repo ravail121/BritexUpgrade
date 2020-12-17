@@ -351,10 +351,9 @@ class CouponController extends Controller
                 }
             }
         }
-        $total = $isPercentage ? $totalDiscount : $coupon->amount * $countItems;
         $orderCouponProduct ? $this->orderCoupon($orderCouponProduct, $order) : null;
         return ([
-            'total'      => str_replace(',', '', number_format($total, 2)), 
+            'total'      => str_replace(',', '', number_format($totalDiscount, 2)),
             'applied_to' => isset($orderCouponProduct) ? $orderCouponProduct : [],
             'amount'     => $coupon->amount
         ]);
