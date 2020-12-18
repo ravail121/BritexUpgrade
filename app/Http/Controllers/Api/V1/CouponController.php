@@ -538,8 +538,13 @@ class CouponController extends Controller
 	     * @internal Rule that coupon can never exceed the original cost
 	     */
 	    $discountAmount = $deviceDiscount > $deviceAmount ? $deviceAmount : $deviceDiscount;
-        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['DEVICE'], $og->device_id, $discountAmount, $discountAmount, $og->id);
-        $this->totalTaxableAmount[] = $og->device->taxable ? $deviceAmount - $discountAmount : 0;
+        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['DEVICE'], $og->device_id, $coupon->amount, $discountAmount, $og->id);
+	    if($deviceAmount > $discountAmount){
+		    $taxableAmount = $deviceAmount - $discountAmount;
+	    } else {
+		    $taxableAmount = $discountAmount;
+	    }
+        $this->totalTaxableAmount[] = $og->device->taxable ? $taxableAmount : 0;
         return ['discount' => $discountAmount, 'products' => $orderCouponProduct];
     }
 
@@ -563,8 +568,13 @@ class CouponController extends Controller
 	     * @internal Rule that coupon can never exceed the original cost
 	     */
 	    $discountAmount = $planDiscount > $planAmount ? $planAmount : $planDiscount;
-        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['PLAN'], $og->plan_id, $discountAmount, $discountAmount, $og->id);
-        $this->totalTaxableAmount[] = $og->plan->taxable ? $planAmount - $discountAmount: 0;
+        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['PLAN'], $og->plan_id, $coupon->amount, $discountAmount, $og->id);
+	    if($planAmount > $discountAmount){
+		    $taxableAmount = $planAmount - $discountAmount;
+	    } else {
+		    $taxableAmount = $discountAmount;
+	    }
+        $this->totalTaxableAmount[] = $og->plan->taxable ? $taxableAmount : 0;
         return ['discount' => $discountAmount, 'products' => $orderCouponProduct];
     }
 
@@ -585,8 +595,13 @@ class CouponController extends Controller
 	     * @internal Rule that coupon can never exceed the original cost
 	     */
 	    $discountAmount = $simDiscount > $simAmount ? $simAmount : $simDiscount;
-        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['SIM'], $og->sim_id, $discountAmount, $discountAmount, $og->id);
-        $this->totalTaxableAmount[] = $og->sim->taxable ? $simAmount - $discountAmount: 0;
+        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['SIM'], $og->sim_id, $coupon->amount, $discountAmount, $og->id);
+	    if($simAmount > $discountAmount){
+		    $taxableAmount = $simAmount - $discountAmount;
+	    } else {
+		    $taxableAmount = $discountAmount;
+	    }
+        $this->totalTaxableAmount[] = $og->sim->taxable ? $taxableAmount : 0;
         return ['discount' => $discountAmount, 'products' => $orderCouponProduct];
     }
 
@@ -610,8 +625,14 @@ class CouponController extends Controller
 	     * @internal Rule that coupon can never exceed the original cost
 	     */
 	    $discountAmount = $addonDiscount > $addonAmount ? $addonAmount : $addonDiscount;
-        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['ADDON'], $addon->id, $discountAmount, $discountAmount, $og->id);
-        $this->totalTaxableAmount[] = $addon->taxable ? $addonAmount - $discountAmount : 0;
+        $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['ADDON'], $addon->id, $coupon->amount, $discountAmount, $og->id);
+        if($addonAmount > $discountAmount){
+	        $taxableAmount = $addonAmount - $discountAmount;
+        } else {
+	        $taxableAmount = $discountAmount;
+        }
+
+        $this->totalTaxableAmount[] = $addon->taxable ? $taxableAmount : 0;
         return ['discount' => $discountAmount, 'products' => $orderCouponProduct];
     }
 
