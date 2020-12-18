@@ -74,8 +74,6 @@ class InvoiceItem extends Model implements ConstantInterface
         return $query->whereIn('type', [
             self::INVOICE_ITEM_TYPES['regulatory_fee'],
             self::INVOICE_ITEM_TYPES['taxes'],
-            
-            
         ]);
     }
 

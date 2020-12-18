@@ -366,17 +366,14 @@ class InvoiceController extends BaseController implements ConstantInterface
 		return $invoiceItem;
 	}
 
-
 	/**
 	 * Creates inovice_item for subscription
+	 * @param      $subscriptionIds
+	 * @param null $coupons
 	 *
-	 * @param  Order      $order
-	 * @param  int        $subscriptionIds
-	 * @return Response
+	 * @return null
 	 */
-
-
-	protected function subscriptionInvoiceItem($subscriptionIds, $coupon = null)
+	protected function subscriptionInvoiceItem($subscriptionIds, $coupons = null)
 	{
 
 		$paidInvoice = 0;
@@ -502,7 +499,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 				$subscription,
 				$invoiceItem->invoice,
 				self::TAX_FALSE,
-				$coupon
+				$coupons
 			);
 		}
 
