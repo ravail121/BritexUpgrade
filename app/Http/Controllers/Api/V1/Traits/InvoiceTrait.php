@@ -537,6 +537,7 @@ trait InvoiceTrait
     {
         if($couponData) {
         	$couponDiscount = 0;
+        	$eligibleProduct = [];
 	        foreach($couponData as $coupon) {
 		        $type = $coupon[ 'coupon_type' ];
 		        if ( $type == 1 ) { // Applied to all
@@ -549,14 +550,15 @@ trait InvoiceTrait
 		        if ( count( $appliedTo ) ) {
 			        foreach ( $appliedTo as $product ) {
 				        if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
-					        $couponDiscount += $item->amount - $product['discount'];
+					        $couponDiscount += $product['discount'] > $item->amount ? $item->amount : $item->amount - $product['discount'];
+					        $eligibleProduct = [$item->id];
 				        }
 			        }
 		        }
 	        }
 	        return [
 		        'amount'            => $couponDiscount,
-		        'eligible_product'  => [$item->id]
+		        'eligible_product'  => $eligibleProduct
 	        ];
         } else {
 	        return ['amount' => 0, 'eligible_product' => []];
