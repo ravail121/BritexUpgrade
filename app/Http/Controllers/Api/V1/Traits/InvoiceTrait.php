@@ -87,17 +87,13 @@ trait InvoiceTrait
 	 */
 	public function addTaxesToSubscription($subscription, $invoice, $isTaxable, $coupons)
     {
-	    \Log::info("addTaxesToSubscription ");
-	    \Log::info($coupons);
         $taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
         if ($taxPercentage > 0) {
             $taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
 
             $taxAmount = $taxableItems->sum('amount');
-	        \Log::info("taxAmount 1 " . $taxAmount);
             if ($coupons) {
                 $taxData = $this->couponTax($taxableItems, $coupons);
-	            \Log::info("taxData " . $taxData);
                 if ($taxData) {
                     $taxAmount = $taxData;
                 } // If coupon tax amount = 0, use original.

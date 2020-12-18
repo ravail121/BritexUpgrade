@@ -376,7 +376,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 	 */
 	protected function subscriptionInvoiceItem($subscriptionIds, $coupons = null)
 	{
-
 		$paidInvoice = 0;
 		$invoiceItem = null;
 		$order = Order::where('invoice_id', $this->input['invoice_id'])->first();
