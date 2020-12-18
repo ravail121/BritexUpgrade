@@ -88,6 +88,7 @@ trait InvoiceTrait
 	public function addTaxesToSubscription($subscription, $invoice, $isTaxable, $coupons)
     {
 	    \Log::info("addTaxesToSubscription ");
+	    \Log::info($coupons);
         $taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
         if ($taxPercentage > 0) {
             $taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
