@@ -384,7 +384,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 			$subarray = [
 				'subscription_id' => $subscription->id,
-
 			];
 
 			if ($subscription->device_id !== null) {
@@ -401,10 +400,10 @@ class InvoiceController extends BaseController implements ConstantInterface
 				} else {
 					$device = Device::find($subscription->device_id);
 					$array = array_merge($array, [
-						'type'   => 3,
-						'amount' => $device->amount_w_plan,
-						'description' => '',
-						'taxable' => $device->taxable
+						'type'           => 3,
+						'amount'        => $device->amount_w_plan,
+						'description'   => '',
+						'taxable'       => $device->taxable
 					]);
 
 				}
