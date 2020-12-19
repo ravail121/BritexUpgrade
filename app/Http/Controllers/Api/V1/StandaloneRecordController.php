@@ -77,7 +77,7 @@ class StandaloneRecordController extends BaseController
         ]));
 
         $order = Order::find($request->order_id);
-        $this->storeCoupon(json_decode($request->coupon_data), $order);
+        $this->storeCoupon(json_decode($request->coupon_data, true), $order);
 
         return $this->respond(['device_id' => $record->id]);
     }
@@ -105,7 +105,7 @@ class StandaloneRecordController extends BaseController
         ]));
 
         $order = Order::find($request->order_id);
-        $this->storeCoupon(json_decode($request->coupon_data), $order);
+        $this->storeCoupon(json_decode($request->coupon_data, true), $order);
 
         return $this->respond(['sim_id' => $record->id]);
     }
