@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\BaseController;
 
+use App\Model\OrderCoupon;
+use App\Model\Tax;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Order;
+use App\Model\Company;
+use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
@@ -21,6 +25,49 @@ use App\Model\BusinessVerification;
  */
 class OrderController extends BaseController
 {
+    /**
+     * $cartItems
+     *
+     * @var array
+     */
+    protected $cartItems;
+    /**
+     * $prices
+     *
+     * @var array
+     */
+    protected $prices;
+    /**
+     * $regulatory
+     *
+     * @var array
+     */
+    protected $regulatory;
+    /**
+     * $taxes
+     *
+     * @var array
+     */
+    protected $taxes;
+    /**
+     * $shippingFee
+     *
+     * @var array
+     */
+    protected $shippingFee;
+    /**
+     * $activation
+     *
+     * @var array
+     */
+    protected $activation;
+    protected $tax_id;
+    protected $tax_total;
+    protected $total_price;
+    protected $subtotalPriceAmount;
+    protected $couponAmount;
+    protected $taxrate;
+    protected $order_hash;
 
 	/**
 	 * OrderController constructor.
@@ -37,15 +84,16 @@ class OrderController extends BaseController
 	public function get(Request $request){
 
         $hash = $request->input('order_hash');
+        $this->order_hash = $hash;
         $paidMonthlyInvoice = $request->input('paid_monthly_invoice');
 
         $order =  $ordergroups = $newPlan = [];
-        
+
         if($hash){
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                 $query->where('hash', $hash);
             })->get();
-            
+
             foreach($order_groups as $key => $og){
 
                 if($order == []){
@@ -102,7 +150,7 @@ class OrderController extends BaseController
                         'customer'               => $og->customer,
                     ];
                 }
-                            
+
                 $tmp = array(
                     'id'                => $og->id,
                     'sim'               => $og->sim,
@@ -160,7 +208,7 @@ class OrderController extends BaseController
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
                     $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt'], 'subscription_addon_id'=> $a['subscription_addon_id'], 'subscription_id' => $a['subscription_id']]);
-                    
+
                     array_push($tmp['addons'], collect($a['addon']));
                 }
 
@@ -175,6 +223,15 @@ class OrderController extends BaseController
         }
 
         $order['order_groups'] = $ordergroups;
+        $this->cartItems = $order;
+//        $order['totalPrice'] =  $this->totalPrice();
+//        $order['subtotalPrice'] =  $this->subTotalPrice();
+//        $order['activeGroupId'] =  $this->getActiveGroupId();
+//        $order['monthlyCharge'] =  $this->calMonthlyCharge();
+//        $order['taxes'] =  $this->calTaxes();
+//        $order['regulatory'] =  $this->calRegulatory();
+//        $order['shippingFee'] =  $this->getShippingFee();
+//        $order['coupons'] =  $this->coupon();
         $this->content = $order;
         return response()->json($this->content);
     }
@@ -188,7 +245,7 @@ class OrderController extends BaseController
 	 */
 	public function find(Request $request, $id)
      {
-       
+
         $this->content = Order::find($id);
         return response()->json($this->content);
      }
@@ -272,7 +329,7 @@ class OrderController extends BaseController
             $this->insertOrderGroup($data, $order, $monthly_order_group, 1);
         }
 
-        return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);    
+        return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);
     }
 
 	/**
@@ -294,7 +351,7 @@ class OrderController extends BaseController
                 $og_params['plan_prorated_amt'] = $order->planProRate($data['plan_id']);
             }
             // delete all rows in order_group_addon table associated with this order
-            
+
             $_oga = OrderGroupAddon::where('order_group_id', $order_group->id)
             ->get();
 
@@ -354,9 +411,9 @@ class OrderController extends BaseController
                 $og_params['require_device'] = $data['require_device'];
             }
         }
-        
+
         $order_group->update($og_params);
-        
+
         if(isset($data['addon_id'][0])){
             foreach ($data['addon_id'] as $key => $addon) {
                 $ogData = [
@@ -429,7 +486,7 @@ class OrderController extends BaseController
         $data = $request->except('_url');
         $validation = Validator::make(
             $data,
-            [   
+            [
                 'hash'             => 'required|exists:order,hash',
                 'shipping_fname'   => 'string',
                 'shipping_lname'   => 'string',
@@ -447,7 +504,7 @@ class OrderController extends BaseController
 
 
         Order::whereHash($data['hash'])->update($data);
-        
+
         return $this->respond(['message' => 'sucessfully Updated']);
     }
 
@@ -463,11 +520,478 @@ class OrderController extends BaseController
         return \Request::get('company');
     }
 
-    
+
 //    public function destroy($id){
 //         Order::find($id)->delete();
 //         //$orders = OrderController::find($id);
 //         return redirect()->back()->withErrors('Successfully deleted!');
 //     }
 // }
+
+
+
+/**-----------Starting-------------**/
+/**-------------------------------**/
+
+/**
+ * Calculates the Total Price of Cart
+ *
+ * @return float  $totalPrice
+ */
+public function totalPrice()
+{
+    if($this->total_price){
+        $this->total_price = 0;
+    }
+    $this->calDevicePrices();
+    $this->getPlanPrices();
+    $this->getSimPrices();
+    $this->getAddonPrices();
+    $this->calTaxes();
+    $this->getShippingFee();
+    $this->calRegulatory();
+    $this->coupon();
+    $price[] = ($this->prices) ? array_sum($this->prices) : 0;
+    $price[] = ($this->regulatory) ? array_sum($this->regulatory) : 0;
+    $price[] = ($this->couponAmount);
+    if($this->tax_total===0){
+        $price[] = ($this->taxes) ? number_format(array_sum($this->taxes), 2) : 0;
+    } else {
+        $price[] = number_format($this->tax_total, 2);
+    }
+    $price[] = ($this->activation) ? array_sum($this->activation) : 0;
+    $price[] = ($this->shippingFee) ? array_sum($this->shippingFee) : 0;
+    $totalPrice = array_sum($price);
+    $this->total_price = $totalPrice;
+    return $totalPrice;
+}
+
+
+protected function calDevicePrices()
+{
+    $this->prices = [];
+    $activeGroupId = $this->getActiveGroupId();
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                if ($cart['device'] != null) {
+                    if ($cart['plan'] == null) {
+                        if ($cart['id'] == $activeGroupId) {
+                            $this->prices[] = $cart['device']['amount_w_plan'];
+                        } else {
+                            $this->prices[] = $cart['device']['amount'];
+                        }
+                    } else {
+                        $this->prices[] = $cart['device']['amount_w_plan'];
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+public function getActiveGroupId()
+{
+    return (isset($this->cartItems['active_group_id'])) ? $this->cartItems['active_group_id'] : null;
+}
+
+protected function getPlanPrices()
+{
+    $this->activation = [];
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                if ($cart['plan']['amount_onetime'] > 0) {
+                    $this->activation[] = $cart['plan']['amount_onetime'];
+                }
+                if ($cart['plan_prorated_amt']) {
+                    $this->prices[] = $cart['plan_prorated_amt'];
+                } else {
+                    $this->prices[] = ($cart['plan'] != null) ? $cart['plan']['amount_recurring'] : [];
+                }
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * It returns the array of Sim-prices from an array
+ *
+ * @param   array  $type
+ * @return  array
+ */
+protected function getSimPrices()
+{
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                if ($cart['sim'] != null && $cart['plan'] != null) {
+                    $this->prices[] = $cart['sim']['amount_w_plan'];
+                } elseif ($cart['sim'] != null && $cart['plan'] == null) {
+                    $this->prices[] = $cart['sim']['amount_alone'];
+                }
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * It returns the array of Addon-prices from an array
+ *
+ * @param   array  $type
+ * @return  array
+ */
+protected function getAddonPrices()
+{
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                if ($cart['addons'] != null) {
+                    foreach ($cart['addons'] as $addon) {
+                        if ($addon['prorated_amt'] != null) {
+                            $this->prices[] = $addon['prorated_amt'];
+                        } else {
+                            $this->prices[] = $addon['amount_recurring'];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+public function calTaxes($taxId = null)
+{
+    $this->taxes = [];
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                $this->taxes[] = number_format($this->calTaxableItems($cart, $taxId), 2);
+            }
+        }
+    }
+    $taxes = ($this->taxes) ? array_sum($this->taxes) : 0;
+    $taxId ?  $this->tax_total = $taxes : $this->tax_total = 0;
+    $taxId ? $this->totalPrice() : null; // to add tax to total without refresh
+    return $taxes;
+}
+
+
+
+/**
+ * Calculates the Sub-Total Price of Cart
+ *
+ * @return float  $subtotalPrice
+ */
+public function subTotalPrice()
+{
+    $this->calDevicePrices();
+    $this->getPlanPrices();
+    $this->getSimPrices();
+    $this->getAddonPrices();
+    $price[] = ($this->prices) ? array_sum($this->prices) : 0;
+    $price[] = ($this->activation) ? array_sum($this->activation) : 0;
+    $this->subTotalPriceAmount = array_sum($price);
+    return $this->subTotalPriceAmount;
+}
+
+/**
+ * Calculates the monthly charge of Cart (plans + addons)
+ *
+ * @return float  $monthlyCharge
+ */
+public function calMonthlyCharge()
+{
+    $this->prices = [];
+    $this->getOriginalPlanPrice();
+    $this->getOriginalAddonPrice();
+    $price = ($this->prices) ? array_sum($this->prices) : 0;
+    if(isset(session('cart')['paid_invoice'])){
+        $price /= 2;
+    }
+    return $price;
+}
+
+
+public function calRegulatory()
+{
+    $this->regulatory = [];
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                if($cart['plan'] != null && !isset($cart['status'])){
+                    if ($cart['plan']['regulatory_fee_type'] == 1) {
+                        $this->regulatory[] = $cart['plan']['regulatory_fee_amount'];
+                    }elseif ($cart['plan']['regulatory_fee_type'] == 2) {
+                        if($cart['plan_prorated_amt'] != null){
+                            $this->regulatory[] = number_format($cart['plan']['regulatory_fee_amount']*$cart['plan_prorated_amt']/100, 2);
+                        }else{
+                            $this->regulatory[] = number_format($cart['plan']['regulatory_fee_amount']*$cart['plan']['amount_recurring']/100, 2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    $regulatory = ($this->regulatory) ? array_sum($this->regulatory) : 0;
+    return $regulatory;
+}
+
+
+public function coupon()
+{
+    $order = Order::where('hash', $this->order_hash)->first();
+
+    $total = 0;
+    $order_couppons = OrderCoupon::where('order_id', $order->id)->get();
+    foreach ($order_couppons as $order_couppon){
+        $this->couponAmount[] = $order_couppon->coupon;
+        $total += $order_couppon->coupon->amount;
+    }
+    return $total;
+}
+
+/**
+ * Gets Shipping fee
+ *
+ * @return float  $shippingFee
+ */
+public function getShippingFee()
+{
+    $this->shippingFee = [];
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                if ($cart['device'] != null) {
+                    if ($cart['device']['shipping_fee'] != null) {
+                        $this->shippingFee[] = $cart['device']['shipping_fee'];
+                    }
+                } if ($cart['sim'] != null) {
+                    if ($cart['sim']['shipping_fee'] != null) {
+                        $this->shippingFee[] = $cart['sim']['shipping_fee'];
+                    }
+                }
+            }
+        }
+    }
+    $shippingFee = ($this->shippingFee) ? array_sum($this->shippingFee) : 0;
+    return $shippingFee;
+}
+
+public function calTaxableItems($cart, $taxId)
+{
+    $_tax_id = null;
+    $stateId = '';
+    if (!$taxId) {
+        if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
+            $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
+        } elseif (session('cart')['customer'] && isset(session('cart')['customer']['billing_state_id'])) {
+            $_tax_id = $this->cartItems['customer']['billing_state_id'];
+        }
+    } else {
+        session(['tax_id' => $taxId]);
+    }
+    $stateId = ['tax_id' => $_tax_id];
+    $taxRate    = $this->taxrate($stateId);
+    if (!$_tax_id || $_tax_id && isset($taxRate['tax_rate']) && $_tax_id != $taxRate['tax_rate']) {
+        $taxRate    = $this->taxrate($stateId);
+        $this->taxrate = isset($taxRate['tax_rate']) ? $taxRate['tax_rate'] : 0;
+    }
+    $taxPercentage  = $_tax_id / 100;
+    if(isset($cart['status']) && $cart['status'] == "SamePlan"){
+        //Addon
+        $addons = $this->addTaxesToAddons($cart, $taxPercentage);
+        return $addons;
+    }
+    if(isset($cart['status']) && $cart['status'] == "Upgrade"){
+        //Plans
+        $plans =$this->addTaxesToPlans($cart, $cart['plan'], $taxPercentage);
+        //Addons
+        $addons = $this->addTaxesToAddons($cart, $taxPercentage);
+        return $plans + $addons;
+    }
+    //Devices
+    $devices        = $this->addTaxesDevices($cart, $cart['device'], $taxPercentage);
+    //Sims
+    $sims           = $this->addTaxesSims($cart, $cart['sim'], $taxPercentage);
+    //Plans
+    $plans          = $this->addTaxesToPlans($cart, $cart['plan'], $taxPercentage);
+    //Addons
+    $addons         = $this->addTaxesToAddons($cart, $taxPercentage);
+    return $devices + $sims + $plans + $addons;
+}
+
+public function taxrate($stateId)
+{
+    $company = \Request::get('company')->load('carrier');
+    if (array_key_exists('tax_id', $stateId)) {
+        $rate = Tax::where('state', $stateId['tax_id'])
+            ->where('company_id', $company->id)
+            ->pluck('rate')
+            ->first();
+        return ['tax_rate' => $rate];
+    }
+    $msg = $this->respond(['error' => 'Hash is required']);
+    if (array_key_exists('hash', $stateId)) {
+        $customer = Customer::where(['hash' => $stateId['hash']])->first();
+        if ($customer) {
+            if (array_key_exists("paid_monthly_invoice", $stateId)) {
+                $date = Carbon::today()->addDays(6)->endOfDay();
+                $invoice = Invoice::where([
+                    ['customer_id', $customer->id],
+                    ['status', Invoice::INVOICESTATUS['closed&paid']],
+                    ['type', Invoice::TYPES['monthly']]
+                ])->whereBetween('start_date', [Carbon::today()->startOfDay(), $date])->where('start_date', '!=', Carbon::today())->first();
+
+                $customer['paid_monthly_invoice'] = $invoice ? 1 : 0;
+            }
+            $customer['company'] = $company;
+            $msg = $this->respond($customer);
+        } else {
+            $msg = $this->respond(['error' => 'customer not found']);
+
+        }
+    }
+    return $msg;
+}
+
+public function addTaxesToPlans($cart, $item, $taxPercentage)
+{
+    $planTax = [];
+    if ($item != null && $item['taxable']) {
+        $amount = $cart['plan_prorated_amt'] != null ? $cart['plan_prorated_amt'] : $item['amount_recurring'];
+        $amount = $item['amount_onetime'] != null ? $amount + $item['amount_onetime'] : $amount;
+        if ($this->couponAmount) {
+            $discounted = $this->getCouponPrice($this->couponAmount, $item, 1);
+            $amount = $discounted > 0 ? $amount - $discounted : $amount;
+        }
+        $planTax[] = $taxPercentage * $amount;
+    }
+    return !empty($planTax) ? array_sum($planTax) : 0;
+}
+
+protected function getCouponPrice($couponData, $item, $itemType)
+{
+    $productDiscount = 0;
+    foreach($couponData as $coupon) {
+        $type = $coupon[ 'coupon_type' ];
+        if ( $type == 1 ) { // Applied to all
+            $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_all' ];
+        } elseif ( $type == 2 ) { // Applied to types
+            $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_types' ];
+        } elseif ( $type == 3 ) { // Applied to products
+            $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_products' ];
+        }
+        if ( count( $appliedTo ) ) {
+            foreach ( $appliedTo as $product ) {
+                if ( $product[ 'order_product_type' ] == $itemType && $product[ 'order_product_id' ] == $item[ 'id' ] ) {
+                    $productDiscount += $product[ 'discount' ];
+                }
+            }
+        }
+
+    }
+    return $productDiscount;
+}
+
+public function addTaxesDevices($cart, $item, $taxPercentage)
+{
+    $itemTax = [];
+    if ($item && $item['taxable']) {
+        $amount = $cart['plan'] != null ? $item['amount_w_plan'] : $item['amount'];
+
+        if ($this->couponAmount ) {
+            $discounted = $this->getCouponPrice($this->couponAmount, $item, 2);
+            $amount = $discounted > 0 ? $amount - $discounted : $amount;
+        }
+        $itemTax[] = $taxPercentage * $amount;
+    }
+    return !empty($itemTax) ? array_sum($itemTax) : 0;
+}
+
+public function addTaxesSims($cart, $item, $taxPercentage)
+{
+    $itemTax = [];
+    if ($item && $item['taxable']) {
+        $amount = $cart['plan'] != null ? $item['amount_w_plan'] : $item['amount_alone'];
+        if ($this->couponAmount) {
+            $discounted = $this->getCouponPrice($this->couponAmount, $item, 3);
+            $amount = $discounted > 0 ? $amount - $discounted : $amount;
+        }
+        $itemTax[] = $taxPercentage * $amount;
+    }
+    return !empty($itemTax) ? array_sum($itemTax) : 0;
+}
+
+public function addTaxesToAddons($cart, $taxPercentage)
+{
+    $addonTax = [];
+    if ($cart['addons'] != null) {
+        foreach ($cart['addons'] as $addon) {
+            if ($addon['taxable'] == 1) {
+                $amount = $addon['prorated_amt'] != null ? $addon['prorated_amt'] : $addon['amount_recurring'];
+                if ($this->couponAmount) {
+                    $discounted = $this->getCouponPrice($this->couponAmount, $addon, 4);
+                    $amount = $discounted > 0 ? $amount - $discounted : $amount;
+                }
+                $addonTax[] = $taxPercentage * $amount;
+            }
+        }
+    }
+    return !empty($addonTax) ? array_sum($addonTax) : 0;
+}
+
+
+/**
+ * It returns the array of Plan-prices from an array
+ *
+ * @param   array  $type
+ * @return  array
+ */
+protected function getOriginalPlanPrice()
+{
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                $this->prices[] = ($cart['plan'] != null) ? $cart['plan']['amount_recurring'] : [];
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * It returns the array of Addon-prices from an array
+ *
+ * @param   array  $type
+ * @return  array
+ */
+protected function getOriginalAddonPrice()
+{
+    if ($this->cartItems != null) {
+        if (count($this->cartItems['order_groups'])) {
+            foreach ($this->cartItems['order_groups'] as $cart) {
+                if ($cart['addons'] != null) {
+                    foreach ($cart['addons'] as $addon) {
+                        if($addon['subscription_addon_id']!= null){
+                            $this->prices[] = [];
+                        }else{
+                            $this->prices[] = $addon['amount_recurring'];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+/**-------------------------------**/
+/**-------------------------------**/
 }
