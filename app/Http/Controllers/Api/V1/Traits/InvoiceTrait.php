@@ -554,7 +554,7 @@ trait InvoiceTrait
 		        if ( count( $appliedTo ) ) {
 			        foreach ( $appliedTo as $product ) {
 				        if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
-					        $couponDiscount += $product['discount'] > $item->amount ? $item->amount : $item->amount - $product['discount'];
+					        $couponDiscount += $item->amount - $product['discount'];
 					        $eligibleProduct = [$item->id];
 				        }
 			        }
