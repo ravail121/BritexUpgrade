@@ -71,7 +71,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 	 */
 	public function oneTimeInvoice(Request $request)
 	{
-		\Log::info($request->all());
 		$msg = '';
 		$order = Order::where('hash', $request->hash ?: $request->order_hash)->first();
 
