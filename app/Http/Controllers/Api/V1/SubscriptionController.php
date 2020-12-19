@@ -76,7 +76,7 @@ class SubscriptionController extends BaseController
             $insertData = $this->generateSubscriptionData($request, $order);
             $subscription = Subscription::create($insertData);
 
-            $this->storeCoupon(json_decode($request->coupon_data), $order, $subscription);
+            $this->storeCoupon(json_decode($request->coupon_data, true), $order, $subscription);
 
             if(!$subscription) {
                 return $this->respondError(['subscription_id' => null]);
