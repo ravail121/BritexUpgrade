@@ -548,11 +548,11 @@ trait InvoiceTrait
 	        foreach($couponData as $coupon) {
 		        $type = $coupon[ 'coupon_type' ];
 		        if ( $type == 1 ) { // Applied to all
-			        $appliedTo = isset($couponData['applied_to']['applied_to_all']) ? $couponData['applied_to']['applied_to_all'] : [];
+			        $appliedTo = isset($coupon['applied_to']['applied_to_all']) ? $coupon['applied_to']['applied_to_all'] : [];
 		        } elseif ( $type == 2 ) { // Applied to types
-			        $appliedTo = isset($couponData['applied_to']['applied_to_types']) ? $couponData['applied_to']['applied_to_types'] : [];
+			        $appliedTo = isset($coupon['applied_to']['applied_to_types']) ? $coupon['applied_to']['applied_to_types'] : [];
 		        } elseif ( $type == 3 ) { // Applied to products
-			        $appliedTo = isset($couponData['applied_to']['applied_to_products']) ? $couponData['applied_to']['applied_to_products'] : [];
+			        $appliedTo = isset($coupon['applied_to']['applied_to_products']) ? $coupon['applied_to']['applied_to_products'] : [];
 		        }
 		        if ( count( $appliedTo ) ) {
 			        foreach ( $appliedTo as $product ) {
