@@ -91,13 +91,17 @@ trait InvoiceTrait
         if ($taxPercentage > 0) {
             $taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
 
+	        \Log::info($taxableItems);
+
             $taxAmount = $taxableItems->sum('amount');
             if ($coupons) {
                 $taxData = $this->couponTax($taxableItems, $coupons);
+	            \Log::info('taxData ' . $taxData);
                 if ($taxData) {
                     $taxAmount = $taxData;
                 } // If coupon tax amount = 0, use original.
             }
+            \Log::info('taxAmount ' . $taxAmount);
             if ($taxAmount > 0) {
                 $subscription->invoiceItemDetail()->create(
                     [
@@ -550,7 +554,7 @@ trait InvoiceTrait
 		        if ( count( $appliedTo ) ) {
 			        foreach ( $appliedTo as $product ) {
 				        if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
-					        $couponDiscount += $item->amount - $product['discount'];
+					        $couponDiscount += $product['discount'] > $item->amount ? $item->amount : $item->amount - $product['discount'];
 					        $eligibleProduct = [$item->id];
 				        }
 			        }
