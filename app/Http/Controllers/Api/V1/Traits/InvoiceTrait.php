@@ -97,9 +97,10 @@ trait InvoiceTrait
             if ($coupons) {
                 $taxData = $this->couponTax($taxableItems, $coupons);
 	            \Log::info('taxData ' . $taxData);
-                if ($taxData) {
+//                if ($taxData) {
                     $taxAmount = $taxData;
-                } // If coupon tax amount = 0, use original.
+//                }
+                // If coupon tax amount = 0, use original.
             }
             \Log::info('taxAmount ' . $taxAmount);
             if ($taxAmount > 0) {
