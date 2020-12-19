@@ -29,7 +29,6 @@ use Exception;
  */
 trait InvoiceTrait
 {
-
 	/**
 	 * @param      $subscription
 	 * @param      $invoice
@@ -91,12 +90,14 @@ trait InvoiceTrait
         if ($taxPercentage > 0) {
             $taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
 
+
             $taxAmount = $taxableItems->sum('amount');
             if ($coupons) {
                 $taxData = $this->couponTax($taxableItems, $coupons);
-                if ($taxData) {
+//                if ($taxData) {
                     $taxAmount = $taxData;
-                } // If coupon tax amount = 0, use original.
+//                }
+                // If coupon tax amount = 0, use original.
             }
             if ($taxAmount > 0) {
                 $subscription->invoiceItemDetail()->create(
@@ -541,16 +542,16 @@ trait InvoiceTrait
 	        foreach($couponData as $coupon) {
 		        $type = $coupon[ 'coupon_type' ];
 		        if ( $type == 1 ) { // Applied to all
-			        $appliedTo = isset($couponData['applied_to']['applied_to_all']) ? $couponData['applied_to']['applied_to_all'] : [];
+			        $appliedTo = isset($coupon['applied_to']['applied_to_all']) ? $coupon['applied_to']['applied_to_all'] : [];
 		        } elseif ( $type == 2 ) { // Applied to types
-			        $appliedTo = isset($couponData['applied_to']['applied_to_types']) ? $couponData['applied_to']['applied_to_types'] : [];
+			        $appliedTo = isset($coupon['applied_to']['applied_to_types']) ? $coupon['applied_to']['applied_to_types'] : [];
 		        } elseif ( $type == 3 ) { // Applied to products
-			        $appliedTo = isset($couponData['applied_to']['applied_to_products']) ? $couponData['applied_to']['applied_to_products'] : [];
+			        $appliedTo = isset($coupon['applied_to']['applied_to_products']) ? $coupon['applied_to']['applied_to_products'] : [];
 		        }
 		        if ( count( $appliedTo ) ) {
 			        foreach ( $appliedTo as $product ) {
 				        if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
-					        $couponDiscount += $product['discount'] > $item->amount ? $item->amount : $item->amount - $product['discount'];
+				        	$couponDiscount += $item->amount - $product['discount'];
 					        $eligibleProduct = [$item->id];
 				        }
 			        }
