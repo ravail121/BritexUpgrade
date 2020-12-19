@@ -502,6 +502,7 @@ trait InvoiceTrait
 	 */
 	protected function couponTax($items, $coupons)
     {
+    	\Log::info('couponTax', $coupons);
         $amount = [0];
         if ($coupons) {
             foreach ($items as $item) {
