@@ -540,6 +540,8 @@ trait InvoiceTrait
 	 */
 	protected function getCouponPrice($couponData, $item, $itemType)
     {
+    	\Log::info('getCouponPrice');
+    	\Log::info($couponData);
         if($couponData) {
         	$couponDiscount = 0;
         	$eligibleProduct = [];
