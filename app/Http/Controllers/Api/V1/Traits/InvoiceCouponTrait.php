@@ -692,7 +692,7 @@ trait InvoiceCouponTrait
         if($this->couponAmount){
             foreach($this->couponAmount as $coupon){
                 if(isset($coupon['total'])){
-                    $couponAmountTotal -= (int) $coupon['total'];
+                    $couponAmountTotal -= (float) $coupon['total'];
                 }
             }
         }
