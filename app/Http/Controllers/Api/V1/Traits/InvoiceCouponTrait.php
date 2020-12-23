@@ -735,43 +735,24 @@ trait InvoiceCouponTrait
      */
     public function calTaxableItems($cart, $taxId)
     {
-        $_tax_id = null;
-        $stateId = '';
-        if (!$taxId) {
-            if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
-                $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
-            } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
-                $_tax_id = $this->cartItems['customer']['billing_state_id'];
-            }
-        } else {
-            $this->tax_id = $taxId;
-        }
-        $stateId = ['tax_id' => $_tax_id];
+        $order  = Order::where('hash', $this->order_hash)->first();
+        $customer = Customer::find($order->customer_id);
+        $stateId = ['tax_id' => $customer->billing_state_id];
         $taxRate    = $this->taxrate($stateId);
-        if (!$_tax_id || $_tax_id && isset($taxRate['tax_rate']) && $_tax_id != $taxRate['tax_rate']) {
-            $taxRate    = $this->taxrate($stateId);
-            $this->taxrate = isset($taxRate['tax_rate']) ? $taxRate['tax_rate'] : 0;
-        }
-        $taxPercentage  = $_tax_id / 100;
+        $this->taxrate = isset($taxRate['tax_rate']) ? $taxRate['tax_rate'] : 0;
+        $taxPercentage  = $this->taxrate / 100;
         if(isset($cart['status']) && $cart['status'] == "SamePlan"){
-            //Addon
             $addons = $this->addTaxesToAddons($cart, $taxPercentage);
             return $addons;
         }
         if(isset($cart['status']) && $cart['status'] == "Upgrade"){
-            //Plans
             $plans =$this->addTaxesToPlans($cart, $cart['plan'], $taxPercentage);
-            //Addons
             $addons = $this->addTaxesToAddons($cart, $taxPercentage);
             return $plans + $addons;
         }
-        //Devices
         $devices        = $this->addTaxesDevices($cart, $cart['device'], $taxPercentage);
-        //Sims
         $sims           = $this->addTaxesSims($cart, $cart['sim'], $taxPercentage);
-        //Plans
         $plans          = $this->addTaxesToPlans($cart, $cart['plan'], $taxPercentage);
-        //Addons
         $addons         = $this->addTaxesToAddons($cart, $taxPercentage);
         return $devices + $sims + $plans + $addons;
     }
