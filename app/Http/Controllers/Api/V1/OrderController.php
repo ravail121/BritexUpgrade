@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 use App\Http\Controllers\BaseController;
 
+use App\Model\OrderCoupon;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Order;
@@ -21,8 +23,80 @@ use App\Model\BusinessVerification;
  */
 class OrderController extends BaseController
 {
+    use InvoiceCouponTrait;
 
-	/**
+    /**
+     *
+     */
+    const SPECIFIC_TYPES = [
+        'PLAN'      =>  1,
+        'DEVICE'    =>  2,
+        'SIM'       =>  3,
+        'ADDON'     =>  4
+    ];
+
+    /**
+     *
+     */
+    const FIXED_PERC_TYPES = [
+        'fixed'      => 1,
+        'percentage' => 2
+    ];
+
+    /**
+     *
+     */
+    const PLAN_TYPE = [
+        'Voice'     => 1,
+        'Data'      => 2
+    ];
+    /**
+     * $cartItems
+     *
+     * @var array
+     */
+    protected $cartItems;
+    /**
+     * $prices
+     *
+     * @var array
+     */
+    protected $prices;
+    /**
+     * $regulatory
+     *
+     * @var array
+     */
+    protected $regulatory;
+    /**
+     * $taxes
+     *
+     * @var array
+     */
+    protected $taxes;
+    /**
+     * $shippingFee
+     *
+     * @var array
+     */
+    protected $shippingFee;
+    /**
+     * $activation
+     *
+     * @var array
+     */
+    protected $activation;
+    protected $tax_id;
+    protected $tax_total;
+    protected $total_price;
+    protected $couponAmount;
+    protected $taxrate;
+    protected $order_hash;
+    protected $totalTaxableAmount = [0];
+    protected  $cart;
+
+
+    /**
 	 * OrderController constructor.
 	 */
 	public function __construct(){
@@ -37,15 +111,16 @@ class OrderController extends BaseController
 	public function get(Request $request){
 
         $hash = $request->input('order_hash');
+        $this->order_hash = $hash;
         $paidMonthlyInvoice = $request->input('paid_monthly_invoice');
 
         $order =  $ordergroups = $newPlan = [];
-        
+
         if($hash){
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                 $query->where('hash', $hash);
             })->get();
-            
+
             foreach($order_groups as $key => $og){
 
                 if($order == []){
@@ -102,7 +177,7 @@ class OrderController extends BaseController
                         'customer'               => $og->customer,
                     ];
                 }
-                            
+
                 $tmp = array(
                     'id'                => $og->id,
                     'sim'               => $og->sim,
@@ -160,7 +235,7 @@ class OrderController extends BaseController
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
                     $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt'], 'subscription_addon_id'=> $a['subscription_addon_id'], 'subscription_id' => $a['subscription_id']]);
-                    
+
                     array_push($tmp['addons'], collect($a['addon']));
                 }
 
@@ -175,6 +250,17 @@ class OrderController extends BaseController
         }
 
         $order['order_groups'] = $ordergroups;
+        $this->cartItems = $order;
+        $this->getCouponDetails();
+        $order['totalPrice'] =  $this->totalPrice();
+        $order['subtotalPrice'] =  $this->subTotalPrice();
+        $order['activeGroupId'] =  $this->getActiveGroupId();
+        $order['monthlyCharge'] =  $this->calMonthlyCharge();
+        $order['taxes'] =  $this->calTaxes();
+        $order['regulatory'] =  $this->calRegulatory();
+        $order['shippingFee'] =  $this->getShippingFee();
+        $order['coupons'] =  $this->coupon();
+        $order['couponDetails'] =  $this->couponAmount;
         $this->content = $order;
         return response()->json($this->content);
     }
@@ -188,7 +274,7 @@ class OrderController extends BaseController
 	 */
 	public function find(Request $request, $id)
      {
-       
+
         $this->content = Order::find($id);
         return response()->json($this->content);
      }
@@ -272,7 +358,7 @@ class OrderController extends BaseController
             $this->insertOrderGroup($data, $order, $monthly_order_group, 1);
         }
 
-        return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);    
+        return $this->respond(['id' => $order->id, 'order_hash' => $order->hash]);
     }
 
 	/**
@@ -294,7 +380,7 @@ class OrderController extends BaseController
                 $og_params['plan_prorated_amt'] = $order->planProRate($data['plan_id']);
             }
             // delete all rows in order_group_addon table associated with this order
-            
+
             $_oga = OrderGroupAddon::where('order_group_id', $order_group->id)
             ->get();
 
@@ -354,9 +440,9 @@ class OrderController extends BaseController
                 $og_params['require_device'] = $data['require_device'];
             }
         }
-        
+
         $order_group->update($og_params);
-        
+
         if(isset($data['addon_id'][0])){
             foreach ($data['addon_id'] as $key => $addon) {
                 $ogData = [
@@ -429,7 +515,7 @@ class OrderController extends BaseController
         $data = $request->except('_url');
         $validation = Validator::make(
             $data,
-            [   
+            [
                 'hash'             => 'required|exists:order,hash',
                 'shipping_fname'   => 'string',
                 'shipping_lname'   => 'string',
@@ -447,7 +533,7 @@ class OrderController extends BaseController
 
 
         Order::whereHash($data['hash'])->update($data);
-        
+
         return $this->respond(['message' => 'sucessfully Updated']);
     }
 
@@ -463,11 +549,34 @@ class OrderController extends BaseController
         return \Request::get('company');
     }
 
-    
+
 //    public function destroy($id){
 //         Order::find($id)->delete();
 //         //$orders = OrderController::find($id);
 //         return redirect()->back()->withErrors('Successfully deleted!');
 //     }
 // }
+
+
+
+    public function getCouponDetails()
+    {
+        $order = Order::where('hash', $this->order_hash)->first();
+
+        $customer = Customer::find($order->customer_id);
+        $order_couppons = OrderCoupon::where('order_id', $order->id)->get();
+        $this->couponAmount = [];
+        if ($order_couppons) {
+            foreach ($order_couppons as $coup) {
+                if ($coup->coupon) {
+                    $coupon = $coup->coupon;
+                    $this->couponAmount[] = $this->ifAddedByCustomerFunction($order->id, $coupon);
+                }
+            }
+        }
+    }
+
+
+    /**-------------------------------**/
+/**-------------------------------**/
 }
