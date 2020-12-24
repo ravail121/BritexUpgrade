@@ -12,9 +12,20 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 use App\Events\PortPending;
 
+/**
+ * Class CustomerPlanController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class CustomerPlanController extends BaseController
 {
-    public function get(Request $request){
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return bool[]|\Illuminate\Http\JsonResponse
+	 */
+	public function get(Request $request){
 
         if ($request->hash) {
     	    $customer = Customer::whereHash($request->hash)->with('tax')->first();
@@ -30,7 +41,12 @@ class CustomerPlanController extends BaseController
         }
     }
 
-    public function getSubscriptions($customer){
+	/**
+	 * @param $customer
+	 *
+	 * @return array
+	 */
+	public function getSubscriptions($customer){
     	$subscriptions = Subscription::with('plan.carrier', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
         $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer->tax->rate);
@@ -38,7 +54,13 @@ class CustomerPlanController extends BaseController
     	return [$subscriptions, $subscriptionPriceDetails];
     }
 
-    private function getSubscriptionPriceDetails($subscriptions, $rate)
+	/**
+	 * @param $subscriptions
+	 * @param $rate
+	 *
+	 * @return array
+	 */
+	private function getSubscriptionPriceDetails($subscriptions, $rate)
     {
         $subscriptions = $subscriptions->whereIn('status', [
                   'active', 'shipping', 'for-activation']);
@@ -82,7 +104,12 @@ class CustomerPlanController extends BaseController
         ];
     }
 
-    public function updatePort(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function updatePort(Request $request)
     {
         $data =  $request->validate([
             'authorized_name'               => 'required|max:20',
@@ -115,18 +142,27 @@ class CustomerPlanController extends BaseController
             event(new PortPending($id));
             return $this->respond('sucessfully Updated');
         }
-        
     }
 
-    protected static function toTwoDecimals($amount)
+	/**
+	 * @param $amount
+	 *
+	 * @return string
+	 */
+	protected static function toTwoDecimals($amount)
     {
         return number_format((float)$amount, 2, '.', '');
     }
 
-    public function checkNumber(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return array
+	 */
+	public function checkNumber(Request $request)
     {
-        $count = Subscription::where([
-            ['phone_number', $request->number_to_port],
+        $count = Subscription::whereNotNull('phone_number')->where([
+            ['phone_number', '=', $request->number],
             ['status', '!=', 'closed'],
         ])->count();
 
