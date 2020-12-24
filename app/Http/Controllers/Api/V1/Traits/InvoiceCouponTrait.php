@@ -394,12 +394,6 @@ trait InvoiceCouponTrait
         return array_sum($amount);
     }
 
-
-
-    /**-----------Starting-------------**/
-    /**-------------------------------**/
-
-
     /**
      * @param $order_id
      * @param $coupon
@@ -735,9 +729,19 @@ trait InvoiceCouponTrait
      */
     public function calTaxableItems($cart, $taxId)
     {
-        $order  = Order::where('hash', $this->order_hash)->first();
-        $customer = Customer::find($order->customer_id);
-        $stateId = ['tax_id' => $customer->billing_state_id];
+        $_tax_id = null;
+        if (!$taxId) {
+            if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
+                $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
+            } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
+                $_tax_id = $this->cartItems['customer']['billing_state_id'];
+            }
+        } else {
+            $order = Order::where('hash', $this->order_hash)->first();
+            $customer = Customer::find($order->customer_id);
+            $_tax_id = $customer->billing_state_id;
+        }
+        $stateId = ['tax_id' => $_tax_id];
         $taxRate    = $this->taxrate($stateId);
         $this->taxrate = isset($taxRate['tax_rate']) ? $taxRate['tax_rate'] : 0;
         $taxPercentage  = $this->taxrate / 100;
