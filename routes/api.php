@@ -600,15 +600,19 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'SubscriptionController@updateSubLabel',
 		]);
 
-		Route::group([],function(){
+		Route::group([], function(){
 			Route::post('/update-port',[
 				'as'   => 'api.update.port',
 				'uses' => 'CustomerPlanController@updatePort',
 			]);
 		});
+
+		Route::post('/subscription/update-requested-zip',[
+			'as'   => 'api.Subscription.requestedZip',
+			'uses' => 'SubscriptionController@updateRequestedZip',
+		]);
 	});
 
-	//Route::get('/confirm','BizVerificationController@confirm');
 
 	Route::group(['namespace' => '\Api\V1'],function() {
 		Route::get('/subscription-by-phone-number', [
