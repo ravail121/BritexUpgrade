@@ -539,4 +539,19 @@ class SubscriptionController extends BaseController
 
     }
 
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return mixed
+	 */
+	public function updateRequestedZip(Request $request)
+	{
+		$subscriptions = Subscription::find($request->id);
+		$update = $subscriptions->update(['requested_zip' => $request->requested_zip]);
+
+		if($update){
+			return $subscriptions;
+		}
+	}
 }
