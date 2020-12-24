@@ -511,7 +511,7 @@ trait InvoiceTrait
                 } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['addon']) {
                     $itemType = Coupon::PRODUCT_TYPE['addon'];
                 }
-                $couponTaxData = $this->getCouponPrice($coupons, $item, $itemType);
+                $couponTaxData = $this->getCouponDiscount($coupons, $item, $itemType);
                 $amount[] = $couponTaxData['amount'];
                 $eligible_products[] = $couponTaxData['eligible_product'];
             }
@@ -534,7 +534,7 @@ trait InvoiceTrait
 	 *
 	 * @return array
 	 */
-	protected function getCouponPrice($couponData, $item, $itemType)
+	protected function getCouponDiscount($couponData, $item, $itemType)
     {
         if($couponData) {
         	$couponDiscount = 0;
