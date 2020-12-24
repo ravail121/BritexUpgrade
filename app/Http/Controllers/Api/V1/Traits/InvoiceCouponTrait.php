@@ -730,15 +730,15 @@ trait InvoiceCouponTrait
     public function calTaxableItems($cart, $taxId)
     {
         $_tax_id = null;
-        if (!$taxId) {
+        $order = Order::where('hash', $this->order_hash)->first();
+        $customer = Customer::find($order->customer_id);
+        if (!$customer) {
             if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
             } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['customer']['billing_state_id'];
             }
         } else {
-            $order = Order::where('hash', $this->order_hash)->first();
-            $customer = Customer::find($order->customer_id);
             $_tax_id = $customer->billing_state_id;
         }
         $stateId = ['tax_id' => $_tax_id];
