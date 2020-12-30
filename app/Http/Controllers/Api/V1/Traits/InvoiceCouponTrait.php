@@ -14,6 +14,7 @@ use App\Model\Plan;
 use App\Model\SubscriptionCoupon;
 use App\Model\Tax;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 
 /**
@@ -833,8 +834,12 @@ trait InvoiceCouponTrait
     protected function getCouponPrice($couponData, $item, $itemType)
     {
         $productDiscount = 0;
+
         foreach ($couponData as $coupon) {
-            $type = $coupon['coupon_type'];
+        	Log::info('getCouponPrice');
+        	Log::info($coupon);
+
+            $type = array_key_exists('coupon_type', $coupon) ? $coupon['coupon_type'] : 0;
             if ($type == 1) { // Applied to all
                 $appliedTo = $coupon['applied_to']['applied_to_all'];
             } elseif ($type == 2) { // Applied to types
