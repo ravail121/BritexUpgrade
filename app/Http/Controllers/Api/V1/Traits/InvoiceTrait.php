@@ -500,6 +500,7 @@ trait InvoiceTrait
 	protected function couponTax($items, $coupons)
     {
         $amount = [0];
+	    $eligible_products = [];
         if ($coupons) {
             foreach ($items as $item) {
                 if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device']) {
