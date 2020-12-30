@@ -141,6 +141,7 @@ Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], f
 });
 
 
+
 Route::middleware('APIToken')->group(function () {
 	// Orders API
 	Route::group(['prefix' => 'order', 'namespace' => '\Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
