@@ -836,10 +836,7 @@ trait InvoiceCouponTrait
         $productDiscount = 0;
 
         foreach ($couponData as $coupon) {
-        	Log::info('getCouponPrice');
-        	Log::info($coupon);
-
-            $type = array_key_exists('coupon_type', $coupon) ? $coupon['coupon_type'] : 0;
+        	$type = array_key_exists('coupon_type', $coupon) ? $coupon['coupon_type'] : 0;
 	        $appliedTo = [];
             if ($type == 1) { // Applied to all
                 $appliedTo = $coupon['applied_to']['applied_to_all'];
