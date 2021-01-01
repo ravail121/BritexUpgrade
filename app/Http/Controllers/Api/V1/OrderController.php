@@ -172,7 +172,9 @@ class OrderController extends BaseController
 	                        'premier_password',
 	                        'opus_username',
 	                        'opus_password',
-	                        'goknows_api_key'
+	                        'goknows_api_key',
+	                        'ultra_username',
+	                        'ultra_password'
                         ])->first(),
                         'customer'               => $og->customer,
                     ];
