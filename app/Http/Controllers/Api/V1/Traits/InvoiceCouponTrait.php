@@ -817,7 +817,7 @@ trait InvoiceCouponTrait
             $amount = $item['amount_onetime'] != null ? $amount + $item['amount_onetime'] : $amount;
             if ($this->couponAmount) {
                 $discounted = $this->getCouponPrice($this->couponAmount, $item, 1);
-                $amount = $discounted > 0 && $amount > $discounted ? $amount - $discounted : $amount;
+                $amount = $discounted > 0 && $amount > $discounted ? $amount - $discounted : 0;
             }
             $planTax[] = $taxPercentage * $amount;
         }
@@ -894,7 +894,7 @@ trait InvoiceCouponTrait
             $amount = $cart['plan'] != null ? $item['amount_w_plan'] : $item['amount_alone'];
             if ($this->couponAmount) {
                 $discounted = $this->getCouponPrice($this->couponAmount, $item, 3);
-                $amount = $discounted > 0  && $amount > $discounted ? $amount - $discounted : $amount;
+                $amount = $discounted > 0 && $amount > $discounted ? $amount - $discounted : 0;
             }
             $itemTax[] = $taxPercentage * $amount;
         }
@@ -916,7 +916,7 @@ trait InvoiceCouponTrait
                     $amount = $addon['prorated_amt'] != null ? $addon['prorated_amt'] : $addon['amount_recurring'];
                     if ($this->couponAmount) {
                         $discounted = $this->getCouponPrice($this->couponAmount, $addon, 4);
-                        $amount = $discounted > 0  && $amount > $discounted ? $amount - $discounted : $amount;
+                        $amount = $discounted > 0 && $amount > $discounted ? $amount - $discounted : 0;
                     }
                     $addonTax[] = $taxPercentage * $amount;
                 }
