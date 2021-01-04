@@ -413,7 +413,11 @@ class SubscriptionController extends BaseController
 
         foreach ($subcriptions as $key => $subcription) {
 
-            $errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
+        	$errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
+	        /**
+	         * @internal Remove the below comment and remove above codes to replace the GoKnows API
+            $errorMessage = $this->getSimNumberFromUltra($request->phone_number, $simNumber, $request->customer_id);
+	         */
             if(!$errorMessage){
                 $this->updateRecord($subcription, $simNumber, $subcription->sim_card_num);
 
@@ -436,10 +440,10 @@ class SubscriptionController extends BaseController
         ]);
 
         CustomerNote::create([
-            'staff_id' => 0,
-            'text'     => 'Customer changed SIM on '.$subcription->phone_number.' from '.$OldsimCardNum.' to '.$simNumber,
-            'date'     => Carbon::now(),
-            'customer_id' => $subcription->customer_id,
+            'staff_id'      => 0,
+            'text'          => 'Customer changed SIM on '.$subcription->phone_number.' from '.$OldsimCardNum.' to '.$simNumber,
+            'date'          => Carbon::now(),
+            'customer_id'   => $subcription->customer_id,
         ]);
     }
 
@@ -554,4 +558,41 @@ class SubscriptionController extends BaseController
 			return $subscriptions;
 		}
 	}
+
+
+	/**
+	 * @param $phoneNumber
+	 * @param $sim_number
+	 * @param $customerId
+	 *
+	 * @return mixed|null
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	protected function getSimNumberFromUltra($phoneNumber, $sim_number, $customerId)
+	{
+		$customer = Customer::find($customerId);
+
+		$headers = [
+			'COMPANY-ID'        => $customer->company->id,
+		];
+
+		$client = new Client([
+			'headers' => $headers
+		]);
+
+		$errorMessage = null;
+		try {
+			$client->request('PUT', config('internal.__BRITEX_ULTRA_API_FOR_SIM_SWAP') . $phoneNumber, [
+				'form_params' => [
+					'sim_number' => $sim_number,
+				]
+			]);
+		} catch (\Exception $e) {
+
+			$responseBody = json_decode($e->getResponse()->getBody(true), true);
+			$errorMessage = $responseBody['message'];
+		}
+		return $errorMessage;
+	}
+
 }
