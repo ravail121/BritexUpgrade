@@ -14,6 +14,6 @@ return [
 	|
 	*/
 
-	'__BRITEX_ULTRA_API_FOR_SIM_SWAP'   => env( 'ULTRA_API_FOR_SIM_SWAP', '' )
+	'__BRITEX_ULTRA_API_BASE_URL'   => env( 'ULTRA_API_BASE_URL', 'https://ultramobile-teltik.azurewebsites.net/api/')
 
 ];

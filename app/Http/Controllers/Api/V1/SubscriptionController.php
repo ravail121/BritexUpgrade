@@ -412,12 +412,12 @@ class SubscriptionController extends BaseController
         }
 
         foreach ($subcriptions as $key => $subcription) {
+        	if($request->has('is_ultra') && $request->is_ultra == '1') {
+		        $errorMessage = $this->getSimNumberFromUltra( $request->phone_number, $simNumber, $request->customer_id );
+	        } else {
+		        $errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
+	        }
 
-        	$errorMessage = $this->getSimNumber($request->phone_number, $simNumber, $request->customer_id);
-	        /**
-	         * @internal Remove the below comment and remove above codes to replace the GoKnows API
-            $errorMessage = $this->getSimNumberFromUltra($request->phone_number, $simNumber, $request->customer_id);
-	         */
             if(!$errorMessage){
                 $this->updateRecord($subcription, $simNumber, $subcription->sim_card_num);
 
@@ -572,23 +572,25 @@ class SubscriptionController extends BaseController
 	{
 		$customer = Customer::find($customerId);
 
-		$headers = [
-			'COMPANY-ID'        => $customer->company->id,
-		];
+		$companyApiKey = $customer->company->api_key;
 
 		$client = new Client([
-			'headers' => $headers
+			'Content-Type' => 'application/json'
 		]);
 
 		$errorMessage = null;
 		try {
-			$client->request('PUT', config('internal.__BRITEX_ULTRA_API_FOR_SIM_SWAP') . $phoneNumber, [
-				'form_params' => [
-					'sim_number' => $sim_number,
+			$client->request('POST', config('internal.__BRITEX_ULTRA_API_BASE_URL') . 'SwapSim', [
+				'form_params'   => [
+					'code'          => $companyApiKey,
+				],
+				'body'          => [
+					'old_sim_iccid' => $phoneNumber,
+					'new_sim_iccid' => $sim_number,
+					'company_id'    => $customer->company->id
 				]
 			]);
 		} catch (\Exception $e) {
-
 			$responseBody = json_decode($e->getResponse()->getBody(true), true);
 			$errorMessage = $responseBody['message'];
 		}
