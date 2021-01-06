@@ -39,6 +39,8 @@ class Kernel extends ConsoleKernel
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyTenMinutes();
         // $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->hourlyAt(30);
+
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->dailyAt('11:20');
     }
 
     /**

@@ -16,7 +16,7 @@ class SubscriptionStatusDateController extends Controller
 	/**
 	 * @param $request
 	 */
-	public function processSuspensions(Request $request)
+	public function processAccountSuspendedAndNullStartDateCheck(Request $request)
 	{
 		try{
 			$customers = Customer::whereNull('subscription_start_data')->where(['account_suspended', false])->get();
