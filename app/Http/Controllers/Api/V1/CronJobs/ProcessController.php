@@ -11,9 +11,19 @@ use App\Events\AccountSuspended;
 use App\Model\SubscriptionAddon;
 use App\Http\Controllers\BaseController;
 
+/**
+ * Class ProcessController
+ *
+ * @package App\Http\Controllers\Api\V1\CronJobs
+ */
 class ProcessController extends BaseController
 {
-    public function processSubscriptions(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function processSubscriptions(Request $request)
     {
     	$this->processSuspensions($request);
         $this->processDowngrades();
@@ -22,7 +32,10 @@ class ProcessController extends BaseController
     	return $this->respond(['message' => 'Processed Successfully']);
     }
 
-    public function processSuspensions($request)
+	/**
+	 * @param $request
+	 */
+	public function processSuspensions($request)
     {
         $pendingMonthlyInvoices = Invoice::monthly()->pendingPayment()->overDue()->with('customer')->get();
 
@@ -53,7 +66,10 @@ class ProcessController extends BaseController
     }
 
 
-    protected function processDowngrades()
+	/**
+	 * @return bool
+	 */
+	protected function processDowngrades()
     {
     	$subscriptions = Subscription::todayEqualsDowngradeDate()->get();
         
@@ -77,11 +93,14 @@ class ProcessController extends BaseController
     	return true;
     }
 
-    protected function processAddonRemovals()
+	/**
+	 * @return bool
+	 */
+	protected function processAddonRemovals()
     {
         SubscriptionAddon::where('removal_date', Carbon::today())->update([
-            'status' => 'for-removal',
-            'removal_date' => null
+            'status'        => 'for-removal',
+            'removal_date'  => null
         ]);
 
     	return true;

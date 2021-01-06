@@ -81,6 +81,10 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\InvoiceEmail' => [
             'App\Listeners\SendInvoiceMail',
         ],
+
+        'App\Events\ReportNullSubscriptionStartData' => [
+	        'App\Listeners\ReportNullSubscriptionStartData'
+        ]
     ];
 
     /**

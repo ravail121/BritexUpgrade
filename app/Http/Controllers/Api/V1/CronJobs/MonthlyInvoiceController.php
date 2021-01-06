@@ -16,6 +16,11 @@ use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
+/**
+ * Class MonthlyInvoiceController
+ *
+ * @package App\Http\Controllers\Api\V1\CronJobs
+ */
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {
     use InvoiceTrait, InvoiceCouponTrait;
@@ -26,10 +31,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
      */
     public $response;
 
-
-    public $flag;
-
-
+	/**
+	 * @var
+	 */
+	public $flag;
 
     /**
      * Sets current date variable
@@ -40,8 +45,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     {
         $this->response = ['error' => 'Email was not sent'];
     }
-
-
 
     /**
      * Generates Monthly Invoice of all Customers by checking conditions
@@ -63,7 +66,12 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $this->respond($this->response);
     }
 
-    public function processMonthlyInvoice($customer, $request, $mail = true)
+	/**
+	 * @param      $customer
+	 * @param      $request
+	 * @param bool $mail
+	 */
+	public function processMonthlyInvoice($customer, $request, $mail = true)
     {
         if ($customer->billableSubscriptions->count()) {
 
@@ -123,7 +131,13 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         } 
     }
 
-    public function applyCredits($customer, $invoice)
+	/**
+	 * @param $customer
+	 * @param $invoice
+	 *
+	 * @return mixed
+	 */
+	public function applyCredits($customer, $invoice)
     {
         $totalDue = $invoice->subtotal;
         if (isset($totalDue) && $totalDue) {
@@ -159,7 +173,14 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         }
     }
 
-    public function addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems)
+	/**
+	 * @param $customer
+	 * @param $invoice
+	 * @param $billableSubscriptionInvoiceItems
+	 *
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems)
     {
         $taxes = collect();
         $taxPercentage = ($customer->stateTax->rate)/100;
@@ -196,7 +217,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $taxes;
     }
 
-    protected function insertOrder($invoice)
+	/**
+	 * @param $invoice
+	 */
+	protected function insertOrder($invoice)
     {
         $hash = md5(time().rand());
     
@@ -284,10 +308,12 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $invoice;
     }
 
-
-
-
-    protected function deleteOldInvoiceItems($invoice)
+	/**
+	 * @param $invoice
+	 *
+	 * @return mixed
+	 */
+	protected function deleteOldInvoiceItems($invoice)
     {
         return InvoiceItem::where('invoice_id', $invoice->id)->delete();
     }
@@ -348,10 +374,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return true;
 
     }
-
-
-
-
+    
     /**
      * Creates invoice-items for all billable subscriptions
      * 
@@ -409,8 +432,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $invoiceItems;
     }
 
-
-
     /**
      * Creates Invoice-items corresponding to subscription-addons
      * 
@@ -442,12 +463,8 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
                 }
             }
         }
-        
-        
         return $subscriptionAddons;
     }
-
-
 
     /**
      * Creates Invoice-items corresponding to regulatory-fees
@@ -475,7 +492,12 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $regulatoryFees;
     }
 
-    protected function pendingCharges($invoice)
+	/**
+	 * @param $invoice
+	 *
+	 * @return \Illuminate\Support\Collection
+	 */
+	protected function pendingCharges($invoice)
     {
         $pendingCharges = collect();
 
@@ -503,8 +525,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         return $pendingCharges;
     }
 
-
-
     /**
      * Generates Plan data
      * 
@@ -518,10 +538,12 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             'amount'      => isset($plan->amount_recurring) ? $plan->amount_recurring : 0,  // ToDo: CONFIRM THIS FIRST
             'taxable'     => isset($plan->taxable) ? $plan->taxable : 0,
         ];
-        
     }
 
-    public function regenerateInvoice(Request $request)
+	/**
+	 * @param Request $request
+	 */
+	public function regenerateInvoice(Request $request)
     {
         $customers = Customer::invoicesForRegeneration(); // Customers with open and unpaid invoice and gap between today and billing_end is <=5 days.
         foreach ($customers as $customer) {
@@ -548,7 +570,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         }
     }
 
-    protected function regenerateCoupons($usedCoupons)
+	/**
+	 * @param $usedCoupons
+	 */
+	protected function regenerateCoupons($usedCoupons)
     {
         foreach ($usedCoupons as $coupon) {
             if (isset($coupon->finiteSubscriptionCoupon)) {
@@ -563,5 +588,4 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             }
         }
     }
-
 }

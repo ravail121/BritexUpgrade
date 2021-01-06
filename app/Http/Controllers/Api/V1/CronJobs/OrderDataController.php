@@ -18,9 +18,21 @@ use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Class OrderDataController
+ *
+ * @package App\Http\Controllers\Api\V1\CronJobs
+ */
 class OrderDataController extends BaseController
 {
-    public function order($orderID = null, Request $request) {
+	/**
+	 * @param null    $orderID
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function order($orderID = null, Request $request)
+	{
         
         if($orderID){
             $orders = Order::where('id', $orderID)->get();
@@ -93,7 +105,15 @@ class OrderDataController extends BaseController
         return $this->respond(['message' => 'Tracking Number Updated Sucessfully']); 
     }
 
-    public function getOrderData($orderNum, $readyCloudApiKey, $url = "/")
+	/**
+	 * @param        $orderNum
+	 * @param        $readyCloudApiKey
+	 * @param string $url
+	 *
+	 * @return false|\Illuminate\Support\Collection
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	public function getOrderData($orderNum, $readyCloudApiKey, $url = "/")
     {
         try {
             $url = config('readyCloud.ready_cloud_base_url').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
@@ -110,7 +130,14 @@ class OrderDataController extends BaseController
         }
     }
 
-    public function getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey)
+	/**
+	 * @param $boxesUrl
+	 * @param $readyCloudApiKey
+	 *
+	 * @return \Illuminate\Support\Collection|null
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	public function getOrderBoxesOrItemsData($boxesUrl, $readyCloudApiKey)
     {
         $client = new Client();
         try {
@@ -126,7 +153,12 @@ class OrderDataController extends BaseController
         
     }
 
-    public function updateOrderDetails($boxdetail, $boxes, $request)
+	/**
+	 * @param $boxdetail
+	 * @param $boxes
+	 * @param $request
+	 */
+	public function updateOrderDetails($boxdetail, $boxes, $request)
     {
         if($boxes['tracking_number'] != null){
             $subString = substr($boxdetail['part_number'], 0, 3);

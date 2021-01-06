@@ -2,35 +2,34 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 /**
- * Class PortPending
+ * Class ReportNullSubscriptionStartData
  *
  * @package App\Events
  */
-class PortPending
+class ReportNullSubscriptionStartData
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
 	/**
 	 * @var
 	 */
-	public $portId;
-    /**
-     * Create a new event instance.
-     *
-     * @return voportId
-     */
-    public function __construct($portId)
+	public $customers;
+
+	/**
+	 * Create a new event instance.
+	 * ReportNullSubscriptionStartData constructor.
+	 *
+	 * @param $customers
+	 */
+    public function __construct($customers)
     {
-        $this->portId = $portId;
+        $this->customers = $customers;
     }
 
     /**

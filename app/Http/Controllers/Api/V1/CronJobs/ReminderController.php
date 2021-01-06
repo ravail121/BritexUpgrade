@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 use App\Events\AutoPayReminder;
 use App\Http\Controllers\Controller;
 
+/**
+ * Class ReminderController
+ *
+ * @package App\Http\Controllers\Api\V1\CronJobs
+ */
 class ReminderController extends Controller
 {
     public function autoPayReminder(Request $request)

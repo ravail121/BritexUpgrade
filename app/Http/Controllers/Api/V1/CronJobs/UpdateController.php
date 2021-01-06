@@ -16,6 +16,11 @@ use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
 use Exception;
 
+/**
+ * Class UpdateController
+ *
+ * @package App\Http\Controllers\Api\V1\CronJobs
+ */
 class UpdateController extends MonthlyInvoiceController
 {
     /**
@@ -211,7 +216,10 @@ class UpdateController extends MonthlyInvoiceController
 		return $subscriptions;
     }
 
-    protected function scheduledSupensions($request)
+	/**
+	 * @param $request
+	 */
+	protected function scheduledSupensions($request)
     {
         $scheduledSuspensions = Subscription::where('scheduled_suspend_date', '<=' ,Carbon::today())->get();
         foreach ($scheduledSuspensions as $sub) {
@@ -231,7 +239,10 @@ class UpdateController extends MonthlyInvoiceController
         }
     }
 
-    protected function scheduledClosings($request)
+	/**
+	 * @param $request
+	 */
+	protected function scheduledClosings($request)
     {
         $scheduledClosings = Subscription::where('scheduled_close_date', '<=', Carbon::today())->get();
         foreach ($scheduledClosings as $sub) {

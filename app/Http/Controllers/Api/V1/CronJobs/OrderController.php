@@ -19,9 +19,20 @@ use App\Http\Controllers\BaseController;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
 
+/**
+ * Class OrderController
+ *
+ * @package App\Http\Controllers\Api\V1\CronJobs
+ */
 class OrderController extends BaseController
 {
-    public function order($orderID = null)
+
+	/**
+	 * @param null $orderID
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function order($orderID = null)
     {
         if($orderID){
             $orders = Order::where('id', $orderID)->get();
@@ -86,7 +97,13 @@ class OrderController extends BaseController
         return $this->respond(['message' => 'Orders Shipped Successfully.']); 
     }
 
-    public function subscriptions($subscription, $invoiceItem) 
+	/**
+	 * @param $subscription
+	 * @param $invoiceItem
+	 *
+	 * @return string[]
+	 */
+	public function subscriptions($subscription, $invoiceItem)
     {
         if(($subscription->sim_id != 0) && ($subscription->device_id == 0)) { 
             return  $this->subscriptionWithSim($subscription, $invoiceItem);
@@ -104,7 +121,13 @@ class OrderController extends BaseController
         }
     }
 
-    public function subscriptionWithSim($subscription, $invoiceItem)
+	/**
+	 * @param $subscription
+	 * @param $invoiceItem
+	 *
+	 * @return string[]
+	 */
+	public function subscriptionWithSim($subscription, $invoiceItem)
     {
 
         $amount = $invoiceItem->where(
@@ -123,7 +146,13 @@ class OrderController extends BaseController
         ];
     }
 
-    public function subscriptionWithDevice($subscription, $invoiceItem)
+	/**
+	 * @param $subscription
+	 * @param $invoiceItem
+	 *
+	 * @return string[]
+	 */
+	public function subscriptionWithDevice($subscription, $invoiceItem)
     {
         $amount = $invoiceItem->where(
             'subscription_id', $subscription->id)
@@ -141,7 +170,13 @@ class OrderController extends BaseController
         ];
     }
 
-    public function subscriptionWithSimAndDevice($subscription, $invoiceItem)
+	/**
+	 * @param $subscription
+	 * @param $invoiceItem
+	 *
+	 * @return string[]
+	 */
+	public function subscriptionWithSimAndDevice($subscription, $invoiceItem)
     {
         $amount = $invoiceItem->where('subscription_id', $subscription->id)->whereIn('product_type', [InvoiceController::DEVICE_TYPE, InvoiceController::SIM_TYPE])->sum('amount');
 
@@ -153,7 +188,13 @@ class OrderController extends BaseController
         ];
     }
 
-    public function standAloneDevice($standAloneDevice, $invoiceItem)
+	/**
+	 * @param $standAloneDevice
+	 * @param $invoiceItem
+	 *
+	 * @return array
+	 */
+	public function standAloneDevice($standAloneDevice, $invoiceItem)
     {
         $invoiceItemAmount = $invoiceItem->where(
             'product_type', InvoiceController::DEVICE_TYPE 
@@ -173,7 +214,13 @@ class OrderController extends BaseController
         ];
     }
 
-    public function standAloneSim($standAloneSim, $invoiceItem)
+	/**
+	 * @param $standAloneSim
+	 * @param $invoiceItem
+	 *
+	 * @return array
+	 */
+	public function standAloneSim($standAloneSim, $invoiceItem)
     {
         $invoiceItemAmount = $invoiceItem->where(
             'product_type', InvoiceController::SIM_TYPE 
@@ -193,7 +240,13 @@ class OrderController extends BaseController
         ];
     }
 
-    public function data($order, $row)
+	/**
+	 * @param $order
+	 * @param $row
+	 *
+	 * @return false|string
+	 */
+	public function data($order, $row)
     {
         $taxes = $order->invoice->invoiceItem->whereIn('type', [Invoice::InvoiceItemTypes['taxes'],
             Invoice::InvoiceItemTypes['regulatory_fee']])->sum('amount');
@@ -254,9 +307,15 @@ class OrderController extends BaseController
         return json_encode($json);
     }
 
-    public function SentToReadyCloud($data, $readyCloudApiKey)
+	/**
+	 * @param $data
+	 * @param $readyCloudApiKey
+	 *
+	 * @return false|mixed|\Psr\Http\Message\ResponseInterface
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	public function SentToReadyCloud($data, $readyCloudApiKey)
     {
-
         try{
             $url = ReadyCloud::getOrgUrl($readyCloudApiKey);
             $url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
