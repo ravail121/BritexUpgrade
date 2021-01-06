@@ -112,6 +112,12 @@ class OrderController extends BaseController
 
         $hash = $request->input('order_hash');
         $this->order_hash = $hash;
+        $do_order_exist_for_company = Order::where('hash', $this->order_hash)
+            ->where('company_id', $request->get('company')->id)
+            ->exists();
+        if(!$do_order_exist_for_company){
+            return $this->respondError('Invalid Order Hash', 400);
+        }
         $paidMonthlyInvoice = $request->input('paid_monthly_invoice');
 
         $order =  $ordergroups = $newPlan = [];
