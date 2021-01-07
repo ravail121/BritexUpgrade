@@ -18,7 +18,12 @@ use App\Events\AccountUnsuspended;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\CreditCardRequest;
 
-trait UsaEpayTransaction 
+/**
+ * Trait UsaEpayTransaction
+ *
+ * @package App\Support\Validation
+ */
+trait UsaEpayTransaction
 {
 
     /**
@@ -81,7 +86,13 @@ trait UsaEpayTransaction
        return $tran;
    }
 
-   public function couponData($order, $request)
+	/**
+	 * @param $order
+	 * @param $request
+	 *
+	 * @return array
+	 */
+	public function couponData($order, $request)
    {
     //IN case of adding a new card $order = null commented
         if($order == null){
@@ -115,7 +126,12 @@ trait UsaEpayTransaction
         return $defaultData;
    }
 
-    private function getOrder($request)
+	/**
+	 * @param $request
+	 *
+	 * @return null
+	 */
+	private function getOrder($request)
     {
         $order = null;
 
@@ -158,7 +174,10 @@ trait UsaEpayTransaction
         return $data;
     }
 
-    protected function accountSuspendedAccount($customerId)
+	/**
+	 * @param $customerId
+	 */
+	protected function accountSuspendedAccount($customerId)
     {
         $customer = Customer::find($customerId);
         if($customer->account_suspended){
@@ -173,7 +192,10 @@ trait UsaEpayTransaction
         }
     }
 
-    protected function updateSub($customer)
+	/**
+	 * @param $customer
+	 */
+	protected function updateSub($customer)
     {
         $subscription = Subscription::where('customer_id', $customer->id)->get();
         $suspendedSubscriptions = $subscription->where('status', Subscription::STATUS['suspended']);
@@ -204,7 +226,12 @@ trait UsaEpayTransaction
     }
 
 
-    protected function updateInvoice($invoice ,$amount, $status)
+	/**
+	 * @param $invoice
+	 * @param $amount
+	 * @param $status
+	 */
+	protected function updateInvoice($invoice ,$amount, $status)
     {
         $invoice->update( [
             'total_due' => $amount,
@@ -212,7 +239,11 @@ trait UsaEpayTransaction
         ] );
     }
 
-    protected function updateCredit($applied ,$credit)
+	/**
+	 * @param $applied
+	 * @param $credit
+	 */
+	protected function updateCredit($applied ,$credit)
     {
         $credit->update( [
             'applied_to_invoice' => $applied,
@@ -220,7 +251,14 @@ trait UsaEpayTransaction
         ] );
     }
 
-    public function addCreditToInvoiceRowNonOrder($invoice, $credit, $amount)
+	/**
+	 * @param $invoice
+	 * @param $credit
+	 * @param $amount
+	 *
+	 * @return mixed
+	 */
+	public function addCreditToInvoiceRowNonOrder($invoice, $credit, $amount)
     {        
         return $credit->usedOnInvoices()->create([
             'invoice_id'  => $invoice->id,
@@ -243,8 +281,6 @@ trait UsaEpayTransaction
         $this->createPaymentLogs($order, $tranFail, 0);
         return ['message' => $tranFail->error];
     }
-
-
 
     /**
      * This function inserts data to payment_logs table
@@ -320,7 +356,14 @@ trait UsaEpayTransaction
         return Credit::find($credit->id);
     }
 
-    public function addCreditToInvoiceRow($invoice, $credit, $tran)
+	/**
+	 * @param $invoice
+	 * @param $credit
+	 * @param $tran
+	 *
+	 * @return mixed
+	 */
+	public function addCreditToInvoiceRow($invoice, $credit, $tran)
     {
         $credit->update( [
             'applied_to_invoice' => true,
@@ -419,7 +462,13 @@ trait UsaEpayTransaction
     }
 
 
-    protected function setUsaEpayDataForRefund($tran, $request)
+	/**
+	 * @param $tran
+	 * @param $request
+	 *
+	 * @return mixed
+	 */
+	protected function setUsaEpayDataForRefund($tran, $request)
     {
         $couponData = $this->couponData(null, $request);
 
@@ -435,7 +484,5 @@ trait UsaEpayTransaction
 
        return $tran;
    }
-
-
 
 }

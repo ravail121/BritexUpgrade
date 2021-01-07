@@ -25,18 +25,41 @@ use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 
+/**
+ * Class PaymentController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class PaymentController extends BaseController implements ConstantInterface
 {
     use InvoiceTrait;
 
-    const DEFAULT_VALUE = 2;
-    const DEFAULT_DUE   = '0.00';
+	/**
+	 *
+	 */
+	const DEFAULT_VALUE = 2;
+	/**
+	 *
+	 */
+	const DEFAULT_DUE   = '0.00';
 
-    public $tran;
+	/**
+	 * @var UsaEpay
+	 */
+	public $tran;
 
-    public $carbon;
+	/**
+	 * @var Carbon
+	 */
+	public $carbon;
 
-    public function __construct(UsaEpay $tran, Carbon $carbon)
+	/**
+	 * PaymentController constructor.
+	 *
+	 * @param UsaEpay $tran
+	 * @param Carbon  $carbon
+	 */
+	public function __construct(UsaEpay $tran, Carbon $carbon)
     {
         $this->tran   = $tran;
         $this->carbon = $carbon;
@@ -136,7 +159,13 @@ class PaymentController extends BaseController implements ConstantInterface
         return $this->respond($msg); 
     }
 
-    protected function creditCardData($card, $request)
+	/**
+	 * @param $card
+	 * @param $request
+	 *
+	 * @return mixed
+	 */
+	protected function creditCardData($card, $request)
     {
         $request->card_id             =  $card->id;
         $request->payment_card_holder =  $card->cardholder;
@@ -158,8 +187,6 @@ class PaymentController extends BaseController implements ConstantInterface
         return $request;
     
     }
-
-
 
 
     /**
@@ -232,7 +259,12 @@ class PaymentController extends BaseController implements ConstantInterface
     }
 
 
-    public function processRefund(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function processRefund(Request $request)
     {
         $data = $request->validate([
             'refnum'     => 'required',
@@ -296,12 +328,19 @@ class PaymentController extends BaseController implements ConstantInterface
 
         \Log::info(["refund finished.", $data['refnum'], $msg]);
         return $this->respond([
-            'paymentRefundLog'=> $paymentRefundLog,
-            'message' => $msg
+            'paymentRefundLog'  => $paymentRefundLog,
+            'message'           => $msg
         ]); 
     }
 
-    protected function createPaymentRefundLog($paymentLog, $status, $invoiceId = null)
+	/**
+	 * @param      $paymentLog
+	 * @param      $status
+	 * @param null $invoiceId
+	 *
+	 * @return mixed
+	 */
+	protected function createPaymentRefundLog($paymentLog, $status, $invoiceId = null)
     {
         return PaymentRefundLog::create([
             'invoice_id'      =>  $invoiceId,
@@ -313,7 +352,14 @@ class PaymentController extends BaseController implements ConstantInterface
         ]);
     }
 
-    protected function createRefundInvoice($customer_id, $amount, $request)
+	/**
+	 * @param $customer_id
+	 * @param $amount
+	 * @param $request
+	 *
+	 * @return mixed
+	 */
+	protected function createRefundInvoice($customer_id, $amount, $request)
     {
         $total_due = self::DEFAULT_DUE;
         $credit = $request->credit;
@@ -321,37 +367,44 @@ class PaymentController extends BaseController implements ConstantInterface
             $total_due = $amount;
         }
         $invoiceData = [
-            'type' => Invoice::TYPES['one-time'],
-            'status' => self::DEFAULT_VALUE,
-            'staff_id' => $request->staff_id,
-            'subtotal' => $amount,
-            'total_due' => $total_due,
-            'prev_balance' => self::DEFAULT_DUE,
-            'start_date' => $this->carbon->toDateString(),
-            'end_date' => $this->carbon->toDateString(),
-            'due_date' => $this->carbon->toDateString(),
-            'payment_method' => '',
-            'notes'=>'',
-            'billing_fname'=>'',
-            'billing_lname'=>'',
-            'billing_address_line_1'=>'',
-            'billing_city'=>'',
-            'billing_state'=>'',
-            'billing_zip'=>'',
-            'shipping_fname'=>'',
-            'shipping_lname'=>'',
-            'shipping_address_line_1'=>'',
-            'shipping_city'=>'',
-            'shipping_state'=>'',
-            'shipping_zip'=>'',
-            'customer_id'  => $customer_id,
+            'type'                      => Invoice::TYPES['one-time'],
+            'status'                    => self::DEFAULT_VALUE,
+            'staff_id'                  => $request->staff_id,
+            'subtotal'                  => $amount,
+            'total_due'                 => $total_due,
+            'prev_balance'              => self::DEFAULT_DUE,
+            'start_date'                => $this->carbon->toDateString(),
+            'end_date'                  => $this->carbon->toDateString(),
+            'due_date'                  => $this->carbon->toDateString(),
+            'payment_method'            => '',
+            'notes'                     => '',
+            'billing_fname'             => '',
+            'billing_lname'             => '',
+            'billing_address_line_1'    => '',
+            'billing_city'              => '',
+            'billing_state'             => '',
+            'billing_zip'               => '',
+            'shipping_fname'            => '',
+            'shipping_lname'            => '',
+            'shipping_address_line_1'   => '',
+            'shipping_city'             => '',
+            'shipping_state'            => '',
+            'shipping_zip'              => '',
+            'customer_id'               => $customer_id,
         ];
         //\Log::info($invoiceData);
         return Invoice::create($invoiceData);
         
     }
 
-    protected function createRefundCredit($invoice, $amount, $staffId)
+	/**
+	 * @param $invoice
+	 * @param $amount
+	 * @param $staffId
+	 *
+	 * @return mixed
+	 */
+	protected function createRefundCredit($invoice, $amount, $staffId)
     {
         $credit =  Credit::create([  
             'customer_id'       =>  $invoice->customer_id,
@@ -375,7 +428,14 @@ class PaymentController extends BaseController implements ConstantInterface
         return $credit;
     }
 
-    public function createRefundInvoiceItem($invoice, $amount, $type)
+	/**
+	 * @param $invoice
+	 * @param $amount
+	 * @param $type
+	 *
+	 * @return mixed
+	 */
+	public function createRefundInvoiceItem($invoice, $amount, $type)
     {
         return InvoiceItem::create([
             'invoice_id'      =>  $invoice->id,
@@ -387,7 +447,10 @@ class PaymentController extends BaseController implements ConstantInterface
         ]);
     }
 
-    public function paymentFailed(Request $request)
+	/**
+	 * @param Request $request
+	 */
+	public function paymentFailed(Request $request)
     {
         $customer = Customer::whereId($request->id)->with('company')->first();
         $request->headers->set('authorization', $customer->company->api_key);

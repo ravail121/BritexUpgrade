@@ -98,18 +98,17 @@ class CouponController extends Controller
 	            ];
             }
 
-	        /**
-	         * Check if the coupon are stackable
-	         */
-            if(!$this->couponAreStackableAndUnused($coupon, $order_id)){
-	            return [
-	            	'error'     => $this->failedResponse
-	            ];
-            }
-
             if ($request->subscription_id) {
                 return $this->ifAddedFromAdmin($request, $coupon);
             } else {
+	            /**
+	             * Check if the coupon are stackable
+	             */
+	            if(!$this->couponAreStackableAndUnused($coupon, $order_id)){
+		            return [
+			            'error'     => $this->failedResponse
+		            ];
+	            }
                 return $this->ifAddedByCustomer($request, $coupon);
             }
 
@@ -237,14 +236,15 @@ class CouponController extends Controller
 	 */
     protected function couponAreStackableAndUnused( $coupon, $order_id )
     {
-	    if($coupon->stackable !== 1) {
-		    $this->failedResponse = "Coupon {$coupon->code} is not stackable. If you still wish to add this coupon, remove the existing coupons and try again";
-			return false;
-	    }
 	    $notStackableCouponCode = '';
 	    $alreadyUsedCouponCode = '';
 		$order = Order::find($order_id);
 		$orderCoupons = $order->orderCoupon;
+
+		if($orderCoupons && $coupon->stackable !== 1) {
+			$this->failedResponse = "Coupon {$coupon->code} is not stackable. If you still wish to add this coupon, remove the existing coupons and try again";
+			return false;
+		}
 
 	    foreach ($orderCoupons as $orderCoupon ) {
 	    	if($orderCoupon->coupon_id === $coupon->id){

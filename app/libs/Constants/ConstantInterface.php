@@ -1,9 +1,8 @@
 <?php
 namespace App\libs\Constants;
 
-interface ConstantInterface {
-
-
+interface ConstantInterface
+{
     // USED IN PaymentController
     const TRAN_INVOICE     = "GORIN-TEST1";
     const TRAN_AMOUNT      = '1.00';
