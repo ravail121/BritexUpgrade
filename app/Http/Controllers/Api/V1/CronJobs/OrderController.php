@@ -3,18 +3,10 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 use Exception;
-use App\Model\Tax;
 use App\Model\Order;
 use GuzzleHttp\Client;
-
-use App\Http\Modules\ReadyCloud;
-
 use App\Model\Invoice;
-use App\Model\Subscription;
-use Illuminate\Http\Request;
-use App\Model\CustomerStandaloneSim;
-use App\Http\Controllers\Controller;
-use App\Model\CustomerStandaloneDevice;
+use App\Http\Modules\ReadyCloud;
 use App\Http\Controllers\BaseController;
 use Illuminate\Database\Eloquent\Builder;
 use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
@@ -58,7 +50,6 @@ class OrderController extends BaseController
                 $standAloneSimRow = array();
 
                 foreach ($order->subscriptions as $key => $subscription) {
-                    // $subscriptionRow[$key]['items'] = $this->subscriptions($subscription);
                     $responseData = $this->subscriptions($subscription, $order->invoice->invoiceItem);
                     if($responseData){
                         $subscriptionRow[$key] = $responseData;
@@ -66,12 +57,10 @@ class OrderController extends BaseController
                 }
 
                 foreach ($order->standAloneDevices as $key => $standAloneDevice) {
-                    // $standAloneDeviceRow[$key]['items'] = $this->standAloneDevice($standAloneDevice);
                     $standAloneDeviceRow[$key] = $this->standAloneDevice($standAloneDevice, $order->invoice->invoiceItem);
                 }
 
                 foreach ($order->standAloneSims as $key => $standAloneSim) {
-                    // $standAloneSimRow[$key]['items'] = $this->standAloneSim($standAloneSim);
                     $standAloneSimRow[$key] = $this->standAloneSim($standAloneSim, $order->invoice->invoiceItem);
                 }
                 $row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
@@ -129,20 +118,19 @@ class OrderController extends BaseController
 	 */
 	public function subscriptionWithSim($subscription, $invoiceItem)
     {
-
         $amount = $invoiceItem->where(
             'subscription_id', $subscription->id)
         ->where(
-            'product_type', InvoiceController::SIM_TYPE 
+            'product_type', InvoiceController::SIM_TYPE
         )->where(
-            'product_id',  $subscription->sim_id
+            'product_id', $subscription->sim_id
         )->sum('amount');
 
         return [
-            'description' => $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'],
-            'part_number' => 'SUB-'.$subscription->id,
-            'unit_price' => $amount.' USD',
-            'quantity'    =>   '1',
+            'description'   => $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'],
+            'part_number'   => 'SUB-'.$subscription->id,
+            'unit_price'    => $amount.' USD',
+            'quantity'      => '1',
         ];
     }
 
@@ -225,7 +213,7 @@ class OrderController extends BaseController
         $invoiceItemAmount = $invoiceItem->where(
             'product_type', InvoiceController::SIM_TYPE 
         )->where(
-            'product_id',  $standAloneSim->sim_id
+            'product_id', $standAloneSim->sim_id
         );
 
         foreach ($invoiceItemAmount->toArray() as $key => $value) {
@@ -233,10 +221,10 @@ class OrderController extends BaseController
             break;
         }
         return [
-            'description' => $standAloneSim->sim['name'],
-            'part_numbe0r' => 'SIM‌-'.$standAloneSim->id,
-            'unit_price' => $amount.' USD',
-            'quantity'    =>   '1',
+            'description'   => $standAloneSim->sim['name'],
+            'part_number'   => 'SIM-'.$standAloneSim->id,
+            'unit_price'    => $amount.' USD',
+            'quantity'      => '1'
         ];
     }
 
@@ -258,42 +246,42 @@ class OrderController extends BaseController
         $payment = $order->payLog;
 
         $json = [
-            "primary_id" => "BX-".$order->order_num,
-            "ordered_at" => $order->created_at_format,
-            "terms" => $payment->card_type." ".$payment->last4,
-            "billing" => [
+            "primary_id"    => "BX-".$order->order_num,
+            "ordered_at"    => $order->created_at_format,
+            "terms"         => $payment->card_type." ".$payment->last4,
+            "billing"       => [
                 // "subtotal" => " USD",
-                "shipping" => $shippingAmount." USD",
-                "tax" => $taxes." USD",
-                "total" => $order->invoice->subtotal." USD",
+                "shipping"  => $shippingAmount." USD",
+                "tax"       => $taxes." USD",
+                "total"     => $order->invoice->subtotal." USD",
             ],
-            "shipping" => [
-                "ship_to"=> [
-                    "first_name" => $order->shipping_fname,
-                    "last_name" => $order->shipping_lname,
-                    "address_1" => $order->shipping_address1,
-                    "address_2" => $order->shipping_address2,
-                    "city" => $order->shipping_city,
-                    "post_code" => $order->shipping_zip,
-                    "region" => $order->shipping_state_id,
-                    "country" => "USA",
-                    'email' => $customer->email,
-                    "phone" =>  $order->customer->phone,
+            "shipping"      => [
+                "ship_to"           => [
+                    "first_name"    => $order->shipping_fname,
+                    "last_name"     => $order->shipping_lname,
+                    "address_1"     => $order->shipping_address1,
+                    "address_2"     => $order->shipping_address2,
+                    "city"          => $order->shipping_city,
+                    "post_code"     => $order->shipping_zip,
+                    "region"        => $order->shipping_state_id,
+                    "country"       => "USA",
+                    'email'         => $customer->email,
+                    "phone"         =>  $order->customer->phone,
                 ], 
-            "ship_from" => [
-                    "company" => $company->name,
-                    "address_1" => $company->address_line_1,
-                    "address_2" => $company->address_line_2,
-                    "city" => $company->city,
-                    "post_code" => $company->zip,
-                    "region" => $company->state,
-                    "country" => "USA",
-                    "phone" => $company->support_phone_number
+            "ship_from"     => [
+                    "company"       => $company->name,
+                    "address_1"     => $company->address_line_1,
+                    "address_2"     => $company->address_line_2,
+                    "city"          => $company->city,
+                    "post_code"     => $company->zip,
+                    "region"        => $company->state,
+                    "country"       => "USA",
+                    "phone"         => $company->support_phone_number
                 ],
-                "ship_type" => "Priority Mail",
-                "ship_via" => "Stamps.com"   
+                "ship_type"         => "Priority Mail",
+                "ship_via"          => "Stamps.com"
             ],
-            "boxes" => $row,
+            "boxes"         => $row,
             "source" => [
                 "name" => "<value>"
             ],
@@ -321,10 +309,9 @@ class OrderController extends BaseController
             $url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
             $client = new Client();
             $response = $client->request('POST', $url, [
-                'headers' => ['Content-type' => 'application/json'],
-                'body' => $data
+                'headers'   => ['Content-type' => 'application/json'],
+                'body'      => $data
             ]);
-
             return $response;
         } catch (Exception $e) {
             $msg = 'ReadyCloud exception: '.$e->getMessage();
