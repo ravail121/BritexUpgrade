@@ -172,8 +172,9 @@ class PaymentController extends BaseController implements ConstantInterface
         $request->payment_card_no     =  $card->token;
         $request->expires_mmyy        =  $card->expiration;
         $request->payment_cvc         =  $card->cvc;
-        $request->shipping_address1   =  $card->customer->shipping_address1;    
-        $request->zip                 =  $card->customer->shipping_zip;         
+        $request->customer_id         =  $card->customer->id;
+        $request->shipping_address1   =  $card->customer->shipping_address1;
+        $request->zip                 =  $card->customer->shipping_zip;
         $request->fname               =  $card->customer->fname;
         $request->lname               =  $card->customer->lname;
         $request->company_name        =  $card->customer->company_name;
