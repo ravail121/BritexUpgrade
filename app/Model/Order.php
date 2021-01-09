@@ -304,4 +304,14 @@ class Order extends Model
             
         return $number;
     }
+
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
+	public function scopePendingOrders($query)
+	{
+		return $query->where('status', 0);
+	}
 }

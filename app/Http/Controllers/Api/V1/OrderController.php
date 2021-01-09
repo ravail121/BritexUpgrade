@@ -15,6 +15,7 @@ use App\Model\PlanToAddon;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\BusinessVerification;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Class OrderController
@@ -108,9 +109,26 @@ class OrderController extends BaseController
 	 *
 	 * @return \Illuminate\Http\JsonResponse
 	 */
-	public function get(Request $request){
+	public function get(Request $request)
+	{
 
-        $hash = $request->input('order_hash');
+		if($request->has('customer_id')){
+			$customerId = $request->input('customer_id');
+			$order = Order::where('customer_id', $customerId)
+				->where('company_id', $request->get('company')->id)
+				->pendingOrders()->first();
+			if(!$order){
+				$this->content = null;
+				return response()->json($this->content);
+			}
+
+			$hash = $order->hash;
+		} else {
+			$hash = $request->input('order_hash');
+		}
+		Log::info('I am here');
+		Log::info($hash);
+
         $this->order_hash = $hash;
         $do_order_exist_for_company = Order::where('hash', $this->order_hash)
             ->where('company_id', $request->get('company')->id)
