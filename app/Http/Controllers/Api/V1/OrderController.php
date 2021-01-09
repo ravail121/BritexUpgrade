@@ -2,20 +2,18 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
-use App\Http\Controllers\BaseController;
-
-use App\Model\OrderCoupon;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\OrderGroup;
+use App\Model\OrderCoupon;
 use App\Model\PlanToAddon;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\BusinessVerification;
-use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
 /**
  * Class OrderController
@@ -126,8 +124,6 @@ class OrderController extends BaseController
 		} else {
 			$hash = $request->input('order_hash');
 		}
-		Log::info('I am here');
-		Log::info($hash);
 
         $this->order_hash = $hash;
         $do_order_exist_for_company = Order::where('hash', $this->order_hash)
