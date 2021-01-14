@@ -83,7 +83,7 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         'App\Events\ReportNullSubscriptionStartData' => [
-	        'App\Listeners\ReportNullSubscriptionStartData'
+	        'App\Listeners\SendEmailForNullSubscriptionStartDateCustomerRecord'
         ]
     ];
 
