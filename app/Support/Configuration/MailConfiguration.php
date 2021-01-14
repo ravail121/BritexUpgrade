@@ -2,8 +2,9 @@
 
 namespace App\Support\Configuration;
 
-use Config;
+
 use App\Model\Company;
+use Illuminate\Support\Facades\Config;
 
 trait MailConfiguration 
 {
@@ -17,15 +18,15 @@ trait MailConfiguration
     {
         $company = Company::find($data->company_id ?: $data->id);
         $config = [
-            'driver'   => $company->smtp_driver,
-            'host'     => $company->smtp_host,
-            'port'     => $company->smtp_port,
-            'username' => $company->smtp_username,
-            'password' => $company->smtp_password,
-            'encryption' => $company->smtp_encryption,
+            'driver'        => $company->smtp_driver,
+            'host'          => $company->smtp_host,
+            'port'          => $company->smtp_port,
+            'username'      => $company->smtp_username,
+            'password'      => $company->smtp_password,
+            'encryption'    => $company->smtp_encryption,
         ];
 
-        Config::set('mail',$config);
+	    Config::set('mail', $config);
         return false;
     }
 
@@ -41,7 +42,7 @@ trait MailConfiguration
             'encryption' => $company->smtp_encryption,
         ];
 
-        Config::set('mail',$config);
+	    Config::set('mail', $config);
         return false;
     }
 
