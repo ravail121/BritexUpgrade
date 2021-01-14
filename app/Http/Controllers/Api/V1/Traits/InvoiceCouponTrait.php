@@ -417,6 +417,7 @@ trait InvoiceCouponTrait
                 'order_id'      => $order->id,
                 'coupon_id'     => $coupon->id
             ]);
+            $this->updateCouponNumUses($order);
             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
             return [

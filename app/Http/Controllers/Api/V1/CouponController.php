@@ -241,7 +241,7 @@ class CouponController extends Controller
 		$order = Order::find($order_id);
 		$orderCoupons = $order->orderCoupon;
 
-		if($orderCoupons && $coupon->stackable !== 1) {
+		if(count($orderCoupons) && $coupon->stackable !== 1) {
 			$this->failedResponse = "Coupon {$coupon->code} is not stackable. If you still wish to add this coupon, remove the existing coupons and try again";
 			return false;
 		}
