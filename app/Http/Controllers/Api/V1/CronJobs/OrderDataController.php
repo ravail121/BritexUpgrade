@@ -170,10 +170,10 @@ class OrderDataController extends BaseController
                 $table = Subscription::whereId($partNumId)->with('customer.company', 'device', 'sim')->first();
                 if($table){
                     $table_data = [
-                        'status'       => 'for-activation',
-                        'shipping_date'=> $date,
-                        'tracking_num' => $boxes['tracking_number'],
-                        'sim_card_num' => $boxdetail['code'],
+                        'status'        => 'for-activation',
+                        'shipping_date' => $date,
+                        'tracking_num'  => $boxes['tracking_number'],
+                        'sim_card_num'  => $boxdetail['code'],
                     ];
                     if (strlen($pick_location) > 0){
                         $table_data['device_imei'] = $pick_location;
@@ -204,10 +204,10 @@ class OrderDataController extends BaseController
                 $table = CustomerStandaloneSim::whereId($partNumId)->with('sim', 'customer.company')->first();
                 if($table){
                     $table->update([
-                        'status'       => CustomerStandaloneSim::STATUS['complete'],
-                        'shipping_date'=> $date,
-                        'tracking_num' => $boxes['tracking_number'],
-                        'sim_card_num' => $boxdetail['code'],
+                        'status'        => CustomerStandaloneSim::STATUS['complete'],
+                        'shipping_date' => $date,
+                        'tracking_num'  => $boxes['tracking_number'],
+                        'sim_num'       => $boxdetail['code'],
                     ]);
                     $request->headers->set('authorization', $table->customer->company->api_key);
                     event(new ShippingNumber($boxes['tracking_number'], $table));
