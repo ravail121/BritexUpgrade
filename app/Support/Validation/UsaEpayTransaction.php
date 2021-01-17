@@ -3,7 +3,6 @@
 namespace App\Support\Validation;
 
 use Validator;
-use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Coupon;
 use App\Model\Credit;
@@ -15,7 +14,6 @@ use App\Model\OrderCoupon;
 use App\Model\Subscription;
 use App\Model\CustomerCreditCard;
 use App\Events\AccountUnsuspended;
-use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\CreditCardRequest;
 
 /**
@@ -94,7 +92,7 @@ trait UsaEpayTransaction
 	 */
 	public function couponData($order, $request)
    {
-    //IN case of adding a new card $order = null commented
+        //IN case of adding a new card $order = null commented
         if($order == null){
             $orderCoupon = null;
         }else{    
@@ -142,7 +140,6 @@ trait UsaEpayTransaction
             $order = Order::where('customer_id', $request->customer_id)->first();
 
         }
-
         return $order;
     }
 

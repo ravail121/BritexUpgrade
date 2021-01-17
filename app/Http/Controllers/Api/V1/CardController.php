@@ -9,7 +9,6 @@ use App\Model\Order;
 use App\Model\Credit;
 use App\Model\Invoice;
 use App\Model\Customer;
-use App\Model\PaymentLog;
 use App\Model\InvoiceItem;
 use App\Events\InvoiceEmail;
 use Illuminate\Http\Request;
@@ -21,24 +20,55 @@ use App\Events\AccountUnsuspended;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 
+/**
+ * Class CardController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class CardController extends BaseController implements ConstantInterface
 {
-    public $tran;
-    public $response;
+	/**
+	 *
+	 */
+	const DEFAULT_VALUE = 2;
+	/**
+	 *
+	 */
+	const DEFAULT_DUE   = '0.00';
 
+	/**
+	 * @var UsaEpay
+	 */
+	public $tran;
 
-    public function __construct(UsaEpay $tran)
+	/**
+	 * @var
+	 */
+	public $response;
+
+	/**
+	 * @var Carbon
+	 */
+	public $carbon;
+
+	/**
+	 * CardController constructor.
+	 *
+	 * @param UsaEpay $tran
+	 * @param Carbon  $carbon
+	 */
+	public function __construct(UsaEpay $tran, Carbon $carbon)
     {
         $this->tran = $tran;
+        $this->carbon = $carbon;
     }
 
-
-    /**
-     * This function fetches all credit cards of particular customer
-     * 
-     * @param  int       $customer_id
-     * @return Response
-     */
+	/**
+	 * This function fetches all credit cards of particular customer
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
     public function getCustomerCards(Request $request)
     {
         if ($request->hash) {
@@ -68,15 +98,12 @@ class CardController extends BaseController implements ConstantInterface
         return $this->respond($customerCreditCard);
     }
 
-
-
-
-    /**
-     * This function inserts data to customer_credit_cards table
-     * 
-     * @param  Request $request
-     * @return Response
-     */
+	/**
+	 * This function inserts data to customer_credit_cards table
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
     public function addCard(Request $request)
     {
         $this->setConstantData($request);
@@ -88,9 +115,7 @@ class CardController extends BaseController implements ConstantInterface
                 'message' => $validation->getMessageBag()->all()
             ]);
         }
-
         return $this->processTransaction($request, 'authonly');
-
     }
 
     /**
@@ -115,7 +140,13 @@ class CardController extends BaseController implements ConstantInterface
     }
 
 
-    protected function creditCardData($card, $request)
+	/**
+	 * @param $card
+	 * @param $request
+	 *
+	 * @return mixed
+	 */
+	protected function creditCardData($card, $request)
     {
         $request->card_id             =  $card->id;
         $request->payment_card_holder =  $card->cardholder;
@@ -133,13 +164,16 @@ class CardController extends BaseController implements ConstantInterface
         $request->billing_zip         =  $card->billing_zip;
         $request->primary_contact     =  $card->customer->phone;
         $request->email               =  $card->customer->email;
-        
         return $request;
-        
-    
     }
 
-    protected function processTransaction($request, $command = null)
+	/**
+	 * @param      $request
+	 * @param null $command
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	protected function processTransaction($request, $command = null)
     {
         $order = Order::where('customer_id', $request->customer_id)->first();
         if ($order) {
@@ -149,6 +183,21 @@ class CardController extends BaseController implements ConstantInterface
                     $this->response = $this->transactionSuccessfulWithoutOrder($request, $this->tran);
                 }else{
                     $this->response = $this->transactionSuccessful($request, $this->tran);
+	                $data    = $this->setInvoiceData($order, $request);
+	                $invoice = Invoice::create($data);
+
+	                if ($invoice) {
+		                $orderCount = Order::where( [
+			                [ 'status', 1 ],
+			                [ 'company_id', $order->company_id ]
+		                ] )->max( 'order_num' );
+		                $order->update( [
+			                'status'         => 1,
+			                'invoice_id'     => $invoice->id,
+			                'order_num'      => $orderCount + 1,
+			                'date_processed' => Carbon::today()
+		                ] );
+	                }
                 }
           
             } else {
@@ -160,19 +209,16 @@ class CardController extends BaseController implements ConstantInterface
         } else {
             $this->response = $this->transactionFail(null, $this->tran);
         }
-
         return $this->respond($this->response);
     }
 
 
-
-
-    /**
-     * Validates if all fields are required
-     * 
-     * @param  Request   $request
-     * @return Response
-     */
+	/**
+	 * Validates if all fields are required
+	 * @param $request
+	 *
+	 * @return false|\Illuminate\Http\JsonResponse
+	 */
     protected function validateData($request)
     {
         return $this->validate_input($request->all(), [
@@ -181,20 +227,14 @@ class CardController extends BaseController implements ConstantInterface
         ]);
     }
 
-
-
-
-
-    /**
-    * This function sets the variable with constant values
-    * 
-    * @param  array    $array
-    * @return boolean
-    */
+	/**
+	 * This function sets the variable with constant values
+	 * @param $request
+	 *
+	 * @return mixed
+	 */
     protected function setConstantData($request)
     {
-        // $request->key         = env('SOURCE_KEY');
-        // $request->usesandbox  = \Request::get('company')->usaepay_live_formatted;
         $request->invoice     = self::TRAN_INVOICE;
         $request->isrecurring = self::TRAN_TRUE; 
         $request->savecard    = self::TRAN_TRUE; 
@@ -203,7 +243,12 @@ class CardController extends BaseController implements ConstantInterface
         return $request;
     }
 
-    public function removeCard(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function removeCard(Request $request)
     {
         $data=$request->validate([
             'customer_credit_card_id'   => 'required',
@@ -227,12 +272,22 @@ class CardController extends BaseController implements ConstantInterface
         } 
     }
 
-    protected function validateCardId($data)
+	/**
+	 * @param $data
+	 *
+	 * @return mixed
+	 */
+	protected function validateCardId($data)
     {
         return CustomerCreditCard::whereId($data['customer_credit_card_id'])->exists();
     }
 
-    public function primaryCard(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function primaryCard(Request $request)
     {
         $data=$request->validate([
             'customer_credit_card_id'   => 'required',
@@ -249,8 +304,10 @@ class CardController extends BaseController implements ConstantInterface
         } 
     }
 
-
-    public function autoPayInvoice(Request $request)
+	/**
+	 * @param Request $request
+	 */
+	public function autoPayInvoice(Request $request)
     {
         $date = Carbon::today()->addDays(1);
         $customers = Customer::where([
@@ -264,8 +321,6 @@ class CardController extends BaseController implements ConstantInterface
         $customers = array_merge($customers, $customersB);
 
         foreach ($customers as $key => $customer) {
-	       \Log::info(array("running autopay for:", $customer["id"]));
-//            if($customer["id"] != 87 ) { continue; } // for debug
             $customer_obj = Customer::find($customer["id"]);
             $amount_due = $customer_obj->amount_due;
             $customer['mounthlyInvoice'] = array('total_due' => $amount_due, 'subtotal' => $amount_due);
@@ -274,32 +329,17 @@ class CardController extends BaseController implements ConstantInterface
                 \Log::info(array("skipping autopaying...", $customer["id"], $customer["email"], $amount_due));
             }
             \Log::info(array("autopaying...", $customer["id"], $customer["email"], $amount_due));
-            //if($customer["account_suspended"] == 1){ continue; }
             $api_key = $customer["company"]["api_key"];
             
             try {
-                // if(isset($customer['unpaid_mounthly_invoice'][0]) || isset($customer['unpaid_and_closed_mounthly_invoice'][0]) ){
                 if($amount_due){
-
-                    // if(isset($customer['unpaid_mounthly_invoice'][0])){
-                    //     $customer['mounthlyInvoice'] = $customer['unpaid_mounthly_invoice'][0]; 
-                    // }else{
-                    //     $customer['mounthlyInvoice'] = $customer['unpaid_and_closed_mounthly_invoice'][0];
-                    // }
 
                     $card = CustomerCreditCard::where(
                         'customer_id', $customer['id']
                     )->orderBy('default', 'desc')->first();
 
                     if($card){
-                        // $invoice = Invoice::where('id', $customer['mounthlyInvoice']['id'])->with('order')->first();
-                        // \Log::info($invoice);
-
                         $order_hash = "";
-                        // if($invoice->order){
-                        //     $order_hash = $invoice->order->hash;
-                        //     $api_key = $invoice->order->company->api_key;
-                        // }
 
                         $request_params = array(
 			                'customer_id'   => $customer_obj->id,
@@ -312,18 +352,10 @@ class CardController extends BaseController implements ConstantInterface
                             'usesandbox'    => $customer_obj->company->usaepay_live_formatted
                         );
 
-                        // if($invoice->order == null){
-                        //     $request_params['key'] = $invoice->customer->company->usaepay_api_key;
-                        //     $request_params['usesandbox'] = $invoice->customer->company->usaepay_live_formatted;
-                        // }
 
                         $request->replace($request_params);
                         $response = $this->chargeCard($request);
                         if(isset($response->getData()->original->success) && $response->getData()->original->success =="true") {
-                            // $invoice->update([
-                            //     'status' => Invoice::INVOICESTATUS['closed'],
-                            //     'total_due' => 0
-                            // ]);
                             $request->headers->set('authorization', $api_key);
                             event(new InvoiceAutoPaid($customer));
                             \Log::info("AutoPaid for customer ".$customer['id']);
@@ -345,10 +377,6 @@ class CardController extends BaseController implements ConstantInterface
                             $paymentLog = $this->createPaymentLogs($order, $this->tran, 0, $card, null);
                             \Log::info("AutoPaid Failed for customer ".$customer['id']);
                         }
-                        
-                        // if($invoice->order){
-                        //     PaymentLog::where('order_id', $invoice->order->id)->update(['invoice_id' => $invoice->id ]);
-                        // }
                     }else{
                         $request->headers->set('authorization', $api_key);
                         event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));
@@ -360,16 +388,15 @@ class CardController extends BaseController implements ConstantInterface
         }
     }
 
-    /**
-     * This function charges now card without order which is done by admin
-     * from admin portal
-     * inserts data to credits and customer_credit_cards table
-     * 
-     * @param  Order     $order
-     * @param  Request   $request
-     * @return Response
-     */
-
+	/**
+	 * This function charges now card without order which is done by admin
+	 * from admin portal
+	 * inserts data to credits and customer_credit_cards table
+	 * @param $request
+	 * @param $tran
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
     protected function transactionSuccessfulWithoutOrder($request, $tran)
     {
         $credit = $this->createCredits($request, $tran);
@@ -380,13 +407,21 @@ class CardController extends BaseController implements ConstantInterface
         return $response;
     }
 
-    public function payCreditToInvoice(Request $request)
+	/**
+	 * @param Request $request
+	 */
+	public function payCreditToInvoice(Request $request)
     {
         $credit = Credit::find($request->creditId);
         $this->payUnpaiedInvoice($credit->amount, $credit, $credit);
     }
 
-    protected function payUnpaiedInvoice($tranAmount, $request, $credit)
+	/**
+	 * @param $tranAmount
+	 * @param $request
+	 * @param $credit
+	 */
+	protected function payUnpaiedInvoice($tranAmount, $request, $credit)
     {
         $invoices = Invoice::where([
             ['customer_id', $request->customer_id],
@@ -424,11 +459,18 @@ class CardController extends BaseController implements ConstantInterface
                     break;
                 }
             }
-        $this->accountSuspendedAccount($request->customer_id);
+            $this->accountSuspendedAccount($request->customer_id);
         }
     }
 
-    public function processCreditInvoice($data, $tran, $credit)
+	/**
+	 * @param $data
+	 * @param $tran
+	 * @param $credit
+	 *
+	 * @return null
+	 */
+	public function processCreditInvoice($data, $tran, $credit)
     {
         $card = CustomerCreditCard::find($data['credit_card_id']);
         $customer = Customer::find($card->customer_id);
@@ -441,34 +483,33 @@ class CardController extends BaseController implements ConstantInterface
                 $staff_id = null;
             }
             $invoice = [
-                'staff_id' => $staff_id,
-                'customer_id' => $card->customer_id,
-                'type' => '2',
-                'start_date' => $customer->billing_start,
-                'end_date' => $customer->billing_end,
-                'status' => '2',
-                'subtotal' => $data['amount'],
-                'total_due' => '0',
-                'prev_balance' => '0',
-                'payment_method' => '1',
-                'notes' => '',
-                'due_date' => Carbon::parse($customer->billing_start)->subDays(1),
-                'business_name' => $customer->company_name,
-                'billing_fname' => $customer->fname,
-                'billing_lname' => $customer->lname,
-                'billing_address_line_1' => $card->billing_address1,
-                'billing_address_line_2' => $card->billing_address2,
-                'billing_city' => $card->billing_city,
-                'billing_state' => $card->billing_state_id,
-                'billing_zip' => $card->billing_zip,
-                'shipping_fname' => $customer->shipping_fname,
-                'shipping_lname' => $customer->shipping_lname,
-                'shipping_address_line_1' => $customer->shipping_address1,
-                'shipping_address_line_2' => $customer->shipping_address2,
-                'shipping_city' => $customer->shipping_city,
-                'shipping_state' => $customer->shipping_state_id,
-                'shipping_zip' => $customer->shipping_zip,
-
+                'staff_id'                  => $staff_id,
+                'customer_id'               => $card->customer_id,
+                'type'                      => '2',
+                'start_date'                => $customer->billing_start,
+                'end_date'                  => $customer->billing_end,
+                'status'                    => '2',
+                'subtotal'                  => $data['amount'],
+                'total_due'                 => '0',
+                'prev_balance'              => '0',
+                'payment_method'            => '1',
+                'notes'                     => '',
+                'due_date'                  => Carbon::parse($customer->billing_start)->subDays(1),
+                'business_name'             => $customer->company_name,
+                'billing_fname'             => $customer->fname,
+                'billing_lname'             => $customer->lname,
+                'billing_address_line_1'    => $card->billing_address1,
+                'billing_address_line_2'    => $card->billing_address2,
+                'billing_city'              => $card->billing_city,
+                'billing_state'             => $card->billing_state_id,
+                'billing_zip'               => $card->billing_zip,
+                'shipping_fname'            => $customer->shipping_fname,
+                'shipping_lname'            => $customer->shipping_lname,
+                'shipping_address_line_1'   => $customer->shipping_address1,
+                'shipping_address_line_2'   => $customer->shipping_address2,
+                'shipping_city'             => $customer->shipping_city,
+                'shipping_state'            => $customer->shipping_state_id,
+                'shipping_zip'              => $customer->shipping_zip
             ];
 
             $newInvoice = Invoice::create($invoice);
@@ -481,24 +522,25 @@ class CardController extends BaseController implements ConstantInterface
                 $product_type = '';
                 $type = '3';
                 $credit->update(['applied_to_invoice' => 1]);
-                // Add to credit_to_invoice table
+                /**
+                 * Add to credit_to_invoice table
+                 */
                 $credit->usedOnInvoices()->create([
                     'invoice_id'    => $newInvoice->id,
                     'amount'        => $newInvoice->subtotal,
                     'description'   => "{$newInvoice->subtotal} applied on invoice id {$newInvoice->id}",
                 ]);
-
             }
 
             $invoiceItem = [
-                'invoice_id' => $newInvoice->id,
-                'product_type' => $product_type,
-                'type' => $type,
-                'subscription_id' => $data['subscription_id'],
-                'start_date' => Carbon::today(),
-                'description' => $description,
-                'amount' => $data['amount'],
-                'taxable' => '0',
+                'invoice_id'        => $newInvoice->id,
+                'product_type'      => $product_type,
+                'type'              => $type,
+                'subscription_id'   => $data['subscription_id'],
+                'start_date'        => Carbon::today(),
+                'description'       => $description,
+                'amount'            => $data['amount'],
+                'taxable'           => '0',
             ];
 
             $newInvoiceItem = InvoiceItem::create($invoiceItem);
@@ -516,6 +558,58 @@ class CardController extends BaseController implements ConstantInterface
         $paymentLog = $this->createPaymentLogs($order, $tran, 1, $card, null);
         return null;
     }
+
+	/**
+	 * Sets data for `invoice` table
+	 * @param $order
+	 * @param $credit
+	 * @param $request
+	 *
+	 * @return array
+	 */
+	protected function setInvoiceData($order, $request, $credit=null)
+	{
+		$arr = [];
+		$costumer = Customer::find($order->customer_id);
+		if (!$costumer) {
+			return $arr;
+		}
+
+		$card = CustomerCreditCard::where('customer_id', $costumer->id)->latest()->first();
+
+		if ($card) {
+			$arr = [
+				'customer_id'             => $costumer->id,
+				'type'                    => self::DEFAULT_VALUE,
+				'status'                  => self::DEFAULT_VALUE,
+				'start_date'              => $this->carbon->toDateString(),
+				'end_date'                => $this->carbon->addMonth()->subDay()->toDateString(),
+				'due_date'                => $this->carbon->subDay()->toDateString(),
+				'subtotal'                => $credit ? $credit->amount : 0,
+				'total_due'               => self::DEFAULT_DUE,
+				'prev_balance'            => self::DEFAULT_DUE,
+				'payment_method'          => $credit ? $credit->payment_method : 'USAePay',
+				'notes'                   => 'notes',
+				'business_name'           => $costumer->company_name,
+				'billing_fname'           => $request->billing_fname,
+				'billing_lname'           => $request->billing_lname,
+				'billing_address_line_1'  => $card->billing_address1,
+				'billing_address_line_2'  => $card->billing_address2,
+				'billing_city'            => $card->billing_city,
+				'billing_state'           => $card->billing_state_id,
+				'billing_zip'             => $card->billing_zip,
+				'shipping_fname'          => $costumer->shipping_fname,
+				'shipping_lname'          => $costumer->shipping_lname,
+				'shipping_address_line_1' => $costumer->shipping_address1,
+				'shipping_address_line_2' => $costumer->shipping_address2,
+				'shipping_city'           => $costumer->shipping_city,
+				'shipping_state'          => $costumer->shipping_state_id,
+				'shipping_zip'            => $costumer->shipping_zip,
+			];
+		}
+		return $arr;
+	}
+
 }
 
 

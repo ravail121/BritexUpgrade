@@ -6,21 +6,17 @@ use PDF;
 use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Credit;
-use App\Model\CreditToInvoice;
 use App\Model\Invoice;
 use App\Model\Customer;
-use App\Model\OrderGroup;
 use App\Model\PaymentLog;
 use App\Model\InvoiceItem;
-use App\Model\Subscription;
+use App\Services\Eye4Fraud;
 use Illuminate\Http\Request;
 use App\Events\PaymentFailed;
+use App\Model\CreditToInvoice;
 use App\Model\PaymentRefundLog;
-use App\Services\Payment\UsaEpay;
-use App\Services\Eye4Fraud;
 use App\Model\CustomerCreditCard;
-use App\Model\SystemGlobalSetting;
-use App\Http\Controllers\Controller;
+use App\Services\Payment\UsaEpay;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
@@ -118,10 +114,10 @@ class PaymentController extends BaseController implements ConstantInterface
                 
                 $orderCount = Order::where([['status', 1],['company_id', $order->company_id]])->max('order_num');
                 $order->update([
-                    'status'     => 1, 
-                    'invoice_id' => $invoice->id,
-                    'order_num'  => $orderCount+1,
-                    'date_processed' => Carbon::today()
+                    'status'            => 1,
+                    'invoice_id'        => $invoice->id,
+                    'order_num'         => $orderCount+1,
+                    'date_processed'    => Carbon::today()
                 ]);
 
                 $paymentLog = PaymentLog::where('order_id', $order->id);
@@ -249,7 +245,6 @@ class PaymentController extends BaseController implements ConstantInterface
     */
     protected function setConstantData($request)
     {
-        // $request->key         = env('SOURCE_KEY');
         $request->usesandbox  = \Request::get('company')->usaepay_live_formatted;
         $request->invoice     = self::TRAN_INVOICE;
         $request->isrecurring = self::TRAN_TRUE; 

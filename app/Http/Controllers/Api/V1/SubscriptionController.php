@@ -72,7 +72,7 @@ class SubscriptionController extends BaseController
             }
 
             $request->status = $request->sim_id != null || $request->device_id ? 'shipping' : 'for-activation';
-           
+
             $insertData = $this->generateSubscriptionData($request, $order);
             $subscription = Subscription::create($insertData);
 
@@ -81,6 +81,7 @@ class SubscriptionController extends BaseController
             if(!$subscription) {
                 return $this->respondError(['subscription_id' => null]);
             }
+
             
             $request->headers->set('authorization', $request->api_key);
 

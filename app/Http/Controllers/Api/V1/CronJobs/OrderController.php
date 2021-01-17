@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use App\Model\Sim;
 use Exception;
 use App\Model\Order;
 use GuzzleHttp\Client;
