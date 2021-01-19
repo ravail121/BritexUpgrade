@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use App\Model\CustomerStandaloneDevice;
-use App\Model\CustomerStandaloneSim;
 use App\Model\Device;
 use App\Model\Sim;
 use Exception;
@@ -71,6 +69,7 @@ class OrderController extends BaseController
 				}
 				$row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
 				$apiData = $this->data($order, $row);
+				\Log::info('Ready Cloud');
 				\Log::info($apiData);
 
 				$response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
