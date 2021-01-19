@@ -5,13 +5,10 @@ namespace App\Listeners;
 use Notification;
 use App\Model\Order;
 use App\Model\EmailTemplate;
-use App\Listeners\EmailLayout;
-use App\Events\AutoPayReminder;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Support\Configuration\MailConfiguration;
+use Illuminate\Support\Facades\Log;
 
 
 class SendAccountUnsuspendedMail
@@ -36,7 +33,11 @@ class SendAccountUnsuspendedMail
     public function handle($event)
     {
         $customer = $event->customer;
-        $configurationSet = $this->setMailConfiguration($customer);
+
+	    $configurationSet = $this->setMailConfigurationById($customer->company_id);
+
+	    Log::info('Configuration Set');
+	    Log::info($configurationSet);
 
         if ($configurationSet) {
             return false;

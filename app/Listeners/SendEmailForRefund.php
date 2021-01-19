@@ -6,11 +6,8 @@ use Notification;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\EmailTemplate;
-use App\Listeners\EmailLayout;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\EmailWithAttachment;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Support\Configuration\MailConfiguration;
 
 class SendEmailForRefund

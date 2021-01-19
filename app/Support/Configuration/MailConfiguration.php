@@ -2,11 +2,15 @@
 
 namespace App\Support\Configuration;
 
-
 use App\Model\Company;
 use Illuminate\Support\Facades\Config;
 
-trait MailConfiguration 
+/**
+ * Trait MailConfiguration
+ *
+ * @package App\Support\Configuration
+ */
+trait MailConfiguration
 {
     /**
      * This method sets the Configuration of the Mail according to the Company
@@ -30,7 +34,12 @@ trait MailConfiguration
         return false;
     }
 
-    public function setMailConfigurationById($companyId)
+	/**
+	 * @param $companyId
+	 *
+	 * @return false
+	 */
+	public function setMailConfigurationById($companyId)
     {
         $company = Company::find($companyId);
         $config = [

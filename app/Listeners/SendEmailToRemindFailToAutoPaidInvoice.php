@@ -6,12 +6,11 @@ use Notification;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\EmailTemplate;
-use App\Listeners\EmailLayout;
 use App\Notifications\SendEmails;
+use Illuminate\Support\Facades\Log;
 use App\Events\FailToAutoPaidInvoice;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
+
 use App\Support\Configuration\MailConfiguration;
 
 class SendEmailToRemindFailToAutoPaidInvoice
@@ -39,9 +38,13 @@ class SendEmailToRemindFailToAutoPaidInvoice
         $customers = $event->customer;
         $customer = Customer::find($customers['id']);
 
-        $configurationSet = $this->setMailConfiguration($customer);
+	    $configurationSet = $this->setMailConfigurationById($customer->company_id);
 
-        if ($configurationSet) {
+	    Log::info('SendEmailToRemindFailToAutoPaidInvoice Configuration Set');
+	    Log::info($configurationSet);
+
+
+	    if ($configurationSet) {
             return false;
         }
 

@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Model\CustomerStandaloneDevice;
+use App\Model\CustomerStandaloneSim;
+use App\Model\Device;
+use App\Model\Sim;
 use Exception;
 use App\Model\Order;
 use GuzzleHttp\Client;
@@ -129,7 +133,7 @@ class OrderController extends BaseController
 			)->sum('amount');
 
 		return [
-			'description'   => $subscription->sim_name.' '.'associated with'.' '. $subscription->plan['name'],
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with '. $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
@@ -153,10 +157,10 @@ class OrderController extends BaseController
 			)->sum('amount');
 
 		return [
-			'description'   => $subscription->device['name'].' '.'associated with'.' '.$subscription->plan['name'],
-			'part_number'   => 'SUB-'.$subscription->id,
-			'unit_price'    => $amount.' USD',
-			'quantity'      =>   '1',
+			'description'   => $subscription->device['name'] . ' ($'. $subscription->device['amount_w_plan'] .') associated with ' . $subscription->plan['name'] .' ($' . $subscription->plan['amount_recurring'] .')',
+			'part_number'   => 'SUB-' . $subscription->id,
+			'unit_price'    => $amount .' USD',
+			'quantity'      => '1'
 		];
 	}
 
@@ -171,10 +175,10 @@ class OrderController extends BaseController
 		$amount = $invoiceItem->where('subscription_id', $subscription->id)->whereIn('product_type', [InvoiceController::DEVICE_TYPE, InvoiceController::SIM_TYPE])->sum('amount');
 
 		return [
-			'description'   => $subscription->sim_name.' '.'associated with'.' '.$subscription->plan['name'].' and '.$subscription->device['name'],
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with ' . $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ') and ' . $subscription->device['name'] . ' ($' . $subscription->device['amount_w_plan'] . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
-			'quantity'      =>   '1',
+			'quantity'      => '1',
 		];
 	}
 
@@ -186,10 +190,11 @@ class OrderController extends BaseController
 	 */
 	public function standAloneDevice($standAloneDevice, $invoiceItem)
 	{
+		$device           = Device::find($standAloneDevice->device_id);
 		$invoiceItemAmount = $invoiceItem->where(
 			'product_type', InvoiceController::DEVICE_TYPE
 		)->where(
-			'product_id',  $standAloneDevice->device['id']
+			'product_id',  $device->id
 		);
 
 		foreach ($invoiceItemAmount->toArray() as $key => $value) {
@@ -200,7 +205,7 @@ class OrderController extends BaseController
 			'description'   => $standAloneDevice->device['name'],
 			'part_number'   => 'DEV-'.$standAloneDevice->id,
 			'unit_price'    => $amount.' USD',
-			'quantity'      =>   '1',
+			'quantity'      => '1',
 		];
 	}
 
@@ -212,10 +217,11 @@ class OrderController extends BaseController
 	 */
 	public function standAloneSim($standAloneSim, $invoiceItem)
 	{
+		$sim           = Sim::find($standAloneSim->sim_id);
 		$invoiceItemAmount = $invoiceItem->where(
 			'product_type', InvoiceController::SIM_TYPE
 		)->where(
-			'product_id', $standAloneSim->sim['id']
+			'product_id', $sim->id
 		);
 
 		foreach ($invoiceItemAmount->toArray() as $key => $value) {
