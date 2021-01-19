@@ -34,7 +34,7 @@ $tran->exp="0522";
 //$tran->cvv2="5793";
 
 $tran->amount="1.00";			
-$tran->invoice="GORIN-TEST1";   		
+$tran->invoice="BriteX";
 //$tran->cardholder="EVAN GORIN"; 	
 //$tran->street="597 Empire Bld Apt 4";	
 //$tran->zip="11213";			
