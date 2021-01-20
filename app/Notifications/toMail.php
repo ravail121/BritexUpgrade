@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
