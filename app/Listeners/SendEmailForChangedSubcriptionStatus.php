@@ -46,7 +46,7 @@ class SendEmailForChangedSubcriptionStatus
         $subscription['suspended_date'] = $this->getDateFormated($subscription['suspended_date']);
         $subscription['closed_date'] = $this->getDateFormated($subscription['closed_date']);
 
-	    $order   = Order::find($subscription->order_id);
+        $order          = $subscription->order;
         
         $dataRow = [
             'subscription'  => $subscription,

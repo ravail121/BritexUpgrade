@@ -11,43 +11,43 @@ use App\Support\Configuration\MailConfiguration;
 class SendEmailforPaymentFailed
 {
 
-    use Notifiable, MailConfiguration, EmailLayout;
-    /**
-     * Create the event listener.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        //
-    }
+	use Notifiable, MailConfiguration, EmailLayout;
+	/**
+	 * Create the event listener.
+	 *
+	 * @return void
+	 */
+	public function __construct()
+	{
+		//
+	}
 
-    /**
-     * Handle the event.
-     *
-     * @param  object  $event
-     * @return void
-     */
-    public function handle($event)
-    {
-        $customer = $event->customer;
+	/**
+	 * Handle the event.
+	 *
+	 * @param  object  $event
+	 * @return void
+	 */
+	public function handle($event)
+	{
+		$customer = $event->customer;
 
-        $configurationSet = $this->setMailConfiguration($customer);
+		$configurationSet = $this->setMailConfiguration($customer);
 
-        if ($configurationSet) {
-            return false;
-        }
-        $dataRow['customer'] = $customer;
-        $customer['customer_id'] = $customer->id;
+		if ($configurationSet) {
+			return false;
+		}
+		$dataRow['customer'] = $customer;
+		$customer['customer_id'] = $customer->id;
 
-         $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)
-        ->where('code', 'payment-failed')
-        ->get();
+		$emailTemplates = EmailTemplate::where('company_id', $customer->company_id)
+		                               ->where('code', 'payment-failed')
+		                               ->get();
 
-        foreach ($emailTemplates as $key => $emailTemplate) {
-            $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+		foreach ($emailTemplates as $key => $emailTemplate) {
+			$row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], $customer->company->support_email));
-        }
-    }
+			Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], $customer->company->support_email));
+		}
+	}
 }

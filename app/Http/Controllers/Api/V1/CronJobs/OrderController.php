@@ -127,11 +127,9 @@ class OrderController extends BaseController
 		$amount = $invoiceItem->where( 'subscription_id', $subscription->id )
 		                      ->where( 'product_type', InvoiceController::SIM_TYPE )
 		                      ->where( 'product_id', $subscription->sim_id )
-		                      ->sum('amount');
-		$planAmount = (int) ($subscription->plan['amount_recurring'] + $subscription->plan['amount_one_time']);
-
+		                      ->sum( 'amount' );
 		return [
-			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with '. $subscription->plan['name'] . ' ($' . $planAmount . ')',
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with '. $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
@@ -154,10 +152,8 @@ class OrderController extends BaseController
 				'product_id',  $subscription->device_id
 			)->sum('amount');
 
-		$planAmount = (int) ($subscription->plan['amount_recurring'] + $subscription->plan['amount_one_time']);
-
 		return [
-			'description'   => $subscription->device['name'] . ' ($'. $subscription->device['amount_w_plan'] .') associated with ' . $subscription->plan['name'] .' ($' . $planAmount .')',
+			'description'   => $subscription->device['name'] . ' ($'. $subscription->device['amount_w_plan'] .') associated with ' . $subscription->plan['name'] .' ($' . $subscription->plan['amount_recurring'] .')',
 			'part_number'   => 'SUB-' . $subscription->id,
 			'unit_price'    => $amount .' USD',
 			'quantity'      => '1'
@@ -174,10 +170,8 @@ class OrderController extends BaseController
 	{
 		$amount = $invoiceItem->where('subscription_id', $subscription->id)->whereIn('product_type', [InvoiceController::DEVICE_TYPE, InvoiceController::SIM_TYPE])->sum('amount');
 
-		$planAmount = (int) ($subscription->plan['amount_recurring'] + $subscription->plan['amount_one_time']);
-
 		return [
-			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with ' . $subscription->plan['name'] . ' ($' . $planAmount . ') and ' . $subscription->device['name'] . ' ($' . $subscription->device['amount_w_plan'] . ')',
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with ' . $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ') and ' . $subscription->device['name'] . ' ($' . $subscription->device['amount_w_plan'] . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
