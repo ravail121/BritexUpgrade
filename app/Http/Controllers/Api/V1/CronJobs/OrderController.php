@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\CronJobs;
 
 use App\Model\Coupon;
 use App\Model\Device;
+use App\Model\Plan;
 use App\Model\Sim;
 use Exception;
 use App\Model\Order;
@@ -124,12 +125,22 @@ class OrderController extends BaseController
 	 */
 	public function subscriptionWithSim($subscription, $invoiceItem)
 	{
-		$amount = $invoiceItem->where( 'subscription_id', $subscription->id )
-		                      ->where( 'product_type', InvoiceController::SIM_TYPE )
-		                      ->where( 'product_id', $subscription->sim_id )
-		                      ->sum( 'amount' );
+		$simAmount = $invoiceItem->where( 'subscription_id', $subscription->id )
+		                         ->where( 'product_type', InvoiceController::SIM_TYPE )
+		                         ->where( 'product_id', $subscription->sim_id )
+		                         ->sum( 'amount' );
+
+		$planAmount = 0;
+
+		if (isset($subscription->plan_id) && $subscription->plan_id != null) {
+			$planAmount = $invoiceItem->where( 'subscription_id', $subscription->id )
+			                          ->where( 'product_type', InvoiceController::PLAN_TYPE )
+			                          ->where( 'product_id', $subscription->plan_id )
+			                          ->sum( 'amount' );
+		}
+		$amount = $simAmount + $planAmount;
 		return [
-			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with '. $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ')',
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with '. $subscription->plan['name'] . ' ($' . $planAmount . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
@@ -144,16 +155,27 @@ class OrderController extends BaseController
 	 */
 	public function subscriptionWithDevice($subscription, $invoiceItem)
 	{
-		$amount = $invoiceItem->where(
-								'subscription_id', $subscription->id)
-                                ->where(
-			                      'product_type', InvoiceController::DEVICE_TYPE
-		                      )->where(
+		$deviceAmount = $invoiceItem->where(
+			'subscription_id', $subscription->id)
+		                            ->where(
+			                            'product_type', InvoiceController::DEVICE_TYPE
+		                            )->where(
 				'product_id',  $subscription->device_id
 			)->sum('amount');
 
+		$planAmount = 0;
+
+		if (isset($subscription->plan_id) && $subscription->plan_id != null) {
+			$planAmount = $invoiceItem->where( 'subscription_id', $subscription->id )
+			                          ->where( 'product_type', InvoiceController::PLAN_TYPE )
+			                          ->where( 'product_id', $subscription->plan_id )
+			                          ->sum( 'amount' );
+		}
+
+		$amount = $deviceAmount + $planAmount;
+
 		return [
-			'description'   => $subscription->device['name'] . ' ($'. $subscription->device['amount_w_plan'] .') associated with ' . $subscription->plan['name'] .' ($' . $subscription->plan['amount_recurring'] .')',
+			'description'   => $subscription->device['name'] . ' ($'. $subscription->device['amount_w_plan'] .') associated with ' . $subscription->plan['name'] .' ($' . $planAmount .')',
 			'part_number'   => 'SUB-' . $subscription->id,
 			'unit_price'    => $amount .' USD',
 			'quantity'      => '1'
@@ -168,10 +190,20 @@ class OrderController extends BaseController
 	 */
 	public function subscriptionWithSimAndDevice($subscription, $invoiceItem)
 	{
-		$amount = $invoiceItem->where('subscription_id', $subscription->id)->whereIn('product_type', [InvoiceController::DEVICE_TYPE, InvoiceController::SIM_TYPE])->sum('amount');
+		$simAndDeviceAmount = $invoiceItem->where('subscription_id', $subscription->id)->whereIn('product_type', [InvoiceController::DEVICE_TYPE, InvoiceController::SIM_TYPE])->sum('amount');
+
+		$planAmount = 0;
+		if (isset($subscription->plan_id) && $subscription->plan_id != null) {
+			$planAmount = $invoiceItem->where( 'subscription_id', $subscription->id )
+			                          ->where( 'product_type', InvoiceController::PLAN_TYPE )
+			                          ->where( 'product_id', $subscription->plan_id )
+			                          ->sum( 'amount' );
+		}
+
+		$amount = $simAndDeviceAmount + $planAmount;
 
 		return [
-			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with ' . $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ') and ' . $subscription->device['name'] . ' ($' . $subscription->device['amount_w_plan'] . ')',
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with ' . $subscription->plan['name'] . ' ($' . $planAmount . ') and ' . $subscription->device['name'] . ' ($' . $subscription->device['amount_w_plan'] . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
@@ -252,9 +284,6 @@ class OrderController extends BaseController
 	{
 		$taxes = $order->invoice->invoiceItem->whereIn('type', [Invoice::InvoiceItemTypes['taxes'],
 			Invoice::InvoiceItemTypes['regulatory_fee']])->sum('amount');
-
-		$coupons = $taxes = $order->invoice->invoiceItem->whereIn('type', [Coupon::TYPES['subscription_coupon'],
-			Coupon::TYPES['customer_coupon']])->sum('amount');
 
 		$shippingAmount = $order->invoice->invoiceItem->where('description', InvoiceController::SHIPPING)->sum('amount');
 
