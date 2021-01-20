@@ -2,16 +2,13 @@
 
 namespace App\Listeners;
 
-use Notification;
 use App\Events\PortPending;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Model\Port;
 use App\Model\EmailTemplate;
-use App\Support\Configuration\MailConfiguration;
-use Illuminate\Notifications\Notifiable;
 use App\Notifications\SendEmails;
-use App\Listeners\EmailLayout;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
+use App\Support\Configuration\MailConfiguration;
 
 class SendPortStatusMail
 {

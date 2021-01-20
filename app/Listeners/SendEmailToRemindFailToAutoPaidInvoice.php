@@ -2,7 +2,6 @@
 
 namespace App\Listeners;
 
-use Notification;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\EmailTemplate;
@@ -10,6 +9,7 @@ use App\Notifications\SendEmails;
 use Illuminate\Support\Facades\Log;
 use App\Events\FailToAutoPaidInvoice;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 
 use App\Support\Configuration\MailConfiguration;
 

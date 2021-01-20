@@ -4,26 +4,51 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 
+/**
+ * Class SendEmails
+ *
+ * @package App\Notifications
+ */
 class SendEmails extends Notification
 {
     use Queueable, EmailRecord;
 
-    public $order;
-    public $customerTemplate;
-    public $bizVerification;
-    public $templateVales;
-    public $email;
-    public $note;
+	/**
+	 * @var
+	 */
+	public $order;
+
+	/**
+	 * @var
+	 */
+	public $customerTemplate;
+
+	/**
+	 * @var
+	 */
+	public $bizVerification;
+
+	/**
+	 * @var
+	 */
+	public $templateVales;
+
+	/**
+	 * @var
+	 */
+	public $email;
+
+	/**
+	 * @var mixed|null
+	 */
+	public $note;
 
     /**
      * Create a new notification instance.
      *
      * @return Order $order
      */
-      
     public function __construct($order, $emailTemplate, $bizVerification, $body, $email, $note =null)
     {
         $this->order = $order;

@@ -2,15 +2,12 @@
 
 namespace App\Listeners;
 
-use Notification;
 use App\Model\Order;
 use App\Model\Subscription;
 use App\Model\EmailTemplate;
-use App\Listeners\EmailLayout;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Notifications\Notification;
 use App\Notifications\EmailWithAttachment;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Support\Configuration\MailConfiguration;
 
 class SendUpgradeDowngradeInvoice

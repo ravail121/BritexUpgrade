@@ -2,16 +2,13 @@
 
 namespace App\Listeners;
 
-use Notification;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\EmailTemplate;
-use App\Listeners\EmailLayout;
 use App\Events\InvoiceAutoPaid;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
 use App\Support\Configuration\MailConfiguration;
 
 class SendEmailToRemindInvoiceAutoPaid

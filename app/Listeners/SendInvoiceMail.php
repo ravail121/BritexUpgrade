@@ -2,11 +2,9 @@
 
 namespace App\Listeners;
 
-use Config;
-use Notification;
 use App\Model\EmailTemplate;
-use App\Listeners\EmailLayout;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use App\Notifications\EmailWithAttachment;
 use App\Support\Configuration\MailConfiguration;
 

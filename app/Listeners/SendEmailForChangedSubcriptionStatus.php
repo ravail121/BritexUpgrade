@@ -2,17 +2,13 @@
 
 namespace App\Listeners;
 
-use Notification;
 use App\Model\Order;
 use App\Model\Subscription;
 use App\Model\EmailTemplate;
-use App\Model\Company;
 use App\Notifications\SendEmails;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
 use App\Support\Configuration\MailConfiguration;
-use Illuminate\Support\Facades\Config;
 
 class SendEmailForChangedSubcriptionStatus
 {
@@ -49,11 +45,13 @@ class SendEmailForChangedSubcriptionStatus
         $subscription['phone_number'] = $subscription->phoneNumberFormatted;
         $subscription['suspended_date'] = $this->getDateFormated($subscription['suspended_date']);
         $subscription['closed_date'] = $this->getDateFormated($subscription['closed_date']);
+
+	    $order   = Order::find($subscription->order_id);
         
         $dataRow = [
-            'subscription' => $subscription,
-            'customer'    => $subscription->customerRelation,
-            'plan'        => $subscription->plans,
+            'subscription'  => $subscription,
+            'customer'      => $subscription->customerRelation,
+            'plan'          => $subscription->plans,
         ];
         $addons = $subscription->namesOfSubscriptionAddonNotRemoved;
         $addonsName = $addons->implode(',');
@@ -72,7 +70,7 @@ class SendEmailForChangedSubcriptionStatus
 
             $row['body'] = $this->addFieldsToBody(['[addon__name]'], [$addonsName], $row['body']);
 
-            Notification::route('mail', $row['email'])->notify(new SendEmails($dataRow['customer'], $emailTemplate, $dataRow['customer']['business_verification_id'] , $row['body'], $row['email']));
+            Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $dataRow['customer']['business_verification_id'] , $row['body'], $row['email']));
         }
     }
 }

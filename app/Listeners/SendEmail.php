@@ -3,16 +3,13 @@
 namespace App\Listeners;
 
 use Mail;
-use Notification;
 use App\Model\Order;
 use App\Model\EmailTemplate;
-use App\Listeners\EmailLayout;
 use App\Notifications\SendEmails;
 use App\Model\BusinessVerification;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use App\Events\BusinessVerificationCreated;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Support\Configuration\MailConfiguration;
 
 class SendEmail

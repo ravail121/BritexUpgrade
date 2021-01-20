@@ -15,28 +15,26 @@ use App\Scripts\TestEye4Fraud;
 */
 
 
-$config = [
-	'driver'   => 'smtp',
-	'host'     => 'smtp.mailgun.org',
-	'port'     =>  587,
-	'username' => 'postmaster@mg.teltik.com',
-	'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
-];
-
-Config::set('mail',$config);
-
-Route::get('test', function(){
+Route::get('britex-test-subscription-changed', function(){
+	$config = [
+		'driver'   => 'smtp',
+		'host'     => 'smtp.mailgun.org',
+		'port'     =>  587,
+		'username' => 'postmaster@mg.teltik.com',
+		'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
+	];
+	Config::set('mail',$config);
 	event(new SubcriptionStatusChanged('6'));
 });
 
-Route::get('/test-cc', function(){
+Route::get('/britex-test-cc', function(){
 
 	// $cc = new TestEye4Fraud();
 	// $cc->test();
 
 });
 
-Route::get('test-email', function(Illuminate\Http\Request $request){
+Route::get('britex-test-email', function(Illuminate\Http\Request $request){
 	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
 		$message->from('postmaster@mg.teltik.com');
 		$message->to($request->to ?: 'vanak.roopak@gmail.com');
@@ -466,10 +464,7 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.pay.unpaied.invoice',
 			'uses' => 'CardController@payCreditToInvoice',
 		]);
-
 	});
-
-
 
 	Route::group(['namespace' => '\Api\V1'],function(){
 

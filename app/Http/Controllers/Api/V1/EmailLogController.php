@@ -4,12 +4,22 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Model\EmailLog;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
 
+/**
+ * Class EmailLogController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class EmailLogController extends Controller
 {
-    public function store(Request $request) 
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return mixed
+	 */
+	public function store(Request $request)
     {
     	$data = $this->validateData($request);
 
@@ -23,9 +33,14 @@ class EmailLogController extends Controller
         return $emailLog;
     }
 
-    public function validateData(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return mixed
+	 */
+	public function validateData(Request $request)
     {
-        $data=$request->validate([
+        $data = $request->validate([
             'company_id'               => '',
             'customer_id'              => '',
             'staff_id'                 => '',

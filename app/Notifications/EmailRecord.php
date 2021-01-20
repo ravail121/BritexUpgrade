@@ -3,13 +3,27 @@
 namespace App\Notifications;
 
 use App\Model\EmailLog;
-use App\Model\EmailTemplate;
-use App\Model\SystemEmailTemplateDynamicField;
 use Illuminate\Notifications\Messages\MailMessage;
 
-trait EmailRecord 
+/**
+ * Trait EmailRecord
+ *
+ * @package App\Notifications
+ */
+trait EmailRecord
 {
-    public function getMailDetails($emailTemplate, $order, $bizVerificationId, $body, $email, $note)
+
+	/**
+	 * @param $emailTemplate
+	 * @param $order
+	 * @param $bizVerificationId
+	 * @param $body
+	 * @param $email
+	 * @param $note
+	 *
+	 * @return MailMessage
+	 */
+	public function getMailDetails($emailTemplate, $order, $bizVerificationId, $body, $email, $note)
     {
         $this->createEmailLog($order, $bizVerificationId, $emailTemplate, $body , $email, $note);
         $mailMessage = $this->addEmailDetails($emailTemplate, $body);
@@ -17,7 +31,13 @@ trait EmailRecord
         return $mailMessage;
     }
 
-    protected function addEmailDetails($emailTemplate, $body)
+	/**
+	 * @param $emailTemplate
+	 * @param $body
+	 *
+	 * @return MailMessage
+	 */
+	protected function addEmailDetails($emailTemplate, $body)
     {
         $mailMessage = (new MailMessage)
                     ->subject($emailTemplate->subject)
@@ -42,7 +62,15 @@ trait EmailRecord
         return $mailMessage;
     }
 
-    protected function createEmailLog($order, $bizVerificationId, $emailTemplate, $body, $email, $note)
+	/**
+	 * @param $order
+	 * @param $bizVerificationId
+	 * @param $emailTemplate
+	 * @param $body
+	 * @param $email
+	 * @param $note
+	 */
+	protected function createEmailLog($order, $bizVerificationId, $emailTemplate, $body, $email, $note)
     {
         $data = [
             'company_id'               => $order->company_id,
@@ -61,7 +89,20 @@ trait EmailRecord
         $emailLog = EmailLog::create($data);
     }
 
-    public function getEmailWithAttachment($emailTemplate, $order, $bizVerificationId, $body, $email, $pdf, $type, $attachData, $note = null)
+	/**
+	 * @param      $emailTemplate
+	 * @param      $order
+	 * @param      $bizVerificationId
+	 * @param      $body
+	 * @param      $email
+	 * @param      $pdf
+	 * @param      $type
+	 * @param      $attachData
+	 * @param null $note
+	 *
+	 * @return MailMessage
+	 */
+	public function getEmailWithAttachment($emailTemplate, $order, $bizVerificationId, $body, $email, $pdf, $type, $attachData, $note = null)
     {
         $mailMessage = $this->getMailDetails($emailTemplate, $order, $bizVerificationId, $body, $email, $note);
 

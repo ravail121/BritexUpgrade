@@ -5,9 +5,21 @@ namespace App\Listeners;
 use Carbon\Carbon;
 use App\Model\EmailTemplate;
 
-trait EmailLayout 
+/**
+ * Trait EmailLayout
+ *
+ * @package App\Listeners
+ */
+trait EmailLayout
 {
-    public function makeEmailLayout(EmailTemplate $emailTemplate, $data, $dataRow)
+	/**
+	 * @param EmailTemplate $emailTemplate
+	 * @param               $data
+	 * @param               $dataRow
+	 *
+	 * @return array
+	 */
+	public function makeEmailLayout(EmailTemplate $emailTemplate, $data, $dataRow)
     {
         if(filter_var($emailTemplate->to, FILTER_VALIDATE_EMAIL)){
                 $email = $emailTemplate->to;
@@ -41,12 +53,24 @@ trait EmailLayout
         ];
     }
 
-    public function addFieldsToBody($fields, $data, $body)
+	/**
+	 * @param $fields
+	 * @param $data
+	 * @param $body
+	 *
+	 * @return string|string[]
+	 */
+	public function addFieldsToBody($fields, $data, $body)
     {
        return str_replace($fields, $data, $body);
     }
 
-    public function getDateFormated($date)
+	/**
+	 * @param $date
+	 *
+	 * @return string
+	 */
+	public function getDateFormated($date)
     {
         if($date){
             return Carbon::parse($date)->format('m/d/Y');   

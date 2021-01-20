@@ -6,22 +6,36 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use App\libs\Constants\ConstantInterface;
 
+/**
+ * Class Invoice
+ *
+ * @package App\Model
+ */
 class Invoice extends Model implements ConstantInterface
 {
 
-    const TYPES = [
+	/**
+	 *
+	 */
+	const TYPES = [
         'monthly'   => 1,
         'one-time'  => 2
     ];
 
-    const INVOICESTATUS = [
+	/**
+	 *
+	 */
+	const INVOICESTATUS = [
         'closed&upaid'  => 0,
         'open'          => 1,
         'closed'        => 2,
         'closed&paid'   => 2,
     ];
 
-    const InvoiceItemTypes = [
+	/**
+	 *
+	 */
+	const InvoiceItemTypes = [
         'plan_charges'     => 1,
         'feature_charges'  => 2,
         'one_time_charges' => 3,
@@ -34,79 +48,150 @@ class Invoice extends Model implements ConstantInterface
         'refund'           => 10,
     ];
 
-    protected $table = 'invoice';
+	/**
+	 * @var string
+	 */
+	protected $table = 'invoice';
 
-    protected $fillable = [ 'customer_id', 'type', 'status', 'start_date', 'end_date', 'due_date', 'subtotal', 'total_due', 'prev_balance', 'payment_method', 'notes', 'business_name', 'billing_fname', 'billing_lname', 'billing_address_line_1', 'billing_address_line_2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_fname', 'shipping_lname', 'shipping_address_line_1', 'shipping_address_line_2', 'shipping_city', 'shipping_state', 'shipping_zip', 'created_at', 'staff_id'
+	/**
+	 * @var string[]
+	 */
+	protected $fillable = [
+		'customer_id',
+		'type',
+		'status',
+		'start_date',
+		'end_date',
+		'due_date',
+		'subtotal',
+		'total_due',
+		'prev_balance',
+		'payment_method',
+		'notes',
+		'business_name',
+		'billing_fname',
+		'billing_lname',
+		'billing_address_line_1',
+		'billing_address_line_2',
+		'billing_city',
+		'billing_state',
+		'billing_zip',
+		'shipping_fname',
+		'shipping_lname',
+		'shipping_address_line_1',
+		'shipping_address_line_2',
+		'shipping_city',
+		'shipping_state',
+		'shipping_zip',
+		'created_at',
+		'staff_id'
 	];
 
-    protected $dates = [
+	/**
+	 * @var string[]
+	 */
+	protected $dates = [
         'due_date'
     ];
 
-    protected $appends = [
+	/**
+	 * @var string[]
+	 */
+	protected $appends = [
         'type_description', 'created_at_formatted_with_time'
     ];
 
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
 	public function order()
 	{
 		return $this->hasOne(Order::class);
 	}
 
-    public function customer()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function customer()
     {
         return $this->belongsTo(Customer::class);
     }
 
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
 	public function invoiceItem()
    	{
         return $this->hasMany('App\Model\InvoiceItem', 'invoice_id', 'id');
     }
 
-    public function invoiceItemOfServices()
+	/**
+	 * @return mixed
+	 */
+	public function invoiceItemOfServices()
     {
         return $this->invoiceItem()->services();
     }
 
-    public function getCalServiceChargesAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCalServiceChargesAttribute()
     {
         $invoiceItems = $this->invoiceItem()->services()->get();
         return $this->calAmount($invoiceItems);
     }
 
-
-    public function getCalTaxesAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCalTaxesAttribute()
     {
         $invoiceItems = $this->invoiceItem()->taxes()->get();
         return $this->calAmount($invoiceItems);
     }
 
-    public function getCalRegulatoryAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCalRegulatoryAttribute()
     {
         $invoiceItems = $this->invoiceItem()->regulatory()->get();
         return $this->calAmount($invoiceItems);
     }
 
-     public function getCalStateTaxAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCalStateTaxAttribute()
     {
         $invoiceItems = $this->invoiceItem()->stateTax()->get();
         return $this->calAmount($invoiceItems);
     }
 
-
-    public function getCalCreditsAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCalCreditsAttribute()
     {
         $invoiceItems = $this->invoiceItem()->credits()->get();
         return $this->calAmount($invoiceItems);
         
     }
 
-    public function getCalPlanChargesAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCalPlanChargesAttribute()
     {
         $invoiceItems = $this->invoiceItem()->planCharges()->get();
         return $this->calAmount($invoiceItems);
     }
 
-    public function getCalPlanOnlyChargesAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCalPlanOnlyChargesAttribute()
     {
         $invoiceItems = $this->invoiceItem()->planOnlyCharges()->get();
         return $this->calAmount($invoiceItems);

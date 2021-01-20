@@ -2,11 +2,11 @@
 
 namespace App\Listeners;
 
-use Notification;
 use App\Model\Order;
 use App\Model\EmailTemplate;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use App\Support\Configuration\MailConfiguration;
 use Illuminate\Support\Facades\Log;
 
@@ -34,7 +34,7 @@ class SendAccountUnsuspendedMail
     {
         $customer = $event->customer;
 
-	    $configurationSet = $this->setMailConfigurationById($customer->company_id);
+	    $configurationSet = $this->setMailConfiguration($customer);
 
 	    Log::info('Configuration Set');
 	    Log::info($configurationSet);

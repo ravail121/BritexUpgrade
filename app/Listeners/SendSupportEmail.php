@@ -2,17 +2,13 @@
 
 namespace App\Listeners;
 
-use Notification;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Events\SupportEmail;
-use App\Notifications\SendEmailToSupport;
-use Illuminate\Notifications\Notifiable;
-use App\Support\Configuration\MailConfiguration;
-use App\Model\Customer;
-use Illuminate\Support\Facades\Request;
-use App\Model\EmailTemplate;
 use Exception;
+use App\Model\EmailTemplate;
+use App\Events\SupportEmail;
+use Illuminate\Notifications\Notifiable;
+use App\Notifications\SendEmailToSupport;
+use Illuminate\Notifications\Notification;
+use App\Support\Configuration\MailConfiguration;
 
 class SendSupportEmail
 {

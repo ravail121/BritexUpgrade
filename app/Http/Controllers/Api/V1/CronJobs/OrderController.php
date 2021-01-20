@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Model\Coupon;
 use App\Model\Device;
 use App\Model\Sim;
 use Exception;
@@ -123,16 +124,14 @@ class OrderController extends BaseController
 	 */
 	public function subscriptionWithSim($subscription, $invoiceItem)
 	{
-		$amount = $invoiceItem->where(
-			'subscription_id', $subscription->id)
-		                      ->where(
-			                      'product_type', InvoiceController::SIM_TYPE
-		                      )->where(
-				'product_id', $subscription->sim_id
-			)->sum('amount');
+		$amount = $invoiceItem->where( 'subscription_id', $subscription->id )
+		                      ->where( 'product_type', InvoiceController::SIM_TYPE )
+		                      ->where( 'product_id', $subscription->sim_id )
+		                      ->sum('amount');
+		$planAmount = (int) ($subscription->plan['amount_recurring'] + $subscription->plan['amount_one_time']);
 
 		return [
-			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with '. $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ')',
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with '. $subscription->plan['name'] . ' ($' . $planAmount . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
@@ -155,8 +154,10 @@ class OrderController extends BaseController
 				'product_id',  $subscription->device_id
 			)->sum('amount');
 
+		$planAmount = (int) ($subscription->plan['amount_recurring'] + $subscription->plan['amount_one_time']);
+
 		return [
-			'description'   => $subscription->device['name'] . ' ($'. $subscription->device['amount_w_plan'] .') associated with ' . $subscription->plan['name'] .' ($' . $subscription->plan['amount_recurring'] .')',
+			'description'   => $subscription->device['name'] . ' ($'. $subscription->device['amount_w_plan'] .') associated with ' . $subscription->plan['name'] .' ($' . $planAmount .')',
 			'part_number'   => 'SUB-' . $subscription->id,
 			'unit_price'    => $amount .' USD',
 			'quantity'      => '1'
@@ -173,8 +174,10 @@ class OrderController extends BaseController
 	{
 		$amount = $invoiceItem->where('subscription_id', $subscription->id)->whereIn('product_type', [InvoiceController::DEVICE_TYPE, InvoiceController::SIM_TYPE])->sum('amount');
 
+		$planAmount = (int) ($subscription->plan['amount_recurring'] + $subscription->plan['amount_one_time']);
+
 		return [
-			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with ' . $subscription->plan['name'] . ' ($' . $subscription->plan['amount_recurring'] . ') and ' . $subscription->device['name'] . ' ($' . $subscription->device['amount_w_plan'] . ')',
+			'description'   => $subscription->sim_name . ' ($'. $subscription->sim['amount_w_plan'] . ') associated with ' . $subscription->plan['name'] . ' ($' . $planAmount . ') and ' . $subscription->device['name'] . ' ($' . $subscription->device['amount_w_plan'] . ')',
 			'part_number'   => 'SUB-'.$subscription->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
@@ -194,14 +197,19 @@ class OrderController extends BaseController
 			'product_type', InvoiceController::DEVICE_TYPE
 		)->where(
 			'product_id',  $device->id
+		)->where(
+			'subscription_id', 0
 		);
 
+		$amount = 0;
 		foreach ($invoiceItemAmount->toArray() as $key => $value) {
 			$amount = $value['amount'];
 			break;
 		}
+		\Log::info('Ready Cloud StandAlone Device: ');
+		\Log::info($amount);
 		return [
-			'description'   => $standAloneDevice->device['name'],
+			'description'   => $standAloneDevice->device['name'] . ' ($' . $amount . ')',
 			'part_number'   => 'DEV-'.$standAloneDevice->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1',
@@ -221,14 +229,19 @@ class OrderController extends BaseController
 			'product_type', InvoiceController::SIM_TYPE
 		)->where(
 			'product_id', $sim->id
+		)->where(
+			'subscription_id', 0
 		);
 
+		$amount = 0;
 		foreach ($invoiceItemAmount->toArray() as $key => $value) {
 			$amount = $value['amount'];
 			break;
 		}
+		\Log::info('Ready Cloud StandAlone SIM: ');
+		\Log::info($amount);
 		return [
-			'description'   => $standAloneSim->sim['name'],
+			'description'   => $standAloneSim->sim['name']. ' ($' . $amount . ')',
 			'part_number'   => 'SIM-'.$standAloneSim->id,
 			'unit_price'    => $amount.' USD',
 			'quantity'      => '1'
@@ -245,6 +258,9 @@ class OrderController extends BaseController
 	{
 		$taxes = $order->invoice->invoiceItem->whereIn('type', [Invoice::InvoiceItemTypes['taxes'],
 			Invoice::InvoiceItemTypes['regulatory_fee']])->sum('amount');
+
+		$coupons = $taxes = $order->invoice->invoiceItem->whereIn('type', [Coupon::TYPES['subscription_coupon'],
+			Coupon::TYPES['customer_coupon']])->sum('amount');
 
 		$shippingAmount = $order->invoice->invoiceItem->where('description', InvoiceController::SHIPPING)->sum('amount');
 
@@ -313,7 +329,7 @@ class OrderController extends BaseController
 	{
 		try{
 			$url = ReadyCloud::getOrgUrl($readyCloudApiKey);
-			$url = env('READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
+			$url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$url."orders/"."?bearer_token=".$readyCloudApiKey;
 			$client = new Client();
 			$response = $client->request('POST', $url, [
 				'headers'   => ['Content-type' => 'application/json'],

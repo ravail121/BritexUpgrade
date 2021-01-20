@@ -2,14 +2,16 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
+/**
+ * Class FailToAutoPaidInvoice
+ *
+ * @package App\Events
+ */
 class FailToAutoPaidInvoice
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;

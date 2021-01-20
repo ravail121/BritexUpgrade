@@ -3,17 +3,17 @@
 namespace App\Listeners;
 
 use Mail;
-use Config;
 use App\Model\Customer;
 use App\Model\Company;
 use App\Events\ForgotPassword;
-use App\Model\BusinessVerification;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
 use App\Notifications\EmailWithHash;
-use Illuminate\Contracts\Queue\ShouldQueue;
-
+use Illuminate\Support\Facades\Config;
+use Illuminate\Notifications\Notifiable;
+/**
+ * Class SendEmailWithPasswordHash
+ *
+ * @package App\Listeners
+ */
 class SendEmailWithPasswordHash
 {
     use Notifiable;
@@ -28,12 +28,12 @@ class SendEmailWithPasswordHash
         //
     }
 
-    /**
-     * Handle the event.
-     *
-     * @param  BusinessVerificationCreated  $event
-     * @return void
-     */
+	/**
+	 * Handle the event.
+	 * @param ForgotPassword $event
+	 *
+	 * @return false
+	 */
     public function handle(ForgotPassword $event)
     {
         $user = $event->user;
@@ -53,12 +53,11 @@ class SendEmailWithPasswordHash
     }
 
 
-    /**
-     * This method sets the Configuration of the Mail according to the Company
-     * 
-     * @param Order $order
-     * @return boolean
-     */
+	/**
+	 * @param $companyId
+	 *
+	 * @return false
+	 */
     protected function setMailConfiguration($companyId)
     {
         $company = Company::find($companyId);
