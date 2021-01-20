@@ -9,7 +9,7 @@ use App\Notifications\SendEmails;
 use Illuminate\Support\Facades\Log;
 use App\Events\FailToAutoPaidInvoice;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
+use Notification;
 
 use App\Support\Configuration\MailConfiguration;
 

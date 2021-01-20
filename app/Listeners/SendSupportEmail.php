@@ -7,7 +7,7 @@ use App\Model\EmailTemplate;
 use App\Events\SupportEmail;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\SendEmailToSupport;
-use Illuminate\Notifications\Notification;
+use Notification;
 use App\Support\Configuration\MailConfiguration;
 
 class SendSupportEmail

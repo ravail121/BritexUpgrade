@@ -10,7 +10,7 @@ use App\Model\Company;
 use App\Model\EmailTemplate;
 use App\Events\MonthlyInvoice;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
+use Notification;
 use App\Model\SystemEmailTemplateDynamicField;
 
 class SendMonthlyInvoiceMail

@@ -8,7 +8,7 @@ use App\Model\EmailTemplate;
 use App\Notifications\SendEmails;
 use App\Model\BusinessVerification;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
+use Notification;
 use App\Events\BusinessVerificationCreated;
 use App\Support\Configuration\MailConfiguration;
 

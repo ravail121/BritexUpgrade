@@ -6,7 +6,7 @@ use App\Model\Order;
 use App\Model\Customer;
 use App\Model\EmailTemplate;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
+use Notification;
 use App\Notifications\EmailWithAttachment;
 use App\Support\Configuration\MailConfiguration;
 

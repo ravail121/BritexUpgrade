@@ -7,7 +7,7 @@ use App\Model\Subscription;
 use App\Model\EmailTemplate;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
+use Notification;
 use App\Support\Configuration\MailConfiguration;
 
 class SendEmailForChangedSubcriptionStatus

@@ -5,7 +5,7 @@ namespace App\Listeners;
 use App\Model\EmailTemplate;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\Notification;
+use Notification;
 use App\Support\Configuration\MailConfiguration;
 
 class SendEmailforPaymentFailed
