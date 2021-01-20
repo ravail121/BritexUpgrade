@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\CronJobs;
 
 use App\Model\Customer;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Events\ReportNullSubscriptionStartData;
 
 /**

@@ -3,11 +3,11 @@
 namespace App\Listeners;
 
 
+use Notification;
 use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\EmailTemplate;
 use Illuminate\Notifications\Notifiable;
-use Notification;
 use App\Notifications\EmailWithAttachment;
 use App\Support\Configuration\MailConfiguration;
 
