@@ -54,13 +54,7 @@ class OrderDataController extends BaseController
 
         $keyUrls=[];
         foreach ($orders as $order) {
-
-        	\Log::info($order);
             $readyCloudApiKey = $order->company->readycloud_api_key;
-
-
-	        \Log::info('readycloud_api_key');
-	        \Log::info($readyCloudApiKey);
 
             if(array_key_exists($readyCloudApiKey, $keyUrls)){
                 $url = $keyUrls[$readyCloudApiKey];
@@ -72,13 +66,8 @@ class OrderDataController extends BaseController
                     continue;
                 }
             }
-	        \Log::info('Order');
-            \Log::info($readyCloudApiKey."--".$order["order_num"]);
             if($readyCloudApiKey ){
-                \Log::info("Getting readycloud data for : ".$order["order_num"]);
                 $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey, $url);
-	            \Log::info('Order Data');
-	            \Log::info($orderData);
                 if($orderData){
                     try{
                         if($orderData && isset($orderData['results'][0])){
@@ -96,9 +85,7 @@ class OrderDataController extends BaseController
                                     $this->updateOrderDetails($boxdetail, $boxes, $request);
                                 }
                             }
-	                        \Log::info("Got RC data for 0 : ".$order["order_num"]);
                         }
-                        \Log::info("Got RC data for : ".$order["order_num"]);
                     }catch (Exception $e) {
                         $msg = 'RC get ex for : order#-'.$order["order_num"]." - " .$e->getMessage();
                         \Log::info($msg);
@@ -125,8 +112,6 @@ class OrderDataController extends BaseController
     {
         try {
             $url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
-            \Log::info('getOrderData');
-            \Log::info($url);
             $client = new Client();
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
@@ -151,8 +136,6 @@ class OrderDataController extends BaseController
         $client = new Client();
         try {
             $url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
-            \Log::info('getOrderBoxesOrItemsData');
-            \Log::info($url);
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
 
@@ -226,4 +209,3 @@ class OrderDataController extends BaseController
         }
     }
 }
-
