@@ -14,8 +14,6 @@ use App\Model\Plan;
 use App\Model\SubscriptionCoupon;
 use App\Model\Tax;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-
 
 /**
  * Trait InvoiceCouponTrait
