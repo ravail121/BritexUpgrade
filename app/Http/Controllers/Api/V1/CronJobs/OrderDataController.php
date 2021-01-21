@@ -77,6 +77,8 @@ class OrderDataController extends BaseController
             if($readyCloudApiKey ){
                 \Log::info("Getting readycloud data for : ".$order["order_num"]);
                 $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey, $url);
+	            \Log::info('Order Data');
+	            \Log::info($orderData);
                 if($orderData){
                     try{
                         if($orderData && isset($orderData['results'][0])){
