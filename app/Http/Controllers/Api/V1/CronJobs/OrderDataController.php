@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use Carbon\Carbon;
 use Exception;
+use Carbon\Carbon;
 use App\Model\Order;
 use GuzzleHttp\Client;
-
-use App\Http\Modules\ReadyCloud;
-
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\ShippingNumber;
+use App\Http\Modules\ReadyCloud;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
 use Illuminate\Database\Eloquent\Builder;
-
 /**
  * Class OrderDataController
  *
@@ -25,11 +22,13 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class OrderDataController extends BaseController
 {
+
 	/**
 	 * @param null    $orderID
 	 * @param Request $request
 	 *
 	 * @return \Illuminate\Http\JsonResponse
+	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
 	public function order($orderID = null, Request $request)
 	{
@@ -107,7 +106,7 @@ class OrderDataController extends BaseController
 
                 }
             }
-            usleep(config('readyCloud.ready_cloud_wait_time_in_seconds')*1000000);
+            usleep(config('internal.__BRITEX_READY_CLOUD_WAIT_TIME_IN_SECONDS') * 1000000);
         }
         return $this->respond(['message' => 'Tracking Number Updated Sucessfully']); 
     }
@@ -123,7 +122,7 @@ class OrderDataController extends BaseController
 	public function getOrderData($orderNum, $readyCloudApiKey, $url = "/")
     {
         try {
-            $url = config('readyCloud.ready_cloud_base_url').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
+            $url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
             \Log::info('getOrderData');
             \Log::info($url);
             $client = new Client();
@@ -149,7 +148,7 @@ class OrderDataController extends BaseController
     {
         $client = new Client();
         try {
-            $url = config('readyCloud.ready_cloud_base_url').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
+            $url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
             \Log::info('getOrderBoxesOrItemsData');
             \Log::info($url);
             $response = $client->request('GET', $url);
