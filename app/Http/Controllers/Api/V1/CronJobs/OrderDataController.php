@@ -95,6 +95,7 @@ class OrderDataController extends BaseController
                                     $this->updateOrderDetails($boxdetail, $boxes, $request);
                                 }
                             }
+	                        \Log::info("Got RC data for 0 : ".$order["order_num"]);
                         }
                         \Log::info("Got RC data for : ".$order["order_num"]);
                     }catch (Exception $e) {
@@ -123,7 +124,8 @@ class OrderDataController extends BaseController
     {
         try {
             $url = config('readyCloud.ready_cloud_base_url').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
-            //\Log::info($url);
+            \Log::info('getOrderData');
+            \Log::info($url);
             $client = new Client();
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
@@ -148,7 +150,8 @@ class OrderDataController extends BaseController
         $client = new Client();
         try {
             $url = config('readyCloud.ready_cloud_base_url').$boxesUrl.'?bearer_token='.$readyCloudApiKey;
-            //\Log::info($url);
+            \Log::info('getOrderBoxesOrItemsData');
+            \Log::info($url);
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
 
