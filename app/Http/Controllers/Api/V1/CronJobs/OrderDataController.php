@@ -55,8 +55,14 @@ class OrderDataController extends BaseController
 
         $keyUrls=[];
         foreach ($orders as $order) {
+
+        	\Log::info($order);
             $readyCloudApiKey = $order->company->readycloud_api_key;
-            
+
+
+	        \Log::info('readycloud_api_key');
+	        \Log::info($readyCloudApiKey);
+
             if(array_key_exists($readyCloudApiKey, $keyUrls)){
                 $url = $keyUrls[$readyCloudApiKey];
             }else{
@@ -66,11 +72,11 @@ class OrderDataController extends BaseController
                 }catch(Exception $e){
                     continue;
                 }
-                
             }
-           // \Log::info($readyCloudApiKey."--".$order["order_num"]);
+	        \Log::info('Order');
+            \Log::info($readyCloudApiKey."--".$order["order_num"]);
             if($readyCloudApiKey ){
-                //\Log::info("Getting readycloud data for : ".$order["order_num"]);
+                \Log::info("Getting readycloud data for : ".$order["order_num"]);
                 $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey, $url);
                 if($orderData){
                     try{
@@ -90,7 +96,7 @@ class OrderDataController extends BaseController
                                 }
                             }
                         }
-                        //\Log::info("Got RC data for : ".$order["order_num"]);
+                        \Log::info("Got RC data for : ".$order["order_num"]);
                     }catch (Exception $e) {
                         $msg = 'RC get ex for : order#-'.$order["order_num"]." - " .$e->getMessage();
                         \Log::info($msg);
