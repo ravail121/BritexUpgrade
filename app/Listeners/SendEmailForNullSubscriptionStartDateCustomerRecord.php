@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-use Illuminate\Notifications\Notifiable;
 use Notification;
+use Illuminate\Notifications\Notifiable;
 use App\Support\Configuration\MailConfiguration;
 use App\Notifications\SendEmailForNullSubscriptionStartDate;
 

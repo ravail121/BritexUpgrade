@@ -71,8 +71,6 @@ class OrderController extends BaseController
 				}
 				$row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
 				$apiData = $this->data($order, $row);
-				\Log::info('Ready Cloud');
-				\Log::info($apiData);
 
 				$response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
 				if($response){

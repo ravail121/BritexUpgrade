@@ -20,14 +20,14 @@ class SubscriptionStatusDateController extends Controller
 	public function processAccountSuspendedAndNullStartDateCheck(Request $request)
 	{
 		try{
-			$customers = Customer::whereNull('subscription_start_data')->where(['account_suspended', false])->get();
+			$customers = Customer::whereNull('subscription_start_date')->where(['account_suspended', false])->get();
 
 			$customerCount = $customers->count();
 
 			if($customerCount) {
 				event( new ReportNullSubscriptionStartData( $customers ) );
 			}
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			\Log::info($e->getMessage(). ' on the line '. $e->getLine());
 		}
 	}
