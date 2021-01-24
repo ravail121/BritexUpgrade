@@ -504,6 +504,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.create.simrecord',
 			'uses' => 'StandaloneRecordController@createSimRecord',
 		]);
+
+		Route::post('/validate-sim-num',[
+			'as'   => 'api.validate.simnum',
+			'uses' => 'SubscriptionController@validateIfTheSimIsUsed',
+		]);
 	});
 
 

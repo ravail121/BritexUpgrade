@@ -9,6 +9,7 @@ use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\OrderCoupon;
 use App\Model\PlanToAddon;
+use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\BusinessVerification;
@@ -85,14 +86,38 @@ class OrderController extends BaseController
      * @var array
      */
     protected $activation;
-    protected $tax_id;
-    protected $tax_total;
-    protected $total_price;
-    protected $couponAmount;
-    protected $taxrate;
-    protected $order_hash;
-    protected $totalTaxableAmount = [0];
-    protected  $cart;
+	/**
+	 * @var
+	 */
+	protected $tax_id;
+	/**
+	 * @var
+	 */
+	protected $tax_total;
+	/**
+	 * @var
+	 */
+	protected $total_price;
+	/**
+	 * @var
+	 */
+	protected $couponAmount;
+	/**
+	 * @var
+	 */
+	protected $taxrate;
+	/**
+	 * @var
+	 */
+	protected $order_hash;
+	/**
+	 * @var int[]
+	 */
+	protected $totalTaxableAmount = [0];
+	/**
+	 * @var
+	 */
+	protected  $cart;
 
 
     /**
@@ -295,11 +320,10 @@ class OrderController extends BaseController
 	 * @return \Illuminate\Http\JsonResponse
 	 */
 	public function find(Request $request, $id)
-     {
-
+	{
         $this->content = Order::find($id);
         return response()->json($this->content);
-     }
+    }
 
 
 	/**
@@ -326,6 +350,14 @@ class OrderController extends BaseController
                 'imei_number'      => 'digits_between:14,16',
             ]
         );
+
+        if($request->has('sim_num')) {
+	        $validation->after( function ( $validator ) use ($request) {
+		        if ( $this->validateIfTheSimIsUsed( $request->input('sim_num') ) ) {
+			        $validator->errors()->add( 'sim_num', "The SIM can't be used." );
+		        }
+	        } );
+        }
 
 
         if ($validation->fails()) {
@@ -566,22 +598,14 @@ class OrderController extends BaseController
 	 */
 	public function get_company(Request $request)
     {
-        // $apiKey = $request->Authorization;
-        // $businessVerification = Company::where('api_key',$apiKey)->first()->business_verification;
         return \Request::get('company');
     }
 
 
-//    public function destroy($id){
-//         Order::find($id)->delete();
-//         //$orders = OrderController::find($id);
-//         return redirect()->back()->withErrors('Successfully deleted!');
-//     }
-// }
-
-
-
-    public function getCouponDetails()
+	/**
+	 * Get Coupon Details
+	 */
+	public function getCouponDetails()
     {
         $order = Order::where('hash', $this->order_hash)->first();
 
@@ -598,7 +622,16 @@ class OrderController extends BaseController
         }
     }
 
-
-    /**-------------------------------**/
-/**-------------------------------**/
+	/**
+	 * @param $simNum
+	 *
+	 * @return mixed
+	 */
+	protected function validateIfTheSimIsUsed($simNum)
+    {
+	    return Subscription::where([
+	    	['sim_card_num', $simNum],
+	    	['status', '!=', 'closed']
+	    ])->exists();
+    }
 }

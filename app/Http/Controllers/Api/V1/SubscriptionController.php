@@ -299,7 +299,7 @@ class SubscriptionController extends BaseController
     {
         $simNum = null;
         if($request->sim_num){
-            $simNum = preg_replace("/\F$/","",$request->sim_num);
+            $simNum = preg_replace("/\F$/","", $request->sim_num);
             if(preg_match("/[a-z]/i", $simNum)){
                 return $this->respond(['details' => ["Invalid Sim Number"]], 400);
             }
@@ -596,6 +596,33 @@ class SubscriptionController extends BaseController
 			$errorMessage = $responseBody['message'];
 		}
 		return $errorMessage;
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function validateIfTheSimIsUsed(Request $request)
+	{
+		$data =  $request->validate([
+			'sim_number'   => 'required|min:19|max:20',
+		]);
+
+		$simNum = preg_replace("/\F$/","", $request->sim_number);
+		if(preg_match("/[a-z]/i", $simNum)){
+			return $this->respond( [ 'success' => false, 'message' => 'Invalid Sim Number' ]);
+		}
+		$subscriptionExists = Subscription::where([
+			['sim_card_num', $simNum],
+			['status', '!=', 'closed']
+		])->exists();
+
+		if($subscriptionExists){
+			return $this->respond( [ 'status' => false, 'message' => "The SIM can't be used." ]);
+		}
+
+		return $this->respond([ 'status' => true ]);
 	}
 
 }
