@@ -11,24 +11,38 @@ use App\Model\Subscription;
 use App\Model\PendingCharge;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Model\CreditToInvoice;
 use App\Model\SubscriptionAddon;
 use App\Model\subscriptionCoupon;
 use App\Http\Controllers\BaseController;
 
+/**
+ * @deprecated
+ * Class InvoiceController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class InvoiceController extends BaseController
 {
 
+	/**
+	 * @var array
+	 */
 	public $content;
 
 
+	/**
+	 * InvoiceController constructor.
+	 */
 	public function __construct()
 	{
 		$this->content = [];
 	}
 
-
-
+	/**
+	 * @param Request $request
+	 *
+	 * @return mixed
+	 */
 	public function get(Request $request){
 
 		$lastdayofmonth = [
@@ -74,8 +88,8 @@ class InvoiceController extends BaseController
 			foreach ($subscriptions as $subscription){
 
 				$_invoice = [];
-				if($subscription->status= 'active' || $subscription->status = 'shipping' || $subscription->status = 'for-activation' && $pendingcharges){
-					$invoices = Invoice::where('customer_id',$customer->id)->get();
+				if($subscription->status == 'active' || $subscription->status == 'shipping' || $subscription->status == 'for-activation' && $pendingcharges){
+					$invoices = Invoice::where('customer_id', $customer->id)->get();
 					foreach ($invoices as $invoice) {
 						if($invoice->start_date > $customer->billing_end && $invoice->type!= 1){
 							$_enddate = $customer->end_date;
@@ -83,39 +97,34 @@ class InvoiceController extends BaseController
 							$end_date =date ("Y-m-d", strtotime ( $start_date ."+1 months"));
 							$due_date = $customer->billing_end;
 							$_invoice = Invoice::create([
-								'end_date'=>$start_date,
-								'start_date'=>$end_date,
-								'due_date'=>$due_date,
-								'type'=>1,
-								'status'=>1,
-								'subtotal'=>0,
-								'total_due'=>0,
-								'prev_balance'=>0,
-								'payment_method'=>0,
-								'business_name'=>0,
-								'billingfname'=>0,
-								'billing_fname'=>0,
-								'billing_lname'=>0,
-								'billing_address_line_1'=>0,
-								'billing_address_line_2'=>0,
-								'billing_city'=>0,
-								'billing_state'=>0,
-								'billing_zip'=>0,
-								'shipping_fname'=>0,
-								'shipping_lname'=>0,
-								'shipping_address_line_1'=>0,
-								'shipping_address_line_2'=>0,
-								'shipping_city'=>0,
-								'shipping_state'=>0,
-								'shipping_zip'=>0,
-
-
+								'end_date'                  => $start_date,
+								'start_date'                => $end_date,
+								'due_date'                  => $due_date,
+								'type'                      => 1,
+								'status'                    => 1,
+								'subtotal'                  => 0,
+								'total_due'                 => 0,
+								'prev_balance'              => 0,
+								'payment_method'            => 0,
+								'business_name'             => 0,
+								'billingfname'              => 0,
+								'billing_fname'             => 0,
+								'billing_lname'             => 0,
+								'billing_address_line_1'    => 0,
+								'billing_address_line_2'    => 0,
+								'billing_city'              => 0,
+								'billing_state'             => 0,
+								'billing_zip'               => 0,
+								'shipping_fname'            => 0,
+								'shipping_lname'            => 0,
+								'shipping_address_line_1'   => 0,
+								'shipping_address_line_2'   => 0,
+								'shipping_city'             => 0,
+								'shipping_state'            => 0,
+								'shipping_zip'              => 0,
 							]);
 						}
 					}
-
-
-
 				}else{
 					return respond(['subscription status or pendingcharge doesnot match']);
 				}
@@ -306,63 +315,6 @@ class InvoiceController extends BaseController
 		], $array);
 	}
 
-	// public function invoiceDetail(Request $request)
-	// {
-	// 	$customer = Customer::hash($request->hash);
-
-	// 	$array = [
-	// 			'billing_start' => $customer->billing_start_date_formatted,
-	// 			'billing_end'   => $customer->billing_end_date_formatted,
-	// 	];
-
-	// 	if($array['billing_start'] =='NA' || $array['billing_end'] =='NA'){
-	// 		return $this->content = array_merge([
-	// 				'charges'  => ['0','00'],
-	// 				'past_due' => ['0','00'],
-	// 				'payment'  => ['0','00'],
-	// 				'total'	   => ['0','00'],
-	// 				'due_date' => 'NA'
-	// 		], $array);
-	// 	}
-
-	// 	$customerInvoice = Invoice::where('customer_id', $customer->id)->get();
-
-	// 	if(isset($customerInvoice['0'])){
-	// 		$invoices = $customerInvoice->where('start_date', $customer->billing_start);
-	// 		$charges = [0];
-	// 		foreach ($invoices as $invoice) {
-	// 			$charges[] = $invoice->cal_total_charges;
-	// 		}
-	// 		$charges = array_sum($charges);
-	// 		$payment = $this->getPaymentAndCreditAmount($customer);
-	// 		$pastDue = $customerInvoice->where('start_date', '<', $customer->billing_start)->sum('total_due');
-	// 	}else{
-	// 		$charges = $payment = $pastDue = 0;
-	// 	}
-
-	// 	$total = ($charges - $payment) + $pastDue;
-
-	// 	if($total < 0){
-	// 		$total = 0;
-	// 	}
-
-	// 	$charges = $this->getAmountFormated($charges);
-	// 	$payment = $this->getAmountFormated($payment);
-	// 	$pastDue = $this->getAmountFormated($pastDue);
-	// 	$total   = $this->getAmountFormated($total);
-	// 	$dueDate = $this->getTotalDueDate($customer);
-
-
-	// 	return $this->content = array_merge([
-	// 				'charges'  => $charges,
-	// 				'past_due' => $pastDue,
-	// 				'payment'  => $payment,
-	// 				'total'	   => $total,
-	// 				'due_date' => $dueDate
-	// 		], $array);
-	// }
-
-
 	public function getTotalDueDate($customer)
 	{
 		$invoice = Invoice::where([['customer_id', $customer->id],['status', '1']])->first();
@@ -383,17 +335,6 @@ class InvoiceController extends BaseController
 	{
 		return $customerInvoice->creditToInvoice->sum('amount');
 	}
-
-	// public function getPaymentAndCreditAmount($customer)
-	// {
-	//           $creditAmount = $customer->creditsNotAppliedCompletely->sum('pending_credits');
-	// 	$id = Invoice::whereCustomerId($customer->id)->pluck('id');
-	// 	$creditToInvoiceAmount = CreditToInvoice::whereIn('invoice_id', $id)->whereBetween('created_at', [date($customer->billing_start), date($customer->billing_end)])->sum('amount');
-
-	// 	return $creditToInvoiceAmount + $creditAmount;
-	// }
-
-
 
 	/**
 	 * Generates Float numbers upto 2 decimals

@@ -7,10 +7,19 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 
+/**
+ * Class SupportEmail
+ *
+ * @package App\Events
+ */
 class SupportEmail
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    public $data;
+
+	/**
+	 * @var array
+	 */
+	public $data;
     /**
      * Create a new event instance.
      *

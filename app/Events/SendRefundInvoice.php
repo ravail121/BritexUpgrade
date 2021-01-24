@@ -7,12 +7,24 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 
+/**
+ * Class SendRefundInvoice
+ *
+ * @package App\Events
+ */
 class SendRefundInvoice
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $paymentLog;
-    public $invoice;
+	/**
+	 * @var
+	 */
+	public $paymentLog;
+
+	/**
+	 * @var
+	 */
+	public $invoice;
 
     /**
      * Create a new event instance.

@@ -1,12 +1,11 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1;
+
 use Validator;
-use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Model\Device;
-use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
@@ -17,22 +16,35 @@ use App\Model\SubscriptionAddon;
 use App\Http\Controllers\BaseController;
 
 /**
- * 
+ * Class PlanController
+ *
+ * @package App\Http\Controllers\Api\V1
  */
 class PlanController extends BaseController
 {
 
-    const ACCOUNT = [
+	/**
+	 *
+	 */
+	const ACCOUNT = [
         'active'    => 0,
         'suspended' => 1
     ];
 
-    function __construct()
+	/**
+	 * PlanController constructor.
+	 */
+	public function __construct()
     {
         $this->content = array();
     }
 
-    public function get(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|void
+	 */
+	public function get(Request $request)
     {
         $company = \Request::get('company');
 
@@ -45,19 +57,6 @@ class PlanController extends BaseController
                 return;
             }
             if ($device->type == 0) {
-                //Get plans from device_to_plan
-                // $device_to_plans = DeviceToPlan::with(['device', 'plan'])->where('device_id', $device_id)
-                        /*->whereHas('device', function($query) use( $device) {
-                            $query->where('device_id', $device->id);
-                        })->whereHas('plan', function($query) use( $device) {
-                            $query->where('type', $device->type);
-                        })*/
-                //     ->get();
-                // $plans = array();
-
-                // foreach ($device_to_plans as $dp) {
-                //     array_push($plans, $dp->plan);
-                // }
                 $plans = $device->plans;
                 
             } else {
@@ -75,22 +74,31 @@ class PlanController extends BaseController
         return response()->json($plans);
     }
 
-    public function find(Request $request, $id)
+	/**
+	 * @param Request $request
+	 * @param         $id
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function find(Request $request, $id)
     {
         $this->content = Plan::find($id);
         return response()->json($this->content);
     }
 
-    public function check_area_code(Request $request)
+	/**
+	 * Check porting
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function check_area_code(Request $request)
     {
-        /*
-        Check porting
-        */
         $validation = Validator::make(
             $request->all(),
             [
-                'order_hash' => 'required|string',
-                'plan_id' => 'required|numeric'
+                'order_hash'    => 'required|string',
+                'plan_id'       => 'required|numeric'
             ]
         );
 
@@ -135,7 +143,12 @@ class PlanController extends BaseController
         }
     }
 
-    public function compatiblePlans(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function compatiblePlans(Request $request)
     {
         $data = $request->validate(
             [
@@ -194,7 +207,12 @@ class PlanController extends BaseController
         return $this->respond($plans);
     }
 
-    public function compatibleAddons(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return PlanToAddon[]|\Illuminate\Database\Eloquent\Builder[]|\Illuminate\Database\Eloquent\Collection
+	 */
+	public function compatibleAddons(Request $request)
     {
         $data = $request->validate(
             [
@@ -211,7 +229,12 @@ class PlanController extends BaseController
        
     }
 
-    public function activeAddons($subscriptionId)
+	/**
+	 * @param $subscriptionId
+	 *
+	 * @return string|void
+	 */
+	public function activeAddons($subscriptionId)
     {
         $allActiveAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId]])->whereNotIn('status', ['removed','removal-scheduled'])->pluck('addon_id')->toArray();
         if($allActiveAddon){
@@ -220,17 +243,29 @@ class PlanController extends BaseController
         return ;
     }
 
-    private function removalScheduledAddon($subscriptionId)
+	/**
+	 * @param $subscriptionId
+	 *
+	 * @return string|void
+	 */
+	private function removalScheduledAddon($subscriptionId)
     {
-        $allRemovalAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId]])->whereNotIn('status', ['removed','removal-scheduled'])->pluck('addon_id')->toArray();
-        $allRemovalAddon = SubscriptionAddon::where([['subscription_id', $subscriptionId],['status', 'removal-scheduled']])->pluck('addon_id')->toArray();
+        $allRemovalAddon = SubscriptionAddon::where([
+        	['subscription_id', $subscriptionId],
+	        ['status', 'removal-scheduled']
+        ])->pluck('addon_id')->toArray();
         if($allRemovalAddon){
             return implode(",", $allRemovalAddon);
         }
-        return ;
+        return;
     }
 
-    public function checkPlan(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function checkPlan(Request $request)
     {
         $data = $request->validate(
             [
@@ -304,7 +339,14 @@ class PlanController extends BaseController
         return $this->respond($order);
     }
 
-    public function updateAddons($request, $orderGroup, $subscription, $plan, $paidInvoice=null)
+	/**
+	 * @param      $request
+	 * @param      $orderGroup
+	 * @param      $subscription
+	 * @param      $plan
+	 * @param null $paidInvoice
+	 */
+	public function updateAddons($request, $orderGroup, $subscription, $plan, $paidInvoice=null)
     {
         $addons = $request->addon;
         if(!$addons){
@@ -317,15 +359,18 @@ class PlanController extends BaseController
             if(!empty($removedAddon) && $paidInvoice ==null){
                 $this->updateRemovedAddon($removedAddon, $subscription->id, $orderGroup->id);
             }
-
         }
-
         $newAddon=array_diff($addons, $activeAddons);
         $this->insertNewAddon($newAddon, $orderGroup, $subscription);
 
     }
 
-    public function updateRemovedAddon($addons, $subscription_id, $orderGroupId)
+	/**
+	 * @param $addons
+	 * @param $subscription_id
+	 * @param $orderGroupId
+	 */
+	public function updateRemovedAddon($addons, $subscription_id, $orderGroupId)
     {
         $data = ['subscription_id' => $subscription_id,
                 'prorated_amt'     => 0,
@@ -336,13 +381,17 @@ class PlanController extends BaseController
             if($subscriptionAddon){
                 $data['addon_id'] = $addon;
                 $data['subscription_addon_id'] = $subscriptionAddon->id;
-
                 $orderGroupAddon = OrderGroupAddon::create($data);
             }
         }
     }
 
-    public function insertNewAddon($addons, $orderGroup, $subscription)
+	/**
+	 * @param $addons
+	 * @param $orderGroup
+	 * @param $subscription
+	 */
+	public function insertNewAddon($addons, $orderGroup, $subscription)
     {
         foreach ($addons as $key => $addon) {
             $data = [

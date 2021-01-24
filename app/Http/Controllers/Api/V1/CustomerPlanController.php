@@ -19,7 +19,6 @@ use App\Events\PortPending;
  */
 class CustomerPlanController extends BaseController
 {
-
 	/**
 	 * @param Request $request
 	 *

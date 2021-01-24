@@ -137,12 +137,10 @@ class StandaloneRecordController extends BaseController
     protected function validateDeviceRecord($request)
     {
 		return $this->validate_input($request->all(), array_merge($this->rules, [ 
-	      'device_id'   => 'required|numeric',
+	        'device_id'   => 'required|numeric',
 	    ]));
 
     }
-
-
 
     /**
      * Validates standalone_sim_record_data

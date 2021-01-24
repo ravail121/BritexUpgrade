@@ -5,15 +5,20 @@ namespace App\Http\Requests;
 use LVR\CreditCard\CardCvc;
 use LVR\CreditCard\CardNumber;
 use LVR\CreditCard\CardExpirationDate;
-use LVR\CreditCard\CardExpirationYear;
-use LVR\CreditCard\CardExpirationMonth;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Class CreditCardRequest
+ *
+ * @package App\Http\Requests
+ */
 class CreditCardRequest extends FormRequest
 {
-    
-    public $cardNumber;
 
+	/**
+	 * @var string
+	 */
+	public $cardNumber;
 
     /**
      * Gets Card Number

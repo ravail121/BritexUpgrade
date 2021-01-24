@@ -762,7 +762,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 		return $dues;
 	}
 
-
 	/**
 	 * @param Request $request
 	 */

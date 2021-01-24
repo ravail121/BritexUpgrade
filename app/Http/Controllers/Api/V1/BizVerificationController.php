@@ -11,23 +11,34 @@ use App\Http\Controllers\BaseController;
 use App\Events\BusinessVerificationCreated;
 use App\Events\BusinessVerificationApproved;
 
+/**
+ * Class BizVerificationController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class BizVerificationController extends BaseController
-{ 
+{
 
-    public function __construct()
+	/**
+	 * BizVerificationController constructor.
+	 */
+	public function __construct()
     {
         $this->content = array();
-
     }
 
-    public function post(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|Response
+	 */
+	public function post(Request $request)
     {
         $order = $this->getOrderId($request->order_hash);
         $request->headers->set('authorization', $order->company->api_key);
         $hasError = $this->validateData($request);
 
         if ($hasError) {
-            
             return $hasError;
         }
 
@@ -50,28 +61,21 @@ class BizVerificationController extends BaseController
             $businessVerification->update($dataWithoutDocs);
 
         } else {
-           
             $businessVerification = BusinessVerification::create($dataWithoutDocs);
             event(new BusinessVerificationCreated($request->order_hash, $businessVerification->hash));
-            
         }
         
         
         if($request->hasFile('doc_file')) {
-            
             $uploadedAndInserted = $this->uploadAndInsertDocument($request->doc_file, $businessVerification);
 
             if (!$uploadedAndInserted) {
                 return $this->respondError('File Could not be uploaded.');
             }
         }
-        
         return $this->respond(['order_hash' => $request->order_hash]);
     }
-
-
-
-
+    
     /**
      * Approves the Business of Customer
      * 
@@ -105,10 +109,8 @@ class BizVerificationController extends BaseController
         return $this->respond(['message' => $msg]); 
     }
 
-
-
     /**
-     * Fethces the Order-id
+     * Fetches the Order-id
      * @param  String        $orderHash
      * @return int
      */
@@ -117,17 +119,14 @@ class BizVerificationController extends BaseController
         return Order::hash($orderHash)->first();
     }
 
-
-
-
-    /**
-     * Validates the Business Verification Data
-     * @param  Request      $request
-     * @return Response
-     */
+	/**
+	 * Validates the Business Verification Data
+	 * @param $request
+	 *
+	 * @return false|\Illuminate\Http\JsonResponse
+	 */
     protected function validateData($request)
     {
-        
         return $this->validate_input($request->all(), [
 		   'fname'         => 'required|string',
 		   'lname'         => 'required|string',
@@ -138,8 +137,6 @@ class BizVerificationController extends BaseController
 		   'order_hash'    => 'required|string',
 		]);
 	}
-
-
 
     /**
      * Uploads the document to desired path and inserts the file name to database
@@ -157,11 +154,8 @@ class BizVerificationController extends BaseController
                 'bus_ver_id' => $businessVerification->id,
             ]);
         }
-
         return false;
     }
-
-
 
     /**
      * This function resends email for business_verification
@@ -183,14 +177,12 @@ class BizVerificationController extends BaseController
         return $this->respond(['email' => $order->bizVerification->email]);   
     }
 
-
-
-    /**
-     * Removes document from database
-     * 
-     * @param  int       $id
-     * @return Response
-     */
+	/**
+	 * Removes document from database
+	 * @param $id
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
     public function removeDocument($id)
     {
         
@@ -203,10 +195,6 @@ class BizVerificationController extends BaseController
         }
 
         BusinessVerificationDocs::destroy($id);
-
         return $this->respond(['message' => 'business document removed']);
     }
-
-
-
 }

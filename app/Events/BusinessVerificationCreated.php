@@ -17,8 +17,15 @@ class BusinessVerificationCreated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $orderHash;
-    public $bizHash;
+	/**
+	 * @var
+	 */
+	public $orderHash;
+
+	/**
+	 * @var
+	 */
+	public $bizHash;
     /**
      * Create a new event instance.
      *

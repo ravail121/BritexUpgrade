@@ -10,10 +10,20 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
+/**
+ * Class SignOnController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class SignOnController extends BaseController
 {
-    
-    public function signOn(Request $request)
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function signOn(Request $request)
     {
         $data = $request->validate([
             'identifier' => 'required',
@@ -61,7 +71,6 @@ class SignOnController extends BaseController
             return $this->respondError("Invalid Email or Password");
         }
     }
-
 
     /**
      * [isNumeric description]

@@ -16,8 +16,10 @@ class UpgradeDowngradeInvoice
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $order, $pdf;
-
+	/**
+	 * @var
+	 */
+	public $order, $pdf;
 
     /**
      * Create a new event instance.

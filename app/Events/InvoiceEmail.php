@@ -16,7 +16,10 @@ class InvoiceEmail
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $invoice, $pdf, $type;
+	/**
+	 * @var
+	 */
+	public $invoice, $pdf, $type;
 
     /**
      * Create a new event instance.

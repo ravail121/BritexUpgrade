@@ -9,12 +9,19 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 
+/**
+ * Class MonthlyInvoice
+ *
+ * @package App\Events
+ */
 class MonthlyInvoice
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $customer;
-
+	/**
+	 * @var Customer
+	 */
+	public $customer;
 
     /**
      * Create a new event instance.

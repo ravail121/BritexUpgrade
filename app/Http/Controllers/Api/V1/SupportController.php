@@ -10,13 +10,26 @@ use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use App\Events\SupportEmail;
 
+/**
+ * Class SupportController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class SupportController extends Controller
 {
+	/**
+	 * SupportController constructor.
+	 */
 	public function  __construct(){
 		$this->content = array();
 	}
 
-    public function get(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function get(Request $request)
     {
 		$company    = \Request::get('company');
 		$categories = Category::where('company_id', $company->id)->get();
@@ -28,7 +41,12 @@ class SupportController extends Controller
 
 		return response()->json($this->content); 	
 	}
-		
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return array|null
+	 */
 	public function sendEmail(Request $request)
 	{
 		$data = $request->all();

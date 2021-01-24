@@ -20,9 +20,6 @@ class SampleInvoiceGenerationController extends Controller
         return $pdf->download('invoice.pdf');
     }
 
-
-
-
     /**
      * Generates the Invoice template and downloads the invoice.pdf file
      * 
@@ -37,5 +34,4 @@ class SampleInvoiceGenerationController extends Controller
         $pdf = PDF::loadHTML($view1 . $view2)->setPaper('letter', 'portrait');
         return $pdf->download('statement.pdf');
     }
-
 }

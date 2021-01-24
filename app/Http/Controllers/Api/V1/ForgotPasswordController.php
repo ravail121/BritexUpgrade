@@ -6,14 +6,23 @@ use App\PasswordReset;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Events\ForgotPassword;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
+/**
+ * Class ForgotPasswordController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class ForgotPasswordController extends BaseController
 {
-    public function password(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return array|\Illuminate\Http\JsonResponse
+	 */
+	public function password(Request $request)
     {
-        $data=$request->validate([
+        $data = $request->validate([
             'identifier'     => 'required'
         ]);
 
@@ -50,7 +59,12 @@ class ForgotPasswordController extends BaseController
     }
 
 
-    protected function insertToken($email)
+	/**
+	 * @param $email
+	 *
+	 * @return array
+	 */
+	protected function insertToken($email)
     {
         $hash = sha1(time());
         $user = [
@@ -65,7 +79,12 @@ class ForgotPasswordController extends BaseController
     }
 
 
-    public function resetPassword(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function resetPassword(Request $request)
     {
         $data = $request->validate([
             'token'      => 'required',
@@ -74,8 +93,8 @@ class ForgotPasswordController extends BaseController
         $companyId = \Request::get('company')->id;
 
         $passwordReset = PasswordReset::where([
-            'token' => $data['token'],
-            'company_id' => $companyId,
+            'token'         => $data['token'],
+            'company_id'    => $companyId,
         ])->first();
 
         if(isset($passwordReset['email'])){
@@ -89,7 +108,6 @@ class ForgotPasswordController extends BaseController
                 'token' => $data['token'],
                 'company_id' => $companyId,
             ])->delete();
-            
         }else{
             return $this->respond('Sorry Reset Password is no longer valid');
         }

@@ -16,7 +16,11 @@ class InvoiceAutoPaid
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $customer;
+	/**
+	 * @var
+	 */
+	public $customer;
+
     /**
      * Create a new event instance.
      *

@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use Validator;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use App\Http\Controllers\Controller;
 use App\Support\Utilities\FileMoveTrait;
 use App\Support\Responses\APIResponse;
 
-
+/**
+ * Class BaseController
+ *
+ * @package App\Http\Controllers
+ */
 class BaseController extends Controller
 { 
     
     use FileMoveTrait, APIResponse;
-
 
     /**
      * Return generic json response with the given data.
@@ -28,6 +28,7 @@ class BaseController extends Controller
     {
         return response()->json($data, $statusCode, $headers);
     }
+
     /**
      * Respond with error.
      *
@@ -42,7 +43,13 @@ class BaseController extends Controller
         ], $statusCode);
     }
 
-    public function validate_input($data, $rules)
+	/**
+	 * @param $data
+	 * @param $rules
+	 *
+	 * @return false|\Illuminate\Http\JsonResponse
+	 */
+	public function validate_input($data, $rules)
     {
 
       $validation = Validator::make($data, $rules);
@@ -52,7 +59,4 @@ class BaseController extends Controller
       return false;
 
     }
-
-
-
 }

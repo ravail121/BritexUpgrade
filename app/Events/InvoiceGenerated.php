@@ -9,11 +9,19 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 
+/**
+ * Class InvoiceGenerated
+ *
+ * @package App\Events
+ */
 class InvoiceGenerated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $order, $pdf;
+	/**
+	 * @var Order
+	 */
+	public $order, $pdf;
 
 
     /**

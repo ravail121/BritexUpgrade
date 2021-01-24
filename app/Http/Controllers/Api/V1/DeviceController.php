@@ -9,12 +9,26 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Request as RequestFacade;
 
+/**
+ * Class DeviceController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class DeviceController extends Controller
 {
+
+	/**
+	 * DeviceController constructor.
+	 */
 	public function  __construct(){
 		$this->content = array();
 	}
 
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
 	public function get(Request $request)
 	{
 		$company = RequestFacade::get('company')->load([
@@ -59,14 +73,23 @@ class DeviceController extends Controller
 		return response()->json($this->content);
 	}
 
-
-
+	/**
+	 * @param Request $request
+	 * @param         $id
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
 	public function find(Request $request, $id){
 		$this->content = Device::find($id);
         return response()->json($this->content);
 	}
 
 
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
 	public function getImei(Request $request)
 	{
 		$imeiNumber = DefaultImei::where('type', $request->plan_type)->get();
@@ -90,6 +113,9 @@ class DeviceController extends Controller
 		return response()->json($this->content);
 	}
 
+	/**
+	 * Sort OS
+	 */
 	protected function sortOS()
 	{
 		$order = [];

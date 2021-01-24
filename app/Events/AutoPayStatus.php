@@ -27,7 +27,6 @@ class AutoPayStatus
     public function __construct(Customer $customer)
     {
         $this->customer = $customer;
-
     }
 
     /**

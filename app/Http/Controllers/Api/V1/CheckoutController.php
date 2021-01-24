@@ -8,10 +8,19 @@ use App\Model\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Class CheckoutController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class CheckoutController extends BaseController
 {
-
-    public function post(Request $request){
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function post(Request $request){
         $company_id = $request->get('company')->id;
         $customer_id = $request->get('customer_id');
 
@@ -63,8 +72,7 @@ class CheckoutController extends BaseController
         $customer = Customer::where('email', $request->get('email'))->first();
         return $this->respond(['success' => true, 'customer' => $customer]);
     }
-
-
+    
     /**
      * This function sets some data for creating a customer
      *

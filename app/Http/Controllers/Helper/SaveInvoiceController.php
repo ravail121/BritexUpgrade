@@ -9,17 +9,30 @@ use App\Model\SystemGlobalSetting;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
 
+/**
+ * Class SaveInvoiceController
+ *
+ * @package App\Http\Controllers\Helper
+ */
 class SaveInvoiceController extends BaseController
 {
 	use InvoiceTrait;
 
+	/**
+	 *
+	 */
 	const INVOICE_TEMPLATE = [
         'custom charge'   => 'custom-charge-invoice',
     ];
 
-    public function saveInvoice(Request $request)
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function saveInvoice(Request $request)
     {
-        $data=$request->validate([
+        $data = $request->validate([
             'invoiceId'    => 'required|exists:invoice,id',
             'invoiceType'  => 'required',
         ]);

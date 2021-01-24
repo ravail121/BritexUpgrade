@@ -12,26 +12,34 @@ use App\Model\Sim;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
 
+/**
+ * Class OrderGroupController
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class OrderGroupController extends Controller
 {
-
+	/**
+	 * OrderGroupController constructor.
+	 */
 	public function __construct(){
 		$this->content = array();
 		$this->output = ['success' => false, 'message' => ''];
 	}
 
-
+	/**
+	 * Closing/Opening a group
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
 	public function put(Request $request)
 	{
-		/*
-			Closing/Opening a group
-		*/
 		$validation = Validator::make($request->all(),[
-			'order_hash'=>'required|string',
-			'action'=>'required|numeric',
-			'order_group_id'=>'numeric'
+			'order_hash'        => 'required|string',
+			'action'            => 'required|numeric',
+			'order_group_id'    => 'numeric'
 		]);
-
 
 		if($validation->fails()){
 			return response()->json($validation->getmessagebag()->all());
@@ -85,21 +93,25 @@ class OrderGroupController extends Controller
 
 	}
 
+	/**
+	 * @param $request
+	 *
+	 * @return array
+	 */
 	protected function editSim($request)
 	{
 		$newSimNumber   = $request->newSimNumber;
-
 		$orderGroupId   = $request->orderGroupId;
 		$orderGroup     = OrderGroup::find($orderGroupId);
-
 		$newSimNumber   ? $orderGroup->update(['sim_num' => $newSimNumber])  : null;
-
 		return ['new_sim_num' => $newSimNumber];
-
 	}
 
-
-
+	/**
+	 * @param Request $request
+	 *
+	 * @return array|\Illuminate\Http\JsonResponse
+	 */
 	public function edit(Request $request)
 	{
 		if ($request->newSimNumber) {
@@ -118,7 +130,11 @@ class OrderGroupController extends Controller
 		return response()->json($this->content);
 	}
 
-
+	/**
+	 * @param $order
+	 *
+	 * @return \Illuminate\Http\JsonResponse|null
+	 */
 	private function checkInvalidHash($order)
 	{
 		if(!count($order)){
@@ -128,6 +144,11 @@ class OrderGroupController extends Controller
 		return null;
 	}
 
+	/**
+	 * @param $orderGroup
+	 *
+	 * @return array
+	 */
 	protected function filterPlans($orderGroup)
 	{
 		$plans = [];
@@ -167,6 +188,11 @@ class OrderGroupController extends Controller
 		return $data;
 	}
 
+	/**
+	 * @param $orderGroup
+	 *
+	 * @return array
+	 */
 	protected function filterDevices($orderGroup)
 	{
 		$data    = [];
@@ -189,12 +215,15 @@ class OrderGroupController extends Controller
 		} else {
 			$data['devices'] = $devices->with(['device_image', 'device_to_carrier'])->get();
 		}
-
-
 		return $data;
 	}
 
 
+	/**
+	 * @param $orderGroup
+	 *
+	 * @return mixed
+	 */
 	protected function getSimId($orderGroup)
 	{
 		if ($orderGroup->sim_id) {
@@ -210,7 +239,6 @@ class OrderGroupController extends Controller
 			}
 		}
 		return $simId;
-
 	}
 
 }

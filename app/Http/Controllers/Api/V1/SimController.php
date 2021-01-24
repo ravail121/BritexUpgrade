@@ -2,157 +2,176 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\BaseController;
-
-use Illuminate\Http\Request;
 use App\Model\Sim;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Model\OrderGroup;
 use App\Model\DeviceToSim;
+use Illuminate\Http\Request;
+use App\Http\Controllers\BaseController;
 
 /**
- * 
+ * Class SimController
+ *
+ * @package App\Http\Controllers\Api\V1
  */
 class SimController extends BaseController
 {
-  
-  function __construct()
-  {
-    $this->content = array();
-  }
 
-  private function getSimsByOg($og, $plan)
-  {
-    $company = \Request::get('company');
+	/**
+	 * SimController constructor.
+	 */
+	public function __construct()
+	{
+		$this->content = array();
+	}
 
-    $sims = [];
-    $_sims = [];
-    $carrier_id = $plan->carrier_id;
-    $device_id = $og->device_id;
+	/**
+	 * @param $og
+	 * @param $plan
+	 *
+	 * @return array
+	 */
+	private function getSimsByOg($og, $plan)
+	{
+		$company = \Request::get('company');
 
-    if($device_id != 0){
+		$sims = [];
+		$_sims = [];
+		$carrier_id = $plan->carrier_id;
+		$device_id = $og->device_id;
 
-      $device_to_sims =  DeviceToSim::with(['sim'])->where('device_id', $device_id)
-                        ->whereHas('sim', function($query) use ($company, $carrier_id) {
-                                                $query->where(
-                                                  [
-                                                      ['carrier_id', $carrier_id],
-                                                      ['company_id', $company->id]
-                                                  ]
-                                                );
+		if($device_id != 0){
 
-                        })
-                        ->get();
-      if (!count($device_to_sims)) {
-        $sims = Sim::where([
-          ['carrier_id', $carrier_id],
-          ['company_id', $company->id]
-        ])->get();
-      } else {
-        foreach ($device_to_sims as $sim) {
-          array_push($sims, $sim->sim);
-        }
-      }
-      
+			$device_to_sims =  DeviceToSim::with(['sim'])->where('device_id', $device_id)
+			                              ->whereHas('sim', function($query) use ($company, $carrier_id) {
+				                              $query->where(
+					                              [
+						                              ['carrier_id', $carrier_id],
+						                              ['company_id', $company->id]
+					                              ]
+				                              );
 
-    }else{
-      $_sims = Sim::where(
-          [
-            ['carrier_id', $carrier_id],
-            ['company_id', $company->id],
-          ]
-      )->get();
-    }
+			                              })
+			                              ->get();
+			if (!count($device_to_sims)) {
+				$sims = Sim::where([
+					['carrier_id', $carrier_id],
+					['company_id', $company->id]
+				])->get();
+			} else {
+				foreach ($device_to_sims as $sim) {
+					array_push($sims, $sim->sim);
+				}
+			}
+		}else{
+			$_sims = Sim::where(
+				[
+					['carrier_id', $carrier_id],
+					['company_id', $company->id],
+				]
+			)->get();
+		}
 
-    foreach ($_sims as $sim) {
-        array_push($sims, $sim);
-    }
-    
-    return $sims;
+		foreach ($_sims as $sim) {
+			array_push($sims, $sim);
+		}
 
-  }
-  
-   public function get(Request $request)
-   {
-  
-      if(!$request->input('order_hash')){
-        return $this->respondError('Invalid order hash');
-      }
+		return $sims;
 
-      $order_hash = $request->input('order_hash');
-      $sims = [];
-      $plan_id = $request->input('plan_id');
+	}
 
-      $order = Order::where('hash', $order_hash)->get();
-      if(count($order) < 1){
-        return $this->respondError('Invalid order hash');
-      }
-      $order = $order[0];
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function get(Request $request)
+	{
 
-      $plan = Plan::where('id', $plan_id)->get();
-      if(count($plan) < 1){
-        return $this->respondError('Invalid plan');
-      }
-      $plan = $plan[0];
-        
+		if(!$request->input('order_hash')){
+			return $this->respondError('Invalid order hash');
+		}
 
+		$order_hash = $request->input('order_hash');
+		$sims = [];
+		$plan_id = $request->input('plan_id');
 
-      $order_group = OrderGroup::with(['order', 'sim', 'device', 'plan'])->where('id', $order->active_group_id)->get();
+		$order = Order::where('hash', $order_hash)->get();
+		if(count($order) < 1){
+			return $this->respondError('Invalid order hash');
+		}
+		$order = $order[0];
 
-      if (count($order_group)) {
-
-        $og = $order_group[0];
-
-        if($og->sim_id == 0) {
-          $sims = $this->getSimsByOg($og, $plan);
-          
-        } else {
-          $_sims = $this->getSimsByOg($og, $plan);
-          $sims = $_sims;
-
-          // check if og->sim_id is in $_sims. i.e. already selected
-          foreach ($_sims as $sim) {
-            if($sim->id == $og->sim_id){
-              $sim['selected'] = 1;
-              array_push($sims, $sim);
-            }
-          }
-
-        }
-      } else {
-        $sims = $this->getSimsByCarrierId($plan);
-      }
+		$plan = Plan::where('id', $plan_id)->get();
+		if(count($plan) < 1){
+			return $this->respondError('Invalid plan');
+		}
+		$plan = $plan[0];
 
 
 
-        $this->content = $sims;
-        return response()->json($this->content);
-    }
+		$order_group = OrderGroup::with(['order', 'sim', 'device', 'plan'])->where('id', $order->active_group_id)->get();
 
-    public function find(request $request, $id)
-    {
-       $this->content = Sim::find($id);
-       return response()->json($this->content);
-    }
+		if (count($order_group)) {
 
-    private function getSimsByCarrierId($plan)
-    {
-      $sims = [];
-      $company = \Request::get('company');
+			$og = $order_group[0];
 
-      $_sims = Sim::where(
-        [
-          ['carrier_id', $plan->carrier_id],
-          ['company_id', $company->id],
-        ]
-      )->get();
+			if($og->sim_id == 0) {
+				$sims = $this->getSimsByOg($og, $plan);
 
-      foreach ($_sims as $sim) {
-        array_push($sims, $sim);
-      }
+			} else {
+				$_sims = $this->getSimsByOg($og, $plan);
+				$sims = $_sims;
 
-      return $sims;
+				// check if og->sim_id is in $_sims. i.e. already selected
+				foreach ($_sims as $sim) {
+					if($sim->id == $og->sim_id){
+						$sim['selected'] = 1;
+						array_push($sims, $sim);
+					}
+				}
 
-    }
- }
+			}
+		} else {
+			$sims = $this->getSimsByCarrierId($plan);
+		}
+		$this->content = $sims;
+		return response()->json($this->content);
+	}
+
+	/**
+	 * @param Request $request
+	 * @param         $id
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function find(request $request, $id)
+	{
+		$this->content = Sim::find($id);
+		return response()->json($this->content);
+	}
+
+	/**
+	 * @param $plan
+	 *
+	 * @return array
+	 */
+	private function getSimsByCarrierId($plan)
+	{
+		$sims = [];
+		$company = \Request::get('company');
+
+		$_sims = Sim::where(
+			[
+				['carrier_id', $plan->carrier_id],
+				['company_id', $company->id],
+			]
+		)->get();
+
+		foreach ($_sims as $sim) {
+			array_push($sims, $sim);
+		}
+		return $sims;
+	}
+}

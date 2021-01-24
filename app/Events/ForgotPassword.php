@@ -17,8 +17,10 @@ class ForgotPassword
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $user;
-
+	/**
+	 * @var
+	 */
+	public $user;
 
     /**
      * Create a new event instance.
@@ -28,8 +30,8 @@ class ForgotPassword
     public function __construct($user)
     {
         $this->user = $user;
-
     }
+
     /**
      * Get the channels the event should broadcast on.
      *

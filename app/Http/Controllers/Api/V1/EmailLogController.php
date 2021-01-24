@@ -13,7 +13,6 @@ use App\Http\Controllers\Controller;
  */
 class EmailLogController extends Controller
 {
-
 	/**
 	 * @param Request $request
 	 *
@@ -24,7 +23,6 @@ class EmailLogController extends Controller
     	$data = $this->validateData($request);
 
         if (!$data) {
-            
             return $this->respondError($data);
         }     
 

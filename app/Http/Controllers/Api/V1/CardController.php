@@ -15,8 +15,8 @@ use Illuminate\Http\Request;
 use App\Events\InvoiceAutoPaid;
 use App\Model\CustomerCreditCard;
 use App\Services\Payment\UsaEpay;
-use App\Events\FailToAutoPaidInvoice;
 use App\Events\AccountUnsuspended;
+use App\Events\FailToAutoPaidInvoice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 
@@ -609,7 +609,6 @@ class CardController extends BaseController implements ConstantInterface
 		}
 		return $arr;
 	}
-
 }
 
 

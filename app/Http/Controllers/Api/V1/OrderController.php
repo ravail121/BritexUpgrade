@@ -515,16 +515,15 @@ class OrderController extends BaseController
     }
 
 	/**
+	 * Delete the input order_group_id from database.
+	 * If it is set as the active group id, then set order.active_group_id=0
+	 *
 	 * @param Request $request
 	 *
 	 * @return \Illuminate\Http\JsonResponse
 	 */
 	public function remove_from_order(Request $request)
     {
-        /*
-        Delete the input order_group_id from database.  If it is set as the active group id, then set order.active_group_id=0
-        */
-
         $hash = $request->input('order_hash');
         $order = Order::where('hash', $hash)->get();
         if(!count($order)){
@@ -542,7 +541,9 @@ class OrderController extends BaseController
         if(!$og){
             return $this->respondError('Invalid order_group_id', 400);
         }
-        //check if this ordergroup is associated with given order_hash
+	    /**
+	     * check if this order group is associated with given order_hash
+	     */
         if($og->order_id != $order->id){
             return $this->respondError('Given order_group_id is not associated with provided order hash', 400);
         }
@@ -584,7 +585,6 @@ class OrderController extends BaseController
         if ($validation->fails()) {
             return response()->json($validation->getMessageBag()->all());
         }
-
 
         Order::whereHash($data['hash'])->update($data);
 
