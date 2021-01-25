@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Events\SubcriptionStatusChanged;
 use App\Scripts\TestEye4Fraud;
+use App\Events\SubcriptionStatusChanged;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -28,16 +28,14 @@ Route::get('britex-test-subscription-changed', function(){
 });
 
 Route::get('/britex-test-cc', function(){
-
-	// $cc = new TestEye4Fraud();
-	// $cc->test();
-
+//	$cc = new TestEye4Fraud();
+//	$cc->test();
 });
 
 Route::get('britex-test-email', function(Illuminate\Http\Request $request){
 	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
 		$message->from('postmaster@mg.teltik.com');
-		$message->to($request->to ?: 'vanak.roopak@gmail.com');
+		$message->to($request->to ?: 'prajwal_stha@yahoo.com');
 		$message->subject('Email Arrived');
 	}));
 });

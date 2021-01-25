@@ -2,8 +2,8 @@
 
 namespace App\Support\Configuration;
 
+use Config;
 use App\Model\Company;
-use Illuminate\Support\Facades\Config;
 
 /**
  * Trait MailConfiguration

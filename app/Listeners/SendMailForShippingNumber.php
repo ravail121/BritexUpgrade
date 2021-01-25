@@ -2,11 +2,11 @@
 
 namespace App\Listeners;
 
+use Notification;
 use App\Model\Order;
 use App\Model\EmailTemplate;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
-use Notification;
 use App\Support\Configuration\MailConfiguration;
 
 class SendMailForShippingNumber

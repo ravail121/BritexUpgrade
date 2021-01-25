@@ -5,12 +5,12 @@ namespace App\Listeners;
 use PDF;
 use Mail;
 use Config;
+use Notification;
 use App\Model\Order;
 use App\Model\Company;
 use App\Model\EmailTemplate;
 use App\Events\MonthlyInvoice;
 use Illuminate\Notifications\Notifiable;
-use Notification;
 use App\Model\SystemEmailTemplateDynamicField;
 
 class SendMonthlyInvoiceMail
