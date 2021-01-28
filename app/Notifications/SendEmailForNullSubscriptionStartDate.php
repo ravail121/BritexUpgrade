@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\MailMessage;
 
 /**
  * Class SendEmailForNullSubscriptionStartDate
@@ -14,14 +15,16 @@ class SendEmailForNullSubscriptionStartDate extends Notification
 {
 	use Queueable, EmailRecord;
 
+	/**
+	 * @var
+	 */
 	protected $customers;
 
 	/**
-	 * Create a new notification instance.
+	 * SendEmailForNullSubscriptionStartDate constructor.
 	 *
-	 * @return Order $order
+	 * @param $customers
 	 */
-
 	public function __construct($customers)
 	{
 		$this->customers = $customers;
@@ -39,13 +42,29 @@ class SendEmailForNullSubscriptionStartDate extends Notification
 	}
 
 	/**
-	 * Build the message.
+	 * @param $notifiable
 	 *
-	 * @return $this
+	 * @return MailMessage
 	 */
-	public function build()
+	public function toMail($notifiable)
 	{
-		return $this->view('mail.email-for-null-subscription-date');
+		return (new MailMessage)
+			->subject('Alert')
+			->from('postmaster@mg.teltik.com')
+			->markdown('mail.email-for-null-subscription-date', ['customers' => $this->customers]);
+	}
+
+	/**
+	 * Get the array representation of the notification.
+	 *
+	 * @param  mixed  $notifiable
+	 * @return array
+	 */
+	public function toArray($notifiable)
+	{
+		return [
+			//
+		];
 	}
 
 }

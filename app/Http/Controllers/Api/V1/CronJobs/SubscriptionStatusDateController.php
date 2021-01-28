@@ -25,7 +25,7 @@ class SubscriptionStatusDateController extends Controller
 			$customerCount = $customers->count();
 
 			if($customerCount) {
-				event( new ReportNullSubscriptionStartDate( $customers ) );
+				event( new ReportNullSubscriptionStartDate( $customers->toArray() ) );
 			}
 		} catch (\Exception $e) {
 			\Log::info($e->getMessage(). ' on the line '. $e->getLine());

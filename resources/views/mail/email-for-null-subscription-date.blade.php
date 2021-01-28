@@ -16,11 +16,11 @@
             <tbody>
             @foreach($customers as $customer)
                 <tr>
-                    <td>{{ $customer->id }}</td>
-                    <td>{{ $customer->fname }}</td>
-                    <td>{{ $customer->lname }}</td>
-                    <td>{{ $customer->company_name }}</td>
-                    <td>{{ $customer->email }}</td>
+                    <td>{{ $customer['id'] }}</td>
+                    <td>{{ $customer['fname'] }}</td>
+                    <td>{{ $customer['lname'] }}</td>
+                    <td>{{ $customer['company_name'] }}</td>
+                    <td>{{ $customer['email'] }}</td>
                 </tr>
             @endforeach
             </tbody>

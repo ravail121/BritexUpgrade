@@ -28,3 +28,5 @@ Route::get('/', function (Request $request) {
 Route::get('/test', function() {
     return "TEST";
 });
+
+Route::get('/test-subscription-null', 'Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck');
