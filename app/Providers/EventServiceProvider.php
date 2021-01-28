@@ -13,75 +13,75 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $listen = [
 
-        'App\Events\BusinessVerificationCreated' => [
+	    'App\Events\BusinessVerificationCreated' => [
             'App\Listeners\SendEmail',
         ],
 
-        'App\Events\InvoiceGenerated' => [
+	    'App\Events\InvoiceGenerated' => [
             'App\Listeners\SendEmailWithInvoice',
         ],
 
-        'App\Events\PaymentFailed' => [
+	    'App\Events\PaymentFailed' => [
             'App\Listeners\SendEmailforPaymentFailed',
         ],
 
-        'App\Events\AccountSuspended' => [
+	    'App\Events\AccountSuspended' => [
             'App\Listeners\SendAccountPastDueMail',
         ],
 
-        'App\Events\ForgotPassword' => [
+	    'App\Events\ForgotPassword' => [
             'App\Listeners\SendEmailWithPasswordHash',
         ],
 
-        'App\Events\AutoPayStatus' => [
+	    'App\Events\AutoPayStatus' => [
             'App\Listeners\SendEmailWithAutoPayStatus',
         ],
 
-        'App\Events\AutoPayReminder' => [
+	    'App\Events\AutoPayReminder' => [
             'App\Listeners\SendEmailToRemindAutoPay',
         ],
 
-        'App\Events\InvoiceAutoPaid' => [
+	    'App\Events\InvoiceAutoPaid' => [
             'App\Listeners\SendEmailToRemindInvoiceAutoPaid',
         ],
 
-        'App\Events\FailToAutoPaidInvoice' => [
+	    'App\Events\FailToAutoPaidInvoice' => [
             'App\Listeners\SendEmailToRemindFailToAutoPaidInvoice',
         ],
 
-        'App\Events\SendRefundInvoice' => [
+	    'App\Events\SendRefundInvoice' => [
             'App\Listeners\SendEmailForRefund',
         ],
-        
-        'App\Events\SupportEmail' => [
+
+	    'App\Events\SupportEmail' => [
             'App\Listeners\SendSupportEmail'
         ],
 
-        'App\Events\ShippingNumber' => [
+	    'App\Events\ShippingNumber' => [
             'App\Listeners\SendMailForShippingNumber'
         ],
 
-        'App\Events\SubcriptionStatusChanged' => [
+	    'App\Events\SubcriptionStatusChanged' => [
             'App\Listeners\SendEmailForChangedSubcriptionStatus'
         ],
 
-        'App\Events\PortPending' => [
+	    'App\Events\PortPending' => [
             'App\Listeners\SendPortStatusMail'
         ],
 
-        'App\Events\UpgradeDowngradeInvoice' => [
+	    'App\Events\UpgradeDowngradeInvoice' => [
             'App\Listeners\SendUpgradeDowngradeInvoice'
         ],
 
-        'App\Events\AccountUnsuspended' => [
+	    'App\Events\AccountUnsuspended' => [
             'App\Listeners\SendAccountUnsuspendedMail',
         ],
 
-        'App\Events\InvoiceEmail' => [
+	    'App\Events\InvoiceEmail' => [
             'App\Listeners\SendInvoiceMail',
         ],
 
-        'App\Events\ReportNullSubscriptionStartData' => [
+	    'App\Events\ReportNullSubscriptionStartDate' => [
 	        'App\Listeners\SendEmailForNullSubscriptionStartDateCustomerRecord'
         ]
     ];

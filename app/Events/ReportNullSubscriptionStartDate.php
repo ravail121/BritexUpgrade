@@ -8,11 +8,11 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 
 /**
- * Class ReportNullSubscriptionStartData
+ * Class ReportNullSubscriptionStartDate
  *
  * @package App\Events
  */
-class ReportNullSubscriptionStartData
+class ReportNullSubscriptionStartDate
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -23,7 +23,7 @@ class ReportNullSubscriptionStartData
 
 	/**
 	 * Create a new event instance.
-	 * ReportNullSubscriptionStartData constructor.
+	 * ReportNullSubscriptionStartDate constructor.
 	 *
 	 * @param $customers
 	 */
