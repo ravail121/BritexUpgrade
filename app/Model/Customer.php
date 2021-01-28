@@ -3,11 +3,8 @@
 namespace App\Model;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use App\Events\InvoiceGenerated;
-use App\Model\Invoice;
 
 class Customer extends Authenticatable
 {

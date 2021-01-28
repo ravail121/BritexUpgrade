@@ -30,6 +30,15 @@ class SendEmailForNullSubscriptionStartDateCustomerRecord
     {
         $customers = $event->customers;
 
+	    /**
+	     * @internal Using Company with id 1 for SMTP configuration
+	     */
+	    $configurationSet = $this->setMailConfigurationById(1);
+
+	    if ($configurationSet) {
+		    return false;
+	    }
+
 	    $alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com'];
 
 	    foreach($alertEmails as $alertEmail){
