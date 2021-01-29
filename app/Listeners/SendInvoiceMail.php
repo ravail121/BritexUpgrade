@@ -42,12 +42,6 @@ class SendInvoiceMail
             'customer' => $customer,
         ];
 
-        $configurationSet = $this->setMailConfiguration($customer);
-
-        if ($configurationSet) {
-            return false;
-        }
-
         $emailTemplates = EmailTemplate::where('company_id', $dataRow['customer']['company_id'])
         ->where('code', self::STATUS_CODE[$type])
         ->get();
@@ -57,6 +51,11 @@ class SendInvoiceMail
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $dataRow['customer'], $dataRow);
+	        $configurationSet = $this->setMailConfiguration($customer);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($customer, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], null));
         }

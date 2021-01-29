@@ -45,13 +45,6 @@ class SendEmailWithInvoice
 
         $customerOrder = Order::whereId($event->order->id)->with('customer', 'invoice')->first();
         $pdf           = $event->pdf;
-        
-        $configurationSet = $this->setMailConfiguration($customerOrder);
-        
-        if ($configurationSet) {
-            
-            return false;
-        }
 
         $customer = $customerOrder->customer;
         $dataRow = [
@@ -71,6 +64,14 @@ class SendEmailWithInvoice
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+
+
+	        $configurationSet = $this->setMailConfiguration($customerOrder);
+
+	        if ($configurationSet) {
+
+		        return false;
+	        }
             
             Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
         }        

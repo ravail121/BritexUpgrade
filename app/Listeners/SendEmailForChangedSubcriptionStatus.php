@@ -56,11 +56,6 @@ class SendEmailForChangedSubcriptionStatus
         $addons = $subscription->namesOfSubscriptionAddonNotRemoved;
         $addonsName = $addons->implode(',');
 
-        $configurationSet = $this->setMailConfigurationById($dataRow['customer']['company_id']);
-        if ($configurationSet) {
-            return false;
-        }
-
         $emailTemplates = EmailTemplate::where('company_id', $dataRow['customer']['company_id'])
         ->where('code', self::STATUS_CODE[$subscription->status])
         ->get();
@@ -69,6 +64,10 @@ class SendEmailForChangedSubcriptionStatus
             $row = $this->makeEmailLayout($emailTemplate, $dataRow['customer'], $dataRow);
 
             $row['body'] = $this->addFieldsToBody(['[addon__name]'], [$addonsName], $row['body']);
+	        $configurationSet = $this->setMailConfigurationById($dataRow['customer']['company_id']);
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $dataRow['customer']['business_verification_id'] , $row['body'], $row['email']));
         }

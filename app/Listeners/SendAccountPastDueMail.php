@@ -35,12 +35,6 @@ class SendAccountPastDueMail
         $subscriptions = $event->subscriptions;
         $amount = $event->amount;
 
-        $configurationSet = $this->setMailConfiguration($customer);
-
-        if ($configurationSet) {
-            return false;
-        }
-
         $dataRow['customer'] = $customer;
 
         $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)
@@ -76,6 +70,11 @@ class SendAccountPastDueMail
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
             $row['body'] = $this->addFieldsToBody(['[balance_due]','[active_subscriptions_list]'], [$amount, $subscriptionList], $row['body']);
+	        $configurationSet = $this->setMailConfiguration($customer);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

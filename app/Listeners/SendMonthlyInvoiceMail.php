@@ -57,12 +57,6 @@ class SendMonthlyInvoiceMail
          // ];
         $pdf = PDF::loadView('templates/monthly-invoice', compact('invoice'))->setPaper('letter', 'portrait');
 
-        $configurationSet = $this->setMailConfiguration($order);
-
-        if ($configurationSet) {
-            return false;
-        }
-
         $emailTemplates = EmailTemplate::where('company_id', $this->order->company_id)->where('code', 'monthly-invoice')->get();
 
         $templateVales  = SystemEmailTemplateDynamicField::where('code', 'one-time-invoice')->get()->toArray();
@@ -75,6 +69,11 @@ class SendMonthlyInvoiceMail
             }else{
                 $email = $customer->email;
             }
+	        $configurationSet = $this->setMailConfiguration($order);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
             Notification::route('mail', $email)->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $this->order->customer->business_verification_id, $templateVales, $note));
         }          
     }

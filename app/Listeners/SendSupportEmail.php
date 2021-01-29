@@ -34,12 +34,13 @@ class SendSupportEmail
         $data       = $event->data;
         $company    = \Request::get('company');
         $emailTemplate = EmailTemplate::where('company_id', $company->id)->where('code', 'support-email')->get();
-        $configurationSet = $this->setMailConfiguration($company);
-        if ($configurationSet) {
-            return false;
-        }
+
         try {
             foreach ($emailTemplate as $template) {
+	            $configurationSet = $this->setMailConfiguration($company);
+	            if ($configurationSet) {
+		            return false;
+	            }
                 Notification::route('mail', $template->to)->notify(new SendEmailToSupport($data, $template->from));
             }
         } catch (Exception $e) {

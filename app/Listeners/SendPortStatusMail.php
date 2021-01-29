@@ -36,11 +36,7 @@ class SendPortStatusMail
         $order          = $subscription->order;
         $customer       = $subscription->customerRelation;
         $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)->where('code', 'port-pending')->get();
-        $configurationSet = $this->setMailConfiguration($customer);
 
-        if ($configurationSet) {
-            return false;
-        }
 
         $dataRow['customer']        = $customer;
         $dataRow['port']            = $port;
@@ -48,6 +44,12 @@ class SendPortStatusMail
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+
+	        $configurationSet = $this->setMailConfiguration($customer);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

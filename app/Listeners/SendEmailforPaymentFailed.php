@@ -32,11 +32,7 @@ class SendEmailforPaymentFailed
 	{
 		$customer = $event->customer;
 
-		$configurationSet = $this->setMailConfiguration($customer);
 
-		if ($configurationSet) {
-			return false;
-		}
 		$dataRow['customer'] = $customer;
 		$customer['customer_id'] = $customer->id;
 
@@ -46,6 +42,12 @@ class SendEmailforPaymentFailed
 
 		foreach ($emailTemplates as $key => $emailTemplate) {
 			$row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+
+			$configurationSet = $this->setMailConfiguration($customer);
+
+			if ($configurationSet) {
+				return false;
+			}
 
 			Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], $customer->company->support_email));
 		}

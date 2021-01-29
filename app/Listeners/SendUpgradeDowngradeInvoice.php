@@ -38,11 +38,7 @@ class SendUpgradeDowngradeInvoice
 
         $pdf           = $event->pdf;
         $customer = $order->customer;
-        $configurationSet = $this->setMailConfiguration($customer);
 
-        if ($configurationSet) {
-            return false;
-        }
 
         $subscription = Subscription::where([
             'id' => $order->allOrderGroup->first()->subscription_id,
@@ -76,6 +72,11 @@ class SendUpgradeDowngradeInvoice
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
             $row['body'] = $this->addFieldsToBody('[subscriptions_changed]', $subscriptionsChanged, $row['body']);
+	        $configurationSet = $this->setMailConfiguration($customer);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
             
             Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
         }
