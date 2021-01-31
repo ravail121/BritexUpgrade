@@ -38,8 +38,7 @@ class SendEmailForNullSubscriptionStartDateCustomerRecord
 	    if ($configurationSet) {
 		    return false;
 	    }
-
-	    $alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com', 'prajwal_stha@yahoo.com'];
+	    $alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com', 'prajwal@britewireless.com'];
 
 	    foreach($alertEmails as $alertEmail){
 		    Notification::route('mail', $alertEmail)->notify(new SendEmailForNullSubscriptionStartDate($customers));
