@@ -72,21 +72,23 @@ trait EmailRecord
 	 */
 	protected function createEmailLog($order, $bizVerificationId, $emailTemplate, $body, $email, $note)
     {
-        $data = [
-            'company_id'               => $order->company_id,
-            'customer_id'              => $order->customer_id,
-            'to'                       => $email,
-            'business_verficiation_id' => $bizVerificationId,
-            'subject'                  => $emailTemplate->subject,
-            'from'                     => $emailTemplate->from,
-            'cc'                       => $emailTemplate->cc,
-            'bcc'                      => $emailTemplate->bcc,
-            'body'                     => $body,
-            'notes'                    => $note,
-            'staff_id'                 => $order->staff_id ?: null,
-        ];
+    	if($order) {
+		    $data = [
+			    'company_id'               => $order->company_id,
+			    'customer_id'              => $order->customer_id,
+			    'to'                       => $email,
+			    'business_verficiation_id' => $bizVerificationId,
+			    'subject'                  => $emailTemplate->subject,
+			    'from'                     => $emailTemplate->from,
+			    'cc'                       => $emailTemplate->cc,
+			    'bcc'                      => $emailTemplate->bcc,
+			    'body'                     => $body,
+			    'notes'                    => $note,
+			    'staff_id'                 => $order->staff_id ?: null,
+		    ];
 
-        $emailLog = EmailLog::create($data);
+		    $emailLog = EmailLog::create( $data );
+	    }
     }
 
 	/**

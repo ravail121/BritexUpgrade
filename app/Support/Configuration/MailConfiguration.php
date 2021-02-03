@@ -14,7 +14,7 @@ trait MailConfiguration
 {
     /**
      * This method sets the Configuration of the Mail according to the Company
-     * 
+     *
      * @param $data
      * @return boolean
      */
