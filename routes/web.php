@@ -14,26 +14,13 @@ use App\Model\CouponProduct;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
-Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
+// Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 
 Route::get('/', function (Request $request) {
     return  response()->json([
       'message' => 'BriteX Backend !!'
     ], 200);
 });
-
-Route::get('/test', function() {
-    return "TEST";
-});
-
-Route::get('/test-subs', function() {
-	return "TEST";
-});
-
 
 Route::get('britex-test-subscription-changed', function(){
 //	$config = [
