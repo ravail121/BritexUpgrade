@@ -32,5 +32,5 @@ Route::get('britex-test-subscription-changed', function(){
 //		'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
 //	];
 //	Config::set('mail',$config);
-	event(new SubcriptionStatusChanged('64'));
+	event(new SubcriptionStatusChanged('702'));
 });

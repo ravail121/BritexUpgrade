@@ -29,7 +29,6 @@ class DynamicSmtpMailChannel extends MailChannel
 	public function send($notifiable, Notification $notification)
 	{
 		Log::info('DynamicSmtpMailChannel send');
-		Log::info($notification);
 		if (isset($notification->customer)) {
 			$companyId = $notification->customer->company_id;
 		}
@@ -40,12 +39,19 @@ class DynamicSmtpMailChannel extends MailChannel
 		}
 
 		if (!isset($companyId) && isset($notification->email)) {
+
 			$customer = Customer::where('email', $notification->email);
-			$companyId = $customer->company_id;
+			if($customer->exists()) {
+				$companyId = $customer->company_id;
+			}
 		}
 
 		if (!isset($companyId) && isset($notification->data['company_id'])) {
 			$companyId = $notification->data['company_id'];
+		}
+
+		if(isset($notification->order)){
+			$companyId = $notification->order->company_id;
 		}
 
 		if (isset($companyId)) {
