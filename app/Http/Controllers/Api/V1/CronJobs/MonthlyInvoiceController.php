@@ -6,11 +6,11 @@ use Exception;
 use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Order;
-use App\Model\Company;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\InvoiceItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
@@ -220,19 +220,21 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 	{
 		$hash = md5(time().rand());
 
-		if ($invoice->type === Invoice::TYPES['monthly']) {
+		if ($invoice->type === Invoice::TYPES['monthly'] && isset($invoice->customer)) {
+			Log::info('insertOrder');
 			$company_id = $invoice->customer->company_id;
-			$count = Order::where('company_id', $company_id)->max('order_num');
-			Order::create([
-				'status'        => 1,
-				'invoice_id'    => $invoice->id,
-				'hash'          => $hash,
-				'company_id'    => $company_id,
-				'customer_id'   => $invoice->customer_id,
-				'date_processed' => Carbon::today(),
-			]);
+			if($company_id) {
+				$count = Order::where( 'company_id', $company_id )->max( 'order_num' );
+				Order::create( [
+					'status'         => 1,
+					'invoice_id'     => $invoice->id,
+					'hash'           => $hash,
+					'company_id'     => $company_id,
+					'customer_id'    => $invoice->customer_id,
+					'date_processed' => Carbon::today(),
+				] );
+			}
 		}
-
 	}
 
 
