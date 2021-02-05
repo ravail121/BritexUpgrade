@@ -3,6 +3,7 @@
 
 namespace App\Notifications;
 
+use Illuminate\Support\Facades\Log;
 use Swift_Mailer;
 use App\Model\Company;
 use App\Model\Customer;
@@ -27,6 +28,8 @@ class DynamicSmtpMailChannel extends MailChannel
 	 */
 	public function send($notifiable, Notification $notification)
 	{
+		Log::info('DynamicSmtpMailChannel send');
+		Log::info($notification);
 		if (isset($notification->customer)) {
 			$companyId = $notification->customer->company_id;
 		}
