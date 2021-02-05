@@ -28,7 +28,6 @@ class DynamicSmtpMailChannel extends MailChannel
 	 */
 	public function send($notifiable, Notification $notification)
 	{
-		Log::info('DynamicSmtpMailChannel send');
 		if (isset($notification->customer)) {
 			$companyId = $notification->customer->company_id;
 		}
@@ -56,6 +55,9 @@ class DynamicSmtpMailChannel extends MailChannel
 
 		if (isset($companyId)) {
 			$company = Company::find($companyId);
+			Log::info('DynamicSmtpMailChannel send');
+			Log::info($company->id);
+			Log::info($company->smtp_host);
 
 			$customSmtp = [
 				'driver'        => $company->smtp_driver,
