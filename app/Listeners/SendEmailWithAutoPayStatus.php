@@ -34,11 +34,6 @@ class SendEmailWithAutoPayStatus
     {
         $customer = $event->customer;
 
-        $configurationSet = $this->setMailConfiguration($customer);
-
-        if ($configurationSet) {
-            return false;
-        }
         $invoice = Invoice::where([['customer_id', $customer->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
         $amount = $invoice ? $invoice->subtotal : 0;
 
@@ -54,6 +49,11 @@ class SendEmailWithAutoPayStatus
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
             $row['body'] = $this->addFieldsToBody('[total_amount_due]', $amount, $row['body']);
+	        $configurationSet = $this->setMailConfiguration($customer);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($customer, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

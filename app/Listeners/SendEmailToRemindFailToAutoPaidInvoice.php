@@ -38,15 +38,6 @@ class SendEmailToRemindFailToAutoPaidInvoice
         $customers = $event->customer;
         $customer = Customer::find($customers['id']);
 
-	    $configurationSet = $this->setMailConfigurationById($customer->company_id);
-
-	    Log::info('SendEmailToRemindFailToAutoPaidInvoice Configuration Set');
-	    Log::info($configurationSet);
-
-
-	    if ($configurationSet) {
-            return false;
-        }
 
         $dataRow['customer'] = $customer;
 
@@ -60,6 +51,16 @@ class SendEmailToRemindFailToAutoPaidInvoice
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
             $row['body'] = $this->addFieldsToBody(['[total_amount_due]', '[description]'], [$customers['mounthlyInvoice']['subtotal'], $event->description], $row['body']);
+
+	        $configurationSet = $this->setMailConfigurationById($customer->company_id);
+
+	        Log::info('SendEmailToRemindFailToAutoPaidInvoice Configuration Set');
+	        Log::info($configurationSet);
+
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

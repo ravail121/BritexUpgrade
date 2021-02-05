@@ -42,16 +42,16 @@ class SendEmail
         $businessVerification = BusinessVerification::hash($businessHash)->first();
         $dataRow['business_verification'] = $businessVerification;
 
-        $configurationSet = $this->setMailConfiguration($order);
-
-        if ($configurationSet) {
-            return false;
-        }
 
         $emailTemplates = EmailTemplate::where('company_id', $order->company_id)->where('code', 'biz-verification-submitted')->get();
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $businessVerification, $dataRow);
+	        $configurationSet = $this->setMailConfiguration($order);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $businessVerification->id, $row['body'], $row['email']));
         }

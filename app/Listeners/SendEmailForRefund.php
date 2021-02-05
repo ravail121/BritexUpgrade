@@ -42,12 +42,6 @@ class SendEmailForRefund
             'customer' => $customer
         ];
 
-        $configurationSet = $this->setMailConfiguration($customer);
-
-        if ($configurationSet) {
-            return false;
-        }
-
         $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)
         ->where('code', 'refund')
         ->get();
@@ -58,6 +52,11 @@ class SendEmailForRefund
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
             $row['body'] = $this->addFieldsToBody('[refund_amount]', $invoice->subtotal, $row['body']);
+	        $configurationSet = $this->setMailConfiguration($customer);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($order, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
         }

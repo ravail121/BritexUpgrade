@@ -32,25 +32,27 @@ class SendPortStatusMail
     public function handle(PortPending $event)
     {
         $port = Port::where('id', $event->portId)->with('subscription.order', 'subscription.customerRelation')->first();
-        $subscription   = $port->subscription;
-        $order          = $subscription->order;
-        $customer       = $subscription->customerRelation;
-        $emailTemplates = EmailTemplate::where('company_id', $customer->company_id)->where('code', 'port-pending')->get();
-        $configurationSet = $this->setMailConfiguration($customer);
+	    if($port->subscription()->exists()) {
+		    $subscription   = $port->subscription;
+		    $order          = $subscription->order;
+		    $customer       = $subscription->customerRelation;
+		    $emailTemplates = EmailTemplate::where( 'company_id', $customer->company_id )->where( 'code', 'port-pending' )->get();
 
-        if ($configurationSet) {
-            return false;
-        }
+		    $dataRow[ 'customer' ]     = $customer;
+		    $dataRow[ 'port' ]         = $port;
+		    $dataRow[ 'subscription' ] = $subscription;
 
-        $dataRow['customer']        = $customer;
-        $dataRow['port']            = $port;
-        $dataRow['subscription']    = $subscription;
+		    foreach ( $emailTemplates as $key => $emailTemplate ) {
+			    $row = $this->makeEmailLayout( $emailTemplate, $customer, $dataRow );
 
-        foreach ($emailTemplates as $key => $emailTemplate) {
-            $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+			    $configurationSet = $this->setMailConfiguration( $customer );
 
-            Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
-        }
+			    if ( $configurationSet ) {
+				    return false;
+			    }
 
+			    Notification::route( 'mail', $row[ 'email' ] )->notify( new SendEmails( $order, $emailTemplate, $customer->business_verification_id, $row[ 'body' ], $row[ 'email' ] ) );
+		    }
+	    }
     }
 }

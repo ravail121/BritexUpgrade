@@ -4,7 +4,7 @@ namespace App\Support\Configuration;
 
 use Config;
 use App\Model\Company;
-
+use Illuminate\Support\Facades\Log;
 /**
  * Trait MailConfiguration
  *
@@ -14,7 +14,7 @@ trait MailConfiguration
 {
     /**
      * This method sets the Configuration of the Mail according to the Company
-     * 
+     *
      * @param $data
      * @return boolean
      */
@@ -30,6 +30,10 @@ trait MailConfiguration
             'encryption'    => $company->smtp_encryption,
         ];
 
+	    Log::info('setMailConfiguration');
+	    Log::info($company->id);
+	    Log::info($config);
+
 	    Config::set('mail', $config);
         return false;
     }
@@ -43,13 +47,16 @@ trait MailConfiguration
     {
         $company = Company::find($companyId);
         $config = [
-            'driver'   => $company->smtp_driver,
-            'host'     => $company->smtp_host,
-            'port'     => $company->smtp_port,
-            'username' => $company->smtp_username,
-            'password' => $company->smtp_password,
-            'encryption' => $company->smtp_encryption,
+            'driver'        => $company->smtp_driver,
+            'host'          => $company->smtp_host,
+            'port'          => $company->smtp_port,
+            'username'      => $company->smtp_username,
+            'password'      => $company->smtp_password,
+            'encryption'    => $company->smtp_encryption,
         ];
+	    Log::info('setMailConfigurationById');
+	    Log::info($company->id);
+	    Log::info($config);
 
 	    Config::set('mail', $config);
         return false;

@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Model\CouponProduct;
+use App\Events\SubcriptionStatusChanged;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -13,11 +13,7 @@ use App\Model\CouponProduct;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
-Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
+// Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 
 Route::get('/', function (Request $request) {
     return  response()->json([
@@ -25,8 +21,16 @@ Route::get('/', function (Request $request) {
     ], 200);
 });
 
-Route::get('/test', function() {
-    return "TEST";
-});
 
-Route::get('/test-subscription-null', 'Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck');
+
+Route::get('britex-test-subscription-changed', function(){
+//	$config = [
+//		'driver'   => 'smtp',
+//		'host'     => 'smtp.mailgun.org',
+//		'port'     =>  587,
+//		'username' => 'postmaster@mg.teltik.com',
+//		'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
+//	];
+//	Config::set('mail',$config);
+	event(new SubcriptionStatusChanged('64'));
+});

@@ -34,14 +34,6 @@ class SendAccountUnsuspendedMail
     {
         $customer = $event->customer;
 
-	    $configurationSet = $this->setMailConfiguration($customer);
-
-	    Log::info('Configuration Set');
-	    Log::info($configurationSet);
-
-        if ($configurationSet) {
-            return false;
-        }
 
         $dataRow['customer'] = $customer;
 
@@ -53,6 +45,15 @@ class SendAccountUnsuspendedMail
 
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+
+	        $configurationSet = $this->setMailConfiguration($customer);
+
+	        Log::info('Configuration Set');
+	        Log::info($configurationSet);
+
+	        if ($configurationSet) {
+		        return false;
+	        }
 
             Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
         }

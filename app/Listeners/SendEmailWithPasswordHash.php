@@ -3,11 +3,11 @@
 namespace App\Listeners;
 
 use Mail;
+use Config;
 use App\Model\Customer;
 use App\Model\Company;
 use App\Events\ForgotPassword;
 use App\Notifications\EmailWithHash;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Notifications\Notifiable;
 /**
  * Class SendEmailWithPasswordHash
