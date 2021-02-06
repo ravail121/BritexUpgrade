@@ -13,7 +13,7 @@ use Illuminate\Notifications\Messages\MailMessage;
  */
 class SendEmailForNullSubscriptionStartDate extends Notification
 {
-	use Queueable, EmailRecord;
+	use Queueable;
 
 	/**
 	 * @var
