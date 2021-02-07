@@ -69,7 +69,6 @@ class SendEmailWithInvoice
 	        $configurationSet = $this->setMailConfiguration($customerOrder);
 
 	        if ($configurationSet) {
-
 		        return false;
 	        }
             

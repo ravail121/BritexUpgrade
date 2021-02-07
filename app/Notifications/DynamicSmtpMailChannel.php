@@ -32,16 +32,12 @@ class DynamicSmtpMailChannel extends MailChannel
 			$companyId = $notification->customer->company_id;
 		}
 
-		if (!isset($companyId) && isset($notification->customerId)) {
-			$customer = Customer::find($notification->customerId);
-			if($customer->exists()) {
-				$companyId = $customer->company_id;
-			}
+		if(isset($notification->order)){
+			$companyId = $notification->order->company_id;
 		}
 
-		if (!isset($companyId) && isset($notification->email)) {
-
-			$customer = Customer::where('email', $notification->email);
+		if (!isset($companyId) && isset($notification->customerId)) {
+			$customer = Customer::find($notification->customerId);
 			if($customer->exists()) {
 				$companyId = $customer->company_id;
 			}
@@ -51,8 +47,11 @@ class DynamicSmtpMailChannel extends MailChannel
 			$companyId = $notification->data['company_id'];
 		}
 
-		if(isset($notification->order)){
-			$companyId = $notification->order->company_id;
+		if (!isset($companyId) && isset($notification->email)) {
+			$customer = Customer::where('email', $notification->email);
+			if($customer->exists()) {
+				$companyId = $customer->company_id;
+			}
 		}
 
 		if (isset($companyId)) {
