@@ -75,59 +75,56 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     {
         if ($customer->billableSubscriptions->count()) {
 
-            if($customer->stateTax){
+	        $invoice = Invoice::create($this->getInvoiceData($customer));
 
-                $invoice = Invoice::create($this->getInvoiceData($customer));
-            
-                $dueDate = Carbon::parse($invoice->start_date)->subDay();
-    
-                $dueDateChange = $invoice->update([
-                    'due_date' => $dueDate
-                ]);
-    
-                $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
-                
-                $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
-    
-                $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
-    
-                $pendingCharges = $this->pendingCharges($invoice);
-    
-                $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
-    
-                // Add Coupons
-                $couponAccount = $this->customerAccountCoupons($customer, $invoice);
-    
-                $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+	        $dueDate = Carbon::parse($invoice->start_date)->subDay();
 
-                $taxes = $this->addTaxes($customer, $invoice, $billableSubscriptionInvoiceItems);
+	        $dueDateChange = $invoice->update([
+		        'due_date' => $dueDate
+	        ]);
 
-                $monthlyCharges = $invoice->cal_total_charges;
+	        $billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
 
-                //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
-                $subtotal = str_replace(',', '',number_format($monthlyCharges + $totalPendingCharges, 2));
-    
-                $invoiceUpdate = $invoice->update(compact('subtotal'));
-    
-                $totalDue = $this->applyCredits($customer, $invoice);
-    
-                $invoice->update(['total_due' => $totalDue]);
-    
-                if ($totalDue == 0) {
-                    $invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
-                }
-    
-                $insertOrder = $this->insertOrder($invoice);
-                
-                $order       = Order::where('invoice_id', $invoice->id)->first();
-    
-                $request->headers->set('authorization', $order->company->api_key);
- 
-                $this->generateInvoice($order, $mail, $request);
+	        $billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
 
-            } else {
-                \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Monthly Invoice Generation skipped");
-            }    
+	        $regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
+
+	        $pendingCharges = $this->pendingCharges($invoice);
+
+	        $totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
+
+	        // Add Coupons
+	        $couponAccount = $this->customerAccountCoupons($customer, $invoice);
+
+	        $couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+
+	        if($customer->stateTax) {
+		        $taxes = $this->addTaxes( $customer, $invoice, $billableSubscriptionInvoiceItems );
+		        \Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Tax Calculation skipped");
+	        }
+
+	        $monthlyCharges = $invoice->cal_total_charges;
+
+	        //Plan charge + addon charge + pending charges + taxes - discount = monthly charges
+	        $subtotal = str_replace(',', '', number_format($monthlyCharges + $totalPendingCharges, 2));
+
+	        $invoiceUpdate = $invoice->update(compact('subtotal'));
+
+	        $totalDue = $this->applyCredits($customer, $invoice);
+
+	        $invoice->update(['total_due' => $totalDue]);
+
+	        if ($totalDue == 0) {
+		        $invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
+	        }
+
+	        $insertOrder = $this->insertOrder($invoice);
+
+	        $order       = Order::where('invoice_id', $invoice->id)->first();
+
+	        $request->headers->set('authorization', $order->company->api_key);
+
+	        $this->generateInvoice($order, $mail, $request);
         } 
     }
 
