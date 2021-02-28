@@ -256,8 +256,6 @@ class Customer extends Authenticatable
     public static function shouldBeGeneratedNewInvoices()
     {
         $today     = self::currentDate();
-
-	    \Log::info('Today ' . $today);
         
         $customers = self::whereNotNull('billing_end')
                         ->whereNotNull('billing_state_id')
@@ -272,9 +270,6 @@ class Customer extends Authenticatable
                             'openMonthlyInvoice'
                         ])
                         ->get();
-        foreach($customers as $customer) {
-	        \Log::info('shouldBeGeneratedNewInvoices ' . $customer->id);
-        }
 
         $customers = $customers->filter(function($customer, $i) use ($today){
             $billingEndParsed = Carbon::parse($customer->billing_end);
@@ -284,6 +279,7 @@ class Customer extends Authenticatable
                 $today >= $billingEndFiveDaysBefore &&
                 $today <= $billingEndParsed;
         });
+
 
         return $customers;
     }
