@@ -256,6 +256,8 @@ class Customer extends Authenticatable
     public static function shouldBeGeneratedNewInvoices()
     {
         $today     = self::currentDate();
+
+	    \Log::info('Today ' . $today);
         
         $customers = self::whereNotNull('billing_end')
                         ->whereNotNull('billing_state_id')
