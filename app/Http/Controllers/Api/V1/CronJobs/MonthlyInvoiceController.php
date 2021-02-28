@@ -57,7 +57,8 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
         
         foreach ($customers as $customer) {
             try {
-                $this->processMonthlyInvoice($customer, $request, true);
+	            \Log::info('Generating invoice for ' . $customer->id);
+	            $this->processMonthlyInvoice($customer, $request, true);
             } catch (Exception $e) {
                 \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
             }
