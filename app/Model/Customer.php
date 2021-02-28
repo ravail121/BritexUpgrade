@@ -3,11 +3,8 @@
 namespace App\Model;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use App\Events\InvoiceGenerated;
-use App\Model\Invoice;
 
 class Customer extends Authenticatable
 {
@@ -273,6 +270,9 @@ class Customer extends Authenticatable
                             'openMonthlyInvoice'
                         ])
                         ->get();
+        foreach($customers as $customer) {
+	        \Log::info('shouldBeGeneratedNewInvoices ' . $customer->id);
+        }
 
         $customers = $customers->filter(function($customer, $i) use ($today){
             $billingEndParsed = Carbon::parse($customer->billing_end);

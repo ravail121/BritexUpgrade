@@ -6,7 +6,6 @@ use Exception;
 use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Order;
-use App\Model\Company;
 use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\InvoiceItem;
