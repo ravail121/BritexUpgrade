@@ -273,7 +273,7 @@ class Customer extends Authenticatable
 
         $customers = $customers->filter(function($customer, $i) use ($today){
             $billingEndParsed = Carbon::parse($customer->billing_end);
-            $billingEndFiveDaysBefore   = $billingEndParsed->copy()->subDays(30);
+            $billingEndFiveDaysBefore   = $billingEndParsed->copy()->subDays(5);
             // Is today between customer.billing_date and -5 days
             return 
                 $today >= $billingEndFiveDaysBefore &&
