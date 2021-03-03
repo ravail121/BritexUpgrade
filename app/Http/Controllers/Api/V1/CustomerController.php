@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Model\Company;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Tax;
