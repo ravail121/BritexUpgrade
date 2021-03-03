@@ -11,12 +11,12 @@ use App\Model\Subscription;
 use App\Model\PendingCharge;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Model\CreditToInvoice;
 use App\Model\SubscriptionAddon;
 use App\Model\subscriptionCoupon;
 use App\Http\Controllers\BaseController;
 
 /**
- * @deprecated
  * Class InvoiceController
  *
  * @package App\Http\Controllers\Api\V1
@@ -88,8 +88,8 @@ class InvoiceController extends BaseController
 			foreach ($subscriptions as $subscription){
 
 				$_invoice = [];
-				if($subscription->status == 'active' || $subscription->status == 'shipping' || $subscription->status == 'for-activation' && $pendingcharges){
-					$invoices = Invoice::where('customer_id', $customer->id)->get();
+				if($subscription->status= 'active' || $subscription->status = 'shipping' || $subscription->status = 'for-activation' && $pendingcharges){
+					$invoices = Invoice::where('customer_id',$customer->id)->get();
 					foreach ($invoices as $invoice) {
 						if($invoice->start_date > $customer->billing_end && $invoice->type!= 1){
 							$_enddate = $customer->end_date;
@@ -97,34 +97,39 @@ class InvoiceController extends BaseController
 							$end_date =date ("Y-m-d", strtotime ( $start_date ."+1 months"));
 							$due_date = $customer->billing_end;
 							$_invoice = Invoice::create([
-								'end_date'                  => $start_date,
-								'start_date'                => $end_date,
-								'due_date'                  => $due_date,
-								'type'                      => 1,
-								'status'                    => 1,
-								'subtotal'                  => 0,
-								'total_due'                 => 0,
-								'prev_balance'              => 0,
-								'payment_method'            => 0,
-								'business_name'             => 0,
-								'billingfname'              => 0,
-								'billing_fname'             => 0,
-								'billing_lname'             => 0,
-								'billing_address_line_1'    => 0,
-								'billing_address_line_2'    => 0,
-								'billing_city'              => 0,
-								'billing_state'             => 0,
-								'billing_zip'               => 0,
-								'shipping_fname'            => 0,
-								'shipping_lname'            => 0,
-								'shipping_address_line_1'   => 0,
-								'shipping_address_line_2'   => 0,
-								'shipping_city'             => 0,
-								'shipping_state'            => 0,
-								'shipping_zip'              => 0,
+								'end_date'=>$start_date,
+								'start_date'=>$end_date,
+								'due_date'=>$due_date,
+								'type'=>1,
+								'status'=>1,
+								'subtotal'=>0,
+								'total_due'=>0,
+								'prev_balance'=>0,
+								'payment_method'=>0,
+								'business_name'=>0,
+								'billingfname'=>0,
+								'billing_fname'=>0,
+								'billing_lname'=>0,
+								'billing_address_line_1'=>0,
+								'billing_address_line_2'=>0,
+								'billing_city'=>0,
+								'billing_state'=>0,
+								'billing_zip'=>0,
+								'shipping_fname'=>0,
+								'shipping_lname'=>0,
+								'shipping_address_line_1'=>0,
+								'shipping_address_line_2'=>0,
+								'shipping_city'=>0,
+								'shipping_state'=>0,
+								'shipping_zip'=>0,
+
+
 							]);
 						}
 					}
+
+
+
 				}else{
 					return respond(['subscription status or pendingcharge doesnot match']);
 				}
@@ -269,12 +274,12 @@ class InvoiceController extends BaseController
 		];
 
 		$date = Carbon::today()->subDays(31)->endOfDay();
-		$customerInvoice = Invoice::where([
-			'customer_id' => $customer->id,
-			'type' => Invoice::TYPES['monthly']
-		])->where('start_date', '>', $date)->get()->last();
+		$customerInvoices = Invoice::where([
+			'customer_id'   => $customer->id,
+			'type'          => Invoice::TYPES['monthly']
+		])->where('start_date', '>', $date)->get();
 
-		if($array['billing_start'] =='NA' || $array['billing_end'] =='NA' || ! $customerInvoice){
+		if($array['billing_start'] =='NA' || $array['billing_end'] =='NA' || !$customerInvoices){
 			return $this->content = array_merge([
 				'charges'  => ['0','00'],
 				'past_due' => ['0','00'],
@@ -284,16 +289,18 @@ class InvoiceController extends BaseController
 			], $array);
 		}
 
-		$charges = $customerInvoice->subtotal;
+		$charges = $customerInvoices->sum('subtotal');
 
-		$payment = $this->getPaymentAndCreditAmount($customerInvoice);
+		$payment = $this->getPaymentAndCreditAmount($customerInvoices);
 
 		$pastDue = 0;
-		if($customerInvoice->status == Invoice::INVOICESTATUS['closed&upaid']){
-			$pastDue = $customerInvoice->total_due;
+		foreach ($customerInvoices as $customerInvoice) {
+			if ( $customerInvoice->status == Invoice::INVOICESTATUS[ 'closed&upaid' ] ) {
+				$pastDue += $customerInvoice->total_due;
+			}
 		}
 		// $total = ($charges - $payment) + $pastDue;
-		$total =  $customerInvoice->total_due;
+		$total =  $customerInvoices->sum('total_due');
 
 		if($total < 0){
 			$total = 0;
@@ -315,6 +322,12 @@ class InvoiceController extends BaseController
 		], $array);
 	}
 
+
+	/**
+	 * @param $customer
+	 *
+	 * @return mixed
+	 */
 	public function getTotalDueDate($customer)
 	{
 		$invoice = Invoice::where([['customer_id', $customer->id],['status', '1']])->first();
@@ -327,13 +340,22 @@ class InvoiceController extends BaseController
 
 	}
 
+	/**
+	 * @param $amount
+	 *
+	 * @return false|string[]
+	 */
 	public function getAmountFormated($amount){
-		return explode(".", (string)self::toTwoDecimals($amount));
+		return explode(".", (string) self::toTwoDecimals($amount));
 	}
 
-	public function getPaymentAndCreditAmount($customerInvoice)
+	public function getPaymentAndCreditAmount($customerInvoices)
 	{
-		return $customerInvoice->creditToInvoice->sum('amount');
+		$total = 0;
+		foreach($customerInvoices as $customerInvoice) {
+			$total += $customerInvoice->creditToInvoice->sum('amount');
+		}
+		return $total;
 	}
 
 	/**
