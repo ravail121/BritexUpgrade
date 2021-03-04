@@ -605,6 +605,7 @@ class SubscriptionController extends BaseController
 	 */
 	public function validateIfTheSimIsUsed(Request $request)
 	{
+		$companyId = $request->get('company')->id;
 		$data =  $request->validate([
 			'sim_number'   => 'required|min:19|max:20',
 		]);
@@ -614,6 +615,7 @@ class SubscriptionController extends BaseController
 			return $this->respond( [ 'success' => false, 'message' => 'Invalid Sim Number' ]);
 		}
 		$subscriptionExists = Subscription::where([
+			['company_id', $companyId],
 			['sim_card_num', $simNum],
 			['status', '!=', 'closed']
 		])->exists();
