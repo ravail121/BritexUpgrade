@@ -3,15 +3,13 @@
 
 namespace App\Notifications;
 
-use Illuminate\Support\Facades\Log;
 use Swift_Mailer;
 use App\Model\Company;
 use App\Model\Customer;
 use Swift_SmtpTransport;
-use Illuminate\Notifications\Channels\MailChannel;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Notifications\Notification;
-
-
+use Illuminate\Notifications\Channels\MailChannel;
 /**
  * Class DynamicSmtpMailChannel
  *

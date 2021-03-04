@@ -289,7 +289,7 @@ class CardController extends BaseController implements ConstantInterface
 	 */
 	public function primaryCard(Request $request)
     {
-        $data=$request->validate([
+        $data = $request->validate([
             'customer_credit_card_id'   => 'required',
             'id'                        => 'required'
         ]);

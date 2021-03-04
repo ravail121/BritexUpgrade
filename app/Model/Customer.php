@@ -280,6 +280,7 @@ class Customer extends Authenticatable
                 $today <= $billingEndParsed;
         });
 
+
         return $customers;
     }
 

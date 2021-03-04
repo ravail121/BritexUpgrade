@@ -120,7 +120,7 @@ class OrderGroupController extends Controller
 		}
 		$orderGroup = OrderGroup::find($request->order_group_id);
 
-		if ($orderGroup->closed == 1) {
+		if (isset($orderGroup->closed) && $orderGroup->closed == 1) {
 			if ($orderGroup->device_id != null) {
 				$this->content = $this->filterDevices($orderGroup);
 

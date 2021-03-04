@@ -36,35 +36,36 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 	 */
 	public $flag;
 
-	/**
-	 * Sets current date variable
-	 *
-	 * @param Carbon $carbon
-	 */
-	public function __construct()
-	{
-		$this->response = ['error' => 'Email was not sent'];
-	}
+    /**
+     * Sets current date variable
+     * 
+     * @param Carbon $carbon
+     */
+    public function __construct()
+    {
+        $this->response = ['error' => 'Email was not sent'];
+    }
 
-	/**
-	 * Generates Monthly Invoice of all Customers by checking conditions
-	 *
-	 * @return Response
-	 */
-	public function generateMonthlyInvoice(Request $request)
-	{
-		$customers = Customer::shouldBeGeneratedNewInvoices();
+    /**
+     * Generates Monthly Invoice of all Customers by checking conditions
+     * 
+     * @return Response
+     */
+    public function generateMonthlyInvoice(Request $request)
+    {
+        $customers = Customer::shouldBeGeneratedNewInvoices();
+        
+        foreach ($customers as $customer) {
+            try {
+	            \Log::info('Generating invoice for ' . $customer->id);
+	            $this->processMonthlyInvoice($customer, $request, true);
+            } catch (Exception $e) {
+                \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
+            }
+        }
 
-		foreach ($customers as $customer) {
-			try {
-				$this->processMonthlyInvoice($customer, $request, true);
-			} catch (Exception $e) {
-				\Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
-			}
-		}
-
-		return $this->respond($this->response);
-	}
+        return $this->respond($this->response);
+    }
 
 	/**
 	 * @param      $customer
@@ -126,7 +127,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 			$this->generateInvoice($order, $mail, $request);
 		}
 	}
-
 	/**
 	 * @param $customer
 	 * @param $invoice
@@ -236,43 +236,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 			}
 		}
 	}
-
-
-	/**
-	 * Sends mail through MonthlyInvoice event
-	 *
-	 * @param  Customer   $customer
-	 * @return Response
-	 */
-	// protected function triggerEvent($customer)
-	// {
-	//     if ($customer->invoice) {
-	//         foreach ($customer->invoice as $invoice) {
-	//             if ($invoice->type_not_one) {
-	//                 $this->flag = '';
-	//                 $invoice = $this->createInvoice($customer->id);
-
-	//                 if ($invoice && $this->flag == '') {
-	//                     $this->debitInvoiceItems($invoice);
-	//                     $this->response = event(new MonthlyInvoice($customer));
-
-	//                 } elseif ($invoice && $this->flag == 'pending') {
-	//                     $this->deleteOldInvoiceItems($invoice); // This need to be changed when plan is neither upgraded nor downgraded
-
-	//                     $this->debitInvoiceItems($invoice);
-	//                     $this->response = event(new MonthlyInvoice($customer));
-
-	//                 } elseif (!$invoice && $this->flag == 'error') {
-	//                     \Log::error('Invoice not created/found.');
-
-	//                 }
-	//                 break;
-	//             }
-	//         }
-	//     }
-	//     return $this->response;
-	// }
-
 
 	/**
 	 * Creates/Regenerates the Invoice
