@@ -20,11 +20,11 @@ class EmailWithHash extends Notification
     const URL = '/reset-password?token=';
 
 
-    /**
-     * Create a new notification instance.
-     *
-     * @return Order $order
-     */
+	/**
+	 * EmailWithHash constructor.
+	 *
+	 * @param $user
+	 */
     public function __construct($user)
     {
         $this->user = $user;
@@ -63,13 +63,14 @@ class EmailWithHash extends Notification
 
         $body = $emailTemplate->customerBody($column, $customer);
 
-        $data = ['company_id'          => $customer['company_id'],
-            'customer_id'              => $customer['id'],
-            'to'                       => $customer['email'],
-            'business_verficiation_id' => $customer['business_verification_id'],
-            'subject'                  => $emailTemplate->subject,
-            'from'                     => $emailTemplate->from,
-            'body'                     => $body,
+        $data = [
+        	'company_id'                => $customer['company_id'],
+            'customer_id'               => $customer['id'],
+            'to'                        => $customer['email'],
+            'business_verficiation_id'  => $customer['business_verification_id'],
+            'subject'                   => $emailTemplate->subject,
+            'from'                      => $emailTemplate->from,
+            'body'                      => $body
         ];
 
         $response = $this->emailLog($data);
