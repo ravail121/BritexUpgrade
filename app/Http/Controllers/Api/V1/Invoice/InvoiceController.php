@@ -134,6 +134,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 			$requestCoupons = [];
 			if($request->coupon) {
 				$requestCoupons = json_decode($request->coupon, true);
+				$this->storeCoupon($requestCoupons, $order);
 			}
 
 			if (isset($invoice['subscription_id'])) {

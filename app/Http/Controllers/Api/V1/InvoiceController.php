@@ -11,7 +11,6 @@ use App\Model\Subscription;
 use App\Model\PendingCharge;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Model\CreditToInvoice;
 use App\Model\SubscriptionAddon;
 use App\Model\subscriptionCoupon;
 use App\Http\Controllers\BaseController;

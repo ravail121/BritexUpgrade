@@ -94,9 +94,7 @@ trait InvoiceTrait
             $taxAmount = $taxableItems->sum('amount');
             if ($coupons) {
                 $taxData = $this->couponTax($taxableItems, $coupons);
-//                if ($taxData) {
-                    $taxAmount = $taxData;
-//                }
+                $taxAmount = $taxData;
                 // If coupon tax amount = 0, use original.
             }
             if ($taxAmount > 0) {
@@ -267,7 +265,7 @@ trait InvoiceTrait
         $invoice = [
             'order'                         =>  $order,
             'invoice'                       =>  $order->invoice,
-                                                //Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
+            //Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
             'standalone_items'              =>  Invoice::find($order->invoice_id)->invoiceItem->where('subscription_id', null),
             'previous_bill'                 =>  $this->previousBill($order),
             'credits'                       =>  $order->invoice->creditsToInvoice
