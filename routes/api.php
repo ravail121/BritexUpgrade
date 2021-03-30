@@ -517,7 +517,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 
-	Route::group(['namespace' => '\Api\V1'],function(){
+	Route::group(['namespace' => '\Api\V1'], function(){
 		Route::post('/sign-on',[
 			'as'   => 'api.customer.signon',
 			'uses' => 'SignOnController@signOn',
@@ -609,6 +609,11 @@ Route::middleware('APIToken')->group(function () {
 		Route::post('/subscription/update-requested-zip',[
 			'as'   => 'api.Subscription.requestedZip',
 			'uses' => 'SubscriptionController@updateRequestedZip',
+		]);
+
+		Route::post('/customers',[
+			'as'   => 'api.customers.list',
+			'uses' => 'CustomerController@listCustomers',
 		]);
 	});
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Tax;
+use App\Helpers\Log;
 use App\Model\Order;
 use App\Model\Invoice;
 use App\Model\Customer;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
+use App\Http\Resources\CustomerCollection;
 
 
 /**
@@ -406,7 +408,15 @@ class CustomerController extends BaseController
 	 */
 	public function orderUpdate($request)
 	{
-		$order = $request->only('shipping_fname','shipping_lname','shipping_address1','shipping_address2','shipping_city','shipping_state_id','shipping_zip');
+		$order = $request->only(
+			'shipping_fname',
+			'shipping_lname',
+			'shipping_address1',
+			'shipping_address2',
+			'shipping_city',
+			'shipping_state_id',
+			'shipping_zip'
+		);
 		$order['customer_id'] = $request->id;
 
 		Order::where('customer_id','=', $order['customer_id'])->update($order);
@@ -538,5 +548,29 @@ class CustomerController extends BaseController
 			                    });
 		              }
 		              )->get();
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function listCustomers(Request $request)
+	{
+		try {
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 25;
+			$customers = new CustomerCollection(
+				Customer::where('company_id', $request->get('company')->id)
+				        ->paginate($perPage)
+			);
+			return $this->respond($customers);
+		} catch (\Exception $e) {
+			Log::info($e->getMessage(), 'List Customers');
+			$response = [
+				'status'    => 'error',
+				'data'      => $e->getMessage()
+			];
+			return $this->respond($response, 503);
+		}
 	}
 }
