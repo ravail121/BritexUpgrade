@@ -549,28 +549,4 @@ class CustomerController extends BaseController
 		              }
 		              )->get();
 	}
-
-	/**
-	 * @param Request $request
-	 *
-	 * @return \Illuminate\Http\JsonResponse
-	 */
-	public function listCustomers(Request $request)
-	{
-		try {
-			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 25;
-			$customers = new CustomerCollection(
-				Customer::where('company_id', $request->get('company')->id)
-				        ->paginate($perPage)
-			);
-			return $this->respond($customers);
-		} catch (\Exception $e) {
-			Log::info($e->getMessage(), 'List Customers');
-			$response = [
-				'status'    => 'error',
-				'data'      => $e->getMessage()
-			];
-			return $this->respond($response, 503);
-		}
-	}
 }

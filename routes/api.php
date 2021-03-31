@@ -610,11 +610,6 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.Subscription.requestedZip',
 			'uses' => 'SubscriptionController@updateRequestedZip',
 		]);
-
-		Route::post('/customers',[
-			'as'   => 'api.customers.list',
-			'uses' => 'CustomerController@listCustomers',
-		]);
 	});
 
 
