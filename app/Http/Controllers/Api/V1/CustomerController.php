@@ -590,9 +590,10 @@ class CustomerController extends BaseController
 				'lname'                         => 'required|string',
 				'email'                         => [
 					'required',
-					Rule::exists('customer')->where(function ($query) use ($requestCompany) {
+					'email',
+					Rule::unique('customer')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
-					}),
+					})
 				],
 				'phone'                         => 'required|string',
 				'alternate_phone'               => 'nullable|string',
@@ -627,7 +628,7 @@ class CustomerController extends BaseController
 				'company_name'          => $requestCompany->name,
 				'phone'                 => $request->phone,
 				'alternate_phone'       => $request->alternate_phone,
-				'password'              => $request->password,
+				'password'              => bcrypt($request->get('password')),
 				'pin'                   => $request->pin,
 				'shipping_address1'     => $request->shipping_address1,
 				'shipping_address2'     => $request->shipping_address2,
@@ -635,7 +636,8 @@ class CustomerController extends BaseController
 				'shipping_state_id'     => $request->shipping_state_id,
 				'shipping_zip'          => $request->shipping_zip,
 				'shipping_fname'        => $request->shipping_fname,
-				'shipping_lname'        => $request->shipping_lname
+				'shipping_lname'        => $request->shipping_lname,
+				'hash'                  => sha1(time().rand())
 			];
 			if($request->has('billing_state_id')) {
 				$customerData['billing_state_id'] = $request->get('billing_state_id');
