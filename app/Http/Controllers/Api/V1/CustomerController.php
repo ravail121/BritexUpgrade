@@ -13,6 +13,7 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Events\AutoPayStatus;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
@@ -566,6 +567,101 @@ class CustomerController extends BaseController
 			return $this->respond($customers);
 		} catch (\Exception $e) {
 			Log::info($e->getMessage(), 'List Customers');
+			$response = [
+				'status'    => 'error',
+				'data'      => $e->getMessage()
+			];
+			return $this->respond($response, 503);
+		}
+	}
+
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function createCustomerWithoutOrder(Request $request)
+	{
+		try {
+			$requestCompany = $request->get('company');
+			$validator = Validator::make( $request->all(), [
+				'fname'                         => 'required|string',
+				'lname'                         => 'required|string',
+				'email'                         => [
+					'required',
+					Rule::exists('customer')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					}),
+				],
+				'phone'                         => 'required|string',
+				'alternate_phone'               => 'nullable|string',
+				'password'                      => 'required|string',
+				'shipping_address1'             => 'required|string',
+				'shipping_address2'             => 'nullable|string',
+				'shipping_city'                 => 'required|string',
+				'shipping_state_id'             => 'required|string|max:2',
+				'shipping_zip'                  => 'required|string',
+				'pin'                           => 'required|digits:4',
+				'billing_state_id'              => 'nullable|string',
+				'billing_fname'                 => 'required_with:billing_state_id|string',
+				'billing_lname'                 => 'required_with:billing_state_id|string',
+				'billing_address1'              => 'required_with:billing_state_id|string',
+				'billing_address2'              => 'nullable|string',
+				'billing_city'                  => 'required_with:billing_state_id|string',
+				'billing_zip'		            => 'required_with:billing_state_id|string',
+			] );
+
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return response()->json( [
+					'status' => 'error',
+					'data'   => $errors->messages(),
+				], 422 );
+			}
+			$customerData = [
+				'company_id'            => $requestCompany->id,
+				'fname'                 => $request->fname,
+				'lname'                 => $request->lname,
+				'email'                 => $request->email,
+				'company_name'          => $requestCompany->name,
+				'phone'                 => $request->phone,
+				'alternate_phone'       => $request->alternate_phone,
+				'password'              => $request->password,
+				'pin'                   => $request->pin,
+				'shipping_address1'     => $request->shipping_address1,
+				'shipping_address2'     => $request->shipping_address2,
+				'shipping_city'         => $request->shipping_city,
+				'shipping_state_id'     => $request->shipping_state_id,
+				'shipping_zip'          => $request->shipping_zip,
+				'shipping_fname'        => $request->shipping_fname,
+				'shipping_lname'        => $request->shipping_lname
+			];
+			if($request->has('billing_state_id')) {
+				$customerData['billing_state_id'] = $request->get('billing_state_id');
+				$customerData['billing_fname'] = $request->get('billing_fname');
+				$customerData['billing_lname'] = $request->get('billing_lname');
+				$customerData['billing_address1'] = $request->get('billing_address1');
+				$customerData['billing_address2'] = $request->get('billing_address2');
+				$customerData['billing_city'] = $request->get('billing_city');
+				$customerData['billing_zip'] = $request->get('billing_zip');
+			}
+			$customer = Customer::create($customerData);
+			if (!$customer) {
+				$errorResponse = [
+					'status'    => 'error',
+					'data'      => 'Customer was not created'
+				];
+				return $this->respond($errorResponse, 503);
+			} else {
+				$successResponse = [
+					'status'    => 'success',
+					'data'      => $customer
+				];
+				return $this->respond($successResponse);
+			}
+		} catch (\Exception $e) {
+			Log::info($e->getMessage(), 'Create Customers');
 			$response = [
 				'status'    => 'error',
 				'data'      => $e->getMessage()

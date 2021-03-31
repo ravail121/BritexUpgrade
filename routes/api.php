@@ -615,6 +615,10 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.customers.list',
 			'uses' => 'CustomerController@listCustomers',
 		]);
+		Route::post('/create-customer-without-order',[
+			'as'   => 'api.customers.create.customer.without.order',
+			'uses' => 'CustomerController@createCustomerWithoutOrder',
+		]);
 	});
 
 
