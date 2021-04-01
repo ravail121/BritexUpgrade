@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Illuminate\Validation\Rule;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Order;
+use App\Helpers\Log;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\OrderCoupon;
@@ -634,4 +636,114 @@ class OrderController extends BaseController
 	    	['status', '!=', 'closed']
 	    ])->exists();
     }
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function createOrderForBulkOrder(Request $request) {
+		try {
+			$requestCompany = $request->get('company');
+			$validation = Validator::make(
+				$request->all(),
+				[
+					'customer_id'       => [
+						'required',
+						'numeric',
+						Rule::exists('customer:id')->where(function ($query) use ($requestCompany) {
+							return $query->where('company_id', $requestCompany->id);
+						})
+					],
+					'device_id'        => 'numeric|exists:device,id',
+					'plan_id'          => 'numeric|exists:plan,id',
+					'sim_id'           => 'numeric|exists:sim,id',
+					'subscription_id'  => 'numeric|exists:subscription,id',
+					'sim_num'          => 'numeric',
+					'sim_type'         => 'string',
+					'porting_number'   => 'string',
+					'area_code'        => 'string',
+					'operating_system' => 'string',
+					'imei_number'      => 'digits_between:14,16',
+				]
+			);
+
+
+			if ( $request->has( 'sim_num' ) ) {
+				$validation->after( function ( $validator ) use ( $request ) {
+					if ( $this->validateIfTheSimIsUsed( $request->input( 'sim_num' ) ) ) {
+						$validator->errors()->add( 'sim_num', "The SIM can't be used." );
+					}
+				} );
+			}
+
+			if ( $validation->fails() ) {
+				$errors = $validation->errors();
+				return response()->json( [
+					'status' => 'error',
+					'data'   => $errors->messages(),
+				], 422 );
+			}
+
+			$data = $request->all();
+
+			/**
+			 * Create new row in order table
+			 */
+			$order = Order::create( [
+				'hash'       => sha1( time() . rand() ),
+				'company_id' => $request->get( 'company' )->id,
+			] );
+
+			$customer = Customer::find($data[ 'customer_id' ]);
+			if ( $customer ) {
+				$order->update( [ 'customer_id' => $customer->id ] );
+				$paidMonthlyInvoice = isset( $data[ 'paid_monthly_invoice' ] ) ? $data[ 'paid_monthly_invoice' ] : null;
+			}
+
+			// check active_group_id
+			if ( ! $order->active_group_id ) {
+				$order_group = OrderGroup::create( [
+					'order_id' => $order->id
+				] );
+
+				// update order.active_group_id
+				$order->update( [
+					'active_group_id' => $order_group->id,
+				] );
+			} else {
+				$order_group = OrderGroup::find( $order->active_group_id );
+			}
+
+			$this->insertOrderGroup( $data, $order, $order_group );
+
+			if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $data[ 'plan_id' ] ) ) {
+				$monthly_order_group = OrderGroup::create( [
+					'order_id' => $order->id
+				] );
+				$this->insertOrderGroup( $data, $order, $monthly_order_group, 1 );
+			}
+
+			if (!$order) {
+				$errorResponse = [
+					'status'    => 'error',
+					'data'      => 'Order was not created'
+				];
+				return $this->respond($errorResponse, 503);
+			} else {
+				$successResponse = [
+					'status'    => 'success',
+					'data'      => $order
+				];
+				return $this->respond($successResponse);
+			}
+		} catch(\Exception $e) {
+			Log::info( $e->getMessage(), 'Create Order for Bulk Order' );
+			$response = [
+				'status' => 'error',
+				'data'   => $e->getMessage()
+			];
+			return $this->respond( $response, 503 );
+		}
+	}
 }

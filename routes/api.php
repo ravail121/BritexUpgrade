@@ -636,6 +636,11 @@ Route::middleware('APIToken')->group(function () {
 		Route::post( '/customer', [
 			'as'   => 'api.bulk.order.create.customer',
 			'uses' => 'CustomerController@createCustomerForBulkOrder',
-		] );
+		]);
+
+		Route::post( '/order', [
+			'as'   => 'api.bulk.order.create.order',
+			'uses' => 'OrderController@createOrderForBulkOrder',
+		]);
 	});
 }); //APIToken middleware
