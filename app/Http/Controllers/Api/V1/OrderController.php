@@ -736,6 +736,7 @@ class OrderController extends BaseController
 
 				foreach ( $orderItems as $orderItem ) {
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
+					
 					// check active_group_id
 					if ( ! $order->active_group_id ) {
 						$order_group = OrderGroup::create( [
@@ -909,7 +910,7 @@ class OrderController extends BaseController
 
 		$output = [
 			'order_id'                         =>  $order->id,
-			'customer_id'                      =>  $order->customer_id,
+			'customer_id'                      =>  $order->customer->id,
 			'company_id'                       =>  $order->customer->company_id,
 			'order_num'                        =>  $order->order_num,
 			'plan_id'                          =>  $data['plan_id'],
