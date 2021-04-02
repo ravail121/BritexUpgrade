@@ -917,7 +917,7 @@ class OrderController extends BaseController
 			'sim_id'                           =>  $data['sim_id'] ?? null,
 			'sim_name'                         =>  $data['sim_type'] ?? '',
 			'sim_card_num'                     =>  $data['sim_num'] ?? '',
-			'device_id'                        =>  $data['device_id'] ?? '',
+			'device_id'                        =>  $data['device_id'] ?? null,
 			'device_os'                        =>  $data['operating_system'] ?? '',
 			'device_imei'                      =>  $data['imei_number'] ?? '',
 			'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : 0,
