@@ -696,6 +696,7 @@ class OrderController extends BaseController
 							return $query->where('status', '!=', 'closed');
 						})
 					],
+					'orders.*.order_group_id'       => 'numeric|exists:order_group,id',
 					'orders.*.sim_type'             => 'string',
 					'orders.*.porting_number'       => 'string',
 					'orders.*.area_code'            => 'string',
@@ -745,7 +746,11 @@ class OrderController extends BaseController
 							'active_group_id' => $order_group->id,
 						] );
 					} else {
-						$order_group = OrderGroup::find( $order->active_group_id );
+						if(isset($data['order_group_id'])){
+							$order_group = OrderGroup::find( $data['order_group_id'] );
+						} else {
+							$order_group = OrderGroup::find( $order->active_group_id );
+						}
 					}
 					$this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
 					if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
@@ -782,6 +787,7 @@ class OrderController extends BaseController
 	private function insertOrderGroupForBulkOrder($data, $order, $order_group, $paidMonthlyInvoice = 0)
 	{
 		$og_params = [];
+		$subscription_id = null;
 		if(isset($data['device_id']) && $paidMonthlyInvoice == 0){
 			$og_params['device_id'] = $data['device_id'];
 		}
@@ -810,6 +816,17 @@ class OrderController extends BaseController
 					$__oga->delete();
 				}
 			}
+			if(!isset($data['plan_id'])) {
+				$subscriptionData = $this->generateSubscriptionData( $data, $order );
+				$subscription     = Subscription::create( $subscriptionData );
+				$subscription_id = $subscription->id;
+			} elseif(isset($data['subscription_id'])){
+				$subscription_id = $data['subscription_id'];
+			}
+
+			if($subscription_id){
+				$og_params['subscription_id'] = $subscription_id;
+			}
 		}
 
 		if($paidMonthlyInvoice == 0){
@@ -824,10 +841,6 @@ class OrderController extends BaseController
 			if(isset($data['sim_num'])){
 				$og_params['sim_num'] = $data['sim_num'];
 			}
-
-			 if(isset($data['subscription_id'])){
-			     $og_params['subscription_id'] = $data['subscription_id'];
-			 }
 
 			if(isset($data['sim_type'])){
 				$og_params['sim_type'] = $data['sim_type'];
@@ -870,14 +883,6 @@ class OrderController extends BaseController
 					$oga = OrderGroupAddon::create($ogData);
 				}
 			}
-		}
-
-		if(isset($data['subscription_id'])){
-			$subscriptionStatus = $data['subscription_status'] ?: 'for-activation';
-		}
-		if(isset($data['plan_id'])) {
-			$subscriptionData = $this->generateSubscriptionData( $data, $order );
-			$subscription     = Subscription::create( $subscriptionData );
 		}
 	}
 
