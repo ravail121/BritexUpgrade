@@ -816,11 +816,11 @@ class OrderController extends BaseController
 					$__oga->delete();
 				}
 			}
-			if(!isset($data['plan_id'])) {
+			if(!isset($data['subscription_id'])) {
 				$subscriptionData = $this->generateSubscriptionData( $data, $order );
 				$subscription     = Subscription::create( $subscriptionData );
 				$subscription_id = $subscription->id;
-			} elseif(isset($data['subscription_id'])){
+			} else {
 				$subscription_id = $data['subscription_id'];
 			}
 
