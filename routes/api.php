@@ -642,5 +642,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.create.order',
 			'uses' => 'OrderController@createOrderForBulkOrder',
 		]);
+
+		Route::post( '/list-order-details', [
+			'as'    => 'api.bulk.order.list.details',
+			'uses'  => 'OrderController@listCustomerSimOrder'
+		]);
+
 	});
 }); //APIToken middleware

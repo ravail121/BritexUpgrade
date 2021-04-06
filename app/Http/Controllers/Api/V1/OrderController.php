@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Model\Plan;
-use App\Model\Sim;
 use Validator;
 use Carbon\Carbon;
+use App\Model\Sim;
+use App\Model\Plan;
 use App\Model\Order;
 use App\Helpers\Log;
 use App\Model\Customer;
@@ -692,7 +692,7 @@ class OrderController extends BaseController
 					],
 					'orders.*.sim_num'              => [
 						'numeric',
-						Rule::exists('subscription', 'sim_card_num')->where(function ($query)  {
+						Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
 							return $query->where('status', '!=', 'closed');
 						})
 					],
@@ -719,46 +719,51 @@ class OrderController extends BaseController
 
 			DB::transaction(function () use ($request, $data) {
 
-				/**
-				 * Create new row in order table
-				 */
-				$order = Order::create( [
-					'hash'       => sha1( time() . rand() ),
-					'company_id' => $request->get( 'company' )->id,
-				] );
-
-				$customer = Customer::find( $data[ 'customer_id' ] );
-				if ( $customer ) {
-					$order->update( [ 'customer_id' => $customer->id ] );
+				if(!$request->get('plan_activation')){
+					/**
+					 * Create new row in order table if the order is not for plan activation
+					 */
+					$order = Order::create( [
+						'hash'          => sha1( time() . rand() ),
+						'company_id'    => $request->get( 'company' )->id,
+						'customer_id'   => $data[ 'customer_id' ]
+					] );
 				}
 
 				$orderItems = $request->get( 'orders' );
 
 				foreach ( $orderItems as $orderItem ) {
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
-					
-					// check active_group_id
-					if ( ! $order->active_group_id ) {
-						$order_group = OrderGroup::create( [
-							'order_id' => $order->id
-						] );
-						// update order.active_group_id
-						$order->update( [
-							'active_group_id' => $order_group->id,
-						] );
-					} else {
-						if(isset($data['order_group_id'])){
-							$order_group = OrderGroup::find( $data['order_group_id'] );
+					if(!$request->get('plan_activation')) {
+						// check active_group_id
+						if ( ! $order->active_group_id ) {
+							$order_group = OrderGroup::create( [
+								'order_id' => $order->id
+							] );
+							// update order.active_group_id
+							$order->update( [
+								'active_group_id' => $order_group->id,
+							] );
 						} else {
 							$order_group = OrderGroup::find( $order->active_group_id );
 						}
+					} else {
+						$order_group = OrderGroup::whereHas('order', function($query) use ($request, $data) {
+							$query->where([
+								['company_id', $request->get('company')->id],
+								['customer_id', $data['customer_id']],
+							]);
+						})->where( 'plan_id', $data['plan_id'])->where( 'sim_num', $data['sim_num'] )->first();
+						$order = $order_group->order;
 					}
-					$this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
-					if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
-						$monthly_order_group = OrderGroup::create( [
-							'order_id' => $order->id
-						] );
-						$this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
+					if($order_group) {
+						$this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
+						if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
+							$monthly_order_group = OrderGroup::create( [
+								'order_id' => $order->id
+							] );
+							$this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
+						}
 					}
 				}
 			});
@@ -817,16 +822,18 @@ class OrderController extends BaseController
 					$__oga->delete();
 				}
 			}
-			if(!isset($data['subscription_id'])) {
-				$subscriptionData = $this->generateSubscriptionData( $data, $order );
-				$subscription     = Subscription::create( $subscriptionData );
-				$subscription_id = $subscription->id;
-			} else {
-				$subscription_id = $data['subscription_id'];
-			}
+			if(isset($data['sim_num'])) {
+				if ( ! isset( $data[ 'subscription_id' ] ) ) {
+					$subscriptionData = $this->generateSubscriptionData( $data, $order );
+					$subscription     = Subscription::create( $subscriptionData );
+					$subscription_id  = $subscription->id;
+				} else {
+					$subscription_id = $data[ 'subscription_id' ];
+				}
 
-			if($subscription_id){
-				$og_params['subscription_id'] = $subscription_id;
+				if ( $subscription_id ) {
+					$og_params[ 'subscription_id' ] = $subscription_id;
+				}
 			}
 		}
 
@@ -917,7 +924,7 @@ class OrderController extends BaseController
 			'status'                           =>  $plan && $plan->type === 4 ? 'active' : $subscriptionStatus,
 			'sim_id'                           =>  $data['sim_id'] ?? null,
 			'sim_name'                         =>  $data['sim_type'] ?? '',
-			'sim_card_num'                     =>  $data['sim_num'] ?? '',
+			'sim_card_num'                     =>  $data['sim_num'],
 			'device_id'                        =>  $data['device_id'] ?? null,
 			'device_os'                        =>  $data['operating_system'] ?? '',
 			'device_imei'                      =>  $data['imei_number'] ?? '',
@@ -930,6 +937,106 @@ class OrderController extends BaseController
 		}
 
 		return $output;
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function listCustomerSimOrder( Request $request )
+	{
+		try {
+			$requestCompany = $request->get('company');
+			$validation = Validator::make(
+				$request->all(),
+				[
+					'customer_id'                   => [
+						'required',
+						'numeric',
+						Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+							return $query->where('company_id', $requestCompany->id);
+						})
+					]
+				]
+			);
+
+			if ( $validation->fails() ) {
+				$errors = $validation->errors();
+				$validationErrorResponse = [
+					'status' => 'error',
+					'data'   => $errors->messages()
+				];
+				return $this->respond($validationErrorResponse, 422);
+			}
+
+			$customerId = $request->input('customer_id');
+			$order = Order::where('customer_id', $customerId)
+			              ->where('company_id', $requestCompany->id)
+			              ->first();
+			if(!$order){
+				return $this->respond([
+					'status'    => 'success',
+					'data'      => 'No orders available'
+				]);
+			}
+
+			$hash = $order->hash;
+
+			$order =  $orderGroups  = [];
+
+			if($hash){
+				$order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
+					$query->where('hash', $hash);
+				})->get();
+
+				foreach($order_groups as $key => $og){
+					if(empty($order)){
+						$order =  [
+							"id"                     => $og->order->id,
+							"order_hash"             => $og->order->hash,
+							"active_group_id"        => $og->order->active_group_id,
+							"active_subscription_id" => $og->order->active_subscription_id,
+							"order_num"              => $og->order->order_num,
+							"status"                 => $og->order->status,
+							"customer_id"            => $og->order->customer_id,
+							'order_groups'           => [],
+							'operating_system'       => $og->operating_system,
+							'imei_number'            => $og->imei_number
+						];
+					}
+
+					$orderGroupsTmp = [
+						'id'                => $og->id,
+						'sim'               => $og->sim,
+						'sim_num'           => $og->sim_num,
+						'sim_type'          => $og->sim_type,
+						'plan'              => $og->plan,
+						'porting_number'    => $og->porting_number,
+						'area_code'         => $og->area_code,
+						'device'            => $og->device_detail,
+						'operating_system'  => $og->operating_system,
+						'imei_number'       => $og->imei_number,
+						'plan_prorated_amt' => $og->plan_prorated_amt,
+						'subscription'      => $og->subscription,
+					];
+
+					array_push($orderGroups, $orderGroupsTmp);
+				}
+				$order['order_groups'] = $orderGroups;
+				return $this->respond([
+					'status'    => 'success',
+					'data'      => $order
+				]);
+			}
+		} catch(\Exception $e) {
+			Log::info( $e->getMessage(), 'List customer sim order' );
+			$response = [
+				'status' => 'error',
+				'data'   => $e->getMessage()
+			];
+			return $this->respond( $response, 503 );
+		}
 	}
 
 }
