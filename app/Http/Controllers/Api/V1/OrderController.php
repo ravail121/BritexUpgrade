@@ -971,64 +971,73 @@ class OrderController extends BaseController
 			}
 
 			$customerId = $request->input('customer_id');
-			$order = Order::where('customer_id', $customerId)
+			$orders = Order::where('customer_id', $customerId)
 			              ->where('company_id', $requestCompany->id)
-			              ->first();
-			if(!$order){
+			              ->get();
+			if(!$orders){
 				return $this->respond([
 					'status'    => 'success',
 					'data'      => 'No orders available'
 				]);
 			}
+			$ordersOutput = [];
+			foreach($orders as $order){
+				$hash = $order->hash;
 
-			$hash = $order->hash;
+				$orderGroups = $tempOrderGroups = $tempOrder = [];
 
-			$order =  $orderGroups  = [];
+				if($hash) {
+					$order_groups = OrderGroup::with( [
+						'order',
+						'sim',
+						'device',
+						'device.device_image'
+					] )->whereHas( 'order', function ( $query ) use ( $hash ) {
+						$query->where( 'hash', $hash );
+					} )->get();
 
-			if($hash){
-				$order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
-					$query->where('hash', $hash);
-				})->get();
+					foreach ( $order_groups as $key => $og ) {
+						if ( empty( $tempOrder ) ) {
+							$tempOrder = [
+								"id"                     => $og->order->id,
+								"order_hash"             => $og->order->hash,
+								"active_group_id"        => $og->order->active_group_id,
+								"active_subscription_id" => $og->order->active_subscription_id,
+								"order_num"              => $og->order->order_num,
+								"status"                 => $og->order->status,
+								"customer_id"            => $og->order->customer_id,
+								'order_groups'           => [],
+								'operating_system'       => $og->operating_system,
+								'imei_number'            => $og->imei_number
+							];
+						}
 
-				foreach($order_groups as $key => $og){
-					if(empty($order)){
-						$order =  [
-							"id"                     => $og->order->id,
-							"order_hash"             => $og->order->hash,
-							"active_group_id"        => $og->order->active_group_id,
-							"active_subscription_id" => $og->order->active_subscription_id,
-							"order_num"              => $og->order->order_num,
-							"status"                 => $og->order->status,
-							"customer_id"            => $og->order->customer_id,
-							'order_groups'           => [],
-							'operating_system'       => $og->operating_system,
-							'imei_number'            => $og->imei_number
+						$tempOrderGroups = [
+							'id'                => $og->id,
+							'sim'               => $og->sim,
+							'sim_num'           => $og->sim_num,
+							'sim_type'          => $og->sim_type,
+							'plan'              => $og->plan,
+							'porting_number'    => $og->porting_number,
+							'area_code'         => $og->area_code,
+							'device'            => $og->device_detail,
+							'operating_system'  => $og->operating_system,
+							'imei_number'       => $og->imei_number,
+							'plan_prorated_amt' => $og->plan_prorated_amt,
+							'subscription'      => $og->subscription,
 						];
+
+						array_push( $orderGroups, $tempOrderGroups );
 					}
-
-					$orderGroupsTmp = [
-						'id'                => $og->id,
-						'sim'               => $og->sim,
-						'sim_num'           => $og->sim_num,
-						'sim_type'          => $og->sim_type,
-						'plan'              => $og->plan,
-						'porting_number'    => $og->porting_number,
-						'area_code'         => $og->area_code,
-						'device'            => $og->device_detail,
-						'operating_system'  => $og->operating_system,
-						'imei_number'       => $og->imei_number,
-						'plan_prorated_amt' => $og->plan_prorated_amt,
-						'subscription'      => $og->subscription,
-					];
-
-					array_push($orderGroups, $orderGroupsTmp);
+					$tempOrder[ 'order_groups' ] = $orderGroups;
 				}
-				$order['order_groups'] = $orderGroups;
-				return $this->respond([
-					'status'    => 'success',
-					'data'      => $order
-				]);
+				array_push($ordersOutput, $tempOrder);
 			}
+
+			return $this->respond([
+				'status'    => 'success',
+				'data'      => $ordersOutput
+			]);
 		} catch(\Exception $e) {
 			Log::info( $e->getMessage(), 'List customer sim order' );
 			$response = [
