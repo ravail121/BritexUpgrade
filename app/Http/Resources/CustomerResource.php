@@ -15,8 +15,9 @@ class CustomerResource extends Resource
 	public function toArray($request)
 	{
 		return [
-			'id' => $this->id,
-			'name' => $this->full_name
+			'id'        => $this->id,
+			'name'      => $this->full_name,
+			'hash'      => $this->hash
 		];
 	}
 }
