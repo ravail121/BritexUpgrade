@@ -648,5 +648,9 @@ Route::middleware('APIToken')->group(function () {
 			'uses'  => 'OrderController@listCustomerSimOrder'
 		]);
 
+		Route::post( '/preview', [
+			'as'   => 'api.bulk.order.preview.order',
+			'uses' => 'OrderController@previewOrderForBulkOrder',
+		]);
 	});
 }); //APIToken middleware

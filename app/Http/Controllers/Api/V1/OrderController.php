@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Cassandra\Custom;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -19,8 +20,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Model\BusinessVerification;
 use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
-
 /**
  * Class OrderController
  *
@@ -28,7 +29,7 @@ use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
  */
 class OrderController extends BaseController
 {
-    use InvoiceCouponTrait;
+    use InvoiceCouponTrait, BulkOrderTrait;
 
     /**
      *
@@ -645,96 +646,50 @@ class OrderController extends BaseController
 	 *
 	 * @return \Illuminate\Http\JsonResponse
 	 */
-	public function createOrderForBulkOrder(Request $request) {
+	public function createOrderForBulkOrder(Request $request)
+	{
 		try {
-			$requestCompany = $request->get('company');
-			if ( !$requestCompany->enable_bulk_order ) {
-				$notAllowedResponse = [
-					'status' => 'error',
-					'data'   => 'Bulk Order not enabled for the requesting company'
-				];
-				return $this->respond($notAllowedResponse, 503);
-			}
-			$validation = Validator::make(
-				$request->all(),
-				[
-					'customer_id'                   => [
-						'required',
-						'numeric',
-						Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
-							return $query->where('company_id', $requestCompany->id);
-						})
-					],
-					'orders'                        => 'required',
-					'orders.*.device_id'            => [
-						'numeric',
-						Rule::exists('device', 'id')->where(function ($query) use ($requestCompany) {
-							return $query->where('company_id', $requestCompany->id);
-						})
-					],
-					'orders.*.plan_id'              => [
-						'numeric',
-						Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-							return $query->where('company_id', $requestCompany->id);
-						})
-					],
-					'orders.*.sim_id'               =>  [
-						'numeric',
-						Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-							return $query->where('company_id', $requestCompany->id);
-						})
-					],
-					'orders.*.subscription_id'      => [
-						'numeric',
-						Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
-							return $query->where('company_id', $requestCompany->id);
-						})
-					],
-					'orders.*.sim_num'              => [
-						'numeric',
-						Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
-							return $query->where('status', '!=', 'closed');
-						})
-					],
-					'orders.*.order_group_id'       => 'numeric|exists:order_group,id',
-					'orders.*.sim_type'             => 'string',
-					'orders.*.porting_number'       => 'string',
-					'orders.*.area_code'            => 'string',
-					'orders.*.operating_system'     => 'string',
-					'orders.*.imei_number'          => 'digits_between:14,16',
-					'orders.*.subscription_status'  => 'string',
-				]
-			);
 
-			if ( $validation->fails() ) {
-				$errors = $validation->errors();
-				$validationErrorResponse = [
-					'status' => 'error',
-					'data'   => $errors->messages()
-				];
-				return $this->respond($validationErrorResponse, 422);
+			$validation = $this->validationRequestForBulkOrder($request);
+			if($validation !== 'valid') {
+				return $validation;
 			}
-
 			$data = $request->all();
+			$customer = Customer::find($request->get('customer_id'));
+
+			$this->updateCustomerDates($customer);
 
 			DB::transaction(function () use ($request, $data) {
+				$planActivation = $request->get('plan_activation') ?: false;
+				$customer = Customer::find($request->get('customer_id'));
 
-				if(!$request->get('plan_activation')){
+				$order = null;
+				if(!$planActivation){
 					/**
 					 * Create new row in order table if the order is not for plan activation
 					 */
 					$order = Order::create( [
-						'hash'          => sha1( time() . rand() ),
-						'company_id'    => $request->get( 'company' )->id,
-						'customer_id'   => $data[ 'customer_id' ]
+						'hash'              => sha1( time() . rand() ),
+						'company_id'        => $request->get( 'company' )->id,
+						'customer_id'       => $data[ 'customer_id' ],
+						'shipping_fname'    => $customer->billing_fname,
+						'shipping_lname'    => $customer->billing_lname,
+						'shipping_address1' => $customer->billing_address1,
+						'shipping_address2' => $customer->billing_address2,
+						'shipping_city'     => $customer->billing_city,
+						'shipping_state_id' => $customer->billing_state_id,
+						'shipping_zip'      => $customer->billing_zip
 					] );
 				}
 
 				$orderItems = $request->get( 'orders' );
 
+				$outputOrderItems = [];
+
 				foreach ( $orderItems as $orderItem ) {
+					$order_group = null;
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
-					if(!$request->get('plan_activation')) {
+					if(!$planActivation) {
 						// check active_group_id
 						if ( ! $order->active_group_id ) {
 							$order_group = OrderGroup::create( [
@@ -748,25 +703,30 @@ class OrderController extends BaseController
 							$order_group = OrderGroup::find( $order->active_group_id );
 						}
 					} else {
-						$order_group = OrderGroup::whereHas('order', function($query) use ($request, $data) {
-							$query->where([
-								['company_id', $request->get('company')->id],
-								['customer_id', $data['customer_id']],
-							]);
-						})->where( 'plan_id', $data['plan_id'])->where( 'sim_num', $data['sim_num'] )->first();
-						$order = $order_group->order;
+						if(isset( $orderItem['plan_id'])) {
+							$order_group = OrderGroup::whereHas( 'order', function ( $query ) use ( $request, $data ) {
+								$query->where( [
+									[ 'company_id', $request->get( 'company' )->id ],
+									[ 'customer_id', $data[ 'customer_id' ] ],
+								] );
+							} )->where( 'plan_id', $orderItem[ 'plan_id' ] )->where( 'sim_num', $orderItem[ 'sim_num' ] )->first();
+						}
 					}
 					if($order_group) {
-						$this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
+						$outputOrderItems[] = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
 						if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
 							$monthly_order_group = OrderGroup::create( [
 								'order_id' => $order->id
 							] );
-							$this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
+							$outputOrderItems[] = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
 						}
 					}
 				}
+				if($order) {
+					$this->createInvoice($request, $order, $outputOrderItems, $planActivation);
+				}
 			});
+
 
 			$successResponse = [
 				'status'    => 'success',
@@ -775,7 +735,7 @@ class OrderController extends BaseController
 			return $this->respond($successResponse);
 
 		} catch(\Exception $e) {
-			Log::info( $e->getMessage(), 'Create Order for Bulk Order' );
+			Log::info($e->getMessage() . ' on line number: '.$e->getLine() . ' Create Order for Bulk Order');
 			$response = [
 				'status' => 'error',
 				'data'   => $e->getMessage()
@@ -789,6 +749,8 @@ class OrderController extends BaseController
 	 * @param     $order
 	 * @param     $order_group
 	 * @param int $paidMonthlyInvoice
+	 *
+	 * @return mixed
 	 */
 	private function insertOrderGroupForBulkOrder($data, $order, $order_group, $paidMonthlyInvoice = 0)
 	{
@@ -875,7 +837,6 @@ class OrderController extends BaseController
 			}
 		}
 
-		$order_group->update($og_params);
 
 		if(isset($data['addon_id'][0])){
 			foreach ($data['addon_id'] as $key => $addon) {
@@ -892,6 +853,7 @@ class OrderController extends BaseController
 				}
 			}
 		}
+		return tap(OrderGroup::findOrFail($order_group->id))->update($og_params);
 	}
 
 	/**
@@ -1046,6 +1008,122 @@ class OrderController extends BaseController
 			];
 			return $this->respond( $response, 503 );
 		}
+	}
+
+	/**
+	 * Preview Order for Bulk Order
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function previewOrderForBulkOrder(Request $request)
+	{
+		try {
+			$output = [];
+			$this->validationRequestForBulkOrder($request);
+
+			$data = $request->all();
+
+			$orderItems = $request->get( 'orders' );
+
+			$output['totalPrice'] =  $this->totalPriceForPreview($orderItems);
+//			$output['subtotalPrice'] = $this->subTotalPriceForPreview($orderItems);
+//			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
+//			$output['taxes'] = $this->calTaxesForPreview($orderItems);
+			$output['regulatory'] = $this->calRegulatoryForPreview($orderItems);
+			$output['shippingFee'] = $this->getShippingFeeForPreview($orderItems);
+
+			$successResponse = [
+				'status'    => 'success',
+				'data'      => $output
+			];
+			return $this->respond($successResponse);
+
+		} catch(\Exception $e) {
+			Log::info( $e->getMessage(), 'Preview Order for Bulk Order' );
+			$response = [
+				'status' => 'error',
+				'data'   => $e->getMessage()
+			];
+			return $this->respond( $response, 503 );
+		}
+	}
+
+	/**
+	 * @param $request
+	 *
+	 * @return bool|\Illuminate\Http\JsonResponse
+	 */
+	private function validationRequestForBulkOrder($request)
+	{
+		$requestCompany = $request->get('company');
+		if ( !$requestCompany->enable_bulk_order ) {
+			$notAllowedResponse = [
+				'status' => 'error',
+				'data'   => 'Bulk Order not enabled for the requesting company'
+			];
+			return $this->respond($notAllowedResponse, 503);
+		}
+		$validation = Validator::make(
+			$request->all(),
+			[
+				'customer_id'                   => [
+					'required',
+					'numeric',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders'                        => 'required',
+				'orders.*.device_id'            => [
+					'numeric',
+					Rule::exists('device', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.plan_id'              => [
+					'numeric',
+					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.sim_id'               =>  [
+					'numeric',
+					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.subscription_id'      => [
+					'numeric',
+					Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.sim_num'              => [
+					'numeric',
+					'required_with:orders.*.sim_id',
+					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
+						return $query->where('status', '!=', 'closed');
+					})
+				],
+				'orders.*.sim_type'             => 'string',
+				'orders.*.porting_number'       => 'string',
+				'orders.*.area_code'            => 'string',
+				'orders.*.operating_system'     => 'string',
+				'orders.*.imei_number'          => 'digits_between:14,16',
+				'orders.*.subscription_status'  => 'string',
+			]
+		);
+
+		if ( $validation->fails() ) {
+			$errors = $validation->errors();
+			$validationErrorResponse = [
+				'status' => 'error',
+				'data'   => $errors->messages()
+			];
+			return $this->respond($validationErrorResponse, 422);
+		}
+		return 'valid';
 	}
 
 }
