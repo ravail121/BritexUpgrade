@@ -139,15 +139,15 @@ trait InvoiceTrait
             if ($taxAmount > 0) {
                 $invoice->invoiceItem()->create(
                     [
-                        'invoice_id'   => $invoice->id,
-                        'subscription_id' => null,
-                        'product_type' => '',
-                        'product_id'   => null,
-                        'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-                        'start_date'   => $invoice->start_date,
-                        'description'  => "(Taxes)",
-                        'amount'       => number_format($taxPercentage * $taxAmount, 2),
-                        'taxable'      => $isTaxable,    
+                        'invoice_id'        => $invoice->id,
+                        'subscription_id'   => null,
+                        'product_type'      => '',
+                        'product_id'        => null,
+                        'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                        'start_date'        => $invoice->start_date,
+                        'description'       => "(Taxes)",
+                        'amount'            => number_format($taxPercentage * $taxAmount, 2),
+                        'taxable'           => $isTaxable,
                     ]
                 );
             }  

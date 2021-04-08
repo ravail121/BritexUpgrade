@@ -13,8 +13,11 @@ use App\Model\Customer;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Model\CustomerStandaloneSim;
+use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\Api\V1\CardController;
 use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
+use App\Http\Controllers\Api\V1\StandaloneRecordController;
 
 /**
  * @author Prajwal Shrestha
@@ -238,7 +241,7 @@ trait BulkOrderTrait
 			'order_num'     => $orderCount + 1,
 		]);
 
-		$this->subscriptionInvoiceItem($orderItems, $invoice, $planActivation);
+		$this->invoiceItem($orderItems, $invoice, $planActivation);
 		$this->ifTotalDue($order);
 		$updateDevicesWithNoId =  $order->invoice->invoiceItem->where('product_type', 'device')->where('product_id', 0);
 
@@ -275,7 +278,44 @@ trait BulkOrderTrait
 	 * @param $invoice
 	 * @param $planActivation
 	 */
-	protected function subscriptionInvoiceItem($orderItems, $invoice, $planActivation)
+	protected function invoiceItem($orderItems, $invoice, $planActivation)
+	{
+
+		$subscriptionIds = [];
+		$standAloneSimIds = [];
+		$standAloneDeviceIds = [];
+		$order = Order::where('invoice_id', $invoice->id)->first();
+		foreach($orderItems as $orderItem) {
+			if(isset($orderItem['subscription_id'])){
+				$subscriptionIds[] = $orderItem['subscription_id'];
+			}
+			if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['subscription_id'])){
+				$standAloneSimIds[] = $orderItem['sim_id'];
+			}
+			if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id']) && !isset($orderItem['subscription_id'])){
+				$standAloneSimIds[] = $orderItem['sim_id'];
+			}
+		}
+		if(!empty($subscriptionIds)){
+			$this->subscriptionInvoiceItem($subscriptionIds, $invoice, $planActivation, $order);
+		}
+		if(!empty($standAloneSimIds)){
+			$this->standaloneSimInvoiceItem($standAloneSimIds, $invoice);
+		}
+		if(!empty($standAloneDeviceIds)){
+			$this->standaloneDeviceInvoiceItem($standAloneDeviceIds, $invoice);
+		}
+
+	}
+
+	/**
+	 * Create invoice item for subscription
+	 * @param $subscriptionIds
+	 * @param $invoice
+	 * @param $planActivation
+	 * @param $order
+	 */
+	protected function subscriptionInvoiceItem($subscriptionIds, $invoice, $planActivation, $order)
 	{
 		$invoiceItemArray = [
 			'invoice_id'  => $invoice->id,
@@ -284,13 +324,7 @@ trait BulkOrderTrait
 			'description' => InvoiceController::DESCRIPTION,
 			'taxable'     => InvoiceController::DEFAULT_INT,
 		];
-		$order = Order::where('invoice_id', $invoice->id)->first();
-		$subscriptionIds = [];
-		foreach($orderItems as $orderItem) {
-			if(isset($orderItem['subscription_id'])){
-				$subscriptionIds[] = $orderItem['subscription_id'];
-			}
-		}
+
 		foreach ($subscriptionIds as $subscriptionId) {
 			$subscription = Subscription::find($subscriptionId);
 			$invoiceItemArray['subscription_id'] = $subscription->id;
@@ -348,13 +382,10 @@ trait BulkOrderTrait
 				$invoiceItemArray['amount'] = $sim->amount_w_plan;
 				$invoiceItemArray['taxable'] = $sim->taxable;
 				$invoiceItemArray['description'] = '';
-
 				$invoiceItem = InvoiceItem::create($invoiceItemArray);
 			}
 
-			$order = Order::where('invoice_id', $invoice->id)->first();
 			$subscriptionAddons = $subscription->subscriptionAddon;
-
 
 			if ($subscriptionAddons) {
 				foreach ($subscriptionAddons as $subAddon) {
@@ -385,5 +416,83 @@ trait BulkOrderTrait
 				[]
 			);
 		}
+	}
+
+	/**
+	 *  Creates invoice_item for customer_standalone_device
+	 * @param $standaloneDeviceIds
+	 * @param $invoice
+	 *
+	 * @return null
+	 */
+	protected function standaloneDeviceInvoiceItem($standaloneDeviceIds, $invoice)
+	{
+		$invoiceItem = null;
+		$invoiceItemArray = [
+			'subscription_id' => 0,
+			'product_type'    => InvoiceController::DEVICE_TYPE,
+		];
+
+		foreach ($standaloneDeviceIds as $standaloneDeviceId) {
+			CustomerStandaloneDevice::create([
+				'customer_id'   => $invoice->customer_id,
+				'order_id'      => $invoice->order->id,
+				'order_num'     => $invoice->order->order_num,
+				'status'        => StandaloneRecordController::DEFAULT_STATUS,
+				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
+				'device_id'     => $standaloneDeviceId,
+				'imei'          => 'null',
+			]);
+			$device           = Device::find($standaloneDeviceId);
+			$invoiceItemArray['product_id'] = $device->id;
+			$invoiceItemArray['type'] = 3;
+			$invoiceItemArray['amount'] = $device->amount;
+			$invoiceItemArray['taxable'] = $device->taxable;
+			$invoiceItemArray['description'] = '';
+			$invoiceItem = InvoiceItem::create($invoiceItemArray);
+			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::DEVICE_TYPE);
+		}
+		return $invoiceItem;
+	}
+
+	/**
+	 * Creates invoice item for customer_standalone_sim
+	 * @param $standaloneSimIds
+	 *
+	 * @return null
+	 */
+	protected function standaloneSimInvoiceItem($standaloneSimIds, $invoice)
+	{
+		$invoiceItem = null;
+		$invoiceItemArray = [
+			'product_type'      => InvoiceController::SIM_TYPE,
+			'subscription_id'   => 0,
+			'invoice_id'        => $invoice->id,
+			'type'              => InvoiceController::DEFAULT_INT,
+			'start_date'        => $invoice->start_date,
+			'description'       => InvoiceController::DESCRIPTION,
+			'taxable'           => InvoiceController::DEFAULT_INT,
+		];
+
+		foreach ($standaloneSimIds as $standaloneSimId) {
+			CustomerStandaloneSim::create([
+				'customer_id'   => $invoice->customer_id,
+				'order_id'      => $invoice->order->id,
+				'order_num'     => $invoice->order->order_num,
+				'status'        => StandaloneRecordController::DEFAULT_STATUS,
+				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
+				'sim_id'        => $standaloneSimId,
+				'sim_num'       => 'null',
+			]);
+			$sim           = Sim::find($standaloneSimId);
+			$invoiceItemArray['product_id'] =  $sim->id;
+			$invoiceItemArray['type'] = 3;
+			$invoiceItemArray['amount'] = $sim->amount_alone;
+			$invoiceItemArray['taxable'] = $sim->taxable;
+			$invoiceItemArray['description'] = '';
+			$invoiceItem = InvoiceItem::create($invoiceItemArray);
+			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::SIM_TYPE);
+		}
+		return $invoiceItem;
 	}
 }
