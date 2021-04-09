@@ -709,7 +709,13 @@ class OrderController extends BaseController
 									[ 'company_id', $request->get( 'company' )->id ],
 									[ 'customer_id', $data[ 'customer_id' ] ],
 								] );
-							} )->where( 'plan_id', $orderItem[ 'plan_id' ] )->where( 'sim_num', $orderItem[ 'sim_num' ] )->first();
+							} )->where( 'sim_num', $orderItem[ 'sim_num' ] )->where(function ($query) use ($orderItem) {
+								$query->whereNull( 'plan_id' )
+								      ->orWhere( 'plan_id', '<>', $orderItem[ 'plan_id' ] );
+							})->first();
+							if($order_group){
+								$order = $order_group->order;
+							}
 						}
 					}
 					if($order_group) {
