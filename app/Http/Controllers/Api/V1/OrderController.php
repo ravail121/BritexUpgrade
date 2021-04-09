@@ -691,17 +691,17 @@ class OrderController extends BaseController
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
 					if(!$planActivation) {
 						// check active_group_id
-						if ( ! $order->active_group_id ) {
+//						if ( ! $order->active_group_id ) {
 							$order_group = OrderGroup::create( [
 								'order_id' => $order->id
 							] );
 							// update order.active_group_id
-							$order->update( [
-								'active_group_id' => $order_group->id,
-							] );
-						} else {
-							$order_group = OrderGroup::find( $order->active_group_id );
-						}
+//							$order->update( [
+//								'active_group_id' => $order_group->id,
+//							] );
+//						} else {
+//							$order_group = OrderGroup::find( $order->active_group_id );
+//						}
 					} else {
 						if(isset( $orderItem['plan_id'])) {
 							$order_group = OrderGroup::whereHas( 'order', function ( $query ) use ( $request, $data ) {
