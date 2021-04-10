@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Cassandra\Custom;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -663,8 +662,8 @@ class OrderController extends BaseController
 				$planActivation = $request->get('plan_activation') ?: false;
 				$customer = Customer::find($request->get('customer_id'));
 
-				$order = null;
-				if(!$planActivation){
+//				$order = null;
+//				if(!$planActivation){
 					/**
 					 * Create new row in order table if the order is not for plan activation
 					 */
@@ -680,7 +679,7 @@ class OrderController extends BaseController
 						'shipping_state_id' => $customer->billing_state_id,
 						'shipping_zip'      => $customer->billing_zip
 					] );
-				}
+//				}
 
 				$orderItems = $request->get( 'orders' );
 
@@ -689,7 +688,7 @@ class OrderController extends BaseController
 				foreach ( $orderItems as $orderItem ) {
 					$order_group = null;
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
-					if(!$planActivation) {
+//					if(!$planActivation) {
 						// check active_group_id
 //						if ( ! $order->active_group_id ) {
 							$order_group = OrderGroup::create( [
@@ -702,22 +701,22 @@ class OrderController extends BaseController
 //						} else {
 //							$order_group = OrderGroup::find( $order->active_group_id );
 //						}
-					} else {
-						if(isset( $orderItem['plan_id'])) {
-							$order_group = OrderGroup::whereHas( 'order', function ( $query ) use ( $request, $data ) {
-								$query->where( [
-									[ 'company_id', $request->get( 'company' )->id ],
-									[ 'customer_id', $data[ 'customer_id' ] ],
-								] );
-							} )->where( 'sim_num', $orderItem[ 'sim_num' ] )->where(function ($query) use ($orderItem) {
-								$query->whereNull( 'plan_id' )
-								      ->orWhere( 'plan_id', '<>', $orderItem[ 'plan_id' ] );
-							})->first();
-							if($order_group){
-								$order = $order_group->order;
-							}
-						}
-					}
+//					} else {
+//						if(isset( $orderItem['plan_id'])) {
+//							$order_group = OrderGroup::whereHas( 'order', function ( $query ) use ( $request, $data ) {
+//								$query->where( [
+//									[ 'company_id', $request->get( 'company' )->id ],
+//									[ 'customer_id', $data[ 'customer_id' ] ],
+//								] );
+//							} )->where( 'sim_num', $orderItem[ 'sim_num' ] )->where(function ($query) use ($orderItem) {
+//								$query->whereNull( 'plan_id' )
+//								      ->orWhere( 'plan_id', '<>', $orderItem[ 'plan_id' ] );
+//							})->first();
+//							if($order_group){
+//								$order = $order_group->order;
+//							}
+//						}
+//					}
 					if($order_group) {
 						$outputOrderItems[] = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
 						if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
@@ -1028,16 +1027,13 @@ class OrderController extends BaseController
 			$output = [];
 			$this->validationRequestForBulkOrder($request);
 
-			$data = $request->all();
-
 			$orderItems = $request->get( 'orders' );
 
-			$output['totalPrice'] =  $this->totalPriceForPreview($orderItems);
-//			$output['subtotalPrice'] = $this->subTotalPriceForPreview($orderItems);
-//			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
-//			$output['taxes'] = $this->calTaxesForPreview($orderItems);
+			$output['totalPrice'] =  $this->totalPriceForPreview($request, $orderItems);
+			$output['subtotalPrice'] = $this->subTotalPriceForPreview($request, $orderItems);
+			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
+			$output['taxes'] = $this->calTaxesForPreview($request, $orderItems);
 			$output['regulatory'] = $this->calRegulatoryForPreview($orderItems);
-			$output['shippingFee'] = $this->getShippingFeeForPreview($orderItems);
 
 			$successResponse = [
 				'status'    => 'success',
@@ -1095,6 +1091,7 @@ class OrderController extends BaseController
 				],
 				'orders.*.sim_id'               =>  [
 					'numeric',
+					'required_with:orders.*.sim_num',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
 					})

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Traits;
 
 use App\Model\Sim;
+use App\Model\Tax;
 use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Order;
@@ -28,56 +29,206 @@ use App\Http\Controllers\Api\V1\StandaloneRecordController;
 trait BulkOrderTrait
 {
 	use InvoiceTrait;
+
+	/**
+	 * @param Request $request
+	 * @param         $orderItems
+	 *
+	 * @return float|int
+	 */
+	protected function totalPriceForPreview(Request $request, $orderItems)
+	{
+		$price[] = $this->calDevicePricesForPreview($request, $orderItems);
+		$price[] = $this->getPlanPricesForPreview($orderItems);
+		$price[] = $this->getSimPricesForPreview($request, $orderItems);
+		$price[] = $this->calTaxesForPreview($request, $orderItems);
+		$price[] = $this->calRegulatoryForPreview($orderItems);
+		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
+		return array_sum($price);
+
+	}
+
+	/**
+	 * @param Request $request
+	 * @param         $orderItems
+	 *
+	 * @return float|int
+	 */
+	protected function subTotalPriceForPreview(Request $request, $orderItems)
+	{
+		$price[] = $this->calDevicePricesForPreview($request, $orderItems);
+		$price[] = $this->getPlanPricesForPreview($orderItems);
+		$price[] = $this->getSimPricesForPreview($request, $orderItems);
+		$price[] = $this->getAddonPricesForPreview($orderItems);
+		return array_sum($price);
+
+	}
+
 	/**
 	 * @param $orderItems
+	 *
+	 * @return float|int
 	 */
-	private function totalPriceForPreview($orderItems)
+	protected function calMonthlyChargeForPreview($orderItems)
 	{
-		$this->calDevicePricesForPreview($orderItems);
-		$this->getPlanPricesForPreview($orderItems);
-		$this->getSimPricesForPreview($orderItems);
-		$this->calTaxesForPreview($orderItems);
-		// $this->getShippingFeeForPreview($orderItems);
-		$this->calRegulatoryForPreview($orderItems);
-		$price[] = ($this->prices) ? array_sum($this->prices) : 0;
-		$price[] = ($this->regulatory) ? array_sum($this->regulatory) : 0;
-		$price[] = ($this->coupon());
+		$prices[] = $this->getOriginalPlanPriceForPreview($orderItems);
+		$prices[] = $this->getOriginalAddonPriceForPreview($orderItems);
+		return $prices ? array_sum($prices) : 0;
+	}
 
-		if ($this->tax_total === 0) {
-			$price[] = ($this->taxes) ? number_format(array_sum($this->taxes), 2) : 0;
-		} else {
-			$price[] = number_format($this->tax_total, 2);
+	/**
+	 * @param $orderItems
+	 *
+	 * @return float|int
+	 */
+	protected function getOriginalPlanPriceForPreview($orderItems)
+	{
+		$prices = [];
+		foreach ($orderItems as $orderItem) {
+			if(isset($orderItem['plan_id'])){
+				$plan = Plan::find($orderItem['plan_id']);
+				$prices[] = $plan->amount_recurring;
+			}
 		}
-		$price[] = ($this->activation) ? array_sum($this->activation) : 0;
-		$price[] = ($this->shippingFee) ? array_sum($this->shippingFee) : 0;
-		$totalPrice = array_sum($price);
-		$this->total_price = $totalPrice;
-		return $totalPrice;
-
+		return $prices ? array_sum($prices) : 0;
 	}
 
 	/**
 	 * @param $orderItems
+	 *
+	 * @return float|int
 	 */
-	private function subTotalPriceForPreview($orderItems)
+	protected function getOriginalAddonPriceForPreview($orderItems)
 	{
+		$prices = [];
+		foreach ($orderItems as $orderItem) {
+			if (isset($orderItem['addons'])) {
+				foreach ($orderItem['addons'] as $addon) {
+					if ($addon['subscription_addon_id'] != null) {
+						$prices[] = [];
+					} else {
+						$prices[] = $addon['amount_recurring'];
+					}
+				}
+			}
+		}
+		return $prices ? array_sum($prices) : 0;
 
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param Request $request
+	 * @param         $orderItems
+	 *
+	 * @return float|int
 	 */
-	private function calMonthlyChargeForPreview($orderItems)
+	protected function calTaxesForPreview(Request $request, $orderItems)
 	{
+		$taxes = [];
+		foreach ($orderItems as $orderItem) {
+			$taxes[] = number_format($this->calTaxableItemsForPreview($request, $orderItem), 2);
+		}
+		return ($taxes) ? array_sum($taxes) : 0;
 
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param Request $request
+	 * @param         $orderItem
+	 *
+	 * @return float|int
 	 */
-	private function calTaxesForPreview($orderItems)
+	protected function calTaxableItemsForPreview(Request $request, $orderItem)
 	{
+		$customer = Customer::find($request->input('customer_id'));
+		$taxRate    = $this->taxRateForPreview($request, $customer->billing_state_id);
+		$taxRate    = $taxRate ?: 0;
+		$taxPercentage  = $taxRate / 100;
+		$devices        = isset($orderItem['device_id']) && !$request->plan_activation ? $this->addTaxesDevicesForPreview($orderItem, $taxPercentage) : 0;
+		$sims           = isset($orderItem['sim_id']) && !$request->plan_activation ? $this->addTaxesSimsForPreview($orderItem, $taxPercentage) : 0;
+		$plans          = isset($orderItem['plan_id']) ? $this->addTaxesToPlansForPreview($orderItem, $taxPercentage) : 0;
+		$addons         = isset($orderItem['addon_id']) ? $this->addTaxesToAddonsForPreview($orderItem, $taxPercentage) : 0;
+		return $devices + $sims + $plans + $addons;
+	}
 
+	/**
+	 * @param Request $request
+	 * @param         $stateId
+	 *
+	 * @return array
+	 */
+	protected function taxRateForPreview(Request $request, $stateId)
+	{
+		$company = $request->get('company');
+		$rate = Tax::where('state', $stateId)
+		           ->where('company_id', $company->id)
+		           ->pluck('rate')
+		           ->first();
+		return $rate;
+	}
+
+	/**
+	 * @param $orderItem
+	 * @param $taxPercentage
+	 *
+	 * @return float|int
+	 */
+	public function addTaxesDevicesForPreview($orderItem, $taxPercentage)
+	{
+		$itemTax = [];
+		$device = Device::find($orderItem['device_id']);
+		if ($device->taxable) {
+			$amount = isset($orderItem['plan_id']) ? $device->amount_w_plan : $device->amount;
+			$itemTax[] = $taxPercentage * $amount;
+		}
+		return !empty($itemTax) ? array_sum($itemTax) : 0;
+	}
+
+	/**
+	 * @param $orderItem
+	 * @param $taxPercentage
+	 *
+	 * @return float|int
+	 */
+	public function addTaxesSimsForPreview($orderItem, $taxPercentage)
+	{
+		$itemTax = [];
+		$sim = Sim::find($orderItem['sim_id']);
+		if ($sim->taxable) {
+			$amount = isset($orderItem['plan_id']) ? $sim->amount_w_plan : $sim->amount_alone;
+			$itemTax[] = $taxPercentage * $amount;
+		}
+		return !empty($itemTax) ? array_sum($itemTax) : 0;
+	}
+
+	/**
+	 * @param $orderItem
+	 * @param $taxPercentage
+	 *
+	 * @return float|int
+	 */
+	public function addTaxesToAddonsForPreview($orderItem, $taxPercentage)
+	{
+		return 0;
+	}
+
+
+	/**
+	 * @param $orderItem
+	 * @param $taxPercentage
+	 *
+	 * @return float|int
+	 */
+	public function addTaxesToPlansForPreview($orderItem, $taxPercentage)
+	{
+		$planTax = [];
+		$plan = Plan::find($orderItem['plan_id']);
+		if ($plan->taxable) {
+			$amount = $plan->amount_recurring;
+			$amount = $plan->amount_onetime ? $amount + $plan->amount_onetime : $amount;
+			$planTax[] = $taxPercentage * $amount;
+		}
+		return !empty($planTax) ? array_sum($planTax) : 0;
 	}
 
 	/**
@@ -132,12 +283,12 @@ trait BulkOrderTrait
 	 *
 	 * @return float|int
 	 */
-	protected function calDevicePricesForPreview($orderItems)
+	protected function calDevicePricesForPreview(Request $request, $orderItems)
 	{
 		$prices = [];
 		if ($orderItems) {
 			foreach ($orderItems as $orderItem) {
-				if (isset($orderItem['device_id'])) {
+				if (isset($orderItem['device_id']) && !$request->plan_activation) {
 					$device = Device::find($orderItem['device_id']);
 					if (isset($orderItem['plan_id'])) {
 						$prices[] = $device->amount_w_plan;
@@ -161,9 +312,6 @@ trait BulkOrderTrait
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['plan_id'])) {
 				$plan = Plan::find($orderItem['plan_id']);
-				if ( $plan->amount_onetime > 0 ) {
-					$prices[] = $plan->amount_onetime;
-				}
 				$prices[] = $plan->amount_recurring;
 			}
 		}
@@ -175,11 +323,32 @@ trait BulkOrderTrait
 	 *
 	 * @return float|int
 	 */
-	protected function getSimPricesForPreview($orderItems)
+	protected function getPlanActivationPricesForPreview($orderItems)
 	{
 		$prices = [];
 		foreach ($orderItems as $orderItem) {
-			if(isset($orderItem['sim_id'])){
+			if (isset($orderItem['plan_id'])) {
+				$plan = Plan::find($orderItem['plan_id']);
+				if ( $plan->amount_onetime > 0 ) {
+					$prices[] = $plan->amount_onetime;
+				}
+			}
+		}
+		return $prices ? array_sum($prices) : 0;
+
+	}
+
+	/**
+	 * @param Request $request
+	 * @param         $orderItems
+	 *
+	 * @return float|int
+	 */
+	protected function getSimPricesForPreview(Request $request, $orderItems)
+	{
+		$prices = [];
+		foreach ($orderItems as $orderItem) {
+			if(isset($orderItem['sim_id']) && !$request->plan_activation){
 				$sim = Sim::find($orderItem['sim_id']);
 				if (isset($orderItem['plan_id'])) {
 					$prices[] = $sim->amount_w_plan;
@@ -329,7 +498,7 @@ trait BulkOrderTrait
 			$subscription = Subscription::find($subscriptionId);
 			$invoiceItemArray['subscription_id'] = $subscription->id;
 
-			if ($subscription->device_id !== null) {
+			if ($subscription->device_id !== null && !$planActivation) {
 				$invoiceItemArray['product_type']    = InvoiceController::DEVICE_TYPE;
 				$invoiceItemArray['product_id']      = $subscription->device_id;
 
@@ -416,6 +585,28 @@ trait BulkOrderTrait
 				[]
 			);
 		}
+	}
+
+	/**
+	 * @param $orderItems
+	 *
+	 * @return float|int
+	 */
+	protected function getAddonPricesForPreview($orderItems)
+	{
+		$prices = [];
+		foreach ($orderItems as $orderItem) {
+			if (isset($orderItem['addons'])) {
+				foreach ($orderItem['addons'] as $addon) {
+					if ($addon['prorated_amt'] != null) {
+						$prices[] = $addon['prorated_amt'];
+					} else {
+						$prices[] = $addon['amount_recurring'];
+					}
+				}
+			}
+		}
+		return $prices ? array_sum($prices) : 0;
 	}
 
 	/**
