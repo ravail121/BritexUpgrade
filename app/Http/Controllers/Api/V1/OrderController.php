@@ -760,7 +760,6 @@ class OrderController extends BaseController
 	private function insertOrderGroupForBulkOrder($data, $order, $order_group, $paidMonthlyInvoice = 0)
 	{
 		$og_params = [];
-		$subscription_id = null;
 		if(isset($data['device_id']) && $paidMonthlyInvoice == 0){
 			$og_params['device_id'] = $data['device_id'];
 		}
@@ -1025,7 +1024,10 @@ class OrderController extends BaseController
 	{
 		try {
 			$output = [];
-			$this->validationRequestForBulkOrder($request);
+			$validation = $this->validationRequestForBulkOrder($request);
+			if($validation !== 'valid') {
+				return $validation;
+			}
 
 			$orderItems = $request->get( 'orders' );
 
@@ -1103,8 +1105,9 @@ class OrderController extends BaseController
 					})
 				],
 				'orders.*.sim_num'              => [
-					'numeric',
 					'required_with:orders.*.sim_id',
+					'min:19',
+					'max:20',
 					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
 						return $query->where('status', '!=', 'closed');
 					})
