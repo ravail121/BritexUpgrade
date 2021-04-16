@@ -462,7 +462,7 @@ trait BulkOrderTrait
 				$standAloneSimIds[] = $orderItem['sim_id'];
 			}
 			if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id']) && !isset($orderItem['subscription_id'])){
-				$standAloneSimIds[] = $orderItem['sim_id'];
+				$standAloneSimIds[] = $orderItem['device_id'];
 			}
 		}
 		if(!empty($subscriptionIds)){
