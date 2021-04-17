@@ -695,18 +695,19 @@ trait BulkOrderTrait
 			if (isset($orderItem['device_id']) && !$request->plan_activation) {
 				$device = Device::find($orderItem['device_id']);
 				if (isset($orderItem['plan_id'])) {
-					$price = $device->amount_w_plan;
+					$prices[$device->id][] = $device->amount_w_plan;
 				} else {
-					$price = $device->amount;
+					$prices[$device->id][] = $device->amount;
 				}
-				if(!isset($priceDetails->{$device->id})){
-					$priceDetails->{$device->id} = [
-						'plan'      => $device->name,
-						'price'     => $price,
-						'quantity'  => 1
-					];
+				if(isset($priceDetails->{$device->id})){
+					$priceDetails->{$device->id}['prices'] = $prices[$device->id];
+					$priceDetails->{$device->id}['quantity'] = count($device[$device->id]);
 				} else {
-					$priceDetails->{$device->id}['quantity'] += 1;
+					$priceDetails->{$device->id} = [
+						'device'     => $device->name,
+						'prices'     => $prices[$device->id],
+						'quantity'   => count($prices[$device->id])
+					];
 				}
 			}
 		}
@@ -721,18 +722,20 @@ trait BulkOrderTrait
 	protected function getCostBreakDownPreviewForPlans($orderItems)
 	{
 		$priceDetails = (object) [];
+		$prices = [];
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['plan_id'])) {
 				$plan = Plan::find($orderItem['plan_id']);
-				$price = $plan->amount_recurring;
-				if(!isset($priceDetails->{$plan->id})){
+				$prices[$plan->id][] = $plan->amount_recurring;
+				if(isset($priceDetails->{$plan->id})){
+					$priceDetails->{$plan->id}['prices'] = $prices[$plan->id];
+					$priceDetails->{$plan->id}['quantity'] = count($prices[$plan->id]);
+				} else {
 					$priceDetails->{$plan->id} = [
 						'plan'      => $plan->name,
-						'price'     => $price,
-						'quantity'  => 1
+						'prices'    => $prices[$plan->id],
+						'quantity'  => count($prices[$plan->id])
 					];
-				} else {
-					$priceDetails->{$plan->id}['quantity'] += 1;
 				}
 			}
 		}
@@ -752,18 +755,19 @@ trait BulkOrderTrait
 			if(isset($orderItem['sim_id']) && !$request->plan_activation){
 				$sim = Sim::find($orderItem['sim_id']);
 				if (isset($orderItem['plan_id'])) {
-					$price = $sim->amount_w_plan;
+					$prices[$sim->id][] = $sim->amount_w_plan;
 				} else {
-					$price = $sim->amount_alone;
+					$prices[$sim->id][] = $sim->amount_alone;
 				}
-				if(!isset($priceDetails->{$sim->id})){
+				if(isset($priceDetails->{$sim->id})){
+					$priceDetails->{$sim->id}['prices'] = $prices[$sim->id];
+					$priceDetails->{$sim->id}['quantity'] = count($prices[$sim->id]);
+				} else {
 					$priceDetails->{$sim->id} = [
 						'sim'       => $sim->name,
-						'price'     => $price,
-						'quantity'  => 1
+						'prices'    => $prices[$sim->id],
+						'quantity'  => count($prices[$sim->id])
 					];
-				} else {
-					$priceDetails->{$sim->id}['quantity'] += 1;
 				}
 			}
 		}
