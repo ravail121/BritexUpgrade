@@ -662,24 +662,22 @@ class OrderController extends BaseController
 				$planActivation = $request->get('plan_activation') ?: false;
 				$customer = Customer::find($request->get('customer_id'));
 
-//				$order = null;
-//				if(!$planActivation){
-					/**
-					 * Create new row in order table if the order is not for plan activation
-					 */
-					$order = Order::create( [
-						'hash'              => sha1( time() . rand() ),
-						'company_id'        => $request->get( 'company' )->id,
-						'customer_id'       => $data[ 'customer_id' ],
-						'shipping_fname'    => $customer->billing_fname,
-						'shipping_lname'    => $customer->billing_lname,
-						'shipping_address1' => $customer->billing_address1,
-						'shipping_address2' => $customer->billing_address2,
-						'shipping_city'     => $customer->billing_city,
-						'shipping_state_id' => $customer->billing_state_id,
-						'shipping_zip'      => $customer->billing_zip
-					] );
-//				}
+
+				/**
+				 * Create new row in order table if the order is not for plan activation
+				 */
+				$order = Order::create( [
+					'hash'              => sha1( time() . rand() ),
+					'company_id'        => $request->get( 'company' )->id,
+					'customer_id'       => $data[ 'customer_id' ],
+					'shipping_fname'    => $customer->billing_fname,
+					'shipping_lname'    => $customer->billing_lname,
+					'shipping_address1' => $customer->billing_address1,
+					'shipping_address2' => $customer->billing_address2,
+					'shipping_city'     => $customer->billing_city,
+					'shipping_state_id' => $customer->billing_state_id,
+					'shipping_zip'      => $customer->billing_zip
+				] );
 
 				$orderItems = $request->get( 'orders' );
 
@@ -688,35 +686,10 @@ class OrderController extends BaseController
 				foreach ( $orderItems as $orderItem ) {
 					$order_group = null;
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
-//					if(!$planActivation) {
-						// check active_group_id
-//						if ( ! $order->active_group_id ) {
-							$order_group = OrderGroup::create( [
-								'order_id' => $order->id
-							] );
-							// update order.active_group_id
-//							$order->update( [
-//								'active_group_id' => $order_group->id,
-//							] );
-//						} else {
-//							$order_group = OrderGroup::find( $order->active_group_id );
-//						}
-//					} else {
-//						if(isset( $orderItem['plan_id'])) {
-//							$order_group = OrderGroup::whereHas( 'order', function ( $query ) use ( $request, $data ) {
-//								$query->where( [
-//									[ 'company_id', $request->get( 'company' )->id ],
-//									[ 'customer_id', $data[ 'customer_id' ] ],
-//								] );
-//							} )->where( 'sim_num', $orderItem[ 'sim_num' ] )->where(function ($query) use ($orderItem) {
-//								$query->whereNull( 'plan_id' )
-//								      ->orWhere( 'plan_id', '<>', $orderItem[ 'plan_id' ] );
-//							})->first();
-//							if($order_group){
-//								$order = $order_group->order;
-//							}
-//						}
-//					}
+					$order_group = OrderGroup::create( [
+						'order_id' => $order->id
+					] );
+
 					if($order_group) {
 						$outputOrderItems[] = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
 						if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
@@ -962,7 +935,7 @@ class OrderController extends BaseController
 						$query->where( 'hash', $hash );
 					} )->get();
 
-					foreach ( $order_groups as $key => $og ) {
+					foreach ( $order_groups as $og ) {
 						if ( empty( $tempOrder ) ) {
 							$tempOrder = [
 								"id"                     => $og->order->id,
@@ -1036,7 +1009,13 @@ class OrderController extends BaseController
 			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
 			$output['taxes'] = $this->calTaxesForPreview($request, $orderItems);
 			$output['regulatory'] = $this->calRegulatoryForPreview($orderItems);
+			$costBreakDown = (object) [
+				'devices'   => $this->getCostBreakDownPreviewForDevices($request, $orderItems),
+				'plans'     => $this->getCostBreakDownPreviewForPlans($orderItems),
+				'sims'      => $this->getCostBreakDownPreviewForSims($request, $orderItems)
+			];
 
+			$output['summary'] = $costBreakDown;
 			$successResponse = [
 				'status'    => 'success',
 				'data'      => $output

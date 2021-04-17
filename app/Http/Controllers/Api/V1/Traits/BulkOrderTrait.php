@@ -38,11 +38,8 @@ trait BulkOrderTrait
 	 */
 	protected function totalPriceForPreview(Request $request, $orderItems)
 	{
-		$price[] = $this->calDevicePricesForPreview($request, $orderItems);
-		$price[] = $this->getPlanPricesForPreview($orderItems);
-		$price[] = $this->getSimPricesForPreview($request, $orderItems);
-		$price[] = $this->calTaxesForPreview($request, $orderItems);
-		$price[] = $this->calRegulatoryForPreview($orderItems);
+		$price[] = $this->subTotalPriceForPreview($request, $orderItems);
+ 		$price[] = $this->calRegulatoryForPreview($orderItems);
 		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
 		return array_sum($price);
 
@@ -286,15 +283,13 @@ trait BulkOrderTrait
 	protected function calDevicePricesForPreview(Request $request, $orderItems)
 	{
 		$prices = [];
-		if ($orderItems) {
-			foreach ($orderItems as $orderItem) {
-				if (isset($orderItem['device_id']) && !$request->plan_activation) {
-					$device = Device::find($orderItem['device_id']);
-					if (isset($orderItem['plan_id'])) {
-						$prices[] = $device->amount_w_plan;
-					} else {
-						$prices[] = $device->amount;
-					}
+		foreach ($orderItems as $orderItem) {
+			if (isset($orderItem['device_id']) && !$request->plan_activation) {
+				$device = Device::find($orderItem['device_id']);
+				if (isset($orderItem['plan_id'])) {
+					$prices[] = $device->amount_w_plan;
+				} else {
+					$prices[] = $device->amount;
 				}
 			}
 		}
@@ -685,5 +680,94 @@ trait BulkOrderTrait
 			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::SIM_TYPE);
 		}
 		return $invoiceItem;
+	}
+
+	/**
+	 * @param Request $request
+	 * @param         $orderItems
+	 *
+	 * @return object
+	 */
+	protected function getCostBreakDownPreviewForDevices(Request $request, $orderItems)
+	{
+		$priceDetails = (object) [];
+		foreach ($orderItems as $orderItem) {
+			if (isset($orderItem['device_id']) && !$request->plan_activation) {
+				$device = Device::find($orderItem['device_id']);
+				if (isset($orderItem['plan_id'])) {
+					$price = $device->amount_w_plan;
+				} else {
+					$price = $device->amount;
+				}
+				if(!isset($priceDetails->{$device->id})){
+					$priceDetails->{$device->id} = [
+						'plan'      => $device->name,
+						'price'     => $price,
+						'quantity'  => 1
+					];
+				} else {
+					$priceDetails->{$device->id}['quantity'] += 1;
+				}
+			}
+		}
+		return $priceDetails;
+	}
+
+	/**
+	 * @param $orderItems
+	 *
+	 * @return object
+	 */
+	protected function getCostBreakDownPreviewForPlans($orderItems)
+	{
+		$priceDetails = (object) [];
+		foreach ($orderItems as $orderItem) {
+			if (isset($orderItem['plan_id'])) {
+				$plan = Plan::find($orderItem['plan_id']);
+				$price = $plan->amount_recurring;
+				if(!isset($priceDetails->{$plan->id})){
+					$priceDetails->{$plan->id} = [
+						'plan'      => $plan->name,
+						'price'     => $price,
+						'quantity'  => 1
+					];
+				} else {
+					$priceDetails->{$plan->id}['quantity'] += 1;
+				}
+			}
+		}
+		return $priceDetails;
+	}
+
+	/**
+	 * @param Request $request
+	 * @param         $orderItems
+	 *
+	 * @return object
+	 */
+	protected function getCostBreakDownPreviewForSims(Request $request, $orderItems)
+	{
+		$priceDetails = (object) [];
+		foreach ($orderItems as $orderItem) {
+			if(isset($orderItem['sim_id']) && !$request->plan_activation){
+				$sim = Sim::find($orderItem['sim_id']);
+				if (isset($orderItem['plan_id'])) {
+					$price = $sim->amount_w_plan;
+				} else {
+					$price = $sim->amount_alone;
+				}
+				if(!isset($priceDetails->{$sim->id})){
+					$priceDetails->{$sim->id} = [
+						'sim'       => $sim->name,
+						'price'     => $price,
+						'quantity'  => 1
+					];
+				} else {
+					$priceDetails->{$sim->id}['quantity'] += 1;
+				}
+			}
+		}
+		return $priceDetails;
+
 	}
 }
