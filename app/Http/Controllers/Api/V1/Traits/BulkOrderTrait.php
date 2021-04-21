@@ -221,7 +221,7 @@ trait BulkOrderTrait
 		$planTax = [];
 		$plan = Plan::find($orderItem['plan_id']);
 		if ($plan->taxable) {
-			$amount = $plan->amount_recurring;
+			$amount = $orderItem['plan_prorated_amt'] != null ? $orderItem['plan_prorated_amt'] : $plan->amount_recurring;
 			$amount = $plan->amount_onetime ? $amount + $plan->amount_onetime : $amount;
 			$planTax[] = $taxPercentage * $amount;
 		}
@@ -242,7 +242,11 @@ trait BulkOrderTrait
 				if ($plan->regulatory_fee_type == 1) {
 					$regulatoryFees = $plan->regulatory_fee_amount;
 				} elseif ($plan->regulatory_fee_type == 2) {
-					$regulatoryFees = number_format($plan->regulatory_fee_amount * $plan->amount_recurring / 100, 2);
+					if ($orderItem['plan_prorated_amt'] != null) {
+						$regulatoryFees[] = number_format($plan->regulatory_fee_amount * $orderItem['plan_prorated_amt'] / 100, 2);
+					} else {
+						$regulatoryFees = number_format($plan->regulatory_fee_amount * $plan->amount_recurring / 100, 2);
+					}
 				}
 			}
 		}
@@ -306,8 +310,13 @@ trait BulkOrderTrait
 		$prices = [];
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['plan_id'])) {
-				$plan = Plan::find($orderItem['plan_id']);
-				$prices[] = $plan->amount_recurring;
+				if ($orderItem['plan_prorated_amt']) {
+					$prices[] = $orderItem['plan_prorated_amt'];
+				} else {
+					$plan = Plan::find($orderItem['plan_id']);
+					$prices[] = $plan->amount_recurring;
+				}
+
 			}
 		}
 		return $prices ? array_sum($prices) : 0;
