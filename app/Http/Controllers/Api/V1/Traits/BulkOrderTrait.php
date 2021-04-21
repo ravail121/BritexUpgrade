@@ -772,6 +772,5 @@ trait BulkOrderTrait
 			}
 		}
 		return $priceDetails;
-
 	}
 }

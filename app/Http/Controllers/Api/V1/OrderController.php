@@ -863,7 +863,7 @@ class OrderController extends BaseController
 			'status'                           =>  $plan && $plan->type === 4 ? 'active' : $subscriptionStatus,
 			'sim_id'                           =>  $data['sim_id'] ?? null,
 			'sim_name'                         =>  $data['sim_type'] ?? '',
-			'sim_card_num'                     =>  $data['sim_num'],
+			'sim_card_num'                     =>  $data['sim_num'] ?? '',
 			'device_id'                        =>  $data['device_id'] ?? null,
 			'device_os'                        =>  $data['operating_system'] ?? '',
 			'device_imei'                      =>  $data['imei_number'] ?? '',
