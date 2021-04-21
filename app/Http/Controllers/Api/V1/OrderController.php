@@ -648,8 +648,12 @@ class OrderController extends BaseController
 	public function createOrderForBulkOrder(Request $request)
 	{
 		try {
-
-			$validation = $this->validationRequestForBulkOrder($request);
+			$planActivation = $request->get('plan_activation') ?: false;
+			if($planActivation){
+				$validation = $this->validationActivationRequestForBulkOrder($request);
+			} else {
+				$validation = $this->validationRequestForBulkOrder($request);
+			}
 			if($validation !== 'valid') {
 				return $validation;
 			}
@@ -658,8 +662,8 @@ class OrderController extends BaseController
 
 			$this->updateCustomerDates($customer);
 
-			DB::transaction(function () use ($request, $data) {
-				$planActivation = $request->get('plan_activation') ?: false;
+			DB::transaction(function () use ($request, $data, $planActivation) {
+
 				$customer = Customer::find($request->get('customer_id'));
 
 
@@ -997,7 +1001,12 @@ class OrderController extends BaseController
 	{
 		try {
 			$output = [];
-			$validation = $this->validationRequestForBulkOrder($request);
+			$planActivation = $request->get('plan_activation') ?: false;
+			if($planActivation){
+				$validation = $this->validationActivationRequestForBulkOrder($request);
+			} else {
+				$validation = $this->validationRequestForBulkOrder($request);
+			}
 			if($validation !== 'valid') {
 				return $validation;
 			}
@@ -1087,8 +1096,98 @@ class OrderController extends BaseController
 					'required_with:orders.*.sim_id',
 					'min:19',
 					'max:20',
+					'distinct',
 					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
 						return $query->where('status', '!=', 'closed');
+					}),
+					'unique:order_group,sim_num'
+				],
+				'orders.*.sim_type'             => 'string',
+				'orders.*.porting_number'       => 'string',
+				'orders.*.area_code'            => 'string',
+				'orders.*.operating_system'     => 'string',
+				'orders.*.imei_number'          => 'digits_between:14,16',
+				'orders.*.subscription_status'  => 'string',
+			]
+		);
+
+		if ( $validation->fails() ) {
+			$errors = $validation->errors();
+			$validationErrorResponse = [
+				'status' => 'error',
+				'data'   => $errors->messages()
+			];
+			return $this->respond($validationErrorResponse, 422);
+		}
+		return 'valid';
+	}
+
+	/**
+	 * @param $request
+	 *
+	 * @return bool|\Illuminate\Http\JsonResponse
+	 */
+	private function validationActivationRequestForBulkOrder($request)
+	{
+		$requestCompany = $request->get('company');
+		$customerId = $request->get('customer_id');
+		if ( !$requestCompany->enable_bulk_order ) {
+			$notAllowedResponse = [
+				'status' => 'error',
+				'data'   => 'Bulk Order not enabled for the requesting company'
+			];
+			return $this->respond($notAllowedResponse, 503);
+		}
+		$customerOrderGroups = OrderGroup::whereHas('order', function($query) use ($requestCompany, $customerId) {
+			$query->where('customer_id', $customerId)
+			      ->where('company_id', $requestCompany->id);
+		})->where('closed', 0)->pluck('id');
+		$validation = Validator::make(
+			$request->all(),
+			[
+				'customer_id'                   => [
+					'required',
+					'numeric',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders'                        => 'required',
+				'orders.*.device_id'            => [
+					'numeric',
+					Rule::exists('device', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.plan_id'              => [
+					'numeric',
+					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.sim_id'               =>  [
+					'numeric',
+					'required_with:orders.*.sim_num',
+					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.subscription_id'      => [
+					'numeric',
+					Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.sim_num'              => [
+					'required_with:orders.*.sim_id',
+					'min:19',
+					'max:20',
+					'distinct',
+					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
+						return $query->where('status', '!=', 'closed');
+					}),
+					Rule::exists('order_group', 'sim_num')->where(function ($query) use ($customerOrderGroups){
+						return $query->whereIn('id', $customerOrderGroups);
 					})
 				],
 				'orders.*.sim_type'             => 'string',
