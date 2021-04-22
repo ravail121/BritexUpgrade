@@ -384,17 +384,18 @@ trait BulkOrderTrait
 	public function createInvoice(Request $request, $order, $orderItems, $planActivation)
 	{
 		$customer = Customer::find($request->get('customer_id'));
-		$end_date = Carbon::parse($customer->billing_end)->addDays(1);
 		$order = Order::whereHash($order->hash)->first();
 		$this->updateCustomerDates($customer);
+
+		$carbon = new Carbon();
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
 			'type'                    => CardController::DEFAULT_VALUE,
 			'status'                  => CardController::DEFAULT_VALUE,
-			'end_date'                => $end_date,
-			'start_date'              => $customer->billing_start,
-			'due_date'                => $customer->billing_start,
+			'end_date'                => $carbon->addMonth()->subDay()->toDateString(),
+			'start_date'              => $carbon->toDateString(),
+			'due_date'                => $carbon->toDateString(),
 			'subtotal'                => $this->subTotalPriceForPreview($request, $orderItems),
 			'total_due'               => $this->totalPriceForPreview($request, $orderItems),
 			'prev_balance'            => $this->getCustomerDue($customer->id),
