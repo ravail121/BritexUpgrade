@@ -661,8 +661,8 @@ trait BulkOrderTrait
 				'order_num'     => $invoice->order->order_num,
 				'status'        => StandaloneRecordController::DEFAULT_STATUS,
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
-				'device_id'     => $standAloneDevices->id,
-				'imei'          => $standAloneDevices->imei,
+				'device_id'     => $standAloneDevice->id,
+				'imei'          => $standAloneDevice->imei,
 			]);
 			$device           = Device::find($standAloneDevice->id);
 			$invoiceItemArray['product_id'] = $device->id;
