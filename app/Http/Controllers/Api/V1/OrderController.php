@@ -654,10 +654,6 @@ class OrderController extends BaseController
 				return $validation;
 			}
 			$data = $request->all();
-			$customer = Customer::find($request->get('customer_id'));
-
-			$this->updateCustomerDates($customer);
-
 			DB::transaction(function () use ($request, $data, $planActivation) {
 
 				$customer = Customer::find($request->get('customer_id'));
@@ -991,7 +987,7 @@ class OrderController extends BaseController
 	 * Preview Order for Bulk Order
 	 * @param Request $request
 	 *
-	 * @return \Illuminate\Http\JsonResponse
+	 * @return \Illuminate\Http\JsonResponse|string
 	 */
 	public function previewOrderForBulkOrder(Request $request)
 	{
@@ -1009,10 +1005,11 @@ class OrderController extends BaseController
 			$output['subtotalPrice'] = $this->subTotalPriceForPreview($request, $orderItems);
 			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
 			$output['taxes'] = $this->calTaxesForPreview($request, $orderItems);
-			$output['regulatory'] = $this->calRegulatoryForPreview($orderItems);
+			$output['regulatory'] = $this->calRegulatoryForPreview($request, $orderItems);
+			$output['activationFees'] = $this->getPlanActivationPricesForPreview($orderItems);
 			$costBreakDown = (object) [
 				'devices'   => $this->getCostBreakDownPreviewForDevices($request, $orderItems),
-				'plans'     => $this->getCostBreakDownPreviewForPlans($orderItems),
+				'plans'     => $this->getCostBreakDownPreviewForPlans($request, $orderItems),
 				'sims'      => $this->getCostBreakDownPreviewForSims($request, $orderItems)
 			];
 
@@ -1054,20 +1051,17 @@ class OrderController extends BaseController
 			/**
 			 * @internal When activating a plan, make sure sim is assigned to specified customer
 			 */
-			$customerOrderGroups = OrderGroup::whereHas('order', function($query) use ($requestCompany, $customerId) {
-				$query->where('customer_id', $customerId)
-				      ->where('company_id', $requestCompany->id);
-			})->where('closed', 0)->pluck('id');
-			$simNumValidation = Rule::exists('order_group', 'sim_num')->where(function ($query) use ($customerOrderGroups){
-				return $query->whereIn('id', $customerOrderGroups);
+			$simNumValidation = Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) use ($customerId) {
+				return $query->where('status', '!=', 'closed')
+				             ->where('customer_id', $customerId);
 			});
 
 		} else {
 			/**
 			 * @internal When purchasing a SIM, make sure sim is not assigned to another customer
 			 */
-			$simNumValidation =  Rule::unique('order_group', 'sim_num')->where(function ($query) {
-				return $query->where('closed', 0);
+			$simNumValidation =  Rule::unique('customer_standalone_sim', 'sim_num')->where(function ($query) {
+				return $query->where('status', '!=', 'closed');
 			});
 		}
 		$validation = Validator::make(
@@ -1088,6 +1082,7 @@ class OrderController extends BaseController
 					})
 				],
 				'orders.*.plan_id'              => [
+					'required_with:plan_activation',
 					'numeric',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
@@ -1123,6 +1118,10 @@ class OrderController extends BaseController
 				'orders.*.operating_system'     => 'string',
 				'orders.*.imei_number'          => 'digits_between:14,16',
 				'orders.*.subscription_status'  => 'string',
+			],
+			[
+				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned to this customer',
+				'orders.*.sim_num.exists'       => 'The sim with number :input is not assigned to this customer',
 			]
 		);
 

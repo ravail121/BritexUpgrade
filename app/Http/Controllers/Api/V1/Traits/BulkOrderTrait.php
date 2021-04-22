@@ -39,9 +39,9 @@ trait BulkOrderTrait
 	protected function totalPriceForPreview(Request $request, $orderItems)
 	{
 		$price[] = $this->subTotalPriceForPreview($request, $orderItems);
- 		$price[] = $this->calRegulatoryForPreview($orderItems);
+ 		$price[] = $this->calRegulatoryForPreview($request, $orderItems);
 		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
-		return array_sum($price);
+		return number_format(array_sum($price), 2);
 
 	}
 
@@ -54,15 +54,15 @@ trait BulkOrderTrait
 	protected function subTotalPriceForPreview(Request $request, $orderItems)
 	{
 		$price[] = $this->calDevicePricesForPreview($request, $orderItems);
-		$price[] = $this->getPlanPricesForPreview($orderItems);
+		$price[] = $this->getPlanPricesForPreview($request, $orderItems);
 		$price[] = $this->getSimPricesForPreview($request, $orderItems);
-		$price[] = $this->getAddonPricesForPreview($orderItems);
-		return array_sum($price);
+		$price[] = $this->getAddonPricesForPreview($request, $orderItems);
+		return number_format(array_sum($price), 2);
 
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param         $orderItems
 	 *
 	 * @return float|int
 	 */
@@ -70,11 +70,11 @@ trait BulkOrderTrait
 	{
 		$prices[] = $this->getOriginalPlanPriceForPreview($orderItems);
 		$prices[] = $this->getOriginalAddonPriceForPreview($orderItems);
-		return $prices ? array_sum($prices) : 0;
+		return number_format($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param         $orderItems
 	 *
 	 * @return float|int
 	 */
@@ -87,7 +87,7 @@ trait BulkOrderTrait
 				$prices[] = $plan->amount_recurring;
 			}
 		}
-		return $prices ? array_sum($prices) : 0;
+		return number_format($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -109,8 +109,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return $prices ? array_sum($prices) : 0;
-
+		return number_format($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -125,7 +124,7 @@ trait BulkOrderTrait
 		foreach ($orderItems as $orderItem) {
 			$taxes[] = number_format($this->calTaxableItemsForPreview($request, $orderItem), 2);
 		}
-		return ($taxes) ? array_sum($taxes) : 0;
+		return number_format($taxes ? array_sum($taxes) : 0, 2);
 
 	}
 
@@ -143,9 +142,9 @@ trait BulkOrderTrait
 		$taxPercentage  = $taxRate / 100;
 		$devices        = isset($orderItem['device_id']) && !$request->plan_activation ? $this->addTaxesDevicesForPreview($orderItem, $taxPercentage) : 0;
 		$sims           = isset($orderItem['sim_id']) && !$request->plan_activation ? $this->addTaxesSimsForPreview($orderItem, $taxPercentage) : 0;
-		$plans          = isset($orderItem['plan_id']) ? $this->addTaxesToPlansForPreview($orderItem, $taxPercentage) : 0;
+		$plans          = isset($orderItem['plan_id']) ? $this->addTaxesToPlansForPreview($request, $orderItem, $taxPercentage) : 0;
 		$addons         = isset($orderItem['addon_id']) ? $this->addTaxesToAddonsForPreview($orderItem, $taxPercentage) : 0;
-		return $devices + $sims + $plans + $addons;
+		return number_format($devices + $sims + $plans + $addons, 2);
 	}
 
 	/**
@@ -178,7 +177,7 @@ trait BulkOrderTrait
 			$amount = isset($orderItem['plan_id']) ? $device->amount_w_plan : $device->amount;
 			$itemTax[] = $taxPercentage * $amount;
 		}
-		return !empty($itemTax) ? array_sum($itemTax) : 0;
+		return number_format(!empty($itemTax) ? array_sum($itemTax) : 0, 2);
 	}
 
 	/**
@@ -195,7 +194,7 @@ trait BulkOrderTrait
 			$amount = isset($orderItem['plan_id']) ? $sim->amount_w_plan : $sim->amount_alone;
 			$itemTax[] = $taxPercentage * $amount;
 		}
-		return !empty($itemTax) ? array_sum($itemTax) : 0;
+		return number_format(!empty($itemTax) ? array_sum($itemTax) : 0, 2);
 	}
 
 	/**
@@ -211,46 +210,54 @@ trait BulkOrderTrait
 
 
 	/**
-	 * @param $orderItem
-	 * @param $taxPercentage
+	 * @param Request $request
+	 * @param         $orderItem
+	 * @param         $taxPercentage
 	 *
 	 * @return float|int
 	 */
-	public function addTaxesToPlansForPreview($orderItem, $taxPercentage)
+	public function addTaxesToPlansForPreview(Request $request, $orderItem, $taxPercentage)
 	{
 		$planTax = [];
+		$customerId = $request->get('customer_id');
+		$customer = Customer::find($customerId);
 		$plan = Plan::find($orderItem['plan_id']);
 		if ($plan->taxable) {
-			$amount = $orderItem['plan_prorated_amt'] != null ? $orderItem['plan_prorated_amt'] : $plan->amount_recurring;
+			$proRatedAmount = $this->calProRatedAmount($plan->amount_recurring, $customer);
+			$amount = $proRatedAmount ?: $plan->amount_recurring;
 			$amount = $plan->amount_onetime ? $amount + $plan->amount_onetime : $amount;
 			$planTax[] = $taxPercentage * $amount;
 		}
-		return !empty($planTax) ? array_sum($planTax) : 0;
+		return number_format(!empty($planTax) ? array_sum($planTax) : 0, 2);
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param Request $request
+	 * @param         $orderItems
 	 *
 	 * @return float|int
 	 */
-	private function calRegulatoryForPreview($orderItems)
+	private function calRegulatoryForPreview(Request $request, $orderItems)
 	{
 		$regulatoryFees = [];
+		$customerId = $request->get('customer_id');
+		$customer = Customer::find($customerId);
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['plan_id'])) {
 				$plan = Plan::find($orderItem['plan_id']);
 				if ($plan->regulatory_fee_type == 1) {
 					$regulatoryFees = $plan->regulatory_fee_amount;
 				} elseif ($plan->regulatory_fee_type == 2) {
-					if ($orderItem['plan_prorated_amt'] != null) {
-						$regulatoryFees[] = number_format($plan->regulatory_fee_amount * $orderItem['plan_prorated_amt'] / 100, 2);
+					$planProRatedAmount = $this->calProRatedAmount($plan->amount_recurring, $customer);
+					if ($planProRatedAmount) {
+						$regulatoryFees[] = number_format($plan->regulatory_fee_amount * $planProRatedAmount / 100, 2);
 					} else {
 						$regulatoryFees = number_format($plan->regulatory_fee_amount * $plan->amount_recurring / 100, 2);
 					}
 				}
 			}
 		}
-		return $regulatoryFees ? array_sum($regulatoryFees) : 0;
+		return number_format($regulatoryFees ? array_sum($regulatoryFees) : 0, 2);
 
 	}
 
@@ -280,7 +287,8 @@ trait BulkOrderTrait
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param Request $request
+	 * @param         $orderItems
 	 *
 	 * @return float|int
 	 */
@@ -297,29 +305,32 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return $prices ? array_sum($prices) : 0;
+		return number_format($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param Request $request
+	 * @param         $orderItems
 	 *
 	 * @return float|int
 	 */
-	protected function getPlanPricesForPreview($orderItems)
+	protected function getPlanPricesForPreview(Request $request, $orderItems)
 	{
 		$prices = [];
+		$customerId = $request->get('customer_id');
+		$customer = Customer::find($customerId);
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['plan_id'])) {
-				if ($orderItem['plan_prorated_amt']) {
-					$prices[] = $orderItem['plan_prorated_amt'];
+				$plan = Plan::find($orderItem['plan_id']);
+				$planProRatedAmount = $this->calProRatedAmount($plan->amount_recurring, $customer);
+				if ($planProRatedAmount) {
+					$prices[] = $planProRatedAmount;
 				} else {
-					$plan = Plan::find($orderItem['plan_id']);
 					$prices[] = $plan->amount_recurring;
 				}
-
 			}
 		}
-		return $prices ? array_sum($prices) : 0;
+		return number_format($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -338,7 +349,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return $prices ? array_sum($prices) : 0;
+		return number_format($prices ? array_sum($prices) : 0, 2);
 
 	}
 
@@ -361,7 +372,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return $prices ? array_sum($prices) : 0;
+		return number_format($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -375,6 +386,7 @@ trait BulkOrderTrait
 		$customer = Customer::find($request->get('customer_id'));
 		$end_date = Carbon::parse($customer->billing_end)->addDays(1);
 		$order = Order::whereHash($order->hash)->first();
+		$this->updateCustomerDates($customer);
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
@@ -383,9 +395,9 @@ trait BulkOrderTrait
 			'end_date'                => $end_date,
 			'start_date'              => $customer->billing_start,
 			'due_date'                => $customer->billing_start,
-			'subtotal'                => 0,
-			'total_due'               => CardController::DEFAULT_DUE,
-			'prev_balance'            => CardController::DEFAULT_DUE,
+			'subtotal'                => $this->subTotalPriceForPreview($request, $orderItems),
+			'total_due'               => $this->totalPriceForPreview($request, $orderItems),
+			'prev_balance'            => $this->getCustomerDue($customer->id),
 			'payment_method'          => 'Bulk Order',
 			'notes'                   => 'Bulk Order | Without Payment',
 			'business_name'           => $customer->company_name,
@@ -402,8 +414,7 @@ trait BulkOrderTrait
 			'shipping_address_line_2' => $order->shipping_address2,
 			'shipping_city'           => $order->shipping_city,
 			'shipping_state'          => $order->shipping_state_id,
-			'shipping_zip'            => $order->shipping_zip,
-
+			'shipping_zip'            => $order->shipping_zip
 		]);
 
 		$orderCount = Order::where([['status', 1],['company_id', $customer->company_id]])->max('order_num');
@@ -455,28 +466,34 @@ trait BulkOrderTrait
 	{
 
 		$subscriptionIds = [];
-		$standAloneSimIds = [];
-		$standAloneDeviceIds = [];
+		$standAloneSims = [];
+		$standAloneDevices = [];
 		$order = Order::where('invoice_id', $invoice->id)->first();
 		foreach($orderItems as $orderItem) {
 			if(isset($orderItem['subscription_id'])){
 				$subscriptionIds[] = $orderItem['subscription_id'];
 			}
 			if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['subscription_id'])){
-				$standAloneSimIds[] = $orderItem['sim_id'];
+				$standAloneSims[] = (object) [
+					'id'        => $orderItem['sim_id'],
+					'sim_num'   => $orderItem['sim_num']
+				];
 			}
 			if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id']) && !isset($orderItem['subscription_id'])){
-				$standAloneDeviceIds[] = $orderItem['device_id'];
+				$standAloneDevices[] = (object) [
+					'id'        => $orderItem['device_id'],
+					'imei'      => $orderItem['imei_number']
+				];
 			}
 		}
 		if(!empty($subscriptionIds)){
 			$this->subscriptionInvoiceItem($subscriptionIds, $invoice, $planActivation, $order);
 		}
-		if(!empty($standAloneSimIds)){
-			$this->standaloneSimInvoiceItem($standAloneSimIds, $invoice);
+		if(!empty($standAloneSims)){
+			$this->standaloneSimInvoiceItem($standAloneSims, $invoice);
 		}
-		if(!empty($standAloneDeviceIds)){
-			$this->standaloneDeviceInvoiceItem($standAloneDeviceIds, $invoice);
+		if(!empty($standAloneDevices)){
+			$this->standaloneDeviceInvoiceItem($standAloneDevices, $invoice);
 		}
 
 	}
@@ -592,20 +609,26 @@ trait BulkOrderTrait
 	}
 
 	/**
-	 * @param $orderItems
+	 * @param Request $request
+	 * @param         $orderItems
 	 *
 	 * @return float|int
 	 */
-	protected function getAddonPricesForPreview($orderItems)
+	protected function getAddonPricesForPreview(Request $request, $orderItems)
 	{
 		$prices = [];
+		$customerId = $request->get('customer_id');
+		$customer = Customer::find($customerId);
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['addons'])) {
 				foreach ($orderItem['addons'] as $addon) {
-					if ($addon['prorated_amt'] != null) {
-						$prices[] = $addon['prorated_amt'];
+					$addon = Addon::find($addon);
+					$amount = $addon->amount_recurring;
+					$addonProRatedAmount = $this->calProRatedAmount($amount, $customer);
+					if ($addonProRatedAmount) {
+						$prices[] = $addonProRatedAmount;
 					} else {
-						$prices[] = $addon['amount_recurring'];
+						$prices[] = $amount;
 					}
 				}
 			}
@@ -615,12 +638,12 @@ trait BulkOrderTrait
 
 	/**
 	 *  Creates invoice_item for customer_standalone_device
-	 * @param $standaloneDeviceIds
+	 * @param $standAloneDevices
 	 * @param $invoice
 	 *
 	 * @return null
 	 */
-	protected function standaloneDeviceInvoiceItem($standaloneDeviceIds, $invoice)
+	protected function standaloneDeviceInvoiceItem($standAloneDevices, $invoice)
 	{
 		$invoiceItem = null;
 		$invoiceItemArray = [
@@ -628,17 +651,17 @@ trait BulkOrderTrait
 			'product_type'    => InvoiceController::DEVICE_TYPE,
 		];
 
-		foreach ($standaloneDeviceIds as $standaloneDeviceId) {
+		foreach ($standAloneDevices as $standAloneDevice) {
 			CustomerStandaloneDevice::create([
 				'customer_id'   => $invoice->customer_id,
 				'order_id'      => $invoice->order->id,
 				'order_num'     => $invoice->order->order_num,
 				'status'        => StandaloneRecordController::DEFAULT_STATUS,
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
-				'device_id'     => $standaloneDeviceId,
-				'imei'          => 'null',
+				'device_id'     => $standAloneDevices->id,
+				'imei'          => $standAloneDevices->imei,
 			]);
-			$device           = Device::find($standaloneDeviceId);
+			$device           = Device::find($standAloneDevice->id);
 			$invoiceItemArray['product_id'] = $device->id;
 			$invoiceItemArray['type'] = 3;
 			$invoiceItemArray['amount'] = $device->amount;
@@ -652,11 +675,11 @@ trait BulkOrderTrait
 
 	/**
 	 * Creates invoice item for customer_standalone_sim
-	 * @param $standaloneSimIds
+	 * @param $standaloneSims
 	 *
 	 * @return null
 	 */
-	protected function standaloneSimInvoiceItem($standaloneSimIds, $invoice)
+	protected function standaloneSimInvoiceItem($standaloneSims, $invoice)
 	{
 		$invoiceItem = null;
 		$invoiceItemArray = [
@@ -669,17 +692,17 @@ trait BulkOrderTrait
 			'taxable'           => InvoiceController::DEFAULT_INT,
 		];
 
-		foreach ($standaloneSimIds as $standaloneSimId) {
+		foreach ($standaloneSims as $standaloneSim) {
 			CustomerStandaloneSim::create([
 				'customer_id'   => $invoice->customer_id,
 				'order_id'      => $invoice->order->id,
 				'order_num'     => $invoice->order->order_num,
 				'status'        => StandaloneRecordController::DEFAULT_STATUS,
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
-				'sim_id'        => $standaloneSimId,
-				'sim_num'       => 'null',
+				'sim_id'        => $standaloneSim->id,
+				'sim_num'       => $standaloneSim->sim_num,
 			]);
-			$sim           = Sim::find($standaloneSimId);
+			$sim           = Sim::find($standaloneSim->id);
 			$invoiceItemArray['product_id'] =  $sim->id;
 			$invoiceItemArray['type'] = 3;
 			$invoiceItemArray['amount'] = $sim->amount_alone;
@@ -728,14 +751,21 @@ trait BulkOrderTrait
 	 *
 	 * @return object
 	 */
-	protected function getCostBreakDownPreviewForPlans($orderItems)
+	protected function getCostBreakDownPreviewForPlans(Request $request, $orderItems)
 	{
 		$priceDetails = (object) [];
 		$prices = [];
+		$customerId = $request->get('customer_id');
+		$customer = Customer::find($customerId);
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['plan_id'])) {
 				$plan = Plan::find($orderItem['plan_id']);
-				$prices[$plan->id][] = $plan->amount_recurring;
+				$planProRatedAmount = $this->calProRatedAmount($plan->amount_recurring, $customer);
+				if ($planProRatedAmount) {
+					$prices[$plan->id][] = $planProRatedAmount;
+				} else {
+					$prices[$plan->id][] = $plan->amount_recurring;
+				}
 				if(isset($priceDetails->{$plan->id})){
 					$priceDetails->{$plan->id}['prices'] = $prices[$plan->id];
 					$priceDetails->{$plan->id}['quantity'] = count($prices[$plan->id]);
@@ -782,4 +812,37 @@ trait BulkOrderTrait
 		}
 		return $priceDetails;
 	}
+
+	/**
+	 * @param $amount
+	 * @param $customer
+	 *
+	 * @return float|int
+	 */
+	protected function calProRatedAmount($amount, $customer)
+	{
+		$today     = Carbon::today();
+		$startDate = Carbon::parse($customer->billing_start);
+		$endDate   = Carbon::parse($customer->billing_end);
+
+		$numberOfDaysLeft  = $endDate->diffInDays($today);
+		$totalNumberOfDays = $endDate->diffInDays($startDate);
+
+		return (($numberOfDaysLeft + 1)/($totalNumberOfDays + 1)) * $amount;
+	}
+
+	/**
+	 * @param $customer_id
+	 *
+	 * @return int
+	 */
+	protected function getCustomerDue($customer_id){
+		$dues = 0;
+		$invoices = Invoice::where('customer_id', $customer_id)->where('status', 1);
+		foreach($invoices as $invoice){
+			$dues += $invoice->total_due;
+		}
+		return $dues;
+	}
+
 }
