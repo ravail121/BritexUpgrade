@@ -73,7 +73,7 @@ class StandaloneRecordController extends BaseController
 
         $record = CustomerStandaloneDevice::create(array_merge($this->data, [
             'device_id' => $request->device_id,
-            'imei'      => 'null', 
+            'imei'      => $request->imei
         ]));
 
         $order = Order::find($request->order_id);
@@ -101,7 +101,7 @@ class StandaloneRecordController extends BaseController
 
         $record = CustomerStandaloneSim::create(array_merge($this->data, [
             'sim_id'  => $request->sim_id, 
-            'sim_num' => 'null', 
+            'sim_num' => $request->sim_num
         ]));
 
         $order = Order::find($request->order_id);
@@ -137,7 +137,8 @@ class StandaloneRecordController extends BaseController
     protected function validateDeviceRecord($request)
     {
 		return $this->validate_input($request->all(), array_merge($this->rules, [ 
-	        'device_id'   => 'required|numeric',
+	        'device_id'     => 'required|numeric',
+			'imei'          => 'required'
 	    ]));
 
     }
@@ -151,7 +152,8 @@ class StandaloneRecordController extends BaseController
     protected function validateSimRecord($request)
     {
         return $this->validate_input($request->all(), array_merge($this->rules, [
-          'sim_id' => 'required|numeric',
+            'sim_id'        => 'required|numeric',
+            'sim_num'       => 'required'
         ]));
 
     }
