@@ -137,8 +137,7 @@ class StandaloneRecordController extends BaseController
     protected function validateDeviceRecord($request)
     {
 		return $this->validate_input($request->all(), array_merge($this->rules, [ 
-	        'device_id'     => 'required|numeric',
-			'imei'          => 'required'
+	        'device_id'     => 'required|numeric'
 	    ]));
 
     }
@@ -152,8 +151,7 @@ class StandaloneRecordController extends BaseController
     protected function validateSimRecord($request)
     {
         return $this->validate_input($request->all(), array_merge($this->rules, [
-            'sim_id'        => 'required|numeric',
-            'sim_num'       => 'required'
+            'sim_id'        => 'required|numeric'
         ]));
 
     }
