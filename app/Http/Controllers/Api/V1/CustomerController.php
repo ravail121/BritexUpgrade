@@ -628,7 +628,7 @@ class CustomerController extends BaseController
 				'fname'                 => $request->fname,
 				'lname'                 => $request->lname,
 				'email'                 => $request->email,
-				'company_name'          => $requestCompany->name,
+				'company_name'          => $request->company_name,
 				'phone'                 => $request->phone,
 				'alternate_phone'       => $request->alternate_phone,
 				'password'              => Hash::make($request->get('password')),
