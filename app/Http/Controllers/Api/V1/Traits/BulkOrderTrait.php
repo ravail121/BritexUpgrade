@@ -465,7 +465,6 @@ trait BulkOrderTrait
 	 */
 	protected function invoiceItem($orderItems, $invoice, $planActivation)
 	{
-
 		$subscriptionIds = [];
 		$standAloneSims = [];
 		$standAloneDevices = [];
@@ -473,27 +472,30 @@ trait BulkOrderTrait
 		foreach($orderItems as $orderItem) {
 			if(isset($orderItem['subscription_id'])){
 				$subscriptionIds[] = $orderItem['subscription_id'];
+			} else {
+				if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id'])){
+					$standAloneSims[] = (object) [
+						'id'        => $orderItem['sim_id'],
+						'sim_num'   => $orderItem['sim_num']
+					];
+				}
+				if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id'])){
+					$standAloneDevices[] = (object) [
+						'id'        => $orderItem['device_id'],
+						'imei'      => $orderItem['imei_number']
+					];
+				}
+
 			}
-			if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['subscription_id'])){
-				$standAloneSims[] = (object) [
-					'id'        => $orderItem['sim_id'],
-					'sim_num'   => $orderItem['sim_num']
-				];
-			}
-			if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id']) && !isset($orderItem['subscription_id'])){
-				$standAloneDevices[] = (object) [
-					'id'        => $orderItem['device_id'],
-					'imei'      => $orderItem['imei_number']
-				];
-			}
+
 		}
 		if(!empty($subscriptionIds)){
 			$this->subscriptionInvoiceItem($subscriptionIds, $invoice, $planActivation, $order);
 		}
-		if(!empty($standAloneSims)){
+		if(!empty($standAloneSims) && !$planActivation){
 			$this->standaloneSimInvoiceItem($standAloneSims, $invoice);
 		}
-		if(!empty($standAloneDevices)){
+		if(!empty($standAloneDevices) && !$planActivation){
 			$this->standaloneDeviceInvoiceItem($standAloneDevices, $invoice);
 		}
 
