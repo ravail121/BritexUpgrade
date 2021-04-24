@@ -652,5 +652,10 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.preview.order',
 			'uses' => 'OrderController@previewOrderForBulkOrder',
 		]);
+
+		Route::post( '/close-lines', [
+			'as'   => 'api.bulk.order.close.lines',
+			'uses' => 'OrderController@closeSubscriptionForBulkOrder',
+		]);
 	});
 }); //APIToken middleware

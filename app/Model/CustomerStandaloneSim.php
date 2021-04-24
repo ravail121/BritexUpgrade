@@ -19,10 +19,12 @@ class CustomerStandaloneSim extends Model
         'shipping_date',
         'order_num',
         'processed',
+	    'closed_date'
     ];
 
     const STATUS = [
-        'complete'    =>  'complete',
+        'complete'    => 'complete',
+	    'closed'      => 'closed'
     ];
     
     public function sim()

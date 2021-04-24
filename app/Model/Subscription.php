@@ -79,14 +79,14 @@ class Subscription extends Model
 	 *
 	 */
 	const SUB_STATUSES = [
-		'active'            => 'active',
-		'suspend-scheduled' => 'suspend-scheduled',
-		'close-scheduled'   => 'close-scheduled',
-		'account-past-due'  => 'account-past-due',
-		'for-restoration'   => 'for-restoration',
-		'closed'            => 'closed',
-		'confirm-closing'   => 'confirm-closing',
-		'confirm-suspension'=> 'confirm-suspension'
+		'active'                => 'active',
+		'suspend-scheduled'     => 'suspend-scheduled',
+		'close-scheduled'       => 'close-scheduled',
+		'account-past-due'      => 'account-past-due',
+		'for-restoration'       => 'for-restoration',
+		'closed'                => 'closed',
+		'confirm-closing'        => 'confirm-closing',
+		'confirm-suspension'     => 'confirm-suspension'
 	];
 
 	/**
