@@ -1160,8 +1160,7 @@ class OrderController extends BaseController
 					if($closeSubscription) {
 						$activeSubscription = Subscription::where([
 							['status', '!=', Subscription::STATUS['closed']],
-							['sim_card_num', $orderItem['sim_num']],
-							['sim_id', $orderItem['sim_id']]
+							['sim_card_num', $orderItem['sim_num']]
 						])->first();
 						if($activeSubscription) {
 							$activeSubscription->update([
@@ -1174,7 +1173,6 @@ class OrderController extends BaseController
 						$assignedSim = CustomerStandaloneSim::where([
 							['status', '!=', CustomerStandaloneSim::STATUS['closed']],
 							['customer_id', $customer->id],
-							['sim_id', $orderItem['sim_id']],
 							['sim_num', $orderItem['sim_num']]
 						])->first();
 						if($assignedSim) {
@@ -1231,14 +1229,7 @@ class OrderController extends BaseController
 					return $query->where('company_id', $requestCompany->id);
 				})
 			],
-			'orders'                        => 'required',
-			'orders.*.sim_id'               =>  [
-				'numeric',
-				'required',
-				Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id);
-				})
-			]
+			'orders'                        => 'required'
 		];
 		if($unassignSim){
 			/**
