@@ -4,8 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $data['order']->company->name }}</title>
-    <link href="{{ $data['order']->company->url }}/pdf/css/82style.css" type="text/css" rel="stylesheet">
-
+    <link href="{{ asset('pdf/css/82style.css') }} " type="text/css" rel="stylesheet">
 </head>
 
 <body>
@@ -305,7 +304,7 @@
                             </tr>
                             
                             <tr class="tfootQ">
-                                <td><b>Total</td>
+                                <td><b>Total</b></td>
                                 <td><b>$ 
                                     @if($data['invoice']->cal_plan_charges)
                                         {{ number_format($data['invoice']->cal_plan_charges, 2) }}
