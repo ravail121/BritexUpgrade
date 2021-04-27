@@ -4,8 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $data['order']->company->name }}</title>
-    <link href="{{ $data['order']->company->url }}/pdf/css/82style.css" type="text/css" rel="stylesheet">
-</head>
+    <link href="{{ asset('pdf/css/82style.css') }}" type="text/css" rel="stylesheet"></head>
 
 <body>
     <div style='position:relative;margin-top:250px;' class="wrapper page3">

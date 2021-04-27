@@ -96,48 +96,40 @@ class InvoiceController extends BaseController
 							$end_date =date ("Y-m-d", strtotime ( $start_date ."+1 months"));
 							$due_date = $customer->billing_end;
 							$_invoice = Invoice::create([
-								'end_date'=>$start_date,
-								'start_date'=>$end_date,
-								'due_date'=>$due_date,
-								'type'=>1,
-								'status'=>1,
-								'subtotal'=>0,
-								'total_due'=>0,
-								'prev_balance'=>0,
-								'payment_method'=>0,
-								'business_name'=>0,
-								'billingfname'=>0,
-								'billing_fname'=>0,
-								'billing_lname'=>0,
-								'billing_address_line_1'=>0,
-								'billing_address_line_2'=>0,
-								'billing_city'=>0,
-								'billing_state'=>0,
-								'billing_zip'=>0,
-								'shipping_fname'=>0,
-								'shipping_lname'=>0,
-								'shipping_address_line_1'=>0,
-								'shipping_address_line_2'=>0,
-								'shipping_city'=>0,
-								'shipping_state'=>0,
-								'shipping_zip'=>0,
-
-
+								'end_date'                  => $start_date,
+								'start_date'                => $end_date,
+								'due_date'                  => $due_date,
+								'type'                      => 1,
+								'status'                    => 1,
+								'subtotal'                  => 0,
+								'total_due'                 => 0,
+								'prev_balance'              => 0,
+								'payment_method'            => 0,
+								'business_name'             => 0,
+								'billingfname'              => 0,
+								'billing_fname'             => 0,
+								'billing_lname'             => 0,
+								'billing_address_line_1'    => 0,
+								'billing_address_line_2'    => 0,
+								'billing_city'              => 0,
+								'billing_state'             => 0,
+								'billing_zip'               => 0,
+								'shipping_fname'            => 0,
+								'shipping_lname'            => 0,
+								'shipping_address_line_1'   => 0,
+								'shipping_address_line_2'   => 0,
+								'shipping_city'             => 0,
+								'shipping_state'            => 0,
+								'shipping_zip'              => 0
 							]);
 						}
 					}
-
-
-
 				}else{
 					return respond(['subscription status or pendingcharge doesnot match']);
 				}
 				$_subscriptions = Subscription::with(['plan'])->where('customer_id', $subscription->customer_id)->get();
 
 				foreach ($_subscriptions as $_subscription ){
-
-
-
 					if($_subscription->status ='active'|| $_subscription->status = 'shipping' || $_subscription->status = 'for-activation'){
 						$name = $_subscription->plans->name;
 						$cost = $_subscription->plans->amount_recurring;
@@ -155,14 +147,14 @@ class InvoiceController extends BaseController
 
 						$invoice_item = InvoiceItem::create([
 
-							'subscription_id'=> $_subscription->id,
-							'product_type'=> 'plan',
-							'product_id'=>$_subscription->plans->id,
-							'type'=>1,
-							'start_date'=>$_invoice->start_date,
-							'description'=>$_subscription->plans->description,
-							'amount'=>$_subscription->plans->amount_recurring,
-							'taxable'=>$_subscription->plans->taxable,
+							'subscription_id'   => $_subscription->id,
+							'product_type'      => 'plan',
+							'product_id'        => $_subscription->plans->id,
+							'type'              => 1,
+							'start_date'        => $_invoice->start_date,
+							'description'       => $_subscription->plans->description,
+							'amount'            => $_subscription->plans->amount_recurring,
+							'taxable'           => $_subscription->plans->taxable,
 						]);
 					}
 
@@ -172,10 +164,7 @@ class InvoiceController extends BaseController
 					foreach ($subscriptionaddons as $subscriptionaddon) {
 
 						if($subscriptionaddon->status ='removal-scheduled' || $subscriptionaddon->status = 'for-removal'){
-
 							continue;
-
-
 						}
 
 						if($_subscription->plans->taxable = 1){
@@ -184,18 +173,15 @@ class InvoiceController extends BaseController
 						}
 
 						$_invoiceitem = InvoiceItem::create([
-							'subscription_id'=>$_subscription->id,
-							'product_type'=>'addon',
-							'product_id'=>$subscriptionaddon->addon->id,
-							'type'=>2,
-							'start_date'=>$_invoice->start_date,
-							'description'=>$subscriptionaddon->addon->description,
-							'amount'=>$subscriptionaddon->addon->amount_recurring,
-							'taxable'=>$taxable,
-
+							'subscription_id'   => $_subscription->id,
+							'product_type'      => 'addon',
+							'product_id'        => $subscriptionaddon->addon->id,
+							'type'              => 2,
+							'start_date'        => $_invoice->start_date,
+							'description'       => $subscriptionaddon->addon->description,
+							'amount'            => $subscriptionaddon->addon->amount_recurring,
+							'taxable'           => $taxable,
 						]);
-
-
 						$regulatory_fee_type = $_subscription->plans->regulatory_fee_type;
 						$regulatory_fee_amount = $_subscription->plans->regulatory_fee_amount;
 
@@ -205,40 +191,29 @@ class InvoiceController extends BaseController
 						}elseif($regulatory_fee_type =2 && $regulatory_fee_amount = 5){
 							$x= 100;                 /*asummed value for running step*/
 							$amount = 0.05 * $x;
-
 						}
 
 						$subscription_id = $_subscription->id;
 						$product_type = '';
 						$product_id = null;
-						$type =5;
+						$type = 5;
 						$start_date = $_invoice['start_date'];
 						$description = $customer->company['regulatory_label'];
 						$Amount = $subscriptionaddon->amount_recurring;
 						$taxable = 0;
-
 					}
-
-
-
 				}
-
 			}
 
 			$subscription_coupons = SubscriptionCoupon::where('subscription_id' , $_subscription->id)->where('cycles_remaining', '>', 0)->get();
 			foreach ($subscription_coupons as $subscription_coupon) {
 				$invoice_item = InvoiceItem::create([
-					'subscription_id'=>$_subscription->id,
-					'type'=> 6,
-					'description'=> 'jst assumed',
-					'amount'=> 500,
-
-
-
+					'subscription_id' => $_subscription->id,
+					'type'            => 6,
+					'description'     => 'jst assumed',
+					'amount'         => 500,
 				]);
 				$subscription_coupon['cycles_remaining'] = $subscription_coupon->cycles_remaining-1;
-
-
 			}
 
 			echo $customer->billing_state_id;
@@ -246,16 +221,12 @@ class InvoiceController extends BaseController
 				echo 'inside';
 				$taxes =  Tax::where('Company_id', $customer->company_id)->get();
 				foreach ($taxes as $tax){
-
 					$tax_rate = $tax->rate;
 					echo $tax_rate;
 				}
 			}
 		}
-
 	}
-
-
 
 	/**
 	 * GET Invoice Details
@@ -310,8 +281,6 @@ class InvoiceController extends BaseController
 		$pastDue = $this->getAmountFormated($pastDue);
 		$total   = $this->getAmountFormated($total);
 		$dueDate = $this->getTotalDueDate($customer);
-
-
 		return $this->content = array_merge([
 			'charges'  => $charges,
 			'past_due' => $pastDue,
