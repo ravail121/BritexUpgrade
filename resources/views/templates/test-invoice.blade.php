@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>Teltik</title>
-    <link href="{{ asset('pdf/css/82style.css') }} " type="text/css" rel="stylesheet">
+    <link href="//teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
 </head>
 
 <body>
