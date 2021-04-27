@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $data['order']->company->name }}</title>
-    <link href="//teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
+    <link href="https://teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
 </head>
 
 <body>
