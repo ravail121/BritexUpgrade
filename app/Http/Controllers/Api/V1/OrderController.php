@@ -1270,7 +1270,7 @@ class OrderController extends BaseController
 			$request->all(),
 			$baseValidation,
 			[
-				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned to this customer',
+				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned',
 				'orders.*.sim_num.exists'       => 'The sim with number :input is not assigned to this customer',
 			]
 		);

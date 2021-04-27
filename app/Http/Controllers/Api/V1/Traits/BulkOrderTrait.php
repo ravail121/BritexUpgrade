@@ -386,16 +386,15 @@ trait BulkOrderTrait
 		$customer = Customer::find($request->get('customer_id'));
 		$order = Order::whereHash($order->hash)->first();
 		$this->updateCustomerDates($customer);
-
-		$carbon = new Carbon();
+		$end_date = Carbon::parse($customer->billing_end)->addDays(1);
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
 			'type'                    => CardController::DEFAULT_VALUE,
 			'status'                  => CardController::DEFAULT_VALUE,
-			'end_date'                => $carbon->addMonth()->subDay()->toDateString(),
-			'start_date'              => $carbon->toDateString(),
-			'due_date'                => $carbon->toDateString(),
+			'end_date'                => $end_date,
+			'start_date'              => $customer->billing_start,
+			'due_date'                => $customer->billing_end,
 			'subtotal'                => $this->subTotalPriceForPreview($request, $orderItems),
 			'total_due'               => $this->totalPriceForPreview($request, $orderItems),
 			'prev_balance'            => $this->getCustomerDue($customer->id),
@@ -659,7 +658,11 @@ trait BulkOrderTrait
 				'customer_id'   => $invoice->customer_id,
 				'order_id'      => $invoice->order->id,
 				'order_num'     => $invoice->order->order_num,
-				'status'        => StandaloneRecordController::DEFAULT_STATUS,
+				/**
+				 * @internal since these are bulk orders, we don't want these
+				 * to go into shipping status, set a special rule for these lines to complete
+				 */
+				'status'        => CustomerStandaloneDevice::STATUS['complete'],
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
 				'device_id'     => $standAloneDevice->id,
 				'imei'          => $standAloneDevice->imei,
@@ -700,7 +703,11 @@ trait BulkOrderTrait
 				'customer_id'   => $invoice->customer_id,
 				'order_id'      => $invoice->order->id,
 				'order_num'     => $invoice->order->order_num,
-				'status'        => StandaloneRecordController::DEFAULT_STATUS,
+				/**
+				 * @internal since these are bulk orders, we don't want these
+				 * to go into shipping status, set a special rule for these lines to complete
+				 */
+				'status'        => CustomerStandaloneSim::STATUS['complete'],
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
 				'sim_id'        => $standaloneSim->id,
 				'sim_num'       => $standaloneSim->sim_num,
