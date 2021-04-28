@@ -581,7 +581,7 @@ class CustomerController extends BaseController
 	 *
 	 * @return \Illuminate\Http\JsonResponse
 	 */
-	public function createCustomerWithoutOrder(Request $request)
+	public function createCustomerForBulkOrder(Request $request)
 	{
 		try {
 			$requestCompany = $request->get('company');
@@ -590,9 +590,10 @@ class CustomerController extends BaseController
 				'lname'                         => 'required|string',
 				'email'                         => [
 					'required',
-					Rule::exists('customer')->where(function ($query) use ($requestCompany) {
+					'email',
+					Rule::unique('customer')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
-					}),
+					})
 				],
 				'phone'                         => 'required|string',
 				'alternate_phone'               => 'nullable|string',
@@ -603,13 +604,16 @@ class CustomerController extends BaseController
 				'shipping_state_id'             => 'required|string|max:2',
 				'shipping_zip'                  => 'required|string',
 				'pin'                           => 'required|digits:4',
-				'billing_state_id'              => 'nullable|string',
+				'billing_state_id'              => 'nullable|string|max:2',
 				'billing_fname'                 => 'required_with:billing_state_id|string',
 				'billing_lname'                 => 'required_with:billing_state_id|string',
 				'billing_address1'              => 'required_with:billing_state_id|string',
 				'billing_address2'              => 'nullable|string',
 				'billing_city'                  => 'required_with:billing_state_id|string',
 				'billing_zip'		            => 'required_with:billing_state_id|string',
+				'primary_payment_method'		=> 'digits',
+				'primary_payment_card'		    => 'digits',
+				'auto_pay'		                => 'digits',
 			] );
 
 			if ($validator->fails()) {
@@ -624,10 +628,10 @@ class CustomerController extends BaseController
 				'fname'                 => $request->fname,
 				'lname'                 => $request->lname,
 				'email'                 => $request->email,
-				'company_name'          => $requestCompany->name,
+				'company_name'          => $request->company_name,
 				'phone'                 => $request->phone,
 				'alternate_phone'       => $request->alternate_phone,
-				'password'              => $request->password,
+				'password'              => Hash::make($request->get('password')),
 				'pin'                   => $request->pin,
 				'shipping_address1'     => $request->shipping_address1,
 				'shipping_address2'     => $request->shipping_address2,
@@ -635,8 +639,18 @@ class CustomerController extends BaseController
 				'shipping_state_id'     => $request->shipping_state_id,
 				'shipping_zip'          => $request->shipping_zip,
 				'shipping_fname'        => $request->shipping_fname,
-				'shipping_lname'        => $request->shipping_lname
+				'shipping_lname'        => $request->shipping_lname,
+				'hash'                  => sha1(time().rand())
 			];
+			if($request->has('primary_payment_method')) {
+				$customerData['primary_payment_method'] = $request->get('primary_payment_method');
+			}
+			if($request->has('primary_payment_card')) {
+				$customerData['primary_payment_card'] = $request->get('primary_payment_card');
+			}
+			if($request->has('auto_pay')) {
+				$customerData['auto_pay'] = $request->get('auto_pay');
+			}
 			if($request->has('billing_state_id')) {
 				$customerData['billing_state_id'] = $request->get('billing_state_id');
 				$customerData['billing_fname'] = $request->get('billing_fname');

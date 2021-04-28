@@ -261,7 +261,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['prefix'=>'sims','namespace'=>'Api\V1'],function()
+	Route::group(['prefix' => 'sims', 'namespace' => 'Api\V1'], function()
 	{
 		Route::get('/',[
 			'as'=>'api.sims.list',
@@ -286,9 +286,9 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-	Route::group(['prefix'=>'addons','namespace'=>'Api\V1'],function()
+	Route::group(['prefix' => 'addons', 'namespace' => 'Api\V1'], function()
 	{
-		Route::get('/',[
+		Route::get('/', [
 			'as'=>'api.addons.list',
 			'uses'=>'AddonController@get',
 		]);
@@ -299,8 +299,7 @@ Route::middleware('APIToken')->group(function () {
 				'uses'=>'AddonController@add',
 			]);
 		Route::get('/{id}',[
-
-			'as'=>'api.addons.find',
+			'as' => 'api.addons.find',
 			//'middleware'=>'auth:api',
 			'uses'=>'AddonController@find',
 		]);
@@ -340,7 +339,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['prefix'=>'biz-verification','namespace'=>'\Api\V1'], function(){
+	Route::group(['prefix' => 'biz-verification', 'namespace' => '\Api\V1'], function(){
 		Route::post('/', [
 			'as'=>'api.bizverification.post',
 			'uses'=>'BizVerificationController@post',
@@ -365,7 +364,7 @@ Route::middleware('APIToken')->group(function () {
 
 	});
 
-	Route::group(['prefix'=>'support','namespace'=>'Api\V1'],function()
+	Route::group(['prefix' => 'support', 'namespace' => 'Api\V1'], function()
 	{
 		Route::get('/',[
 			'as'=>'api.support.categories',
@@ -379,7 +378,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['namespace'=>'Api\V1\Invoice'],function(){
+	Route::group(['namespace'=>'Api\V1\Invoice'], function(){
 		// Route::get('/invoice', [
 		//  'as'=>'api.invoice.get',
 		//  'uses'=> 'InvoiceController@get',
@@ -409,14 +408,14 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'],function(){
+	Route::group(['namespace' => '\Api\V1'], function(){
 		Route::get('/default-imei', [
 			'as'   => 'api.default.imei',
 			'uses' => 'DeviceController@getImei'
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'],function(){
+	Route::group(['namespace' => '\Api\V1'], function(){
 
 		Route::post('/charge-new-card',[
 			'as'   => 'api.customer.creditcard',
@@ -464,7 +463,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'],function(){
+	Route::group(['namespace' => '\Api\V1'], function(){
 
 		Route::post('/create-email-log',[
 			'as'   => 'api.create.emaillog',
@@ -615,14 +614,10 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.customers.list',
 			'uses' => 'CustomerController@listCustomers',
 		]);
-		Route::post('/create-customer-without-order',[
-			'as'   => 'api.customers.create.customer.without.order',
-			'uses' => 'CustomerController@createCustomerWithoutOrder',
-		]);
 	});
 
 
-	Route::group(['namespace' => '\Api\V1'],function() {
+	Route::group(['namespace' => '\Api\V1'], function() {
 		Route::get('/subscription-by-phone-number', [
 			'as' => 'api.Subscription.phone',
 			'uses' => 'SubscriptionController@getSubscriptionByPhoneNumber',
@@ -634,4 +629,33 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
+	/**
+	 * APIS for Bulk Orders
+	 */
+	Route::group(['prefix' => 'bulk-order', 'namespace' => '\Api\V1'], function() {
+		Route::post( '/customer', [
+			'as'   => 'api.bulk.order.create.customer',
+			'uses' => 'CustomerController@createCustomerForBulkOrder',
+		]);
+
+		Route::post( '/order', [
+			'as'   => 'api.bulk.order.create.order',
+			'uses' => 'OrderController@createOrderForBulkOrder',
+		]);
+
+		Route::post( '/list-order-details', [
+			'as'    => 'api.bulk.order.list.details',
+			'uses'  => 'OrderController@listCustomerSimOrder'
+		]);
+
+		Route::post( '/preview', [
+			'as'   => 'api.bulk.order.preview.order',
+			'uses' => 'OrderController@previewOrderForBulkOrder',
+		]);
+
+		Route::post( '/close-lines', [
+			'as'   => 'api.bulk.order.close.lines',
+			'uses' => 'OrderController@closeSubscriptionForBulkOrder',
+		]);
+	});
 }); //APIToken middleware
