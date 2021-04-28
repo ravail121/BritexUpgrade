@@ -5,7 +5,6 @@ namespace App\Model;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
-
 /**
  * Class Order
  *

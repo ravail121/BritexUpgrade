@@ -139,15 +139,15 @@ trait InvoiceTrait
             if ($taxAmount > 0) {
                 $invoice->invoiceItem()->create(
                     [
-                        'invoice_id'   => $invoice->id,
-                        'subscription_id' => null,
-                        'product_type' => '',
-                        'product_id'   => null,
-                        'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
-                        'start_date'   => $invoice->start_date,
-                        'description'  => "(Taxes)",
-                        'amount'       => number_format($taxPercentage * $taxAmount, 2),
-                        'taxable'      => $isTaxable,    
+                        'invoice_id'        => $invoice->id,
+                        'subscription_id'   => null,
+                        'product_type'      => '',
+                        'product_id'        => null,
+                        'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+                        'start_date'        => $invoice->start_date,
+                        'description'       => "(Taxes)",
+                        'amount'            => number_format($taxPercentage * $taxAmount, 2),
+                        'taxable'           => $isTaxable,
                     ]
                 );
             }  
@@ -212,6 +212,7 @@ trait InvoiceTrait
 	 * @param       $order
 	 * @param false $mail
 	 * @param null  $request
+	 * @param null  $bulk_order
 	 *
 	 * @return string
 	 */
@@ -228,6 +229,7 @@ trait InvoiceTrait
 //                     return View('templates/onetime-invoice', compact('data', 'planChange'));
                     $request && $mail ? event(new UpgradeDowngradeInvoice($order, $generatePdf)) : null;
                     return $generatePdf->download('Invoice.pdf');
+
                 } else {
 //                     return View('templates/onetime-invoice', compact('data'));
                     $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
@@ -380,19 +382,18 @@ trait InvoiceTrait
         $totalDue       = $totalAmount > $paidAmount ? $totalAmount - $paidAmount : 0;
         if ($totalDue > 0) {
             $order->invoice->update([
-                    'total_due'  => str_replace(',', '',number_format($totalDue, 2)),
-                    'status' => 1 
-                ]);
+                'total_due'     => str_replace(',', '', number_format($totalDue, 2)),
+                'status'        => 1
+            ]);
             PendingCharge::create([
-                'customer_id' => $order->customer_id,
-                'subscription_id' => 0,
-                'invoice_id' => $order->invoice_id,
-                'type'  => 3,
-                'amount' => str_replace(',', '',number_format($totalDue)),
-                'description' => 'Pending one time payment'
+                'customer_id'       => $order->customer_id,
+                'subscription_id'   => 0,
+                'invoice_id'        => $order->invoice_id,
+                'type'              => 3,
+                'amount'            => str_replace(',', '',number_format($totalDue)),
+                'description'       => 'Pending one time payment'
             ]);
         }
-  
     }
 
 	/**
