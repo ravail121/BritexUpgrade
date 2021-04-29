@@ -389,7 +389,7 @@ trait BulkOrderTrait
 		if($hasSubscription) {
 			$this->updateCustomerDates( $customer );
 		}
-		if(!$customer->billing_start || $customer->billing_end) {
+		if(!$customer->billing_start || !$customer->billing_end) {
 			$carbon = new Carbon();
 			$startDate = $carbon->toDateString();
 			$endDate = $carbon->addMonth()->subDay()->toDateString();
