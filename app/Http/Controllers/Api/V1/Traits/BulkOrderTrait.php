@@ -389,16 +389,15 @@ trait BulkOrderTrait
 		if($hasSubscription) {
 			$this->updateCustomerDates( $customer );
 		}
+		$carbon = new Carbon();
 		if(!$customer->billing_start || !$customer->billing_end) {
-			$carbon = new Carbon();
 			$startDate = $carbon->toDateString();
 			$endDate = $carbon->addMonth()->subDay()->toDateString();
-			$dueDate = $carbon->subDay()->toDateString();
 		} else {
 			$startDate = $customer->billing_start;
-			$endDate = Carbon::parse($customer->billing_end)->addDays(1);
-			$dueDate = $customer->billing_end;
+			$endDate = $customer->billing_end;
 		}
+		$dueDate = $carbon->toDateString();
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
