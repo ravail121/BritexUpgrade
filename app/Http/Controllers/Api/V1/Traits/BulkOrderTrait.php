@@ -380,12 +380,15 @@ trait BulkOrderTrait
 	 * @param         $order
 	 * @param         $orderItems
 	 * @param         $planActivation
+	 * @param         $hasSubscription
 	 */
-	public function createInvoice(Request $request, $order, $orderItems, $planActivation)
+	public function createInvoice(Request $request, $order, $orderItems, $planActivation, $hasSubscription)
 	{
 		$customer = Customer::find($request->get('customer_id'));
 		$order = Order::whereHash($order->hash)->first();
-		$this->updateCustomerDates($customer);
+		if($hasSubscription) {
+			$this->updateCustomerDates( $customer );
+		}
 		$end_date = Carbon::parse($customer->billing_end)->addDays(1);
 
 		$invoice = Invoice::create([
