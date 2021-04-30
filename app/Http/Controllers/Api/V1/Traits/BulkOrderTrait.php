@@ -392,8 +392,7 @@ trait BulkOrderTrait
 		$carbon = new Carbon();
 		$dueDate = $carbon->toDateString();
 		if(!($customer->billing_start || $customer->billing_end)) {
-			$startDate = $dueDate;
-			$endDate = $carbon->addMonth()->subDay()->toDateString();
+			$startDate = $endDate = $dueDate;
 		} else {
 			$startDate = $customer->billing_start;
 			$endDate = $customer->billing_end;
