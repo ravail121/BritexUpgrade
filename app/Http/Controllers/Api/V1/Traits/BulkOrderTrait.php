@@ -19,6 +19,7 @@ use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\Api\V1\CardController;
 use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
 use App\Http\Controllers\Api\V1\StandaloneRecordController;
+use App\Helpers\Log;
 
 /**
  * @author Prajwal Shrestha
@@ -390,14 +391,14 @@ trait BulkOrderTrait
 			$this->updateCustomerDates( $customer );
 		}
 		$carbon = new Carbon();
-		if(!$customer->billing_start || !$customer->billing_end) {
-			$startDate = $carbon->toDateString();
+		$dueDate = $carbon->toDateString();
+		if(!($customer->billing_start || $customer->billing_end)) {
+			$startDate = $dueDate;
 			$endDate = $carbon->addMonth()->subDay()->toDateString();
 		} else {
 			$startDate = $customer->billing_start;
 			$endDate = $customer->billing_end;
 		}
-		$dueDate = $carbon->toDateString();
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
