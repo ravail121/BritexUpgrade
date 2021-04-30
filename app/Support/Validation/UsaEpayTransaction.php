@@ -82,7 +82,7 @@ trait UsaEpayTransaction
 	   /**
 	    * Set verify SSL cert to false
 	    */
-	   $tran->ignoresslcerterrors = false;
+	   $tran->ignoresslcerterrors = true;
 
        flush();
 
@@ -481,7 +481,7 @@ trait UsaEpayTransaction
         $tran->invoice     = $request->invoice;
         $tran->email       = $request->email;
 
-        $tran->ignoresslcerterrors = false;
+        $tran->ignoresslcerterrors = true;
 
         flush();
 
