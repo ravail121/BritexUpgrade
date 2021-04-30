@@ -19,7 +19,6 @@ use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\Api\V1\CardController;
 use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
 use App\Http\Controllers\Api\V1\StandaloneRecordController;
-use App\Helpers\Log;
 
 /**
  * @author Prajwal Shrestha
