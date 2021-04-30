@@ -21,7 +21,7 @@ class UsaEpay {
 	var $key;			// Source key
 	var $pin;			// Source pin (optional)
 	var $amount;		// the entire amount that will be charged to the customers card
-							// (including tax, shipping, etc)
+	// (including tax, shipping, etc)
 	var $invoice;		// invoice number.  must be unique.  limited to 10 digits.  use orderid if you need longer.
 
 	// Required for Level 2 - Commercial Card support
@@ -39,9 +39,9 @@ class UsaEpay {
 	var $shipping;		// Shipping charge
 	var $discount; 	// Discount amount (ie gift certificate or coupon code)
 	var $subtotal; 	// if subtotal is set, then
-							// subtotal + tip + shipping - discount + tax must equal amount
-							// or the transaction will be declined.  If subtotal is left blank
-							// then it will be ignored
+	// subtotal + tip + shipping - discount + tax must equal amount
+	// or the transaction will be declined.  If subtotal is left blank
+	// then it will be ignored
 	var $currency;		// Currency of $amount
 	var $allowpartialauth; //set to true if a partial authorization (less than the full $amount)  will be accepted
 
@@ -99,12 +99,12 @@ class UsaEpay {
 	// Option parameters
 	var $origauthcode;	// required if running postauth transaction.
 	var $command;		// type of command to run; Possible values are:
-						// sale, credit, void, preauth, postauth, check and checkcredit.
-						// Default is sale.
+	// sale, credit, void, preauth, postauth, check and checkcredit.
+	// Default is sale.
 	var $orderid;		// Unique order identifier.  This field can be used to reference
-						// the order for which this transaction corresponds to. This field
-						// can contain up to 64 characters and should be used instead of
-						// UMinvoice when orderids longer that 10 digits are needed.
+	// the order for which this transaction corresponds to. This field
+	// can contain up to 64 characters and should be used instead of
+	// UMinvoice when orderids longer that 10 digits are needed.
 	var $custid;   // Alpha-numeric id that uniquely identifies the customer.
 	var $description;	// description of charge
 	var $cvv2;			// cvv2 code
@@ -129,7 +129,7 @@ class UsaEpay {
 	var $ifauthexpired;  // controls what happens when capturing an authorization that has expire.  options are 'ignore','error','reauth'.
 	var $authexpiredays;  //set the number of days an authorization is valid for.  defaults to merchant account setting.
 	var $inventorylocation; // set the warehouse to pull inventory from.  defaults to source key setting.
-	
+
 	// Card Authorization - Verified By Visa and Mastercard SecureCode
 	var $cardauth;    	// enable card authentication
 	var $pares; 		//
@@ -293,32 +293,32 @@ class UsaEpay {
 		{
 			$vars = $sku;
 			$this->lineitems[] = array(
-						'sku' => @$vars['sku'],
-						'name' => @$vars['name'],
-						'description' => @$vars['description'],
-						'cost' => @$vars['cost'],
-						'taxable' => @$vars['taxable'],
-						'qty' => @$vars['qty'],
-						'refnum' => @$vars['refnum'],
-						'um' => @$vars['um'],
-						'taxrate' => @$vars['taxrate'],
-						'taxamount' => @$vars['taxamount'],
-						'taxclass' => @$vars['taxclass'],
-						'commoditycode' => @$vars['commoditycode'],
-						'discountrate' => @$vars['discountrate'],
-						'discountamount' => @$vars['discountamount'],
-					);
+				'sku' => @$vars['sku'],
+				'name' => @$vars['name'],
+				'description' => @$vars['description'],
+				'cost' => @$vars['cost'],
+				'taxable' => @$vars['taxable'],
+				'qty' => @$vars['qty'],
+				'refnum' => @$vars['refnum'],
+				'um' => @$vars['um'],
+				'taxrate' => @$vars['taxrate'],
+				'taxamount' => @$vars['taxamount'],
+				'taxclass' => @$vars['taxclass'],
+				'commoditycode' => @$vars['commoditycode'],
+				'discountrate' => @$vars['discountrate'],
+				'discountamount' => @$vars['discountamount'],
+			);
 
 		} else {
 			$this->lineitems[] = array(
-					'sku' => $sku,
-					'name' => $name,
-					'description' => $description,
-					'cost' => $cost,
-					'taxable' => $taxable,
-					'qty' => $qty,
-					'refnum' => $refnum
-				);
+				'sku' => $sku,
+				'name' => $name,
+				'description' => $description,
+				'cost' => $cost,
+				'taxable' => $taxable,
+				'qty' => $qty,
+				'refnum' => $refnum
+			);
 		}
 	}
 
@@ -384,8 +384,8 @@ class UsaEpay {
 			if(!$this->svpcancelurl) return "Cancel URL is required";
 		}  else {
 			if(in_array(strtolower($this->command), array("check:sale","check:credit", "check", "checkcredit","reverseach") )) {
-					if(!$this->account) return "Account Number is required";
-					if(!$this->routing) return "Routing Number is required";
+				if(!$this->account) return "Account Number is required";
+				if(!$this->routing) return "Routing Number is required";
 			} else if (in_array(strtolower($this->command) , array('cash','cash:refund','cash:sale','external:check:sale','external:cc:sale','external:gift:sale'))) {
 				// nothing needs to be validated for cash
 			} else {
@@ -395,13 +395,13 @@ class UsaEpay {
 				}
 			}
 			if ($this->command !== "cc:save"){
-			$this->amount=preg_replace("/[^0-9\.]/","",$this->amount);
-			if(!$this->amount) return "Amount is required";
-			if(!$this->invoice && !$this->orderid) return "Invoice number or Order ID is required";
-			if(!$this->magstripe) {
-				//if(!$this->cardholder) return "Cardholder Name is required";
-				//if(!$this->street) return "Street Address is required";
-				//if(!$this->zip) return "Zipcode is required";
+				$this->amount=preg_replace("/[^0-9\.]/","",$this->amount);
+				if(!$this->amount) return "Amount is required";
+				if(!$this->invoice && !$this->orderid) return "Invoice number or Order ID is required";
+				if(!$this->magstripe) {
+					//if(!$this->cardholder) return "Cardholder Name is required";
+					//if(!$this->street) return "Street Address is required";
+					//if(!$this->zip) return "Zipcode is required";
 				}
 			}
 		}
@@ -568,10 +568,10 @@ class UsaEpay {
 		$this->last4    = (isset($tmp["UMmaskedCardNum"])?$tmp["UMmaskedCardNum"]:"");
 // =================== These two lines were added ===================================
 
-		
 
 
-		
+
+
 		// Obsolete variable (for backward compatibility) At some point they will no longer be set.
 		//$this->avs=(isset($tmp["UMavsResult"])?$tmp["UMavsResult"]:"");
 		//$this->cvv2=(isset($tmp["UMcvv2Result"])?$tmp["UMcvv2Result"]:"");
@@ -601,7 +601,7 @@ class UsaEpay {
 			return false;
 		}
 
-				// Create hash if pin has been set.
+		// Create hash if pin has been set.
 		if(!trim($this->pin))
 		{
 			$this->result="Error";
@@ -622,36 +622,36 @@ class UsaEpay {
 
 
 		$data = '<?xml version="1.0" encoding="UTF-8"?>' .
-				'<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="urn:usaepay" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">' .
-				'<SOAP-ENV:Body>' .
-				'<ns1:runQuickSale>' .
-				'<Token xsi:type="ns1:ueSecurityToken">' .
-				'<ClientIP xsi:type="xsd:string">' . $this->ip . '</ClientIP>' .
-				'<PinHash xsi:type="ns1:ueHash">' .
-				'<HashValue xsi:type="xsd:string">' . $hash . '</HashValue>' .
-				'<Seed xsi:type="xsd:string">' . $seed . '</Seed>' .
-				'<Type xsi:type="xsd:string">sha1</Type>' .
-				'</PinHash>' .
-				'<SourceKey xsi:type="xsd:string">' . $this->key . '</SourceKey>' .
-				'</Token>' .
-				'<RefNum xsi:type="xsd:integer">' . preg_replace('/[^0-9]/','',$this->refnum) . '</RefNum>' .
-				'<Details xsi:type="ns1:TransactionDetail">' .
-				'<Amount xsi:type="xsd:double">' . $this->xmlentities($this->amount) . '</Amount>' .
-				'<Description xsi:type="xsd:string">' . $this->xmlentities($this->description) . '</Description>'.
-				'<Discount xsi:type="xsd:double">' . $this->xmlentities($this->discount) . '</Discount>' .
-				'<Invoice xsi:type="xsd:string">' . $this->xmlentities($this->invoice) . '</Invoice>' .
-				'<NonTax xsi:type="xsd:boolean">' . ($this->nontaxable?'true':'false') . '</NonTax>' .
-				'<OrderID xsi:type="xsd:string">' . $this->xmlentities($this->orderid) . '</OrderID>' .
-				'<PONum xsi:type="xsd:string">' . $this->xmlentities($this->ponum) . '</PONum>' .
-				'<Shipping xsi:type="xsd:double">' . $this->xmlentities($this->shipping) . '</Shipping>' .
-				'<Subtotal xsi:type="xsd:double">' . $this->xmlentities($this->subtotal) . '</Subtotal>' .
-				'<Tax xsi:type="xsd:double">' . $this->xmlentities($this->tax) . '</Tax>' .
-				'<Tip xsi:type="xsd:double">' . $this->xmlentities($this->tip) . '</Tip>' .
-				'</Details>' .
-				'<AuthOnly xsi:type="xsd:boolean">false</AuthOnly>' .
-				'</ns1:runQuickSale>' .
-				'</SOAP-ENV:Body>' .
-				'</SOAP-ENV:Envelope>';
+		        '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="urn:usaepay" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">' .
+		        '<SOAP-ENV:Body>' .
+		        '<ns1:runQuickSale>' .
+		        '<Token xsi:type="ns1:ueSecurityToken">' .
+		        '<ClientIP xsi:type="xsd:string">' . $this->ip . '</ClientIP>' .
+		        '<PinHash xsi:type="ns1:ueHash">' .
+		        '<HashValue xsi:type="xsd:string">' . $hash . '</HashValue>' .
+		        '<Seed xsi:type="xsd:string">' . $seed . '</Seed>' .
+		        '<Type xsi:type="xsd:string">sha1</Type>' .
+		        '</PinHash>' .
+		        '<SourceKey xsi:type="xsd:string">' . $this->key . '</SourceKey>' .
+		        '</Token>' .
+		        '<RefNum xsi:type="xsd:integer">' . preg_replace('/[^0-9]/','',$this->refnum) . '</RefNum>' .
+		        '<Details xsi:type="ns1:TransactionDetail">' .
+		        '<Amount xsi:type="xsd:double">' . $this->xmlentities($this->amount) . '</Amount>' .
+		        '<Description xsi:type="xsd:string">' . $this->xmlentities($this->description) . '</Description>'.
+		        '<Discount xsi:type="xsd:double">' . $this->xmlentities($this->discount) . '</Discount>' .
+		        '<Invoice xsi:type="xsd:string">' . $this->xmlentities($this->invoice) . '</Invoice>' .
+		        '<NonTax xsi:type="xsd:boolean">' . ($this->nontaxable?'true':'false') . '</NonTax>' .
+		        '<OrderID xsi:type="xsd:string">' . $this->xmlentities($this->orderid) . '</OrderID>' .
+		        '<PONum xsi:type="xsd:string">' . $this->xmlentities($this->ponum) . '</PONum>' .
+		        '<Shipping xsi:type="xsd:double">' . $this->xmlentities($this->shipping) . '</Shipping>' .
+		        '<Subtotal xsi:type="xsd:double">' . $this->xmlentities($this->subtotal) . '</Subtotal>' .
+		        '<Tax xsi:type="xsd:double">' . $this->xmlentities($this->tax) . '</Tax>' .
+		        '<Tip xsi:type="xsd:double">' . $this->xmlentities($this->tip) . '</Tip>' .
+		        '</Details>' .
+		        '<AuthOnly xsi:type="xsd:boolean">false</AuthOnly>' .
+		        '</ns1:runQuickSale>' .
+		        '</SOAP-ENV:Body>' .
+		        '</SOAP-ENV:Envelope>';
 
 		// Figure out URL
 		$url = ($this->gatewayurl?$this->gatewayurl:"https://www.usaepay.com/soap/gate/15E7FB61");
@@ -706,7 +706,7 @@ class UsaEpay {
 			return false;
 		}
 
-				// Create hash if pin has been set.
+		// Create hash if pin has been set.
 		if(!trim($this->pin))
 		{
 			$this->result="Error";
@@ -726,36 +726,36 @@ class UsaEpay {
 		$hash = sha1($prehash);
 
 		$data = '<?xml version="1.0" encoding="UTF-8"?>' .
-				'<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="urn:usaepay" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">' .
-				'<SOAP-ENV:Body>' .
-				'<ns1:runQuickCredit>' .
-				'<Token xsi:type="ns1:ueSecurityToken">' .
-				'<ClientIP xsi:type="xsd:string">' . $this->ip . '</ClientIP>' .
-				'<PinHash xsi:type="ns1:ueHash">' .
-				'<HashValue xsi:type="xsd:string">' . $hash . '</HashValue>' .
-				'<Seed xsi:type="xsd:string">' . $seed . '</Seed>' .
-				'<Type xsi:type="xsd:string">sha1</Type>' .
-				'</PinHash>' .
-				'<SourceKey xsi:type="xsd:string">' . $this->key . '</SourceKey>' .
-				'</Token>' .
-				'<RefNum xsi:type="xsd:integer">' . preg_replace('/[^0-9]/','',$this->refnum) . '</RefNum>' .
-				'<Details xsi:type="ns1:TransactionDetail">' .
-				'<Amount xsi:type="xsd:double">' . $this->xmlentities($this->amount) . '</Amount>' .
-				'<Description xsi:type="xsd:string">' . $this->xmlentities($this->description) . '</Description>'.
-				'<Discount xsi:type="xsd:double">' . $this->xmlentities($this->discount) . '</Discount>' .
-				'<Invoice xsi:type="xsd:string">' . $this->xmlentities($this->invoice) . '</Invoice>' .
-				'<NonTax xsi:type="xsd:boolean">' . ($this->nontaxable?'true':'false') . '</NonTax>' .
-				'<OrderID xsi:type="xsd:string">' . $this->xmlentities($this->orderid) . '</OrderID>' .
-				'<PONum xsi:type="xsd:string">' . $this->xmlentities($this->ponum) . '</PONum>' .
-				'<Shipping xsi:type="xsd:double">' . $this->xmlentities($this->shipping) . '</Shipping>' .
-				'<Subtotal xsi:type="xsd:double">' . $this->xmlentities($this->subtotal) . '</Subtotal>' .
-				'<Tax xsi:type="xsd:double">' . $this->xmlentities($this->tax) . '</Tax>' .
-				'<Tip xsi:type="xsd:double">' . $this->xmlentities($this->tip) . '</Tip>' .
-				'</Details>' .
-				'<AuthOnly xsi:type="xsd:boolean">false</AuthOnly>' .
-				'</ns1:runQuickCredit>' .
-				'</SOAP-ENV:Body>' .
-				'</SOAP-ENV:Envelope>';
+		        '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="urn:usaepay" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">' .
+		        '<SOAP-ENV:Body>' .
+		        '<ns1:runQuickCredit>' .
+		        '<Token xsi:type="ns1:ueSecurityToken">' .
+		        '<ClientIP xsi:type="xsd:string">' . $this->ip . '</ClientIP>' .
+		        '<PinHash xsi:type="ns1:ueHash">' .
+		        '<HashValue xsi:type="xsd:string">' . $hash . '</HashValue>' .
+		        '<Seed xsi:type="xsd:string">' . $seed . '</Seed>' .
+		        '<Type xsi:type="xsd:string">sha1</Type>' .
+		        '</PinHash>' .
+		        '<SourceKey xsi:type="xsd:string">' . $this->key . '</SourceKey>' .
+		        '</Token>' .
+		        '<RefNum xsi:type="xsd:integer">' . preg_replace('/[^0-9]/','',$this->refnum) . '</RefNum>' .
+		        '<Details xsi:type="ns1:TransactionDetail">' .
+		        '<Amount xsi:type="xsd:double">' . $this->xmlentities($this->amount) . '</Amount>' .
+		        '<Description xsi:type="xsd:string">' . $this->xmlentities($this->description) . '</Description>'.
+		        '<Discount xsi:type="xsd:double">' . $this->xmlentities($this->discount) . '</Discount>' .
+		        '<Invoice xsi:type="xsd:string">' . $this->xmlentities($this->invoice) . '</Invoice>' .
+		        '<NonTax xsi:type="xsd:boolean">' . ($this->nontaxable?'true':'false') . '</NonTax>' .
+		        '<OrderID xsi:type="xsd:string">' . $this->xmlentities($this->orderid) . '</OrderID>' .
+		        '<PONum xsi:type="xsd:string">' . $this->xmlentities($this->ponum) . '</PONum>' .
+		        '<Shipping xsi:type="xsd:double">' . $this->xmlentities($this->shipping) . '</Shipping>' .
+		        '<Subtotal xsi:type="xsd:double">' . $this->xmlentities($this->subtotal) . '</Subtotal>' .
+		        '<Tax xsi:type="xsd:double">' . $this->xmlentities($this->tax) . '</Tax>' .
+		        '<Tip xsi:type="xsd:double">' . $this->xmlentities($this->tip) . '</Tip>' .
+		        '</Details>' .
+		        '<AuthOnly xsi:type="xsd:boolean">false</AuthOnly>' .
+		        '</ns1:runQuickCredit>' .
+		        '</SOAP-ENV:Body>' .
+		        '</SOAP-ENV:Envelope>';
 
 		// Figure out URL
 		$url = ($this->gatewayurl?$this->gatewayurl:"https://www.usaepay.com/soap/gate/15E7FB61");
@@ -854,325 +854,325 @@ class UsaEpay {
 	{
 		$curl_version=false;
 		?>
-		<table border=1>
-		<tr><th><b>Test</b></th><th><b>Result</b></th></tr>
-		<tr><td valign="Top">Checking PHP Version</td>
-		<td valign="top"><?php
-			if(version_compare(phpversion(),"4.3.0")) {
-				?><font color="green">Ok</font><br>
-				PHP version <?php echo phpversion()?> on <?php echo PHP_OS?> detected.
-				<?php
-			} else {
-				?><font color="red">Warning</font><br>
-				PHP version <?php echo phpversion()?> detected. It is recommended that you
-				upgrade to the most recent release of PHP.
-				<?php
-			}
-		?></td></tr>
-		<tr><td valign="Top">Checking CURL Extension</td>
-		<td valign="top"><?php
-			if(function_exists("curl_version")) {
-				$tmp=curl_version();
-				// PHP 5 returns an array,  version 4 returns a string
-				if(is_array($tmp)) {
-					$curl_version=$tmp["version"];
-					$curl_ssl_version=$tmp["ssl_version"];
-				} else {
-					$tmp=explode(" ", $tmp);
-					foreach($tmp as $piece)
-					{
-						list($lib,$version)=explode("/",$piece);
-						if(stristr($lib,"curl")) $curl_version=$version;
-						elseif(stristr($lib,"ssl")) $curl_ssl_version=$version;
-					}
-
-				}
-				?><font color="green">Ok</font><br>
-				Curl Extension (<?php echo $curl_version?>) detected.
-				<?php
-			} else {
-				?><font color="red">Error</font><br>
-				Your PHP installation does not include the Curl Extension. You must either enable the curl
-				extension in your php.ini file by removing the semi-colon from the line ";extension=php_curl.dll" or recompile
-				php with the configuration flag: "--with-curl"
-				<?php
-			}
-		?>
-		</td></tr>
-		<tr><td valign="Top">Checking CURL SSL Support</td>
-		<td valign="top"><?php
-			if($curl_ssl_version) {
-				?><font color="green">Ok</font><br>
-				SSL Version (<?php echo $curl_ssl_version?>) detected.
-				<?php
-			} else {
-				?><font color="red">Error</font><br>
-				It appears that your curl installation does not include support for the HTTPS (ssl) protocal
-				Proper SSL installation is required to communicate with the USAePay gateway securely.  Please recompile curl
-				with SSL support.
-				<?php
-			}
-		?>
-		</td></tr>
-		<tr><td valign="Top">Checking Communication with the Gateway</td>
-		<td valign="top"><?php
-			$ssl_failed=true;
-			if(!$curl_version) {
-				?><font color="red">Error</font><br>
-				No curl support
-				<?php
-			} else {
-				$ch = curl_init(($this->gatewayurl?$this->gatewayurl:"https://www.usaepay.com/secure/gate.php") . "?VersionCheck=1&UMsoftware=" . rawurlencode($this->software));
-				if(!$ch) {
-					?><font color="red">Error</font><br>
-					Curl failed to connect to server:  (NULL $ch returned)
-					<?php
-				} else {
-
-					curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-					curl_setopt($ch,CURLOPT_SSLVERSION, 6);
-					if($this->cabundle) curl_setopt($ch, CURLOPT_CAINFO, $this->cabundle);
-
-					$result=curl_exec($ch);
-					parse_str($result, $return);
-					if($return["UMversion"]) {
-						$ssl_failed=false;
+        <table border=1>
+            <tr><th><b>Test</b></th><th><b>Result</b></th></tr>
+            <tr><td valign="Top">Checking PHP Version</td>
+                <td valign="top"><?php
+					if(version_compare(phpversion(),"4.3.0")) {
 						?><font color="green">Ok</font><br>
-						Successfully connected to the gateway.  Detected version (<?php echo $return["UMversion"]?>) of the USAePay gateway API.
+                        PHP version <?php echo phpversion()?> on <?php echo PHP_OS?> detected.
 						<?php
 					} else {
-						$ch = curl_init(($this->gatewayurl?$this->gatewayurl:"https://www.usaepay.com/secure/gate.php") . "?VersionCheck=1&UMsoftware=" . rawurlencode($this->software));
-						if($this->cabundle) curl_setopt($ch, CURLOPT_CAINFO, $this->cabundle);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-						curl_setopt($ch,CURLOPT_SSLVERSION, 6);
-						curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-						curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-						$result=curl_exec($ch);
-						parse_str($result, $return);
-						if($return["UMversion"]) {
-							?><font color="red">Warning</font><br>
-
-							Successfully connected to the gateway but could not verify SSL certificate.  This usually indicates that you
-							do not have curl set up with the proper root CA certificate.  It is recommended that you install an up to date
-							root ca bundle.  As a <b>temporary</b> work around you may disable the ssl cert check by adding the following to your script:<br><br><tt>
-							$tran->ignoresslcerterrors=true;<br>
-							<br></tt>
-							<?php
-							$ch = curl_init("https://www.verisign.com");
-							if($this->cabundle) curl_setopt($ch, CURLOPT_CAINFO, $this->cabundle);
-							curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-							curl_setopt($ch,CURLOPT_SSLVERSION, 6);
-							$result=curl_exec($ch);
-							if(strlen($result)) {
-								?>
-								SSL certificate for VeriSign was validated sucessfully. This would indicate that you have a root CA bundle installed but that it
-								is outdated. See below.
-								<?php
-							} else {
-								?>
-								Unable to verify SSL certificate for VeriSign.  This would indicate that you do not have a root CA bundle installed. See below.
-								<?php
-							}
-
-
-
+						?><font color="red">Warning</font><br>
+                        PHP version <?php echo phpversion()?> detected. It is recommended that you
+                        upgrade to the most recent release of PHP.
+						<?php
+					}
+					?></td></tr>
+            <tr><td valign="Top">Checking CURL Extension</td>
+                <td valign="top"><?php
+					if(function_exists("curl_version")) {
+						$tmp=curl_version();
+						// PHP 5 returns an array,  version 4 returns a string
+						if(is_array($tmp)) {
+							$curl_version=$tmp["version"];
+							$curl_ssl_version=$tmp["ssl_version"];
 						} else {
-							$ch = curl_init("https://216.133.244.70/secure/gate.php?VersionCheck=1&UMsoftware=" . rawurlencode($this->software));
-							curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-							curl_setopt($ch,CURLOPT_SSLVERSION, 6);
-							curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-							curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-							$result=curl_exec($ch);
-							parse_str($result, $return);
-							if($return["UMversion"]) {
-								?><font color="red">Warning</font><br>
-
-								Successfully connected to the gateway using a static IP but could not connect using hostname. This would indicate
-								that you do not have DNS setup correctly.  Please correct your server configuration to include a valid
-								DNS server. As a temporary work around you may add the following to your script:<br><br><tt>
-								$tran->ignoresslcerterrors=true;<br>
-								$tran->gatewayurl="https://216.133.244.70/gate.php";<br>
-								<br></tt>
-								<?php
-							} else {
-								?><font color="red">Failed</font><br>
-								Unable to establish connection to the USAePay Gateway.  It is possible that you are firewalling
-								outbound traffic from your server.  To correct this problem,  you must add an allow entry in
-								your firewall for ip <?php echo gethostbyname("www.usaepay.com")?> on port 443;
-								<?php
-
+							$tmp=explode(" ", $tmp);
+							foreach($tmp as $piece)
+							{
+								list($lib,$version)=explode("/",$piece);
+								if(stristr($lib,"curl")) $curl_version=$version;
+                                elseif(stristr($lib,"ssl")) $curl_ssl_version=$version;
 							}
 
 						}
-
+						?><font color="green">Ok</font><br>
+                        Curl Extension (<?php echo $curl_version?>) detected.
+						<?php
+					} else {
+						?><font color="red">Error</font><br>
+                        Your PHP installation does not include the Curl Extension. You must either enable the curl
+                        extension in your php.ini file by removing the semi-colon from the line ";extension=php_curl.dll" or recompile
+                        php with the configuration flag: "--with-curl"
+						<?php
 					}
-				}
-			}
-		?>
-		</td></tr>
-		<?php if($ssl_failed) {?>
+					?>
+                </td></tr>
+            <tr><td valign="Top">Checking CURL SSL Support</td>
+                <td valign="top"><?php
+					if($curl_ssl_version) {
+						?><font color="green">Ok</font><br>
+                        SSL Version (<?php echo $curl_ssl_version?>) detected.
+						<?php
+					} else {
+						?><font color="red">Error</font><br>
+                        It appears that your curl installation does not include support for the HTTPS (ssl) protocal
+                        Proper SSL installation is required to communicate with the USAePay gateway securely.  Please recompile curl
+                        with SSL support.
+						<?php
+					}
+					?>
+                </td></tr>
+            <tr><td valign="Top">Checking Communication with the Gateway</td>
+                <td valign="top"><?php
+					$ssl_failed=true;
+					if(!$curl_version) {
+						?><font color="red">Error</font><br>
+                        No curl support
+						<?php
+					} else {
+						$ch = curl_init(($this->gatewayurl?$this->gatewayurl:"https://www.usaepay.com/secure/gate.php") . "?VersionCheck=1&UMsoftware=" . rawurlencode($this->software));
+						if(!$ch) {
+							?><font color="red">Error</font><br>
+                            Curl failed to connect to server:  (NULL $ch returned)
+							<?php
+						} else {
 
-		<tr><td valign="Top">Looking for root CA Bundle</td>
-		<td valign="top"><?php
-			if(strstr(PHP_OS,"WIN")!==false) {
-				foreach(array('c:\windows\ca-bundle.crt','c:\windows\curl-ca-bundle.crt') as $certpath)
-				{
-					if(is_file($certpath)) break;
-					else unset($certpath);
-				}
+							curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+							curl_setopt($ch,CURLOPT_SSLVERSION, 6);
+							if($this->cabundle) curl_setopt($ch, CURLOPT_CAINFO, $this->cabundle);
 
-				if(!$certpath) $certpath="c:\windows\curl-ca-bundle.crt";
-			} else {
+							$result=curl_exec($ch);
+							parse_str($result, $return);
+							if($return["UMversion"]) {
+								$ssl_failed=false;
+								?><font color="green">Ok</font><br>
+                                Successfully connected to the gateway.  Detected version (<?php echo $return["UMversion"]?>) of the USAePay gateway API.
+								<?php
+							} else {
+								$ch = curl_init(($this->gatewayurl?$this->gatewayurl:"https://www.usaepay.com/secure/gate.php") . "?VersionCheck=1&UMsoftware=" . rawurlencode($this->software));
+								if($this->cabundle) curl_setopt($ch, CURLOPT_CAINFO, $this->cabundle);
+								curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+								curl_setopt($ch,CURLOPT_SSLVERSION, 6);
+								curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+								curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+								$result=curl_exec($ch);
+								parse_str($result, $return);
+								if($return["UMversion"]) {
+									?><font color="red">Warning</font><br>
 
-				foreach(array("/usr/share/curl/curl-ca-bundle.crt","/usr/local/share/curl/curl-ca-bundle.crt","/etc/curl/curl-ca-bundle.crt") as $certpath)
-				{
-					if(is_file($certpath)) break;
-					else unset($certpath);
-				}
+                                    Successfully connected to the gateway but could not verify SSL certificate.  This usually indicates that you
+                                    do not have curl set up with the proper root CA certificate.  It is recommended that you install an up to date
+                                    root ca bundle.  As a <b>temporary</b> work around you may disable the ssl cert check by adding the following to your script:<br><br><tt>
+                                        $tran->ignoresslcerterrors=true;<br>
+                                        <br></tt>
+									<?php
+									$ch = curl_init("https://www.verisign.com");
+									if($this->cabundle) curl_setopt($ch, CURLOPT_CAINFO, $this->cabundle);
+									curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+									curl_setopt($ch,CURLOPT_SSLVERSION, 6);
+									$result=curl_exec($ch);
+									if(strlen($result)) {
+										?>
+                                        SSL certificate for VeriSign was validated sucessfully. This would indicate that you have a root CA bundle installed but that it
+                                        is outdated. See below.
+										<?php
+									} else {
+										?>
+                                        Unable to verify SSL certificate for VeriSign.  This would indicate that you do not have a root CA bundle installed. See below.
+										<?php
+									}
 
-				if(!$certpath) $certpath="/usr/share/curl/curl-ca-bundle.crt";
-			}
 
 
-			if(is_readable($certpath)) {
-				?><font color="green">Ok</font><br>
-				A root CA bundle was found in "<?php echo $certpath?>".  Since the above test failed,  its possible that curl is not
-				correctly configured to use this bundle.  You can correct the problem by add the following code to your script:<br><br><tt>
-				$tran->cabundle='<?php echo $certpath?>';
-				</tt>
-				<br><br>
-				It is also possible that your root CA bundle is out dated. Your root CA bundle was last updated <?php echo date("m/d/y", filemtime($certpath))?>.
-				You can download a new file from:
-				<a href="https://www.usaepay.com/topics/curl-ca-bundle.crt">https://www.usaepay.com/topics/curl-ca-bundle.crt</a>
-				</tt>
-				<?php
-			} else {
-				?><font color="red">Error</font><br>
-				Unable to locate your root CA bundle file. You can correct this by downloading a bundle file from:
-				<a href="https://www.usaepay.com/topics/curl-ca-bundle.crt">https://www.usaepay.com/topics/curl-ca-bundle.crt</a>
-				Once downloaded save this file to: <?php echo $certpath?> You may also need to add the following code:<br><br><tt>
-				$tran->cabundle='<?php echo $certpath?>';
-				</tt>
-				<br><br>
-				<?php
-			}
-		?>
-		</td></tr>
-		<?php } ?>
+								} else {
+									$ch = curl_init("https://216.133.244.70/secure/gate.php?VersionCheck=1&UMsoftware=" . rawurlencode($this->software));
+									curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+									curl_setopt($ch,CURLOPT_SSLVERSION, 6);
+									curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+									curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+									$result=curl_exec($ch);
+									parse_str($result, $return);
+									if($return["UMversion"]) {
+										?><font color="red">Warning</font><br>
 
-		</table>
+                                        Successfully connected to the gateway using a static IP but could not connect using hostname. This would indicate
+                                        that you do not have DNS setup correctly.  Please correct your server configuration to include a valid
+                                        DNS server. As a temporary work around you may add the following to your script:<br><br><tt>
+                                            $tran->ignoresslcerterrors=true;<br>
+                                            $tran->gatewayurl="https://216.133.244.70/gate.php";<br>
+                                            <br></tt>
+										<?php
+									} else {
+										?><font color="red">Failed</font><br>
+                                        Unable to establish connection to the USAePay Gateway.  It is possible that you are firewalling
+                                        outbound traffic from your server.  To correct this problem,  you must add an allow entry in
+                                        your firewall for ip <?php echo gethostbyname("www.usaepay.com")?> on port 443;
+										<?php
+
+									}
+
+								}
+
+							}
+						}
+					}
+					?>
+                </td></tr>
+			<?php if($ssl_failed) {?>
+
+                <tr><td valign="Top">Looking for root CA Bundle</td>
+                    <td valign="top"><?php
+						if(strstr(PHP_OS,"WIN")!==false) {
+							foreach(array('c:\windows\ca-bundle.crt','c:\windows\curl-ca-bundle.crt') as $certpath)
+							{
+								if(is_file($certpath)) break;
+								else unset($certpath);
+							}
+
+							if(!$certpath) $certpath="c:\windows\curl-ca-bundle.crt";
+						} else {
+
+							foreach(array("/usr/share/curl/curl-ca-bundle.crt","/usr/local/share/curl/curl-ca-bundle.crt","/etc/curl/curl-ca-bundle.crt") as $certpath)
+							{
+								if(is_file($certpath)) break;
+								else unset($certpath);
+							}
+
+							if(!$certpath) $certpath="/usr/share/curl/curl-ca-bundle.crt";
+						}
+
+
+						if(is_readable($certpath)) {
+							?><font color="green">Ok</font><br>
+                            A root CA bundle was found in "<?php echo $certpath?>".  Since the above test failed,  its possible that curl is not
+                            correctly configured to use this bundle.  You can correct the problem by add the following code to your script:<br><br><tt>
+                                $tran->cabundle='<?php echo $certpath?>';
+                            </tt>
+                            <br><br>
+                            It is also possible that your root CA bundle is out dated. Your root CA bundle was last updated <?php echo date("m/d/y", filemtime($certpath))?>.
+                            You can download a new file from:
+                            <a href="https://www.usaepay.com/topics/curl-ca-bundle.crt">https://www.usaepay.com/topics/curl-ca-bundle.crt</a>
+                            </tt>
+							<?php
+						} else {
+							?><font color="red">Error</font><br>
+                            Unable to locate your root CA bundle file. You can correct this by downloading a bundle file from:
+                            <a href="https://www.usaepay.com/topics/curl-ca-bundle.crt">https://www.usaepay.com/topics/curl-ca-bundle.crt</a>
+                            Once downloaded save this file to: <?php echo $certpath?> You may also need to add the following code:<br><br><tt>
+                                $tran->cabundle='<?php echo $certpath?>';
+                            </tt>
+                            <br><br>
+							<?php
+						}
+						?>
+                    </td></tr>
+			<?php } ?>
+
+        </table>
 		<?php
 	}
 
 	function getFieldMap()
 	{
 		return array("UMkey" => 'key',
-			"UMcommand" => 'command',
-			"UMauthCode" => 'origauthcode',
-			"UMcard" => 'card',
-			"UMexpir" => 'exp',
-			"UMbillamount" => 'billamount',
-			"UMamount" => 'amount',
-			"UMinvoice" => 'invoice',
-			"UMorderid" => 'orderid',
-			"UMponum" => 'ponum',
-			"UMtax" => 'tax',
-			"UMnontaxable" => 'nontaxable',
-			"UMtip" => 'tip',
-			"UMshipping" => 'shipping',
-			"UMdiscount" => 'discount',
-			"UMsubtotal" => 'subtotal',
-			"UMcurrency" => 'currency',
-			"UMname" => 'cardholder',
-			"UMstreet" => 'street',
-			"UMzip" => 'zip',
-			"UMdescription" => 'description',
-			"UMcomments" => 'comments',
-			"UMcvv2" => 'cvv2',
-			"UMip" => 'ip',
-			"UMtestmode" => 'testmode',
-			"UMcustemail" => 'custemail',
-			"UMcustreceipt" => 'custreceipt',
-			"UMrouting" => 'routing',
-			"UMaccount" => 'account',
-			"UMssn" => 'ssn',
-			"UMdlstate" => 'dlstate',
-			"UMdlnum" => 'dlnum',
-			"UMchecknum" => 'checknum',
-			"UMaccounttype" => 'accounttype',
-			"UMcheckformat" => 'checkformat',
-			"UMcheckimagefront" => 'checkimage_front',
-			"UMcheckimageback" => 'checkimage_back',
-			"UMaddcustomer" => 'addcustomer',
-			"UMrecurring" => 'recurring',
-			"UMbillamount" => 'billamount',
-			"UMbilltax" => 'billtax',
-			"UMschedule" => 'schedule',
-			"UMnumleft" => 'numleft',
-			"UMstart" => 'start',
-			"UMexpire" => 'end',
-			"UMbillsourcekey" => 'billsourcekey',
-			"UMbillfname" => 'billfname',
-			"UMbilllname" => 'billlname',
-			"UMbillcompany" => 'billcompany',
-			"UMbillstreet" => 'billstreet',
-			"UMbillstreet2" => 'billstreet2',
-			"UMbillcity" => 'billcity',
-			"UMbillstate" => 'billstate',
-			"UMbillzip" => 'billzip',
-			"UMbillcountry" => 'billcountry',
-			"UMbillphone" => 'billphone',
-			"UMemail" => 'email',
-			"UMfax" => 'fax',
-			"UMwebsite" => 'website',
-			"UMshipfname" => 'shipfname',
-			"UMshiplname" => 'shiplname',
-			"UMshipcompany" => 'shipcompany',
-			"UMshipstreet" => 'shipstreet',
-			"UMshipstreet2" => 'shipstreet2',
-			"UMshipcity" => 'shipcity',
-			"UMshipstate" => 'shipstate',
-			"UMshipzip" => 'shipzip',
-			"UMshipcountry" => 'shipcountry',
-			"UMshipphone" => 'shipphone',
-			"UMcardauth" => 'cardauth',
-			"UMpares" => 'pares',
-			"UMxid" => 'xid',
-			"UMcavv" => 'cavv',
-			"UMeci" => 'eci',
-			"UMcustid" => 'custid',
-			"UMcardpresent" => 'cardpresent',
-			"UMmagstripe" => 'magstripe',
-			"UMdukpt" => 'dukpt',
-			"UMtermtype" => 'termtype',
-			"UMreasonCode" => 'reasoncode',
-			"UMmagsupport" => 'magsupport',
-			"UMcontactless" => 'contactless',
-			"UMsignature" => 'signature',
-			"UMsoftware" => 'software',
-			"UMignoreDuplicate" => 'ignoreduplicate',
-			"UMrefNum" => 'refnum',
-			'UMauxonus' => 'auxonus',
-			'UMepcCode' => 'epccode',
-			'UMcustreceiptname' => 'custreceiptname',
-			'UMallowPartialAuth' => 'allowpartialauth',
-			'UMdigitalGoods' => 'digitalgoods',
-			'UMmicr' => 'micr',
-			'UMsession' => 'session',
-			'UMisRecurring' => 'isrecurring',
-			'UMclerk' => 'clerk',
-			'UMtranterm' => 'terminal',
-			'UMresttable' => 'restaurant_table',
-			'UMticketedEvent' => 'ticketedevent',
-			'UMifAuthExpired' => 'ifauthexpired',
-			'UMauthExpireDays' => 'authexpiredays',
-			'UMinventorylocation' => 'inventorylocation',
-			'UMduty' => 'duty',
-			'UMshipfromzip' => 'shipfromzip',
-			'UMsaveCard' => 'savecard',
-			'UMlocation' => 'geolocation',
+		             "UMcommand" => 'command',
+		             "UMauthCode" => 'origauthcode',
+		             "UMcard" => 'card',
+		             "UMexpir" => 'exp',
+		             "UMbillamount" => 'billamount',
+		             "UMamount" => 'amount',
+		             "UMinvoice" => 'invoice',
+		             "UMorderid" => 'orderid',
+		             "UMponum" => 'ponum',
+		             "UMtax" => 'tax',
+		             "UMnontaxable" => 'nontaxable',
+		             "UMtip" => 'tip',
+		             "UMshipping" => 'shipping',
+		             "UMdiscount" => 'discount',
+		             "UMsubtotal" => 'subtotal',
+		             "UMcurrency" => 'currency',
+		             "UMname" => 'cardholder',
+		             "UMstreet" => 'street',
+		             "UMzip" => 'zip',
+		             "UMdescription" => 'description',
+		             "UMcomments" => 'comments',
+		             "UMcvv2" => 'cvv2',
+		             "UMip" => 'ip',
+		             "UMtestmode" => 'testmode',
+		             "UMcustemail" => 'custemail',
+		             "UMcustreceipt" => 'custreceipt',
+		             "UMrouting" => 'routing',
+		             "UMaccount" => 'account',
+		             "UMssn" => 'ssn',
+		             "UMdlstate" => 'dlstate',
+		             "UMdlnum" => 'dlnum',
+		             "UMchecknum" => 'checknum',
+		             "UMaccounttype" => 'accounttype',
+		             "UMcheckformat" => 'checkformat',
+		             "UMcheckimagefront" => 'checkimage_front',
+		             "UMcheckimageback" => 'checkimage_back',
+		             "UMaddcustomer" => 'addcustomer',
+		             "UMrecurring" => 'recurring',
+		             "UMbillamount" => 'billamount',
+		             "UMbilltax" => 'billtax',
+		             "UMschedule" => 'schedule',
+		             "UMnumleft" => 'numleft',
+		             "UMstart" => 'start',
+		             "UMexpire" => 'end',
+		             "UMbillsourcekey" => 'billsourcekey',
+		             "UMbillfname" => 'billfname',
+		             "UMbilllname" => 'billlname',
+		             "UMbillcompany" => 'billcompany',
+		             "UMbillstreet" => 'billstreet',
+		             "UMbillstreet2" => 'billstreet2',
+		             "UMbillcity" => 'billcity',
+		             "UMbillstate" => 'billstate',
+		             "UMbillzip" => 'billzip',
+		             "UMbillcountry" => 'billcountry',
+		             "UMbillphone" => 'billphone',
+		             "UMemail" => 'email',
+		             "UMfax" => 'fax',
+		             "UMwebsite" => 'website',
+		             "UMshipfname" => 'shipfname',
+		             "UMshiplname" => 'shiplname',
+		             "UMshipcompany" => 'shipcompany',
+		             "UMshipstreet" => 'shipstreet',
+		             "UMshipstreet2" => 'shipstreet2',
+		             "UMshipcity" => 'shipcity',
+		             "UMshipstate" => 'shipstate',
+		             "UMshipzip" => 'shipzip',
+		             "UMshipcountry" => 'shipcountry',
+		             "UMshipphone" => 'shipphone',
+		             "UMcardauth" => 'cardauth',
+		             "UMpares" => 'pares',
+		             "UMxid" => 'xid',
+		             "UMcavv" => 'cavv',
+		             "UMeci" => 'eci',
+		             "UMcustid" => 'custid',
+		             "UMcardpresent" => 'cardpresent',
+		             "UMmagstripe" => 'magstripe',
+		             "UMdukpt" => 'dukpt',
+		             "UMtermtype" => 'termtype',
+		             "UMreasonCode" => 'reasoncode',
+		             "UMmagsupport" => 'magsupport',
+		             "UMcontactless" => 'contactless',
+		             "UMsignature" => 'signature',
+		             "UMsoftware" => 'software',
+		             "UMignoreDuplicate" => 'ignoreduplicate',
+		             "UMrefNum" => 'refnum',
+		             'UMauxonus' => 'auxonus',
+		             'UMepcCode' => 'epccode',
+		             'UMcustreceiptname' => 'custreceiptname',
+		             'UMallowPartialAuth' => 'allowpartialauth',
+		             'UMdigitalGoods' => 'digitalgoods',
+		             'UMmicr' => 'micr',
+		             'UMsession' => 'session',
+		             'UMisRecurring' => 'isrecurring',
+		             'UMclerk' => 'clerk',
+		             'UMtranterm' => 'terminal',
+		             'UMresttable' => 'restaurant_table',
+		             'UMticketedEvent' => 'ticketedevent',
+		             'UMifAuthExpired' => 'ifauthexpired',
+		             'UMauthExpireDays' => 'authexpiredays',
+		             'UMinventorylocation' => 'inventorylocation',
+		             'UMduty' => 'duty',
+		             'UMshipfromzip' => 'shipfromzip',
+		             'UMsaveCard' => 'savecard',
+		             'UMlocation' => 'geolocation',
 
-			);
+		);
 	}
 	function buildQuery($data)
 	{
@@ -1326,15 +1326,15 @@ class UsaEpay {
 		$options = array(
 			'http'=> array(
 				'method'=>'POST',
-	            'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
-	                . "Content-Length: " . strlen($data) . "\r\n",
-	            'content' => $data,
-	            'timeout' => ($this->timeout>0?$this->timeout:45),
-	            'user_agent' => 'uePHPLibary v' . USAEPAY_VERSION . ($this->software?'/' . $this->software:'')
-	        ),
-	        'ssl' => array(
-	            'verify_peer' => ($this->ignoresslcerterrors?false:true),
-	            'allow_self_signed' => ($this->ignoresslcerterrors?true:false)
+				'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
+				           . "Content-Length: " . strlen($data) . "\r\n",
+				'content' => $data,
+				'timeout' => ($this->timeout>0?$this->timeout:45),
+				'user_agent' => 'uePHPLibary v' . USAEPAY_VERSION . ($this->software?'/' . $this->software:'')
+			),
+			'ssl' => array(
+				'verify_peer' => ($this->ignoresslcerterrors?false:true),
+				'allow_self_signed' => ($this->ignoresslcerterrors?true:false)
 			)
 		);
 
