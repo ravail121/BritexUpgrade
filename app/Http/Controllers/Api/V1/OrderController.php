@@ -680,6 +680,8 @@ class OrderController extends BaseController
 
 				$outputOrderItems = [];
 
+				$hasSubscription = false;
+
 				foreach ( $orderItems as $orderItem ) {
 					$order_group = null;
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
@@ -688,17 +690,21 @@ class OrderController extends BaseController
 					] );
 
 					if($order_group) {
-						$outputOrderItems[] = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
+						$outputOrderItem = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
 						if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
 							$monthly_order_group = OrderGroup::create( [
 								'order_id' => $order->id
 							] );
-							$outputOrderItems[] = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
+							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
 						}
+						if(isset($outputOrderItem['subscription_id'])){
+							$hasSubscription = true;
+						}
+						$outputOrderItems[] = $outputOrderItem;
 					}
 				}
 				if($order) {
-					$this->createInvoice($request, $order, $outputOrderItems, $planActivation);
+					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, $hasSubscription);
 				}
 			});
 
