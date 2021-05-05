@@ -380,21 +380,31 @@ trait BulkOrderTrait
 	 * @param         $order
 	 * @param         $orderItems
 	 * @param         $planActivation
+	 * @param         $hasSubscription
 	 */
-	public function createInvoice(Request $request, $order, $orderItems, $planActivation)
+	public function createInvoice(Request $request, $order, $orderItems, $planActivation, $hasSubscription)
 	{
 		$customer = Customer::find($request->get('customer_id'));
 		$order = Order::whereHash($order->hash)->first();
-		$this->updateCustomerDates($customer);
-		$end_date = Carbon::parse($customer->billing_end)->addDays(1);
+		if($hasSubscription) {
+			$this->updateCustomerDates( $customer );
+		}
+		$carbon = new Carbon();
+		$dueDate = $carbon->toDateString();
+		if(!($customer->billing_start || $customer->billing_end)) {
+			$startDate = $endDate = $dueDate;
+		} else {
+			$startDate = $customer->billing_start;
+			$endDate = $customer->billing_end;
+		}
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
 			'type'                    => CardController::DEFAULT_VALUE,
 			'status'                  => CardController::DEFAULT_VALUE,
-			'end_date'                => $end_date,
-			'start_date'              => $customer->billing_start,
-			'due_date'                => $customer->billing_end,
+			'end_date'                => $endDate,
+			'start_date'              => $startDate,
+			'due_date'                => $dueDate,
 			'subtotal'                => $this->subTotalPriceForPreview($request, $orderItems),
 			'total_due'               => $this->totalPriceForPreview($request, $orderItems),
 			'prev_balance'            => $this->getCustomerDue($customer->id),

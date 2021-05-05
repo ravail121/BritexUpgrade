@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
-use App\Events\SubcriptionStatusChanged;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -15,10 +13,10 @@ use App\Events\SubcriptionStatusChanged;
 
 // Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 
-Route::get('/', function (Request $request) {
+Route::get('/', function () {
     return  response()->json([
-      'message' => 'BriteX Backend !!'
-    ], 200);
+        'message'   => 'BriteX Backend !!'
+    ]);
 });
 
 /**

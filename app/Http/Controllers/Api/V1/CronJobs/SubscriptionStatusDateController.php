@@ -22,7 +22,7 @@ class SubscriptionStatusDateController extends Controller
 	{
 		try{
 			$customers = Customer::whereHas('subscriptions', function(Builder $subscription) {
-				$subscription->where( [ 'status', '!=', 'closed' ] );
+				$subscription->where('status', '!=', 'closed');
 			})->whereNull('subscription_start_date')->orWhereNull('billing_start')->orWhereNull('billing_end')->get();
 
 			$customerCount = $customers->count();

@@ -79,6 +79,11 @@ trait UsaEpayTransaction
        $tran->billphone   = $request->primary_contact;
        $tran->email       = $request->email;
 
+	   /**
+	    * Set verify SSL cert to false
+	    */
+	   $tran->ignoresslcerterrors = true;
+
        flush();
 
        return $tran;
@@ -117,7 +122,6 @@ trait UsaEpayTransaction
             $defaultData['usesandbox'] = $request->usesandbox;
         }else{
             $defaultData['key'] = \Request::get('company') ?\Request::get('company')->usaepay_api_key : $order->company->usaepay_api_key;
-        
             $defaultData['usesandbox'] = \Request::get('company') ?\Request::get('company')->usaepay_live_formatted : $order->company->usaepay_live_formatted;
         }
         
@@ -200,18 +204,18 @@ trait UsaEpayTransaction
 
         foreach ($suspendedSubscriptions as $key => $suspendedSubscription) {
             $suspendedSubscription->update([
-                'status'     => Subscription::STATUS['active'],
-                'sub_status' => Subscription::SUB_STATUSES['for-restoration'],
-                'scheduled_suspend_date' => null,
-                'account_past_due_date' => null,
+                'status'                    => Subscription::STATUS['active'],
+                'sub_status'                => Subscription::SUB_STATUSES['for-restoration'],
+                'scheduled_suspend_date'    => null,
+                'account_past_due_date'     => null,
             ]); 
         }
 
         foreach ($pastDueSubscriptions as $key => $pastDueSubscription) {
             $pastDueSubscription->update([
-                'sub_status' => '',
-                'scheduled_suspend_date' => null,
-                'account_past_due_date' => null,
+                'sub_status'                => '',
+                'scheduled_suspend_date'    => null,
+                'account_past_due_date'     => null,
             ]);
         }
 
@@ -243,8 +247,8 @@ trait UsaEpayTransaction
 	protected function updateCredit($applied ,$credit)
     {
         $credit->update( [
-            'applied_to_invoice' => $applied,
-            'description' => "$credit->description (One Time New Invoice)",
+            'applied_to_invoice'    => $applied,
+            'description'           => "$credit->description (One Time New Invoice)",
         ] );
     }
 
@@ -363,8 +367,8 @@ trait UsaEpayTransaction
 	public function addCreditToInvoiceRow($invoice, $credit, $tran)
     {
         $credit->update( [
-            'applied_to_invoice' => true,
-            'description' => "$credit->description (One Time New Invoice)",
+            'applied_to_invoice'    => true,
+            'description'           => "$credit->description (One Time New Invoice)",
         ] );
         
         return $credit->usedOnInvoices()->create([
@@ -476,6 +480,8 @@ trait UsaEpayTransaction
         $tran->amount      = $request->amount;
         $tran->invoice     = $request->invoice;
         $tran->email       = $request->email;
+
+        $tran->ignoresslcerterrors = true;
 
         flush();
 

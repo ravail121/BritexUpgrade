@@ -164,9 +164,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 				$standaloneDevice = CustomerStandaloneDevice::find($deviceId);
 
-				$updateCustomerDates = $this->updateCustomerDates($standaloneDevice);
-
-				$invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id']);
+				$invoiceItem = $this->standaloneDeviceInvoiceItem($invoice['customer_standalone_device_id'], $order->invoice->id);
 
 				$taxes = $this->addTaxesToStandalone($order->id, self::TAX_FALSE, self::DEVICE_TYPE, $requestCoupons);
 
@@ -176,9 +174,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 				$standaloneSim = CustomerStandaloneSim::find($invoice['customer_standalone_sim_id'][0]);
 
-				$updateCustomerDates = $this->updateCustomerDates($standaloneSim);
-
-				$invoiceItem = $this->standaloneSimInvoiceItem($invoice['customer_standalone_sim_id']);
+				$invoiceItem = $this->standaloneSimInvoiceItem($invoice['customer_standalone_sim_id'], $order->invoice->id);
 
 				$taxes = $this->addTaxesToStandalone($order->id, self::TAX_FALSE, self::SIM_TYPE, $requestCoupons);
 
@@ -666,68 +662,65 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 
 	/**
-	 * Creates inovice_item for customer_standalone_device
+	 * @param $standaloneDeviceIds
+	 * @param $invoiceId
 	 *
-	 * @param  Order      $order
-	 * @param  int        $deviceIds
-	 * @return Response
+	 * @return null
 	 */
-	protected function standaloneDeviceInvoiceItem($standaloneDeviceIds)
+	protected function standaloneDeviceInvoiceItem($standaloneDeviceIds, $invoiceId)
 	{
 		$invoiceItem = null;
 		$subArray = [
-			'subscription_id' => 0,
-			'product_type'    => self::DEVICE_TYPE,
+			'subscription_id'   => 0,
+			'product_type'      => self::DEVICE_TYPE,
+			'invoice_id'        => $invoiceId
 		];
 
-		foreach ($standaloneDeviceIds as $index => $standaloneDeviceId) {
+		foreach ($standaloneDeviceIds as $standaloneDeviceId) {
 			$standaloneDevice = CustomerStandaloneDevice::find($standaloneDeviceId);
 			$device           = Device::find($standaloneDevice->device_id);
 
 			$array = array_merge($subArray, [
-				'product_id' => $device->id,
-				'type'       => 3,
-				'amount'     => $device->amount,
-				'taxable'    => $device->taxable,
-				'description'  => ''
+				'product_id'    => $device->id,
+				'type'          => 3,
+				'amount'        => $device->amount,
+				'taxable'       => $device->taxable,
+				'description'   => ''
 			]);
 			$invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
-
 		}
 
 		return $invoiceItem;
 	}
 
 	/**
-	 * Creates invoice item for customer_standalone_sim
 	 * @param $standaloneSimIds
+	 * @param $invoiceId
 	 *
 	 * @return null
 	 */
-	protected function standaloneSimInvoiceItem($standaloneSimIds)
+	protected function standaloneSimInvoiceItem($standaloneSimIds, $invoiceId)
 	{
 		$invoiceItem = null;
 		$subArray = [
-			'subscription_id' => 0,
-			'product_type'    => self::SIM_TYPE,
+			'invoice_id'        => $invoiceId,
+			'subscription_id'   => 0,
+			'product_type'      => self::SIM_TYPE,
 		];
 
-		foreach ($standaloneSimIds as $index => $standaloneSimId) {
+		foreach ($standaloneSimIds as $standaloneSimId) {
 			$standaloneSim = CustomerStandaloneSim::find($standaloneSimId);
 			$sim           = Sim::find($standaloneSim->sim_id);
 
 			$array = array_merge($subArray, [
-				'product_id' => $sim->id,
-				'type'       => 3,
-				'amount'     => $sim->amount_alone,
-				'taxable'    => $sim->taxable,
-				'description'  => ''
+				'product_id'    => $sim->id,
+				'type'          => 3,
+				'amount'        => $sim->amount_alone,
+				'taxable'       => $sim->taxable,
+				'description'   => ''
 			]);
-
 			$invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
-
 		}
-
 		return $invoiceItem;
 	}
 
