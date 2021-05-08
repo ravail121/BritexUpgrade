@@ -17,7 +17,11 @@ class CustomerResource extends Resource
 		return [
 			'id'        => $this->id,
 			'name'      => $this->full_name,
-			'hash'      => $this->hash
+			'hash'      => $this->hash,
+			'company'   => [
+				'id'    => $this->company->id,
+				'name'  => $this->company->name
+			]
 		];
 	}
 }
