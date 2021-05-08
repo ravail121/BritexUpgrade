@@ -509,7 +509,13 @@ class CustomerController extends BaseController
 		]);
 		$customer = Customer::whereHash($request->hash)->first();
 
-		$customerDetails = Customer::with('creditAmount.invoice','orders.allOrderGroup.plan', 'orders.allOrderGroup.device','orders.allOrderGroup.sim','orders.allOrderGroup.order_group_addon.addon','orders.invoice', 'invoice.invoiceItem')->find($customer['id'])->toArray();
+		$customerDetails = Customer::with('creditAmount.invoice',
+			'orders.allOrderGroup.plan',
+			'orders.allOrderGroup.device',
+			'orders.allOrderGroup.sim',
+			'orders.allOrderGroup.order_group_addon.addon',
+			'orders.invoice',
+			'invoice.invoiceItem')->find($customer['id'])->toArray();
 
 		$customerDetails['invoice'] = $this->getInvoiceData($customerDetails['id']);
 
