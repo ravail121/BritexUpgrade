@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1\CronJobs;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Database\Eloquent\Builder;
 use App\Events\ReportNullSubscriptionStartDate;
 
 /**
@@ -21,9 +20,11 @@ class SubscriptionStatusDateController extends Controller
 	public function processAccountSuspendedAndNullStartDateCheck(Request $request)
 	{
 		try{
-			$customers = Customer::whereHas('subscriptions', function(Builder $subscription) {
+			$customers = Customer::whereHas('subscription', function($subscription) {
 				$subscription->where('status', '!=', 'closed');
-			})->whereNull('subscription_start_date')->orWhereNull('billing_start')->orWhereNull('billing_end')->get();
+			})->where(function($query){
+				$query->whereNull('subscription_start_date')->orWhereNull('billing_start')->orWhereNull('billing_end');
+			})->get();
 
 			$customerCount = $customers->count();
 
