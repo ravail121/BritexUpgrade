@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Validator;
 use App\Support\Utilities\FileMoveTrait;
 use App\Support\Responses\APIResponse;
@@ -57,6 +58,31 @@ class BaseController extends Controller
 			return $this->respondError($validation->getMessageBag()->all());
 		}
 		return false;
+	}
 
+	/**
+	 * @param        $customer
+	 * @param string $output
+	 *
+	 * @return Carbon|string
+	 */
+	protected function getInvoiceDates($customer, $output='start_date')
+	{
+		$carbon = new Carbon();
+		$dueDate = $carbon->toDateString();
+		if(!($customer->billing_start || $customer->billing_end)) {
+			$startDate = $endDate = $dueDate;
+		} else {
+			$startDate = $customer->billing_start;
+			$endDate = $customer->billing_end;
+			$dueDate = Carbon::parse($customer->billing_start)->subDays(1);
+		}
+		if($output === 'end_date'){
+			return $endDate;
+		} elseif($output === 'due_date') {
+			return $dueDate;
+		} else {
+			return $startDate;
+		}
 	}
 }
