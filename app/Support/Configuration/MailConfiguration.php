@@ -4,7 +4,6 @@ namespace App\Support\Configuration;
 
 use Config;
 use App\Model\Company;
-use Illuminate\Support\Facades\Log;
 /**
  * Trait MailConfiguration
  *
@@ -30,10 +29,6 @@ trait MailConfiguration
             'encryption'    => $company->smtp_encryption,
         ];
 
-	    Log::info('setMailConfiguration');
-	    Log::info($company->id);
-	    Log::info($config);
-
 	    Config::set('mail', $config);
         return false;
     }
@@ -54,9 +49,6 @@ trait MailConfiguration
             'password'      => $company->smtp_password,
             'encryption'    => $company->smtp_encryption,
         ];
-	    Log::info('setMailConfigurationById');
-	    Log::info($company->id);
-	    Log::info($config);
 
 	    Config::set('mail', $config);
         return false;

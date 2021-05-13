@@ -34,7 +34,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice')->dailyAt('00:01');
 
-        $schedule->call('App\Http\Controllers\Api\V1\CardController@autoPayInvoice')->dailyAt('00:00');
+        $schedule->call('App\Http\Controllers\Api\V1\CardController@autoPayInvoice')->daily();
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes();
 
@@ -42,7 +42,7 @@ class Kernel extends ConsoleKernel
 
         // $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->hourlyAt(30);
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->dailyAt('00:00');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->daily();
     }
 
     /**

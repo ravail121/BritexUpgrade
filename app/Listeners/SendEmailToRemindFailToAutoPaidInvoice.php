@@ -54,10 +54,6 @@ class SendEmailToRemindFailToAutoPaidInvoice
 
 	        $configurationSet = $this->setMailConfigurationById($customer->company_id);
 
-	        Log::info('SendEmailToRemindFailToAutoPaidInvoice Configuration Set');
-	        Log::info($configurationSet);
-
-
 	        if ($configurationSet) {
 		        return false;
 	        }

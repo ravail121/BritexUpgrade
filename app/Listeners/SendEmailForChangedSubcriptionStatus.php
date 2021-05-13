@@ -69,7 +69,7 @@ class SendEmailForChangedSubcriptionStatus
 		        if ( $configurationSet ) {
 			        return false;
 		        }
-		        Notification::route( 'mail', $row[ 'email' ] )->notify( new SendEmails( $order, $emailTemplate, $dataRow[ 'customer' ][ 'business_verification_id' ], $row[ 'body' ], 'prajwal@britewireless.com' ) );
+		        Notification::route( 'mail', $row[ 'email' ] )->notify( new SendEmails( $order, $emailTemplate, $dataRow[ 'customer' ][ 'business_verification_id' ], $row[ 'body' ], $row[ 'email' ] ) );
 	        }
         }
     }
