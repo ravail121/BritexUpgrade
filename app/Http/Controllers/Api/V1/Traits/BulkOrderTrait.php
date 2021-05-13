@@ -431,7 +431,6 @@ trait BulkOrderTrait
 		]);
 
 		$this->invoiceItem($orderItems, $invoice, $planActivation);
-		$this->ifTotalDue($order);
 		$updateDevicesWithNoId =  $order->invoice->invoiceItem->where('product_type', 'device')->where('product_id', 0);
 
 		foreach ($updateDevicesWithNoId as $item) {
