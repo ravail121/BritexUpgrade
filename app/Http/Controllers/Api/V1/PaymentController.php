@@ -202,13 +202,16 @@ class PaymentController extends BaseController implements ConstantInterface
         $card = CustomerCreditCard::where('customer_id', $customer->id)->latest()->first();
 
         if ($customer || $credit || $card) {
+        	$invoiceStartDate = $this->getInvoiceDates($customer);
+        	$invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
+        	$invoiceDueDate = $this->getInvoiceDates($customer, 'due_date');
             $arr = [
                 'customer_id'             => $customer->id,
                 'type'                    => self::DEFAULT_VALUE,
                 'status'                  => self::DEFAULT_VALUE,
-                'start_date'              => $this->carbon->toDateString(),
-                'end_date'                => $this->carbon->addMonth()->subDay()->toDateString(),
-                'due_date'                => $this->carbon->subDay()->toDateString(),
+                'start_date'              => $invoiceStartDate,
+                'end_date'                => $invoiceEndDate,
+                'due_date'                => $invoiceDueDate,
                 'subtotal'                => $credit->amount,
                 'total_due'               => self::DEFAULT_DUE,
                 'prev_balance'            => self::DEFAULT_DUE, 

@@ -75,7 +75,7 @@ class BaseController extends Controller
 		} else {
 			$startDate = $customer->billing_start;
 			$endDate = $customer->billing_end;
-			$dueDate = Carbon::parse($customer->billing_start)->subDays(1);
+			$dueDate = Carbon::parse($endDate)->subDays(1);
 		}
 		if($output === 'end_date'){
 			return $endDate;
