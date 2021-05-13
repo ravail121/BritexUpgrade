@@ -21,13 +21,20 @@ class SendEmailForNullSubscriptionStartDate extends Notification
 	protected $customers;
 
 	/**
+	 * @var
+	 */
+	protected $companyId;
+
+	/**
 	 * SendEmailForNullSubscriptionStartDate constructor.
 	 *
 	 * @param $customers
+	 * @param $companyId
 	 */
-	public function __construct($customers)
+	public function __construct($customers, $companyId)
 	{
 		$this->customers = $customers;
+		$this->companyId = $companyId;
 	}
 
 	/**

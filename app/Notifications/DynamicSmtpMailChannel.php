@@ -54,9 +54,6 @@ class DynamicSmtpMailChannel extends MailChannel
 
 		if (isset($companyId)) {
 			$company = Company::find($companyId);
-			Log::info('DynamicSmtpMailChannel send');
-			Log::info($company->id);
-			Log::info($company->smtp_host);
 
 			$customSmtp = [
 				'driver'        => $company->smtp_driver,
