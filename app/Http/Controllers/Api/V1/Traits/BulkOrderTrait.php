@@ -389,22 +389,17 @@ trait BulkOrderTrait
 		if($hasSubscription) {
 			$this->updateCustomerDates( $customer );
 		}
-		$carbon = new Carbon();
-		$dueDate = $carbon->toDateString();
-		if(!($customer->billing_start || $customer->billing_end)) {
-			$startDate = $endDate = $dueDate;
-		} else {
-			$startDate = $customer->billing_start;
-			$endDate = $customer->billing_end;
-		}
+		$invoiceStartDate = $this->getInvoiceDates($customer);
+		$invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
+		$invoiceDueDate = $this->getInvoiceDates($customer, 'due_date');
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
 			'type'                    => CardController::DEFAULT_VALUE,
 			'status'                  => CardController::DEFAULT_VALUE,
-			'end_date'                => $endDate,
-			'start_date'              => $startDate,
-			'due_date'                => $dueDate,
+			'end_date'                => $invoiceEndDate,
+			'start_date'              => $invoiceStartDate,
+			'due_date'                => $invoiceDueDate,
 			'subtotal'                => $this->subTotalPriceForPreview($request, $orderItems),
 			'total_due'               => $this->totalPriceForPreview($request, $orderItems),
 			'prev_balance'            => $this->getCustomerDue($customer->id),

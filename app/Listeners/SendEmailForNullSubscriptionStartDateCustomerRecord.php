@@ -34,7 +34,8 @@ class SendEmailForNullSubscriptionStartDateCustomerRecord
 		/**
 		 * @internal Using Company with id 1 for SMTP configuration
 		 */
-	    $configurationSet = $this->setMailConfigurationById(1);
+		$companyId = 1;
+	    $configurationSet = $this->setMailConfigurationById($companyId);
 
 	    if ($configurationSet) {
 		    return false;
@@ -43,7 +44,7 @@ class SendEmailForNullSubscriptionStartDateCustomerRecord
 	    $alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com', 'prajwal@britewireless.com'];
 
 		foreach($alertEmails as $alertEmail){
-			Notification::route('mail', $alertEmail)->notify(new SendEmailForNullSubscriptionStartDate($customers));
+			Notification::route('mail', $alertEmail)->notify(new SendEmailForNullSubscriptionStartDate($customers, $companyId));
 		}
 	}
 }

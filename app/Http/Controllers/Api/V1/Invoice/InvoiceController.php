@@ -768,14 +768,17 @@ class InvoiceController extends BaseController implements ConstantInterface
 		]);
 
 		$customer = Customer::find($data['customer_id']);
-		$end_date = Carbon::parse($customer->billing_end)->addDays(1);
 		$order = Order::whereHash($data['order_hash'])->first();
+
+		$invoiceStartDate = $this->getInvoiceDates($customer);
+		$invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
+		$invoiceDueDate = $this->getInvoiceDates($customer, 'due_date');
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
-			'end_date'                => $end_date,
-			'start_date'              => $customer->billing_start,
-			'due_date'                => $customer->billing_end,
+			'end_date'                => $invoiceEndDate,
+			'start_date'              => $invoiceStartDate,
+			'due_date'                => $invoiceDueDate,
 			'type'                    => 2,
 			'status'                  => 2,
 			'subtotal'                => 0,

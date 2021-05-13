@@ -482,19 +482,22 @@ class CardController extends BaseController implements ConstantInterface
             }else{
                 $staff_id = null;
             }
+            $invoiceStartDate = $this->getInvoiceDates($customer);
+            $invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
+            $invoiceDueDate = $this->getInvoiceDates($customer, 'due_date');
             $invoice = [
                 'staff_id'                  => $staff_id,
                 'customer_id'               => $card->customer_id,
                 'type'                      => '2',
-                'start_date'                => $customer->billing_start,
-                'end_date'                  => $customer->billing_end,
+                'start_date'                => $invoiceStartDate,
+                'end_date'                  => $invoiceEndDate,
                 'status'                    => '2',
                 'subtotal'                  => $data['amount'],
                 'total_due'                 => '0',
                 'prev_balance'              => '0',
                 'payment_method'            => '1',
                 'notes'                     => '',
-                'due_date'                  => Carbon::parse($customer->billing_start)->subDays(1),
+                'due_date'                  => $invoiceDueDate,
                 'business_name'             => $customer->company_name,
                 'billing_fname'             => $customer->fname,
                 'billing_lname'             => $customer->lname,
@@ -578,13 +581,16 @@ class CardController extends BaseController implements ConstantInterface
 		$card = CustomerCreditCard::where('customer_id', $costumer->id)->latest()->first();
 
 		if ($card) {
+			$invoiceStartDate = $this->getInvoiceDates($costumer);
+			$invoiceEndDate = $this->getInvoiceDates($costumer, 'end_date');
+			$invoiceDueDate = $this->getInvoiceDates($costumer, 'due_date');
 			$arr = [
 				'customer_id'             => $costumer->id,
 				'type'                    => self::DEFAULT_VALUE,
 				'status'                  => self::DEFAULT_VALUE,
-				'start_date'              => $this->carbon->toDateString(),
-				'end_date'                => $this->carbon->addMonth()->subDay()->toDateString(),
-				'due_date'                => $this->carbon->subDay()->toDateString(),
+				'start_date'              => $invoiceStartDate,
+				'end_date'                => $invoiceEndDate,
+				'due_date'                => $invoiceDueDate,
 				'subtotal'                => $credit ? $credit->amount : 0,
 				'total_due'               => self::DEFAULT_DUE,
 				'prev_balance'            => self::DEFAULT_DUE,

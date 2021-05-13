@@ -48,9 +48,6 @@ class SendAccountUnsuspendedMail
 
 	        $configurationSet = $this->setMailConfiguration($customer);
 
-	        Log::info('Configuration Set');
-	        Log::info($configurationSet);
-
 	        if ($configurationSet) {
 		        return false;
 	        }
