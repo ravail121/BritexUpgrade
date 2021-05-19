@@ -323,7 +323,12 @@ class CardController extends BaseController implements ConstantInterface
         foreach ($customers as $key => $customer) {
             $customer_obj = Customer::find($customer["id"]);
             $amount_due = $customer_obj->amount_due;
-            $customer['mounthlyInvoice'] = array('total_due' => $amount_due, 'subtotal' => $amount_due);
+	        $customer['mounthlyInvoice'] = [
+		        'total_due'     => $amount_due,
+		        'subtotal'      => $amount_due,
+		        'start_date'    => $customer->billing_start,
+		        'end_date'      => $customer->billing_end
+	        ];
             if($amount_due <= 0){
                 continue;
                 \Log::info(array("skipping autopaying...", $customer["id"], $customer["email"], $amount_due));
