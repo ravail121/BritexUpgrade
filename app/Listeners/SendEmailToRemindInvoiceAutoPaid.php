@@ -48,7 +48,11 @@ class SendEmailToRemindInvoiceAutoPaid
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
-            $row['body'] = $this->addFieldsToBody('[total_amount_due]', $customers['mounthlyInvoice']['total_due'], $row['body']);
+            $row['body'] = $this->addFieldsToBody(
+                ['[total_amount_due]', '[invoice__start_date]', '[invoice__end_date]'],
+                [$customers['mounthlyInvoice']['total_due'], $customers['mounthlyInvoice']['start_date'], $customers['mounthlyInvoice']['end_date']],
+                $row['body']
+            );
 
 	        $configurationSet = $this->setMailConfiguration($customer);
 
