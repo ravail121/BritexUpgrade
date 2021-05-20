@@ -85,4 +85,14 @@ class BaseController extends Controller
 			return $startDate;
 		}
 	}
+
+	/**
+	 * @param $amount
+	 *
+	 * @return string
+	 */
+	protected function convertToTwoDecimals($amount)
+	{
+		return number_format((float)$amount, 2, '.', '');
+	}
 }

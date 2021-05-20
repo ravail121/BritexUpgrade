@@ -41,7 +41,7 @@ trait BulkOrderTrait
 		$price[] = $this->subTotalPriceForPreview($request, $orderItems);
  		$price[] = $this->calRegulatoryForPreview($request, $orderItems);
 		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
-		return number_format(array_sum($price), 2);
+		return $this->convertToTwoDecimals(array_sum($price), 2);
 
 	}
 
@@ -57,7 +57,7 @@ trait BulkOrderTrait
 		$price[] = $this->getPlanPricesForPreview($request, $orderItems);
 		$price[] = $this->getSimPricesForPreview($request, $orderItems);
 		$price[] = $this->getAddonPricesForPreview($request, $orderItems);
-		return number_format(array_sum($price), 2);
+		return $this->convertToTwoDecimals(array_sum($price), 2);
 
 	}
 
@@ -70,7 +70,7 @@ trait BulkOrderTrait
 	{
 		$prices[] = $this->getOriginalPlanPriceForPreview($orderItems);
 		$prices[] = $this->getOriginalAddonPriceForPreview($orderItems);
-		return number_format($prices ? array_sum($prices) : 0, 2);
+		return $this->convertToTwoDecimals($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -87,7 +87,7 @@ trait BulkOrderTrait
 				$prices[] = $plan->amount_recurring;
 			}
 		}
-		return number_format($prices ? array_sum($prices) : 0, 2);
+		return $this->convertToTwoDecimals($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -109,7 +109,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return number_format($prices ? array_sum($prices) : 0, 2);
+		return $this->convertToTwoDecimals($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -122,10 +122,9 @@ trait BulkOrderTrait
 	{
 		$taxes = [];
 		foreach ($orderItems as $orderItem) {
-			$taxes[] = number_format($this->calTaxableItemsForPreview($request, $orderItem), 2);
+			$taxes[] = $this->convertToTwoDecimals($this->calTaxableItemsForPreview($request, $orderItem), 2);
 		}
-		return number_format($taxes ? array_sum($taxes) : 0, 2);
-
+		return $this->convertToTwoDecimals($taxes ? array_sum($taxes) : 0, 2);
 	}
 
 	/**
@@ -144,7 +143,7 @@ trait BulkOrderTrait
 		$sims           = isset($orderItem['sim_id']) && !$request->plan_activation ? $this->addTaxesSimsForPreview($orderItem, $taxPercentage) : 0;
 		$plans          = isset($orderItem['plan_id']) ? $this->addTaxesToPlansForPreview($request, $orderItem, $taxPercentage) : 0;
 		$addons         = isset($orderItem['addon_id']) ? $this->addTaxesToAddonsForPreview($orderItem, $taxPercentage) : 0;
-		return number_format($devices + $sims + $plans + $addons, 2);
+		return $this->convertToTwoDecimals($devices + $sims + $plans + $addons, 2);
 	}
 
 	/**
@@ -177,7 +176,7 @@ trait BulkOrderTrait
 			$amount = isset($orderItem['plan_id']) ? $device->amount_w_plan : $device->amount;
 			$itemTax[] = $taxPercentage * $amount;
 		}
-		return number_format(!empty($itemTax) ? array_sum($itemTax) : 0, 2);
+		return $this->convertToTwoDecimals(!empty($itemTax) ? array_sum($itemTax) : 0, 2);
 	}
 
 	/**
@@ -194,7 +193,7 @@ trait BulkOrderTrait
 			$amount = isset($orderItem['plan_id']) ? $sim->amount_w_plan : $sim->amount_alone;
 			$itemTax[] = $taxPercentage * $amount;
 		}
-		return number_format(!empty($itemTax) ? array_sum($itemTax) : 0, 2);
+		return $this->convertToTwoDecimals(!empty($itemTax) ? array_sum($itemTax) : 0, 2);
 	}
 
 	/**
@@ -228,7 +227,7 @@ trait BulkOrderTrait
 			$amount = $plan->amount_onetime ? $amount + $plan->amount_onetime : $amount;
 			$planTax[] = $taxPercentage * $amount;
 		}
-		return number_format(!empty($planTax) ? array_sum($planTax) : 0, 2);
+		return $this->convertToTwoDecimals(!empty($planTax) ? array_sum($planTax) : 0, 2);
 	}
 
 	/**
@@ -250,14 +249,14 @@ trait BulkOrderTrait
 				} elseif ($plan->regulatory_fee_type == 2) {
 					$planProRatedAmount = $this->calProRatedAmount($plan->amount_recurring, $customer);
 					if ($planProRatedAmount) {
-						$regulatoryFees[] = number_format($plan->regulatory_fee_amount * $planProRatedAmount / 100, 2);
+						$regulatoryFees[] = $this->convertToTwoDecimals($plan->regulatory_fee_amount * $planProRatedAmount / 100, 2);
 					} else {
-						$regulatoryFees = number_format($plan->regulatory_fee_amount * $plan->amount_recurring / 100, 2);
+						$regulatoryFees = $this->convertToTwoDecimals($plan->regulatory_fee_amount * $plan->amount_recurring / 100, 2);
 					}
 				}
 			}
 		}
-		return number_format($regulatoryFees ? array_sum($regulatoryFees) : 0, 2);
+		return $this->convertToTwoDecimals($regulatoryFees ? array_sum($regulatoryFees) : 0, 2);
 
 	}
 
@@ -305,7 +304,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return number_format($prices ? array_sum($prices) : 0, 2);
+		return $this->convertToTwoDecimals($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -330,7 +329,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return number_format($prices ? array_sum($prices) : 0, 2);
+		return $this->convertToTwoDecimals($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -349,7 +348,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return number_format($prices ? array_sum($prices) : 0, 2);
+		return $this->convertToTwoDecimals($prices ? array_sum($prices) : 0, 2);
 
 	}
 
@@ -372,7 +371,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return number_format($prices ? array_sum($prices) : 0, 2);
+		return $this->convertToTwoDecimals($prices ? array_sum($prices) : 0, 2);
 	}
 
 	/**
@@ -549,7 +548,7 @@ trait BulkOrderTrait
 
 				$invoiceItemArray['product_type'] = InvoiceController::PLAN_TYPE;
 				$invoiceItemArray['product_id'] = $subscription->plan_id;
-				$invoiceItemArray['amount'] = number_format($amount, 2);
+				$invoiceItemArray['amount'] = $this->convertToTwoDecimals($amount, 2);
 				$invoiceItemArray['taxable'] = $plan->taxable;
 				$invoiceItemArray['description'] = '';
 				$invoiceItem = InvoiceItem::create($invoiceItemArray);
@@ -597,7 +596,7 @@ trait BulkOrderTrait
 					$invoiceItemArray['product_type'] = InvoiceController::ADDON_TYPE;
 					$invoiceItemArray['product_id'] = $addon->id;
 					$invoiceItemArray['type'] = 2;
-					$invoiceItemArray['amount'] = number_format($addonAmount, 2);
+					$invoiceItemArray['amount'] = $this->convertToTwoDecimals($addonAmount, 2);
 					$invoiceItemArray['taxable'] = $addon->taxable;
 					$invoiceItemArray['description'] = '';
 
