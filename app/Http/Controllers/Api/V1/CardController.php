@@ -322,12 +322,13 @@ class CardController extends BaseController implements ConstantInterface
 
         foreach ($customers as $key => $customer) {
             $customer_obj = Customer::find($customer["id"]);
-            $amount_due = $customer_obj->amount_due;
+	        $invoice = Invoice::where([['customer_id', $customer_obj->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
+	        $amount_due = $customer_obj->amount_due;
 	        $customer['mounthlyInvoice'] = [
 		        'total_due'     => $amount_due,
 		        'subtotal'      => $amount_due,
-		        'start_date'    => $customer_obj->billing_start,
-		        'end_date'      => $customer_obj->billing_end
+		        'start_date'    => $invoice ? $invoice->start_date : $customer_obj->billing_start,
+		        'end_date'      => $invoice ? $invoice->end_date : $customer_obj->billing_end
 	        ];
             if($amount_due <= 0){
                 continue;
