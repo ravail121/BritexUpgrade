@@ -326,8 +326,8 @@ class CardController extends BaseController implements ConstantInterface
 	        $customer['mounthlyInvoice'] = [
 		        'total_due'     => $amount_due,
 		        'subtotal'      => $amount_due,
-		        'start_date'    => $customer->billing_start,
-		        'end_date'      => $customer->billing_end
+		        'start_date'    => $customer_obj->billing_start,
+		        'end_date'      => $customer_obj->billing_end
 	        ];
             if($amount_due <= 0){
                 continue;
