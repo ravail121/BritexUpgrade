@@ -60,7 +60,7 @@ class SendEmailToRemindInvoiceAutoPaid
 		        return false;
 	        }
 
-	        Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
+	        Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], 'prajwal@britewireless.com'));
         }
     }
 }
