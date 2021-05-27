@@ -263,13 +263,13 @@ class InvoiceController extends BaseController implements ConstantInterface
 		$order    = Order::find($obj->order_id);
 
 		Log::info(
-		    'Previous subscription date: ' . $obj->customer_id .
-            ' Subscription start date' . $customer->subscription_start_date
+		    'Customer Id: ' . $obj->customer_id .
+            '>> Previous Subscription start date' . $customer->subscription_start_date . '<<'
         );
 		try {
             if ($customer->subscription_start_date == null && $customer->billing_start == null  && $customer->billing_end == null) {
                 $customer->update([
-                    'subscription_start_date' => '2025-05-23',
+                    'subscription_start_date' => $this->carbon->toDateString(),
                     'billing_start'           => $this->carbon->toDateString(),
                     'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
                 ]);
