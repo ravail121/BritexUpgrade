@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Model\OrderGroupAddon;
 use App\Model\SystemGlobalSetting;
+use Illuminate\Support\Facades\Log;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
@@ -261,16 +262,27 @@ class InvoiceController extends BaseController implements ConstantInterface
 		$customer = Customer::find($obj->customer_id);
 		$order    = Order::find($obj->order_id);
 
-		if ($customer->subscription_start_date == null && $customer->billing_start == null  && $customer->billing_end == null) {
+		Log::info(
+		    'Customer Id: ' . $obj->customer_id .
+            '>> Previous Subscription start date' . $customer->subscription_start_date . '<<'
+        );
+		try {
+            if ($customer->subscription_start_date == null && $customer->billing_start == null  && $customer->billing_end == null) {
+                $customer->update([
+                    'subscription_start_date' => $this->carbon->toDateString(),
+                    'billing_start'           => $this->carbon->toDateString(),
+                    'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
+                ]);
+            }
+        } catch (\Exception $exception) {
+            Log::error('Error message ' . $exception->getMessage());
+        }
+        Log::info(
+            ' Subscription start date: ' . $customer->subscription_start_date
+        );
 
-			$customer->update([
-				'subscription_start_date' => $this->carbon->toDateString(),
-				'billing_start'           => $this->carbon->toDateString(),
-				'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
-			]);
-		}
 
-		$this->input = [
+        $this->input = [
 			'invoice_id'  => $order->invoice_id,
 			'type'        => self::DEFAULT_INT,
 			'start_date'  => $order->invoice_id ? $order->invoice->start_date : '',
