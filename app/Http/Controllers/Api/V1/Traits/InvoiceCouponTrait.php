@@ -46,7 +46,7 @@ trait InvoiceCouponTrait
 		        /**
 		         * store coupon in invoice_items.
 		         */
-		        if ( $coupon[ 'amount' ] ) {
+                if (isset($coupon['amount'])) {
 			        $order->invoice->invoiceItem()->create(
 				        [
 					        'subscription_id' => $subscription ? $subscription->id : 0,
