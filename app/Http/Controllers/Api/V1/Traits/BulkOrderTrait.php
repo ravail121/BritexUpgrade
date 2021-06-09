@@ -244,20 +244,19 @@ trait BulkOrderTrait
 		foreach ($orderItems as $orderItem) {
 			if (isset($orderItem['plan_id'])) {
 				$plan = Plan::find($orderItem['plan_id']);
-				if ($plan->regulatory_fee_type == 1) {
-					$regulatoryFees = $plan->regulatory_fee_amount;
-				} elseif ($plan->regulatory_fee_type == 2) {
+				if ($plan->regulatory_fee_type == Plan::REGULATORY_FEE_TYPES['fixed_amount']) {
+					$regulatoryFees[] = $plan->regulatory_fee_amount;
+				} elseif ($plan->regulatory_fee_type == Plan::REGULATORY_FEE_TYPES['percentage_of_plan_cost']) {
 					$planProRatedAmount = $this->calProRatedAmount($plan->amount_recurring, $customer);
 					if ($planProRatedAmount) {
 						$regulatoryFees[] = $this->convertToTwoDecimals($plan->regulatory_fee_amount * $planProRatedAmount / 100, 2);
 					} else {
-						$regulatoryFees = $this->convertToTwoDecimals($plan->regulatory_fee_amount * $plan->amount_recurring / 100, 2);
+						$regulatoryFees[] = $this->convertToTwoDecimals($plan->regulatory_fee_amount * $plan->amount_recurring / 100, 2);
 					}
 				}
 			}
 		}
 		return $this->convertToTwoDecimals($regulatoryFees ? array_sum($regulatoryFees) : 0, 2);
-
 	}
 
 	/**
@@ -282,7 +281,7 @@ trait BulkOrderTrait
 				}
 			}
 		}
-		return $shippingFees ? array_sum($shippingFees) : 0;
+		return $this->convertToTwoDecimals($shippingFees ? array_sum($shippingFees) : 0, 2);
 	}
 
 	/**
