@@ -652,8 +652,10 @@ trait BulkOrderTrait
 	{
 		$invoiceItem = null;
 		$invoiceItemArray = [
-			'subscription_id' => 0,
-			'product_type'    => InvoiceController::DEVICE_TYPE,
+			'subscription_id'   => 0,
+			'product_type'      => InvoiceController::DEVICE_TYPE,
+			'invoice_id'        => $invoice->id,
+			'start_date'        => $invoice->start_date,
 		];
 
 		foreach ($standAloneDevices as $standAloneDevice) {
