@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
+use App\Helpers\Log;
 use App\Model\Sim;
 use App\Model\Tax;
 use Carbon\Carbon;
@@ -676,6 +677,7 @@ trait BulkOrderTrait
 			$invoiceItemArray['taxable'] = $device->taxable;
 			$invoiceItemArray['description'] = '';
 			$invoiceItem = InvoiceItem::create($invoiceItemArray);
+			Log::info($invoiceItem, 'Create Invoice Item');
 			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::DEVICE_TYPE);
 		}
 		return $invoiceItem;
