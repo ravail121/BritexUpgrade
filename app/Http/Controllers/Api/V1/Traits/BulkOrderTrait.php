@@ -483,7 +483,7 @@ trait BulkOrderTrait
 				if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id'])){
 					$standAloneDevices[] = (object) [
 						'id'        => $orderItem['device_id'],
-						'imei'      => $orderItem['imei_number']
+						'imei'      => $orderItem['imei_number'] ?? 'null'
 					];
 				}
 
@@ -667,7 +667,7 @@ trait BulkOrderTrait
 				'status'        => CustomerStandaloneDevice::STATUS['complete'],
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
 				'device_id'     => $standAloneDevice->id,
-				'imei'          => $standAloneDevice->imei,
+				'imei'          => $standAloneDevice->imei
 			]);
 			$device           = Device::find($standAloneDevice->id);
 			$invoiceItemArray['product_id'] = $device->id;
@@ -745,7 +745,7 @@ trait BulkOrderTrait
 				}
 				if(isset($priceDetails->{$device->id})){
 					$priceDetails->{$device->id}['prices'] = $prices[$device->id];
-					$priceDetails->{$device->id}['quantity'] = count($device[$device->id]);
+					$priceDetails->{$device->id}['quantity'] = count($prices[$device->id]);
 				} else {
 					$priceDetails->{$device->id} = [
 						'device'     => $device->name,
