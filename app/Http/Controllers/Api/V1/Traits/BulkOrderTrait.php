@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
+use App\Helpers\Log;
 use App\Model\Sim;
 use App\Model\Tax;
 use Carbon\Carbon;
@@ -404,15 +405,15 @@ trait BulkOrderTrait
 			'payment_method'          => 'Bulk Order',
 			'notes'                   => 'Bulk Order | Without Payment',
 			'business_name'           => $customer->company_name,
-			'billing_fname'           => $customer->billing_fname,
-			'billing_lname'           => $customer->billing_lname,
+			'billing_fname'           => $customer->billing_fname ?: $customer->fname,
+			'billing_lname'           => $customer->billing_lname ?: $customer->lname,
 			'billing_address_line_1'  => $customer->billing_address1,
 			'billing_address_line_2'  => $customer->billing_address2,
 			'billing_city'            => $customer->billing_city,
 			'billing_state'           => $customer->billing_state_id,
 			'billing_zip'             => $customer->billing_zip,
-			'shipping_fname'          => $order->shipping_fname,
-			'shipping_lname'          => $order->shipping_lname,
+			'shipping_fname'          => $order->shipping_fname ?: $customer->fname,
+			'shipping_lname'          => $order->shipping_lname ?: $customer->lname,
 			'shipping_address_line_1' => $order->shipping_address1,
 			'shipping_address_line_2' => $order->shipping_address2,
 			'shipping_city'           => $order->shipping_city,
@@ -483,7 +484,7 @@ trait BulkOrderTrait
 				if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id'])){
 					$standAloneDevices[] = (object) [
 						'id'        => $orderItem['device_id'],
-						'imei'      => $orderItem['imei_number']
+						'imei'      => $orderItem['imei_number'] ?? 'null'
 					];
 				}
 
@@ -651,8 +652,10 @@ trait BulkOrderTrait
 	{
 		$invoiceItem = null;
 		$invoiceItemArray = [
-			'subscription_id' => 0,
-			'product_type'    => InvoiceController::DEVICE_TYPE,
+			'subscription_id'   => 0,
+			'product_type'      => InvoiceController::DEVICE_TYPE,
+			'invoice_id'        => $invoice->id,
+			'start_date'        => $invoice->start_date,
 		];
 
 		foreach ($standAloneDevices as $standAloneDevice) {
@@ -667,7 +670,7 @@ trait BulkOrderTrait
 				'status'        => CustomerStandaloneDevice::STATUS['complete'],
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
 				'device_id'     => $standAloneDevice->id,
-				'imei'          => $standAloneDevice->imei,
+				'imei'          => $standAloneDevice->imei
 			]);
 			$device           = Device::find($standAloneDevice->id);
 			$invoiceItemArray['product_id'] = $device->id;
@@ -676,6 +679,7 @@ trait BulkOrderTrait
 			$invoiceItemArray['taxable'] = $device->taxable;
 			$invoiceItemArray['description'] = '';
 			$invoiceItem = InvoiceItem::create($invoiceItemArray);
+			Log::info($invoiceItem, 'Create Invoice Item');
 			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::DEVICE_TYPE);
 		}
 		return $invoiceItem;
@@ -745,7 +749,7 @@ trait BulkOrderTrait
 				}
 				if(isset($priceDetails->{$device->id})){
 					$priceDetails->{$device->id}['prices'] = $prices[$device->id];
-					$priceDetails->{$device->id}['quantity'] = count($device[$device->id]);
+					$priceDetails->{$device->id}['quantity'] = count($prices[$device->id]);
 				} else {
 					$priceDetails->{$device->id} = [
 						'device'     => $device->name,
