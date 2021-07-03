@@ -1161,7 +1161,6 @@ class OrderController extends BaseController
 				$closeSubscription = $request->get('close_subscription') ?: false;
 				$unassignSim = $request->get('unassign_sim') ?: false;
 
-				$customer = Customer::find($request->get('customer_id'));
 				foreach ( $orderItems as $orderItem ) {
 					if($closeSubscription) {
 						$activeSubscription = Subscription::where([
@@ -1178,7 +1177,6 @@ class OrderController extends BaseController
 					} else if($unassignSim) {
 						$assignedSim = CustomerStandaloneSim::where([
 							['status', '!=', CustomerStandaloneSim::STATUS['closed']],
-							['customer_id', $customer->id],
 							['sim_num', $orderItem['sim_num']]
 						])->first();
 						if($assignedSim) {
@@ -1215,26 +1213,11 @@ class OrderController extends BaseController
 	private function validationRequestForBulkOrderClosing(Request $request)
 	{
 		$requestCompany = $request->get('company');
-		$customerId = $request->get('customer_id');
-		if ( !$requestCompany->enable_bulk_order ) {
-			$notAllowedResponse = [
-				'status' => 'error',
-				'data'   => 'Bulk Order not enabled for the requesting company'
-			];
-			return $this->respond($notAllowedResponse, 503);
-		}
 		$closeSubscription = $request->get('close_subscription') ?: false;
 		$unassignSim = $request->get('unassign_sim') ?: false;
 		$baseValidation = [
 			'close_subscription'            => 'required_without:unassign_sim',
 			'unassign_sim'                  => 'required_without:close_subscription',
-			'customer_id'                   => [
-				'required',
-				'numeric',
-				Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id);
-				})
-			],
 			'orders'                        => 'required'
 		];
 		if($unassignSim){
@@ -1249,9 +1232,8 @@ class OrderController extends BaseController
 				Rule::unique('subscription', 'sim_card_num')->where(function ($query) {
 					return $query->where('status', '!=', Subscription::STATUS['closed']);
 				}),
-				Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) use ($customerId) {
-					return $query->where('status', '!=', CustomerStandaloneSim::STATUS['closed'])
-					             ->where('customer_id', $customerId);
+				Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) {
+					return $query->where('status', '!=', CustomerStandaloneSim::STATUS['closed']);
 				})
 
 			];
@@ -1265,9 +1247,8 @@ class OrderController extends BaseController
 				'min:19',
 				'max:20',
 				'distinct',
-				Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($customerId, $requestCompany) {
+				Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($requestCompany) {
 					return $query->where('status', '!=', Subscription::STATUS['closed'])
-						->where('customer_id', $customerId)
 						->where('company_id', $requestCompany->id);
 				})
 			];
@@ -1277,7 +1258,7 @@ class OrderController extends BaseController
 			$baseValidation,
 			[
 				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned',
-				'orders.*.sim_num.exists'       => 'The sim with number :input is not assigned to this customer',
+				'orders.*.sim_num.exists'       => 'The sim with number :input is not assigned',
 			]
 		);
 
@@ -1292,4 +1273,213 @@ class OrderController extends BaseController
 		return 'valid';
 	}
 
+
+	/**
+	 * Open Subscription for Bulk Order
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function openSubscriptionForBulkOrder(Request $request)
+	{
+		try {
+			$validation = $this->validationRequestForBulkOrderOpening($request);
+			if($validation !== 'valid') {
+				return $validation;
+			}
+
+			DB::transaction(function () use ($request) {
+				$orderItems = $request->get( 'orders' );
+				$openSubscription = $request->get('open_subscription') ?: false;
+				$assignSim = $request->get('assign_sim') ?: false;
+
+				foreach ( $orderItems as $orderItem ) {
+					if($openSubscription) {
+						$closedSubscription = Subscription::where([
+							['status', Subscription::STATUS['closed']],
+							['sim_card_num', $orderItem['sim_num']]
+						])->first();
+						if($closedSubscription) {
+							$closedSubscription->update([
+								'status'        => Subscription::STATUS['active'],
+								'sub_status'    => Subscription::SUB_STATUSES['active'],
+								'closed_date'   => null
+							]);
+						}
+					} else if($assignSim) {
+						$unAssignedSim = CustomerStandaloneSim::where([
+							['status', CustomerStandaloneSim::STATUS['closed']],
+							['sim_num', $orderItem['sim_num']]
+						])->first();
+						if($unAssignedSim) {
+							$unAssignedSim->update([
+								'status'        => CustomerStandaloneSim::STATUS['complete'],
+								'closed_date'   => null
+							]);
+						}
+					}
+				}
+			});
+
+			$successResponse = [
+				'status'    => 'success',
+				'data'      => 'Lines updated successfully'
+			];
+			return $this->respond($successResponse);
+		} catch(\Exception $e) {
+			Log::info( $e->getMessage(), 'Open Subscription for bulk order' );
+			$response = [
+				'status' => 'error',
+				'data'   => $e->getMessage()
+			];
+			return $this->respond( $response, 503 );
+
+		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|string
+	 */
+	private function validationRequestForBulkOrderOpening(Request $request)
+	{
+		$requestCompany = $request->get('company');
+		$openSubscription = $request->get('open_subscription') ?: false;
+		$assignSim = $request->get('assign_sim') ?: false;
+		$baseValidation = [
+			'open_subscription'            => 'required_without:assign_sim',
+			'assign_sim'                   => 'required_without:open_subscription',
+			'orders'                        => 'required'
+		];
+		if($assignSim){
+			/**
+			 * @internal Check if there are no closed subscriptions for this customer with the given SIMs)
+			 */
+			$baseValidation['orders.*.sim_num']             = [
+				'required',
+				'min:19',
+				'max:20',
+				'distinct',
+				Rule::exists('subscription', 'sim_card_num')->where(function ($query) {
+					return $query->where('status', Subscription::STATUS['closed']);
+				}),
+				Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) {
+					return $query->where('status', CustomerStandaloneSim::STATUS['closed']);
+				})
+
+			];
+		}
+		if($openSubscription){
+			/**
+			 * @internal Check if the subscription exists with the sim number for closing the subscription
+			 */
+			$baseValidation['orders.*.sim_num']             = [
+				'required',
+				'min:19',
+				'max:20',
+				'distinct',
+				Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($requestCompany) {
+					return $query->where('status', '!=', Subscription::STATUS['closed'])
+					             ->where('company_id', $requestCompany->id);
+				})
+			];
+		}
+		$validation = Validator::make(
+			$request->all(),
+			$baseValidation,
+			[
+				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned',
+				'orders.*.sim_num.exists'       => 'The sim with number :input does not exist',
+			]
+		);
+
+		if ( $validation->fails() ) {
+			$errors = $validation->errors();
+			$validationErrorResponse = [
+				'status' => 'error',
+				'data'   => $errors->messages()
+			];
+			return $this->respond($validationErrorResponse, 422);
+		}
+		return 'valid';
+	}
+
+	/**
+	 * Open Subscription for Bulk Order
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function listCustomerIdFromAssignedSIMForBulkOrder(Request $request)
+	{
+		try {
+			$validation = $this->validationRequestForAssignedSIMForBulkOrder($request);
+			if($validation !== 'valid') {
+				return $validation;
+			}
+
+			$simRecord  = CustomerStandaloneSim::where([
+				['sim_num', $request->sim_num]
+			])->first();
+			if($simRecord){
+				$successResponse = [
+					'status'    => 'success',
+					'data'      => $simRecord->customer_id
+				];
+			} else {
+				$successResponse = [
+					'status'    => 'success',
+					'data'      => 'No record found for ' . $request->sim_num
+				];
+			}
+
+			return $this->respond($successResponse);
+		} catch(\Exception $e) {
+			Log::info( $e->getMessage(), 'List CustomerId From Assigned SIM For BulkOrder' );
+			$response = [
+				'status' => 'error',
+				'data'   => $e->getMessage()
+			];
+			return $this->respond( $response, 503 );
+		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|string
+	 */
+	private function validationRequestForAssignedSIMForBulkOrder(Request $request)
+	{
+		$requestCompany = $request->get('company');
+		$baseValidation = [
+			'sim_num'            => [
+				'required',
+				'min:19',
+				'max:20',
+				'exists:customer_standalone_sim,sim_num',
+				Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			]
+		];
+		$validation = Validator::make(
+			$request->all(),
+			$baseValidation,
+			[
+				'orders.*.sim_num.exists'       => 'The sim with number :input does not exist',
+			]
+		);
+
+		if ( $validation->fails() ) {
+			$errors = $validation->errors();
+			$validationErrorResponse = [
+				'status' => 'error',
+				'data'   => $errors->messages()
+			];
+			return $this->respond($validationErrorResponse, 422);
+		}
+		return 'valid';
+	}
 }
