@@ -17,6 +17,7 @@ use App\Model\SubscriptionAddon;
 use App\Events\SubcriptionStatusChanged;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
+use Illuminate\Validation\Rule;
 
 /**
  * Class SubscriptionController
@@ -606,10 +607,19 @@ class SubscriptionController extends BaseController
 	public function validateIfTheSimIsUsed(Request $request)
 	{
 		$companyId = $request->get('company')->id;
-		$data =  $request->validate([
-			'sim_number'   => 'required|min:19|max:20',
-		]);
-
+		$validation = Validator::make(
+			$request->all(),
+			[
+				'sim_number'   => 'required|min:19|max:20',
+			]
+		);
+		if ( $validation->fails() ) {
+			$validationErrorResponse = [
+				'status' => 'success',
+				'data'   => 'Invalid Sim Number'
+			];
+			return $this->respond($validationErrorResponse, 422);
+		}
 		$simNum = preg_replace("/\F$/","", $request->sim_number);
 		if(preg_match("/[a-z]/i", $simNum)){
 			return $this->respond( [ 'success' => false, 'message' => 'Invalid Sim Number' ]);
