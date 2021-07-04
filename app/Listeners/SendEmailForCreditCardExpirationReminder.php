@@ -51,7 +51,8 @@ class SendEmailForCreditCardExpirationReminder
 			    return false;
 		    }
 
-		    Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], $customer->company->support_email));
+//		    Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], $customer->company->support_email));
+		    Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], 'prajwal@britewireless.com'));
 	    }
     }
 }
