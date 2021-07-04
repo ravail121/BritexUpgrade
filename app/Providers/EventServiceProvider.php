@@ -83,7 +83,11 @@ class EventServiceProvider extends ServiceProvider
 
 	    'App\Events\ReportNullSubscriptionStartDate' => [
 	        'App\Listeners\SendEmailForNullSubscriptionStartDateCustomerRecord'
-        ]
+        ],
+
+	    'App\Events\CreditCardExpirationReminder' => [
+		    'App\Listeners\SendEmailForCreditCardExpirationReminder'
+	    ]
     ];
 
     /**

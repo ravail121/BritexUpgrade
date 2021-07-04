@@ -4,16 +4,31 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Class CustomerCreditCard
+ *
+ * @package App\Model
+ */
 class CustomerCreditCard extends Model
 {
-    const DEFAULT = [
+
+	/**
+	 *
+	 */
+	const DEFAULT = [
         'notDefault' =>  0,
         'default'    =>  1,
     ];
 
-    protected $table = 'customer_credit_card'; 
+	/**
+	 * @var string
+	 */
+	protected $table = 'customer_credit_card';
 
-    protected $fillable = [
+	/**
+	 * @var string[]
+	 */
+	protected $fillable = [
         'token',
         'api_key',
         'customer_id', 
@@ -31,12 +46,18 @@ class CustomerCreditCard extends Model
         'billing_zip',
     ];
 
-    public function customer()
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
+	public function customer()
     {
         return $this->belongsTo('App\Model\Customer');
     }
 
-    public function addPrefixSlash()
+	/**
+	 * @return string
+	 */
+	public function addPrefixSlash()
     {
         $month = substr($this->expiration, 0, -2);
         $year  = substr($this->expiration, -2);
@@ -46,13 +67,19 @@ class CustomerCreditCard extends Model
         return $month.'/'.$year;
     }
 
-    public function getLastFourAttribute()
+	/**
+	 * @return false|string
+	 */
+	public function getLastFourAttribute()
     {
         return substr($this->last4, -4);
 
     }
 
-    public function getCardInfoAttribute()
+	/**
+	 * @return string
+	 */
+	public function getCardInfoAttribute()
     {
         return $this->card_type ." ". $this->getLastFourAttribute();
 
