@@ -20,8 +20,8 @@ class CreditCardExpirationController extends Controller
 	 */
 	public function cardExpirationReminder(Request $request)
 	{
-		$twoMonthsPriorDate = Carbon::today()->subDays(60);
-		$oneMonthPriorDate = Carbon::today()->subDays(30);
+		$twoMonthsPriorDate = Carbon::today()->subDays(60)->format('jy');
+		$oneMonthPriorDate = Carbon::today()->subDays(30)->format('jy');
 
 		$customerCreditCards = CustomerCreditCard::where('expiration', $twoMonthsPriorDate)
 		                                        ->orWhere('expiration', $oneMonthPriorDate)
