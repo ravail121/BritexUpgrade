@@ -1350,7 +1350,7 @@ class OrderController extends BaseController
 		$baseValidation = [
 			'open_subscription'            => 'required_without:assign_sim',
 			'assign_sim'                   => 'required_without:open_subscription',
-			'orders'                        => 'required'
+			'orders'                       => 'required'
 		];
 		if($assignSim){
 			/**
@@ -1380,7 +1380,7 @@ class OrderController extends BaseController
 				'max:20',
 				'distinct',
 				Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($requestCompany) {
-					return $query->where('status', '!=', Subscription::STATUS['closed'])
+					return $query->where('status', Subscription::STATUS['closed'])
 					             ->where('company_id', $requestCompany->id);
 				})
 			];
