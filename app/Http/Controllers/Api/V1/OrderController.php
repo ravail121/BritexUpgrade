@@ -1458,10 +1458,7 @@ class OrderController extends BaseController
 				'required',
 				'min:19',
 				'max:20',
-				'exists:customer_standalone_sim,sim_num',
-				Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id);
-				})
+				'exists:customer_standalone_sim,sim_num'
 			]
 		];
 		$validation = Validator::make(
