@@ -1302,7 +1302,7 @@ class OrderController extends BaseController
 						if($closedSubscription) {
 							$closedSubscription->update([
 								'status'        => Subscription::STATUS['active'],
-								'sub_status'    => Subscription::SUB_STATUSES['active'],
+								'sub_status'    => null,
 								'closed_date'   => null
 							]);
 						}
