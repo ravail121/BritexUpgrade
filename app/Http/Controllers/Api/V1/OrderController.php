@@ -1292,6 +1292,7 @@ class OrderController extends BaseController
 				$orderItems = $request->get( 'orders' );
 				$openSubscription = $request->get('open_subscription') ?: false;
 				$assignSim = $request->get('assign_sim') ?: false;
+				$customerId = $request->get('customer_id') ?: null;
 
 				foreach ( $orderItems as $orderItem ) {
 					if($openSubscription) {
@@ -1307,15 +1308,27 @@ class OrderController extends BaseController
 							]);
 						}
 					} else if($assignSim) {
-						$unAssignedSim = CustomerStandaloneSim::where([
-							['status', CustomerStandaloneSim::STATUS['closed']],
-							['sim_num', $orderItem['sim_num']]
-						])->first();
-						if($unAssignedSim) {
-							$unAssignedSim->update([
-								'status'        => CustomerStandaloneSim::STATUS['complete'],
-								'closed_date'   => null
-							]);
+						$unAssignedSim = CustomerStandaloneSim::where( [
+							[ 'status', CustomerStandaloneSim::STATUS[ 'closed' ] ],
+							[ 'sim_num', $orderItem[ 'sim_num' ] ]
+						] )->first();
+						if ( $unAssignedSim ) {
+							if(!$customerId) {
+								$unAssignedSim->update( [
+									'status'      => CustomerStandaloneSim::STATUS[ 'complete' ],
+									'closed_date' => null
+								] );
+							} else {
+								CustomerStandaloneSim::create([
+									'customer_id'   => $customerId,
+									'order_id'      => $unAssignedSim->order_id,
+									'order_num'     => $unAssignedSim->order_num,
+									'status'        => CustomerStandaloneSim::STATUS['complete'],
+									'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
+									'sim_id'        => $unAssignedSim->sim_id,
+									'sim_num'       => $orderItem[ 'sim_num' ]
+								]);
+							}
 						}
 					}
 				}
@@ -1361,14 +1374,14 @@ class OrderController extends BaseController
 				'min:19',
 				'max:20',
 				'distinct',
-				Rule::exists('subscription', 'sim_card_num')->where(function ($query) {
-					return $query->where('status', Subscription::STATUS['closed']);
+				Rule::unique('subscription', 'sim_card_num')->where(function ($query) {
+					return $query->where('status', '!=', Subscription::STATUS['closed']);
 				}),
-				Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) {
-					return $query->where('status', CustomerStandaloneSim::STATUS['closed']);
+				Rule::unique('customer_standalone_sim', 'sim_num')->where(function ($query) {
+					return $query->where('status', '!=', CustomerStandaloneSim::STATUS['closed']);
 				})
-
 			];
+			$baseValidation['customer_id']  = 'required';
 		}
 		if($openSubscription){
 			/**
@@ -1389,7 +1402,7 @@ class OrderController extends BaseController
 			$request->all(),
 			$baseValidation,
 			[
-				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned',
+				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned to another customer',
 				'orders.*.sim_num.exists'       => 'The sim with number :input does not exist',
 			]
 		);
