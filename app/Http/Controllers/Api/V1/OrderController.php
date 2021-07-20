@@ -1377,8 +1377,8 @@ class OrderController extends BaseController
 				Rule::unique('subscription', 'sim_card_num')->where(function ($query) {
 					return $query->where('status', '!=', Subscription::STATUS['closed']);
 				}),
-				Rule::unique('customer_standalone_sim', 'sim_num')->where(function ($query) {
-					return $query->where('status', '!=', CustomerStandaloneSim::STATUS['closed']);
+				Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) {
+					return $query->where('status', CustomerStandaloneSim::STATUS['closed']);
 				})
 			];
 			$baseValidation['customer_id']  = 'required';
