@@ -15,6 +15,7 @@ class AddEnableBulkOrderToCompanyTable extends Migration
     {
 	    Schema::table('company', function (Blueprint $table) {
 		    $table->boolean( 'enable_bulk_order' )
+		          ->default('0')
 		          ->after( 'ultra_password' )
 		          ->comment('Enable Bulk Order for the company');
 	    });

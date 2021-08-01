@@ -14,6 +14,8 @@
 // Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 
 
+use Carbon\Carbon;
+
 Route::get('/', function () {
     return  response()->json([
         'message'   => 'BriteX Backend !!'

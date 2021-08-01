@@ -16,7 +16,11 @@ use App\Http\Controllers\Controller;
  */
 class ReminderController extends Controller
 {
-    public function autoPayReminder(Request $request)
+
+	/**
+	 * @param Request $request
+	 */
+	public function autoPayReminder(Request $request)
     {
         $date = Carbon::today()->addDays(2);
 

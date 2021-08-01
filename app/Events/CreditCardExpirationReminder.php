@@ -5,43 +5,31 @@ namespace App\Events;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-/**
- * Class BusinessVerificationCreated
- *
- * @package App\Events
- */
-class BusinessVerificationCreated
+class CreditCardExpirationReminder
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-	/**
-	 * @var
-	 */
-	public $orderHash;
-
-	/**
-	 * @var
-	 */
-	public $bizHash;
+    public $customerCreditCard;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($orderHash, $bizHash)
+    public function __construct($customerCreditCard)
     {
-        $this->orderHash = $orderHash;
-        $this->bizHash   = $bizHash;
-
+        $this->customerCreditCard = $customerCreditCard;
     }
+
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return Channel|array
+     * @return \Illuminate\Broadcasting\Channel|array
      */
     public function broadcastOn()
     {

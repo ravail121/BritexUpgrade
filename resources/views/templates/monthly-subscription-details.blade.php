@@ -303,7 +303,6 @@
                 <div class="usage_charges">
                     <div class="container">
                         <div class="table-padding">
-
                             <h2>Usage Charges</h2>
                             <table>
 	                            <tr>
@@ -314,9 +313,19 @@
 	                        </table>
                         </div>
                         <table class="test table-padding">
+                            @foreach ($subscription->invoiceItemDetail()->where('type', 4) as $usage)
+                                <tr>
+                                    <td>{{ $usage['description'] }}</td>
+                                    <td colspan="3" class="right"> $&nbsp;{{ number_format($usage['amount'], 2) }} </td>
+                                </tr>
+                            @endforeach
                             <tr>
-                                <td></td>
-                                <td colspan="2" class="last total_value"><a><strong>Total Usage Charges: $
+                                <td colspan="3">
+                                    <div class="sepratorline dark"></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="right total_value"><a><strong>Total Usage Charges: $
                                     @if($subscription->cal_usage_charges)
                                         {{ number_format ($subscription->calculateChargesForAllproducts([4], $data['invoice']->id, $subscription->id), 2) }}
                                     @else 
