@@ -271,7 +271,7 @@ class InvoiceController extends BaseController implements ConstantInterface
                 $customer->update([
                     'subscription_start_date' => $this->carbon->toDateString(),
                     'billing_start'           => $this->carbon->toDateString(),
-                    'billing_end'             => $this->carbon->addMonth()->subDay()->toDateString()
+                    'billing_end'             => $this->carbon->addMonthsNoOverflow(1)->subDay()->toDateString()
                 ]);
             }
         } catch (\Exception $exception) {
