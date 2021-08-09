@@ -505,7 +505,7 @@ class Customer extends Authenticatable
 	public function getAddMonthToBillingEndAttribute()
 	{
 		$endDate = $this->parseEndDate();
-		return $endDate->addMonthsNoOverflow(1)->toDateString();
+		return $endDate->addMonths(2)->subDay()->toDateString();
 	}
 
 
