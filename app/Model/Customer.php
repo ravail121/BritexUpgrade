@@ -504,8 +504,10 @@ class Customer extends Authenticatable
 	 */
 	public function getAddMonthToBillingEndAttribute()
 	{
-		$endDate = $this->parseEndDate();
-		return $endDate->addMonths(2)->subDay()->toDateString();
+		$customerSubscriptionStartDate = $this->parseSubscriptionStartDate();
+		$currentDate           = self::currentDate();
+		$monthAddition = (int) $currentDate->diffInMonths($customerSubscriptionStartDate) + 1;
+		return $customerSubscriptionStartDate->addMonthsNoOverflow($monthAddition)->subDay()->toDateString();
 	}
 
 
@@ -526,6 +528,14 @@ class Customer extends Authenticatable
 	public function parseEndDate($billingEnd = null)
 	{
 		return Carbon::parse($billingEnd ?: $this->billing_end);
+	}
+
+	/**
+	 * @return Carbon
+	 */
+	protected function parseSubscriptionStartDate()
+	{
+		return Carbon::parse($this->subscription_start_date);
 	}
 
 	/**
