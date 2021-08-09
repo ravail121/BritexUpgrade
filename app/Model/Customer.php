@@ -510,6 +510,17 @@ class Customer extends Authenticatable
 		return $customerSubscriptionStartDate->addMonthsNoOverflow($monthAddition)->subDay()->toDateString();
 	}
 
+	/**
+	 * @return string
+	 */
+	public function getAddMonthToBillingEndForInvoiceAttribute()
+	{
+		$customerSubscriptionStartDate = $this->parseSubscriptionStartDate();
+		$customerStartDate          = Carbon::parse($this->getAddDayToBillingEndAttribute());
+		$monthAddition = (int) $customerStartDate->diffInMonths($customerSubscriptionStartDate) + 1;
+		return $customerSubscriptionStartDate->addMonthsNoOverflow($monthAddition)->subDay()->toDateString();
+	}
+
 
 	/**
 	 * @return Carbon
