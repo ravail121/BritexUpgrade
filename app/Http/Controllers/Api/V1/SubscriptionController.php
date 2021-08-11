@@ -607,22 +607,17 @@ class SubscriptionController extends BaseController
 	public function validateIfTheSimIsUsed(Request $request)
 	{
 		$companyId = $request->get('company')->id;
-		$validation = Validator::make(
-			$request->all(),
-			[
-				'sim_number'   => 'required|min:19|max:20',
-			]
-		);
-		if ( $validation->fails() ) {
+		$validation = $this->validate_input($request->all(), ['sim_number'    => 'required|min:19|max:20']);
+		if ( $validation ) {
 			$validationErrorResponse = [
-				'status' => 'success',
-				'data'   => 'Invalid Sim Number'
+				'status'    => false,
+				'message'   => 'Invalid Sim Number'
 			];
-			return $this->respond($validationErrorResponse, 422);
+			return $this->respond($validationErrorResponse);
 		}
 		$simNum = preg_replace("/\F$/","", $request->sim_number);
 		if(preg_match("/[a-z]/i", $simNum)){
-			return $this->respond( [ 'success' => false, 'message' => 'Invalid Sim Number' ]);
+			return $this->respond( [ 'status' => false, 'message' => 'Invalid Sim Number' ]);
 		}
 		$subscriptionExists = Subscription::where([
 			['company_id', $companyId],

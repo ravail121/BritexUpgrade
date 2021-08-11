@@ -293,7 +293,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 			'type'                    => self::INVOICE_TYPES['monthly'],
 			'status'                  => self::STATUS['pending_payment'],
 			'start_date'              => $customer->add_day_to_billing_end,
-			'end_date'                => $customer->add_month_to_billing_end,
+			'end_date'                => $customer->add_month_to_billing_end_for_invoice,
 			'due_date'                => $customer->billing_end,
 			// Todo: add notes
 			'subtotal'                => 0,

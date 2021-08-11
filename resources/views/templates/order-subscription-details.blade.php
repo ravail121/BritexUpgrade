@@ -297,7 +297,7 @@
 	                        </table>
                         </div>
                         <table class="test table-padding">
-                            @foreach ($planChange['order']->invoice->invoiceItem->where('type', 4) as $usage)
+                            @foreach ($data['order']->invoice->invoiceItem->where('type', 4) as $usage)
                                 <tr>
                                     <td>{{ $usage['description'] }}</td>
                                     <td colspan="3" class="right"> $&nbsp;{{ number_format($usage['amount'], 2) }} </td>
