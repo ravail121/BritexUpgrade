@@ -59,7 +59,7 @@ class UpdateController extends MonthlyInvoiceController
                     }
                     $customer->update([
                         'billing_start' => $customer->add_day_to_billing_end,
-                        'billing_end'   => $customer->add_month_to_billing_end,
+                        'billing_end'   => $customer->add_month_to_billing_end_for_invoice,
                     ]);
                 }
             } catch (Exception $e) {
