@@ -260,12 +260,15 @@ class OrderController extends BaseController
 
                 if(isset($tmp['subscription'])){
                     $tmp['plan']['amount_onetime'] = 0;
+	                $today = Carbon::now();
                     if($key > 0){
-                        $tmp['plan']['from'] = Carbon::parse($og->customer->billing_end)->addDays(1)->toDateString();
-                        $tmp['plan']['to'] = Carbon::parse($og->customer->billing_end)->addMonths(2)->subDay()->toDateString();
+                    	$customer_subscription_start_date = Carbon::parse($og->customer->subscription_start_date);
+                    	$customer_start_date = Carbon::parse($og->customer->billing_end)->addDays(1);
+	                    $month_addition = (int) $today->diffInMonths($customer_subscription_start_date) + 1;
+                        $tmp['plan']['from'] = $customer_start_date->toDateString();
+                        $tmp['plan']['to'] =  $customer_subscription_start_date->addMonthsNoOverflow($month_addition)->subDay()->toDateString();
                         $order['paid_invoice'] = 1;
                     }else{
-                        $today = Carbon::now();
                         $billingStart = Carbon::parse($og->customer->billing_start)->subDays(1);
                         $tmp['plan']['from'] = $today->toDateString();
                         if($billingStart < $today){
