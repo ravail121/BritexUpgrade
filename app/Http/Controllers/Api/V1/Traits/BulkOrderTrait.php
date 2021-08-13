@@ -455,7 +455,7 @@ trait BulkOrderTrait
 			$customer->update([
 				'subscription_start_date' => $carbon->toDateString(),
 				'billing_start'           => $carbon->toDateString(),
-				'billing_end'             => $carbon->addMonths(2)->subDay()->toDateString()
+				'billing_end'             => $carbon->addMonthsNoOverflow(1)->subDay()->toDateString()
 			]);
 		}
 	}
