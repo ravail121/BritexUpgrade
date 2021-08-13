@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use App\Notifications\DynamicSmtpMailChannel;
 use Illuminate\Notifications\Channels\MailChannel;
+use Carbon\Carbon;
 
 /**
  * Class AppServiceProvider

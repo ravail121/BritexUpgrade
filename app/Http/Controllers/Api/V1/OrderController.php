@@ -264,7 +264,7 @@ class OrderController extends BaseController
                     if($key > 0){
                     	$customer_subscription_start_date = Carbon::parse($og->customer->subscription_start_date);
                     	$customer_start_date = Carbon::parse($og->customer->billing_end)->addDays(1);
-	                    $month_addition = (int) $today->diffInMonths($customer_subscription_start_date) + 1;
+	                    $month_addition = (int) $today->copy()->firstOfMonth()->diffInMonths($customer_subscription_start_date->copy()->firstOfMonth()) + 1;
                         $tmp['plan']['from'] = $customer_start_date->toDateString();
                         $tmp['plan']['to'] =  $customer_subscription_start_date->addMonthsNoOverflow($month_addition)->subDay()->toDateString();
                         $order['paid_invoice'] = 1;

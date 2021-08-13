@@ -517,7 +517,7 @@ class Customer extends Authenticatable
 	{
 		$customerSubscriptionStartDate = $this->parseSubscriptionStartDate();
 		$customerStartDate          = Carbon::parse($this->getAddDayToBillingEndAttribute());
-		$monthAddition = (int) $customerStartDate->diffInMonths($customerSubscriptionStartDate) + 1;
+		$monthAddition = (int) $customerStartDate->copy()->firstOfMonth()->diffInMonths($customerSubscriptionStartDate->copy()->firstOfMonth()) + 1;
 		return $customerSubscriptionStartDate->addMonthsNoOverflow($monthAddition)->subDay()->toDateString();
 	}
 
