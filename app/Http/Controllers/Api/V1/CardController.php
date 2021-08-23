@@ -490,7 +490,7 @@ class CardController extends BaseController implements ConstantInterface
             }
             $invoiceStartDate = $this->getInvoiceDates($customer);
             $invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
-            $invoiceDueDate = $this->getInvoiceDates($customer, 'due_date');
+            $invoiceDueDate = $this->getInvoiceDates($customer, 'due_date', true);
             $invoice = [
                 'staff_id'                  => $staff_id,
                 'customer_id'               => $card->customer_id,

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Model\CustomerStandaloneSim;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -17,8 +16,9 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 use App\Model\BusinessVerification;
+use Illuminate\Support\Facades\DB;
+use App\Model\CustomerStandaloneSim;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
