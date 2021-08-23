@@ -321,6 +321,13 @@
                                     </tr>
                                 @endforeach
                             </table>
+                            <table>
+                                <tr>
+                                    <td colspan="3">
+                                        <div class="sepratorline dark"></div>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                         <table class="test table-padding">
                             <tr>
