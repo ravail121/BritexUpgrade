@@ -77,7 +77,7 @@ trait EmailRecord
 			    'company_id'               => $order->company_id,
 			    'customer_id'              => $order->customer_id,
 			    'to'                       => $email,
-			    'business_verficiation_id' => $bizVerificationId,
+			    'business_verficiation_id'  => $bizVerificationId,
 			    'subject'                  => $emailTemplate->subject,
 			    'from'                     => $emailTemplate->from,
 			    'cc'                       => $emailTemplate->cc,
