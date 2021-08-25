@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-
 use Notification;
+use Carbon\Carbon;
 use App\Model\EmailTemplate;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
@@ -32,6 +32,11 @@ class SendEmailForCreditCardExpirationReminder
     {
 	    $customerCreditCard = $event->customerCreditCard;
 	    $customer = $customerCreditCard->customer;
+
+	    /**
+	     * @inernal Formatting expiration date to include forward slash in the date
+	     */
+	    $customerCreditCard->expiration = Carbon::createFromFormat('ny', $customerCreditCard->expiration)->format('n/y');
 
 	    $customer['customer_id'] = $customer->id;
 
