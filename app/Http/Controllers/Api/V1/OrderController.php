@@ -290,7 +290,11 @@ class OrderController extends BaseController
                 }
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
-                    $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt'], 'subscription_addon_id'=> $a['subscription_addon_id'], 'subscription_id' => $a['subscription_id']]);
+                    $a['addon'] = array_merge($a['addon']->toArray(), [
+                    	'prorated_amt'          => $a['prorated_amt'],
+	                    'subscription_addon_id' => $a['subscription_addon_id'],
+	                    'subscription_id'       => $a['subscription_id']
+                    ]);
 
                     array_push($tmp['addons'], collect($a['addon']));
                 }

@@ -112,7 +112,10 @@ class PaymentController extends BaseController implements ConstantInterface
 
             if ($invoice) {
                 
-                $orderCount = Order::where([['status', 1],['company_id', $order->company_id]])->max('order_num');
+                $orderCount = Order::where([
+                	['status', 1],
+	                ['company_id', $order->company_id]
+                ])->max('order_num');
                 $order->update([
                     'status'            => 1,
                     'invoice_id'        => $invoice->id,
