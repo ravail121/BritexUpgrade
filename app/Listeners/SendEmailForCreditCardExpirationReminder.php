@@ -2,8 +2,8 @@
 
 namespace App\Listeners;
 
-
 use Notification;
+use Carbon\Carbon;
 use App\Model\EmailTemplate;
 use App\Notifications\SendEmails;
 use Illuminate\Notifications\Notifiable;
@@ -33,6 +33,13 @@ class SendEmailForCreditCardExpirationReminder
 	    $customerCreditCard = $event->customerCreditCard;
 	    $customer = $customerCreditCard->customer;
 
+	    /**
+	     * @inernal Formatting expiration date to include forward slash in the date
+	     */
+	    $customerCreditCard->expiration = Carbon::createFromFormat('ny', $customerCreditCard->expiration)->format('n/y');
+
+	    $customer['customer_id'] = $customer->id;
+
 	    $dataRow = [
 		    'customer_credit_card'  => $customerCreditCard,
 		    'customer'              => $customer
@@ -51,8 +58,7 @@ class SendEmailForCreditCardExpirationReminder
 			    return false;
 		    }
 
-//		    Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], $customer->company->support_email));
-		    Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], 'prajwal@britewireless.com'));
+		    Notification::route('mail', $row['email'])->notify(new SendEmails($customer , $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
 	    }
     }
 }

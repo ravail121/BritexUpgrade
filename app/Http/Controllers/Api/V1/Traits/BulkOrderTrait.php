@@ -390,7 +390,7 @@ trait BulkOrderTrait
 		}
 		$invoiceStartDate = $this->getInvoiceDates($customer);
 		$invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
-		$invoiceDueDate = $this->getInvoiceDates($customer, 'due_date');
+		$invoiceDueDate = $this->getInvoiceDates($customer, 'due_date', true);
 
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,

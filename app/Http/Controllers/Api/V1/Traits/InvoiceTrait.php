@@ -408,22 +408,26 @@ trait InvoiceTrait
         foreach ($items as $item) {
             if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device'] && $item->product_id) {
                 $shippingFee        = Device::find($item->product_id)->shipping_fee;
-                if ($shippingFee) { $itemWithShippingCharges[] = [
-                    'amount'            => $shippingFee, 
-                    'subscription_id'   => $item->subscription_id, 
-                    'taxable'           => 0,
-                    'invoice_id'        => $item->invoice_id,
-                    'start_date'        => Carbon::today()
-                ]; }
+                if ($shippingFee) {
+                	$itemWithShippingCharges[] = [
+	                    'amount'            => $shippingFee,
+	                    'subscription_id'   => $item->subscription_id,
+	                    'taxable'           => 0,
+	                    'invoice_id'        => $item->invoice_id,
+	                    'start_date'        => Carbon::today()
+                    ];
+                }
             } elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['sim']) {
                 $shippingFee        = Sim::find($item->product_id)->shipping_fee;
-                if ($shippingFee) { $itemWithShippingCharges[] = [
-                    'amount'            => $shippingFee, 
-                    'subscription_id'   => $item->subscription_id, 
-                    'taxable'           => 0, 
-                    'invoice_id'        => $item->invoice_id,
-                    'start_date'        => Carbon::today()
-                ]; }
+                if ($shippingFee) {
+                	$itemWithShippingCharges[] = [
+	                    'amount'            => $shippingFee,
+	                    'subscription_id'   => $item->subscription_id,
+	                    'taxable'           => 0,
+	                    'invoice_id'        => $item->invoice_id,
+	                    'start_date'        => Carbon::today()
+                    ];
+                }
             }
         }
 
@@ -433,7 +437,7 @@ trait InvoiceTrait
             'description'  => 'Shipping Fee',
         ];
         foreach ($itemWithShippingCharges as $items) {
-            InvoiceItem::create(array_merge($items,$defaultValuesToInsert));
+            InvoiceItem::create(array_merge($items, $defaultValuesToInsert));
         }
         return true;
     }

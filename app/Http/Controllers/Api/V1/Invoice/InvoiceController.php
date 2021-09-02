@@ -274,6 +274,15 @@ class InvoiceController extends BaseController implements ConstantInterface
                     'billing_end'             => $this->carbon->addMonthsNoOverflow(1)->subDay()->toDateString()
                 ]);
             }
+            if(isset($order->invoice)){
+	            $invoiceEndDate = $order->invoice->end_date;
+	            if($customer->billing_end !== $invoiceEndDate) {
+		            $order->invoice->update([
+		            	'end_date'  => $customer->billing_end
+		            ]);
+	            }
+            }
+
         } catch (\Exception $exception) {
             Log::error('Error message ' . $exception->getMessage());
         }
@@ -551,7 +560,6 @@ class InvoiceController extends BaseController implements ConstantInterface
 					}
 					$addonAmount    = $proratedAmount >= 0 ? $proratedAmount : $addon->amount_recurring;
 
-
 					$array = [
 						'product_type' => self::ADDON_TYPE,
 						'product_id'   => $addon->id,
@@ -820,8 +828,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 		$order->update([
 			'invoice_id' => $invoice->id,
-			'status' => '1',
-			'order_num' => $orderCount + 1,
+			'status'     => '1',
+			'order_num'  => $orderCount + 1,
 		]);
 
 		$this->createInvoiceItem($data['order_groups'], $invoice, $request->type);

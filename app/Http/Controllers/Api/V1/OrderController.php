@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Model\CustomerStandaloneSim;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -17,8 +16,9 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 use App\Model\BusinessVerification;
+use Illuminate\Support\Facades\DB;
+use App\Model\CustomerStandaloneSim;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
@@ -290,7 +290,11 @@ class OrderController extends BaseController
                 }
                 $_addons = OrderGroupAddon::with(['addon'])->where('order_group_id', $og->id )->get();
                 foreach ($_addons as $a) {
-                    $a['addon'] = array_merge($a['addon']->toArray(), ['prorated_amt' => $a['prorated_amt'], 'subscription_addon_id'=> $a['subscription_addon_id'], 'subscription_id' => $a['subscription_id']]);
+                    $a['addon'] = array_merge($a['addon']->toArray(), [
+                    	'prorated_amt'          => $a['prorated_amt'],
+	                    'subscription_addon_id' => $a['subscription_addon_id'],
+	                    'subscription_id'       => $a['subscription_id']
+                    ]);
 
                     array_push($tmp['addons'], collect($a['addon']));
                 }

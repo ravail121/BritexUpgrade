@@ -348,14 +348,14 @@ class CardController extends BaseController implements ConstantInterface
                         $order_hash = "";
 
                         $request_params = array(
-			                'customer_id'   => $customer_obj->id,
+			                'customer_id'    => $customer_obj->id,
                             'credit_card_id' => $card->id,
                             'amount'         => $amount_due,
-                            'order_hash'    => $order_hash,
-                            'staff_id'      => 5,
-		      	            'without_order' => true,
-                            'key'           => $customer_obj->company->usaepay_api_key,
-                            'usesandbox'    => $customer_obj->company->usaepay_live_formatted
+                            'order_hash'     => $order_hash,
+                            'staff_id'       => 5,
+		      	            'without_order'  => true,
+                            'key'            => $customer_obj->company->usaepay_api_key,
+                            'usesandbox'     => $customer_obj->company->usaepay_live_formatted
                         );
 
 
@@ -490,7 +490,7 @@ class CardController extends BaseController implements ConstantInterface
             }
             $invoiceStartDate = $this->getInvoiceDates($customer);
             $invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
-            $invoiceDueDate = $this->getInvoiceDates($customer, 'due_date');
+            $invoiceDueDate = $this->getInvoiceDates($customer, 'due_date', true);
             $invoice = [
                 'staff_id'                  => $staff_id,
                 'customer_id'               => $card->customer_id,

@@ -63,10 +63,11 @@ class BaseController extends Controller
 	/**
 	 * @param        $customer
 	 * @param string $output
+	 * @param false  $isOneTime
 	 *
 	 * @return Carbon|string
 	 */
-	protected function getInvoiceDates($customer, $output='start_date')
+	protected function getInvoiceDates($customer, $output='start_date', $isOneTime=false)
 	{
 		$carbon = new Carbon();
 		$dueDate = $carbon->toDateString();
@@ -75,7 +76,9 @@ class BaseController extends Controller
 		} else {
 			$startDate = $customer->billing_start;
 			$endDate = $customer->billing_end;
-			$dueDate = Carbon::parse($endDate)->subDays(1);
+			if(!$isOneTime){
+				$dueDate = Carbon::parse($endDate)->subDays(1);
+			}
 		}
 		if($output === 'end_date'){
 			return $endDate;
