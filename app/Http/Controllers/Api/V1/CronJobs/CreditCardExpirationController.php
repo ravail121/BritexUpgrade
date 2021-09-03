@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Helpers\Log;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Model\CustomerCreditCard;
@@ -28,6 +29,7 @@ class CreditCardExpirationController extends Controller
 												->with('customer')->get();
 
 		foreach ($customerCreditCards as $customerCreditCard) {
+			Log::info($customerCreditCard->customer_id, 'Customer Id Card Expiration');
 			$request->headers->set('authorization', $customerCreditCard->api_key);
 			event(new CreditCardExpirationReminder($customerCreditCard));
 		}
