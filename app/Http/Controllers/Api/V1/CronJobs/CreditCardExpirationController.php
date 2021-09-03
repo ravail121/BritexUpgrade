@@ -28,7 +28,7 @@ class CreditCardExpirationController extends Controller
 												->with('customer')->get();
 
 		foreach ($customerCreditCards as $customerCreditCard) {
-			$request->headers->set('authorization', $customerCreditCard->customer->api_key);
+			$request->headers->set('authorization', $customerCreditCard->api_key);
 			event(new CreditCardExpirationReminder($customerCreditCard));
 		}
 	}

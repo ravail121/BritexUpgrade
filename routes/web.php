@@ -13,9 +13,21 @@
 
 // Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 
+use Carbon\Carbon;
+
 Route::get('/', function () {
+
+	$today = Carbon::createFromFormat('m/d/Y', '10/01/2022');
+	$twoMonthsPriorDate = $today->copy()->addMonth(2)->format('ny');
+	$oneMonthPriorDate = $today->copy()->addMonth()->format('ny');
     return  response()->json([
-        'message'   => 'BriteX Backend !!'
+        'message'   => 'BriteX Backend !!',
+	    'data'      => [
+	    	'today'     => $today,
+		    '2_month'   => $twoMonthsPriorDate,
+		    '1_month'   => $oneMonthPriorDate
+
+	    ]
     ]);
 });
 
