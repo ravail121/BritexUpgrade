@@ -13,19 +13,32 @@
 
 // Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 
+use App\Model\CustomerCreditCard;
 use Carbon\Carbon;
 
 Route::get('/', function () {
 
-	$today = Carbon::createFromFormat('m/d/Y', '10/01/2022');
-	$twoMonthsPriorDate = $today->copy()->addMonth(2)->format('ny');
-	$oneMonthPriorDate = $today->copy()->addMonth()->format('ny');
+//	$expiration = CustomerCreditCard::find(1);
+////	dd($expiration->expiration);
+//	$expiration = Carbon::createFromFormat('ny', $expiration->expiration);
+////	dd($expiration);
+//	$twoMonthsPriorDate = (int) $expiration->copy()->addMonth(2)->format('ny');
+//	$oneMonthPriorDate = (int) $expiration->copy()->addMonth()->format('ny');
+//	$twoMonthsPriorDate = Carbon::today()->addMonth(2)->format('ny');
+//	$oneMonthPriorDate = Carbon::today()->addMonth()->format('ny');
+//	$twoMonthsPriorDate = '1222';
+//	$oneMonthPriorDate = '1122';
+
+//	$customerCreditCards = CustomerCreditCard::where('expiration', $twoMonthsPriorDate)
+//	                                         ->orWhere('expiration', $oneMonthPriorDate)
+//	                                         ->with('customer')->get();
     return  response()->json([
         'message'   => 'BriteX Backend !!',
 	    'data'      => [
-	    	'today'     => $today,
+//	    	'today'     => $today,
 		    '2_month'   => $twoMonthsPriorDate,
-		    '1_month'   => $oneMonthPriorDate
+		    '1_month'   => $oneMonthPriorDate,
+		    'expiration'    => $expiration
 
 	    ]
     ]);
