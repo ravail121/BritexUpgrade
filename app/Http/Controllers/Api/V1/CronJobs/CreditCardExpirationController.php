@@ -28,7 +28,7 @@ class CreditCardExpirationController extends Controller
 											->where(function($query) use ($twoMonthsPriorDate, $oneMonthPriorDate){
 												$query->where( 'expiration', $twoMonthsPriorDate )
 		                                        ->orWhere( 'expiration', $oneMonthPriorDate );
-											})->with('customer')->first();
+											})->with('customer')->get();
 
 		foreach ($customerCreditCards as $customerCreditCard) {
 			Log::info($customerCreditCard->customer_id, 'Customer Id Card Expiration');
