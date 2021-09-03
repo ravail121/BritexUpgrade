@@ -24,9 +24,11 @@ class CreditCardExpirationController extends Controller
 		$twoMonthsPriorDate = Carbon::today()->addMonth(2)->format('ny');
 		$oneMonthPriorDate = Carbon::today()->addMonth()->format('ny');
 
-		$customerCreditCards = CustomerCreditCard::where('expiration', $twoMonthsPriorDate)
-		                                        ->orWhere('expiration', $oneMonthPriorDate)
-												->with('customer')->get();
+		$customerCreditCards = CustomerCreditCard::where('default', 1)
+											->where(function($query) use ($twoMonthsPriorDate, $oneMonthPriorDate){
+												$query->where( 'expiration', $twoMonthsPriorDate )
+		                                        ->orWhere( 'expiration', $oneMonthPriorDate );
+											})->with('customer')->get();
 
 		foreach ($customerCreditCards as $customerCreditCard) {
 			Log::info($customerCreditCard->customer_id, 'Customer Id Card Expiration');
