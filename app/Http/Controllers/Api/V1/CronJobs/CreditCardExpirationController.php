@@ -31,7 +31,6 @@ class CreditCardExpirationController extends Controller
 											})->with('customer')->get();
 
 		foreach ($customerCreditCards as $customerCreditCard) {
-			Log::info($customerCreditCard->customer_id, 'Customer Id Card Expiration');
 			$request->headers->set('authorization', $customerCreditCard->api_key);
 			event(new CreditCardExpirationReminder($customerCreditCard));
 		}
