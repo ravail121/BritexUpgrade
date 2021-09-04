@@ -36,7 +36,7 @@ class SendEmailForCreditCardExpirationReminder
 	    /**
 	     * @inernal Formatting expiration date to include forward slash in the date
 	     */
-	    $customerCreditCard->expiration = Carbon::createFromFormat('ny', $customerCreditCard->expiration)->format('n/y');
+	    $customerCreditCard->expiration = $customerCreditCard->addPrefixSlash();
 
 	    $customer['customer_id'] = $customer->id;
 

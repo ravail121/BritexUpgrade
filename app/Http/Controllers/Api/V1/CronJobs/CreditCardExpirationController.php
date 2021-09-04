@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Helpers\Log;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Model\CustomerCreditCard;
@@ -20,15 +21,17 @@ class CreditCardExpirationController extends Controller
 	 */
 	public function cardExpirationReminder(Request $request)
 	{
-		$twoMonthsPriorDate = Carbon::today()->subDays(60)->format('ny');
-		$oneMonthPriorDate = Carbon::today()->subDays(30)->format('ny');
+		$twoMonthsPriorDate = Carbon::today()->addMonth(2)->format('ny');
+		$oneMonthPriorDate = Carbon::today()->addMonth()->format('ny');
 
-		$customerCreditCards = CustomerCreditCard::where('expiration', $twoMonthsPriorDate)
-		                                        ->orWhere('expiration', $oneMonthPriorDate)
-												->with('customer')->get();
+		$customerCreditCards = CustomerCreditCard::where('default', 1)
+											->where(function($query) use ($twoMonthsPriorDate, $oneMonthPriorDate){
+												$query->where( 'expiration', $twoMonthsPriorDate )
+		                                        ->orWhere( 'expiration', $oneMonthPriorDate );
+											})->with('customer')->get();
 
 		foreach ($customerCreditCards as $customerCreditCard) {
-			$request->headers->set('authorization', $customerCreditCard->customer->api_key);
+			$request->headers->set('authorization', $customerCreditCard->api_key);
 			event(new CreditCardExpirationReminder($customerCreditCard));
 		}
 	}
