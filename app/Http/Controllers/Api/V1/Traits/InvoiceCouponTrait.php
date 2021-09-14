@@ -121,7 +121,13 @@ trait InvoiceCouponTrait
         } else {
             foreach ($subscriptionIds as $id) {
                 $data['subscription_id'] = $id;
-                $couponAdded = SubscriptionCoupon::create($data);
+	            /**
+	             * @internal Prevent duplication of same coupon applied on the same subscription
+	             */
+	            $couponAdded = SubscriptionCoupon::where([['subscription_id', $id], ['coupon_id', $coupon->id]])->first();
+	            if (!$couponAdded) {
+		            $couponAdded = SubscriptionCoupon::create($data);
+	            }
                 $response = ['success' => 'Coupon added', 'id' => $couponAdded->id];
             }
         }

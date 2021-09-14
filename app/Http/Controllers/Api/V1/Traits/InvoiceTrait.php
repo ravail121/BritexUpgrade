@@ -290,7 +290,9 @@ trait InvoiceTrait
             $subscriptionsExists ? array_push($subscriptions, $subscriptionsExists) : null;
         }
         
-        if (!count($subscriptions)) { return false; }
+        if (!count($subscriptions)) {
+        	return false;
+        }
         return $subscriptions;
     }
 
