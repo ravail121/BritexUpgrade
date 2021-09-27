@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use App\Helpers\Log;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Model\CustomerCreditCard;
