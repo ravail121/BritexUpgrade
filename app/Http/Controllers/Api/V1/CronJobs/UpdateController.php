@@ -116,7 +116,10 @@ class UpdateController extends MonthlyInvoiceController
                 $order   = Order::find($subscription->order_id);
                 if ($subscription->checkGracePeriod($order->company->suspend_grace_period)) {
                     $subscription->update([
-                        'status' => Subscription::STATUS['closed'], 
+                        'status'                => Subscription::STATUS['closed'],
+                        'sub_status'            => Subscription::SUB_STATUSES['confirm-closing'],
+                        'scheduled_close_date'  => null,
+                        'closed_date'           => Carbon::today()
                     ]);
                 }
                 $request->headers->set('authorization', $subscription->customerRelation->company->api_key);
@@ -242,7 +245,7 @@ class UpdateController extends MonthlyInvoiceController
 	/**
 	 * @param $request
 	 */
-	protected function scheduledClosings($request)
+	protected function  scheduledClosings($request)
     {
         $scheduledClosings = Subscription::where('scheduled_close_date', '<=', Carbon::today())->get();
         foreach ($scheduledClosings as $sub) {

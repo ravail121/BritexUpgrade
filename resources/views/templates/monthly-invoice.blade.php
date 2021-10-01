@@ -243,6 +243,42 @@
                         </tr>
                         </thead>
                         <tbody>
+                        @if ($data['order']->invoice->invoiceItem->where('subscription_id', null)->count())
+                            <tr class="tfootQ">
+                                <td>Account Charges</td>
+                                <td>$ 0.00</td>
+                                <td>$
+                                    @if(count($data['standalone_items']->where('type', 3)))
+                                        {{ number_format($data['standalone_items']->where('type', 3)->sum('amount'), 2) }}
+                                    @else
+                                        0.00
+                                    @endif
+                                </td>
+                                <td>$ 0.00</td>
+                                <td>$
+                                    @if(count($data['standalone_items']->where('type', 7)))
+                                        {{ number_format($data['standalone_items']->where('type', 7)->sum('amount'), 2) }}
+                                    @else
+                                        0.00
+                                    @endif
+                                </td>
+                                <td>-$
+
+                                    @if(count($data['standalone_items']->whereIn('type', [6, 8])))
+                                        {{number_format($data['standalone_items']->whereIn('type', [6, 8])->sum('amount'), 2)}}
+                                    @else
+                                        0.00
+                                    @endif
+                                </td>
+                                <td>$
+                                    @if($data['standalone_items']->sum('amount'))
+                                        {{ number_format($data['invoice']->standAloneTotal($data['invoice']->id), 2)}}
+                                    @else
+                                        0.00
+                                    @endif
+                                </td>
+                            </tr>
+                        @endif
                         @if (count($subscriptions))
                             @foreach ($subscriptions as $index => $subscription)
                                 <tr>
