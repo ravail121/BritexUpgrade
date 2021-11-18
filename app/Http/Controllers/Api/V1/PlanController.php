@@ -184,7 +184,8 @@ class PlanController extends BaseController
         $condition = [
             ['carrier_id', '=', $subscription->plan->carrier_id],
             ['company_id', '=', $subscription->plan->company_id],
-            ['type', '=', $subscription->plan->type]
+            ['type', '=', $subscription->plan->type],
+            ['show', '!=', 0],
         ];
 
         $ifSuspended = ['amount_recurring' , '<', $plan->amount_recurring];
