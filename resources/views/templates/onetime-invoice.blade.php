@@ -456,8 +456,6 @@
         @foreach ($data['order']->subscriptions as $index => $subscription)
             @include('templates.order-subscription-details')
         @endforeach
-    @else 
-        @include('templates.order-subscription-details')
     @endif
 @else 
     @if ($planChange['subscription'])
