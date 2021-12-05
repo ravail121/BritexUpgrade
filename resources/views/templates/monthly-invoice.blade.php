@@ -5,18 +5,27 @@
     <meta charset="utf-8">
     <title>{{ $data['order']->company->name }}</title>
     <link href="https://teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
+    <style>
+        .account_info {
+            background: {{ $data['order']->company->invoice_account_summary_primary_color ?? '#4c00ac' }};
+        }
+        .footer {
+            background: {{ $data['order']->company->invoice_account_summary_secondary_color ?? '#420590' }};
+        }
+    </style>
+
 </head>
 
 <body>
-<div tyle='margin-bottom:500px;' class="wrapper">
-    <div class="container" style="width: 100%; float: none; margin: 0px auto;">
-        <div style='position:relative;top:100px;' class="boxmain">
-            <div class="head" style="padding: 0px 0px 0px;">
+<div style='margin-bottom:500px;' class="wrapper">
+    <div class="container" style="width: 100%; float: none; margin: 0 auto;">
+        <div style='position:relative; top:100px;' class="boxmain">
+            <div class="head" style="padding: 0 0 0;">
                 <div class="containerin">
-                    <div class="logo" style=" width: 100%; text-align: center;">
-                        <img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
+                    <div class="logo" style="width: 100%; text-align: center;">
+                        <img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0 15px 0; width: 200px;" alt="logo">
                     </div>
-                    <div style='margin-top:20px' class="invoice">
+                    <div style='margin-top:20px;' class="invoice">
                         <h2>INVOICE</h2>
                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
                             <tbody>
@@ -53,8 +62,6 @@
                                     </span></p>
                             @endif
                             <p><span>{{ $data['order']->customer->full_name }},</span></p>
-                            {{--  <p><span>{{ $data['order']->customer->shipping_address1 }}</span></p>
-                              <p><span>{{ $data['order']->customer->zip_address }}</span></p>--}}
                             <p><span>{{ $data['order']->customer->billing_address1 }}</span></p>
                             <p><span>{{ $data['order']->customer->billing_address2 }}</span></p>
                         </div>

@@ -11,7 +11,7 @@
     <div class="container">
         <div class="header">
             <div class="logo">
-                <a href="#"><img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo"></a>
+                <a href="#"><img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0 15px 0; width: 200px;" alt="logo"></a>
             </div>
             <div class="statement">
                 <p>Statement For:</p>

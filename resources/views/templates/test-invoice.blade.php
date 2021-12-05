@@ -9,12 +9,12 @@
 
 <body>
     <div class="wrapper">
-        <div class="container" style="width: 100%; float: none; margin: 0px auto;">
+        <div class="container" style="width: 100%; float: none; margin:0 auto;">
             <div class="boxmain">
-                <div class="head" style="padding: 0px 0px 0px;">
+                <div class="head" style="padding:0 0 0;">
                     <div class="containerin">
                         <div class="logo" style=" width: 100%; text-align: center;">
-                            <img src="https://teltik.pw/pdf/img/logo.png" alt="logo" style="padding: -10px 0px 15px 0px; width: 200px;">
+                            <img src="https://teltik.pw/pdf/img/logo.png" alt="logo" style="padding: -10px 0 15px 0; width: 200px;">
                         </div>
                         <div class="invoice">
                             <h2>INVOICE</h2>
