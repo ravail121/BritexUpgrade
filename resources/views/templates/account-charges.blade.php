@@ -265,11 +265,11 @@
         }
         .footer_logo img {
             width: 180px;
-            margin: 20px0;
+            margin: 20px 0;
         }
         .footer {
             background: #420590;
-            padding: 12px0;
+            padding: 12px 0;
         }
         .footer .center a {
             color: #FFFFFF;
@@ -325,7 +325,7 @@
             font-weight: 400;
         }
         .account {
-            border-bottom: 5px solid #8b00da;
+            border-bottom: 5px solid {{ $data['order']->company->invoice_account_summary_primary_color ?? '#8b00da' }} !important;
         }
         .account h2 {
             font-family: 'Avenir LT Std';
@@ -563,6 +563,7 @@
             margin-left: 40px !important;
         }
     </style>
+    @include('templates.dynamic-invoice-branding')
 </head>
 
 <body>

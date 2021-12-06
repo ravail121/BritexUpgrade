@@ -27,7 +27,7 @@
 
 
 h1, h2, h3, h4, h5, p {
-    margin: 0px;
+    margin: 0;
 }
 body {
     font-family: 'Montserrat', sans-serif;
@@ -75,7 +75,7 @@ body {
     border-radius: 20px;
     padding: 30px 0;
     background: #fff;
-    box-shadow: 32.192px 60.916px 131px 0px rgba(4, 7, 11, 0.16);
+    box-shadow: 32.192px 60.916px 131px 0 rgba(4, 7, 11, 0.16);
 }
 .head .bill_info h2 {
     font-size: 14px;
@@ -95,7 +95,7 @@ body {
 .info h2 {
     font-size: 14px;
     font-weight: 700;
-    padding: 30px 0px 20px;
+    padding: 30px 0 20px;
 }
 .info p {
     font-size: 12px;
@@ -110,7 +110,7 @@ body {
     color: #373737;
 }
 .billing_detail {
-    padding: 15px 0px;
+    padding: 15px 0;
     margin: 40px 0 0 0;
     background: #fff;
     clear: both;
@@ -126,11 +126,13 @@ body {
     font-weight: 700;
     text-align: left;
 }
-.bill_detail { padding: 30px 0px;}
+.bill_detail {
+    padding: 30px 0;
+}
 .bill_detail td a {
     font-weight: 400;
     float: right;
-    margin: 0px 80px;
+    margin: 0 80px;
 }
 .bill_detail td.titlebx:last-child {
     padding: 0;
@@ -262,7 +264,7 @@ body {
 }
 .footer {
     background: #420590;
-    padding: 12px 0px;
+    padding: 12px 0;
 }
 .footer .center a {
     color: #FFFFFF;
@@ -337,7 +339,7 @@ body {
     font-style: normal;
     font-weight: normal;
     font-size: 22px;
-    padding: 60px 0px 20px;
+    padding: 60px 0 20px;
 }
 .tables table td {
     font-family: 'Avenir LT Std 65 Medium';
@@ -345,7 +347,7 @@ body {
     font-weight: normal;
     font-family: 'Avenir LT Std';
     font-size: 14px;
-    padding: 10px 0px;
+    padding: 10px 0;
     color: #000000;
 }
 .tables td a {
@@ -367,9 +369,8 @@ body {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
-    padding: 0px 0px 5px;
+    padding: 0 0 5px;
 }
 .feature table .right {
     text-align: right;
@@ -386,15 +387,14 @@ body {
     font-style: normal;
     font-weight: normal;
     font-size: 22px;
-    padding: 0px 0px 5px;
+    padding: 0 0 5px;
 }
 .taxes h2 {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
-    padding: 0px 0px 5px;
+    padding: 0 0 5px;
 }
 .taxes table .right {
     text-align: right;
@@ -415,7 +415,6 @@ body {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 18px;
     color: #FFFFFF;
     padding: 10px 20px;
@@ -427,7 +426,7 @@ body {
 }
 .subscriber {
     border-bottom: 5px solid #8b00da;
-    padding: 5px 0px;
+    padding: 5px 0;
     margin-bottom: 20px;
 }
 .sepratorline{
@@ -454,10 +453,9 @@ body {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
     position: relative;
-    padding: 0px 0px 5px;
+    padding: 0 0 5px;
 }
 .tables .nmbr a {
     float: right;
@@ -466,23 +464,21 @@ body {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
     position: relative;
-    padding: 0px 0px 5px;
+    padding: 0 0 5px;
 }
 .tables h3 {
     font-family: 'Open Sans', sans-serif;
     font-size: 16px;
     font-weight: 400;
     text-align: center;
-    padding: 30px 0px 20px;
+    padding: 30px 0 20px;
 }
 .fees h2 {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
     position: relative;
     padding: 0 0 5px;
@@ -491,7 +487,6 @@ body {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
     position: relative;
     padding: 0 0 5px;
@@ -500,7 +495,6 @@ body {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
     position: relative;
     padding: 0 0 5px;
@@ -509,19 +503,17 @@ body {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
     position: relative;
     padding: 0 0 5px;
 }
 .credit2 {
-    margin: 30px 0
+    margin: 30px 0;
 }
 .credit2 h2 {
     font-family: 'Avenir LT Std';
     font-style: normal;
     font-weight: normal;
-
     font-size: 22px;
     position: relative;
     padding: 0 0 5px;

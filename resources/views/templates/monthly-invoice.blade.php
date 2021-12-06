@@ -5,14 +5,8 @@
     <meta charset="utf-8">
     <title>{{ $data['order']->company->name }}</title>
     <link href="https://teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
-    <style>
-        .account_info {
-            background: {{ $data['order']->company->invoice_account_summary_primary_color ?? '#4c00ac' }};
-        }
-        .footer {
-            background: {{ $data['order']->company->invoice_account_summary_secondary_color ?? '#420590' }};
-        }
-    </style>
+
+    @include('templates.dynamic-invoice-branding')
 
 </head>
 
