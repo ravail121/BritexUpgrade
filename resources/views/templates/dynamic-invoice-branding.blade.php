@@ -4,6 +4,7 @@
     $invoice_account_summary_secondary_color = $company->invoice_account_summary_secondary_color;
     $invoice_background_text_color = $company->invoice_background_text_color;
     $invoice_normal_text_color = $company->invoice_normal_text_color;
+    $invoice_solid_line_color = $company->invoice_solid_line_color;
 @endphp
 <style>
     h1, h2, h3, h4, h5, p {
@@ -14,10 +15,6 @@
     }
     .footer {
         background: {{ $invoice_account_summary_secondary_color ?? '#420590' }} !important;
-    }
-
-    .head .bill_info {
-        border: 2px dashed {{ $invoice_account_summary_primary_color ?? '#4c00ac' }} !important;
     }
 
     .invoice td {
@@ -64,10 +61,6 @@
         color: {{ $invoice_background_text_color ?? '#FFFFFF' }} !important;
     }
 
-    .linksfooter {
-        border: 2px dashed {{ $invoice_account_summary_primary_color ?? '#4c00ac' }} !important;;
-    }
-
     .footer .center a {
         color: {{ $invoice_background_text_color ?? '#FFFFFF' }} !important;
     }
@@ -105,6 +98,10 @@
 
     .subscriber table .nmbr {
         color: {{ $invoice_normal_text_color ?? '#000000' }} !important;
+    }
+
+    .sepratorline {
+        background: {{ $invoice_solid_line_color ??  '#000' }} !important;
     }
 
     {{--.tables table td {--}}
