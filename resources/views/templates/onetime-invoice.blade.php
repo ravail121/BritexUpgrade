@@ -424,7 +424,7 @@
                         <div class="footer">
                             <div class="container">
                                 <div class="center">
-                                    <a href="#">Contact us: <td colspan="2">{{ isset($data['order']->company->support_phone_number) ? $data['order']->phoneNumberFormatted($data['order']->company->support_phone_number) : '' }}</td></a>
+                                    <a href="javascript:void(0);">Contact us: <td colspan="2">{{ isset($data['order']->company->support_phone_number) ? $data['order']->phoneNumberFormatted($data['order']->company->support_phone_number) : '' }}</td></a>
                                     <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">{{ $data['order']->company->url_formatted }}</a>
                                 </div>
                             </div>
@@ -437,7 +437,7 @@
                             @if (count($data['order']->subscriptions))
                                 {{ count($data['order']->subscriptions) + 2 }}
                             @else 
-                                1
+                                2
                             @endif
                         @else 
                             3

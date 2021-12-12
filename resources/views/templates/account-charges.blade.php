@@ -833,7 +833,7 @@
                         @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
                             {{ count($data['order']->subscriptions) + 2 }}
                         @else
-                            3
+                            2
                         @endif
                     @else
                         3
