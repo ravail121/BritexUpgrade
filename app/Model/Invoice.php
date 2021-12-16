@@ -385,7 +385,7 @@ class Invoice extends Model implements ConstantInterface
                 return 'Refund';    
             }
             return 'One-time invoice';
-        } elseif($this->staff_id == 5 && $this->type == 2){
+        } elseif($this->staff_id == 5 && $this->type == 1){
 	        return 'Auto Payment';
         }
         return 'Monthly invoice';
