@@ -104,8 +104,8 @@
         background: {{ $invoice_solid_line_color ??  '#000000' }} !important;
     }
 
-    .total table td, .total table .right {
-        color: {{ $invoice_solid_line_color ?? '#000000' }} !important;
+    .total {
+        background: {{ $invoice_solid_line_color ?? '#000000' }} !important;
     }
 
     {{--.tables table td {--}}
