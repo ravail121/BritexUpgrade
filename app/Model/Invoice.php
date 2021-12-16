@@ -324,7 +324,7 @@ class Invoice extends Model implements ConstantInterface
 
     public function getTypeNotOneAttribute()
     {
-        return ($this->type != self::TYPE['monthly_invoice'] && $this->start_date > $this->customer->billing_end) ;
+        return ($this->type != self::TYPES['monthly_invoice'] && $this->start_date > $this->customer->billing_end) ;
 
     }
 
@@ -385,6 +385,8 @@ class Invoice extends Model implements ConstantInterface
                 return 'Refund';    
             }
             return 'One-time invoice';
+        } elseif ($this->staff_id == 5) {
+	        return 'Auto Payment';
         }
         return 'Monthly invoice';
     }
