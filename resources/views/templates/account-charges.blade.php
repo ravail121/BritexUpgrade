@@ -34,7 +34,7 @@
 
 
         h1, h2, h3, h4, h5, p {
-            margin: 0px;
+            margin:0;
         }
         body {
             font-family: 'Montserrat', sans-serif;
@@ -46,42 +46,20 @@
         .boxmain{
             background: white/*#e7e5e8 url(http://teltik.pw/public/pdf/img/mainbg.jpg) top repeat-x*/;
             width: 100%;
-            /*float: left;*/
         }
-        /*.head {
-            padding: 0px 0px 0px;
-        }*/
-        /*.container {
-            width: 800px;
-            float: none;
-            margin: 0px auto;
-            max-width: 100%;
-        }*/
         .containerin {
             padding: 0 20px;
         }
 
-
-        /*.logo {
-            width: 100%;
-            float: left;
-            text-align: center;
-        }*/
-        /*.logo img {
-            padding: 20px 0px;
-            width: 200px;
-        }*/
         .invoice {
             width: 30%;
             box-sizing: border-box;
             position: relative;
-            /*width: auto;*/
-            /*float: left;*/
         }
         .invoice h2 {
             font-size: 30px;
             font-weight: 700;
-            padding: 0px 0px 5px;
+            padding: 0 0 5px;
         }
         .invoice td {
             font-size: 12px;
@@ -102,14 +80,14 @@
             text-align: center;
             border: 2px dashed #4c00ac;
             border-radius: 20px;
-            padding: 30px 0px;
+            padding: 30px 0;
             background: #fff;
-            box-shadow: 32.192px 60.916px 131px 0px rgba(4, 7, 11, 0.16);
+            box-shadow: 32.192px 60.916px 131px 0 rgba(4, 7, 11, 0.16);
         }
         .head .bill_info h2 {
             font-size: 14px;
             font-weight: 700;
-            padding: 0px 0px 5px;
+            padding: 0 0 5px;
             color: #373737;
         }
         .head .bill_info h3 {
@@ -124,7 +102,7 @@
         .info h2 {
             font-size: 14px;
             font-weight: 700;
-            padding: 30px 0px 20px;
+            padding: 30px 0 20px;
         }
         .info p {
             font-size: 12px;
@@ -139,7 +117,7 @@
             color: #373737;
         }
         .billing_detail {
-            padding: 15px 0px;
+            padding: 15px 0;
             margin: 40px 0 0 0;
             background: #fff;
             clear: both;
@@ -155,11 +133,11 @@
             font-weight: 700;
             text-align: left;
         }
-        .bill_detail { padding: 30px 0px;}
+        .bill_detail { padding: 30px 0;}
         .bill_detail td a {
             font-weight: 400;
             float: right;
-            margin: 0px 80px;
+            margin: 0 80px;
         }
         .bill_detail td.titlebx:last-child {
             padding: 0;
@@ -192,7 +170,7 @@
         }
         .account_info {
             background: #4c00ac;
-            padding: 0px 0px 15px 0px;
+            padding: 0 0 15px 0;
         }
         .account_info center {
             font-size: 28px;
@@ -227,14 +205,14 @@
             color: #FFFFFF;
             font-size: 12px;
             font-weight: 500;
-            padding: 10px 0px 8px 0px;
+            padding: 10px 0 8px 0;
             text-align: center;
         }
         .account_info p a {
             color: #FFFFFF;
             font-size: 12px;
             font-weight: 700;
-            padding: 10px 0px;
+            padding: 10px 0;
             text-decoration: none;
             line-height: 25px;
         }
@@ -253,7 +231,6 @@
 
         .linksfooter {
             width: 30%;
-            /*float: left;*/
             margin-left: 215px;
             margin-top: -135px;
             border: 2px dashed #4c00ac;
@@ -288,12 +265,11 @@
         }
         .footer_logo img {
             width: 180px;
-            margin: 20px 0px;
+            margin: 20px 0;
         }
         .footer {
             background: #420590;
-            /* float: left; */
-            padding: 12px 0px;
+            padding: 12px 0;
         }
         .footer .center a {
             color: #FFFFFF;
@@ -317,13 +293,13 @@
             clear:both;
         }
         .table-padding{
-            padding: 0px 20px;
+            padding:0 20px;
         }
 
         .header {
             background: #d7dcec;
-            padding: 30px 0px;
-            margin: 0px 0px 70px;
+            padding: 30px 0;
+            margin: 0 0 70px;
             width: 100%;
         }
         .header .logo {
@@ -333,7 +309,7 @@
         }
         .header img {
             width: 200px;
-            padding: 0px 20px;
+            padding:0 20px;
         }
         .header .statement {
             width: 26%;
@@ -349,7 +325,7 @@
             font-weight: 400;
         }
         .account {
-            border-bottom: 5px solid #8b00da;
+            border-bottom: 5px solid {{ $data['order']->company->invoice_account_summary_primary_color ?? '#8b00da' }} !important;
         }
         .account h2 {
             font-family: 'Avenir LT Std';
@@ -360,7 +336,7 @@
         }
 
         .account img {
-            margin: 0px 40px 0px 0px;
+            margin:0 40px 0 0;
             width: 100%;
         }
         .base_charges h2 {
@@ -369,7 +345,7 @@
             font-weight: normal;
 
             font-size: 22px;
-            padding: 60px 0px 20px;
+            padding: 60px 0 20px;
         }
         .tables table td {
             font-family: 'Avenir LT Std 65 Medium';
@@ -377,7 +353,7 @@
             font-weight: normal;
             font-family: 'Avenir LT Std';
             font-size: 14px;
-            padding: 10px 0px;
+            padding: 10px 0;
             color: #000000;
         }
         .tables td a {
@@ -401,7 +377,7 @@
             font-weight: normal;
 
             font-size: 22px;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .feature table .right {
             text-align: right;
@@ -418,7 +394,7 @@
             font-style: normal;
             font-weight: normal;
             font-size: 22px;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .taxes h2 {
             font-family: 'Avenir LT Std';
@@ -426,7 +402,7 @@
             font-weight: normal;
 
             font-size: 22px;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .taxes table .right {
             text-align: right;
@@ -438,7 +414,7 @@
             font-weight: normal;
 
             font-size: 22px;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .total {
             background: #000000;
@@ -459,7 +435,7 @@
         }
         .subscriber {
             border-bottom: 5px solid #8b00da;
-            padding: 5px 0px;
+            padding: 5px 0;
             margin-bottom: 20px;
         }
         .sepratorline{
@@ -489,7 +465,7 @@
 
             font-size: 22px;
             position: relative;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .tables .nmbr a {
             float: right;
@@ -501,14 +477,14 @@
 
             font-size: 22px;
             position: relative;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .tables h3 {
             font-family: 'Open Sans', sans-serif;
             font-size: 16px;
             font-weight: 400;
             text-align: center;
-            padding: 30px 0px 20px;
+            padding: 30px 0 20px;
         }
         .fees h2 {
             font-family: 'Avenir LT Std';
@@ -517,7 +493,7 @@
 
             font-size: 22px;
             position: relative;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .usage_charges h2 {
             font-family: 'Avenir LT Std';
@@ -526,7 +502,7 @@
 
             font-size: 22px;
             position: relative;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .credit h2 {
             font-family: 'Avenir LT Std';
@@ -535,7 +511,7 @@
 
             font-size: 22px;
             position: relative;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .plan_charge h2 {
             font-family: 'Avenir LT Std';
@@ -544,10 +520,10 @@
 
             font-size: 22px;
             position: relative;
-            padding: 0px 0px 5px;
+            padding:0 0 5px;
         }
         .credit2 {
-            margin: 30px 0px;
+            margin: 30px 0;
         }
         .credit2 h2 {
             font-family: 'Avenir LT Std';
@@ -556,16 +532,16 @@
 
             font-size: 22px;
             position: relative;
-            padding: 0px 0px 5px;
+            padding: 0 0 5px;
         }
         table.test td {
-            padding: 8px 0px;
+            padding: 8px 0;
         }
         .page1 table.test td, .page2 table.test td,  .page3 table.test td {
-            padding: 5px 0px;
+            padding: 5px 0;
         }
         .page1 .header, .page2 .header, .page3 .header {
-            margin: 0px 0px 20px;
+            margin: 0 0 20px;
         }
         .total_value a, .total_value {
             font-size: 16px !important;
@@ -578,7 +554,7 @@
         }
 
         .linksfooter, .bill_info{
-            top: 0px !important;
+            top:0 !important;
             position: relative !important;
             float: left !important;
         }
@@ -586,14 +562,16 @@
         .linksfooter {
             margin-left: 40px !important;
         }
-    </style></head>
+    </style>
+    @include('templates.dynamic-invoice-branding')
+</head>
 
 <body>
 <div style='position:relative;margin-top:400px;' class="wrapper page1">
     <div class="container">
         <div class="header">
             <div class="logo">
-                <a href="#"><img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo"></a>
+                <a href="{{ $data['order']->company->url }}" target="_blank"><img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0 15px 0; width: 200px;" alt="logo"></a>
             </div>
             <div class="statement">
                 <p>Statement For:</p>
@@ -855,7 +833,7 @@
                         @elseif (isset($data['order']->subscriptions) && count($data['order']->subscriptions))
                             {{ count($data['order']->subscriptions) + 2 }}
                         @else
-                            3
+                            2
                         @endif
                     @else
                         3
