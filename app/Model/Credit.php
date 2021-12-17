@@ -61,16 +61,21 @@ class Credit extends Model
         return $this->amount - $this->used_credits;
     }
 
-    public function getTypeDescriptionAttribute($value)
+	/**
+	 * @return string
+	 */
+    public function getTypeDescriptionAttribute()
     {
-        $value = $this->type;
-        if ($value == 1) {
-            return 'Payment';
-        }
-        elseif ($value == 2) {
-            return 'Manual Credit';
-        }
-        return 'Closed Invoice';
+	    $value = $this->type;
+	    if($value == 1 && $this->staff_id == 5) {
+		    return 'Auto Payment';
+	    }elseif ($value == 1) {
+		    return 'Payment';
+	    }
+	    elseif ($value == 2) {
+		    return 'Manual Credit';
+	    }
+	    return 'Closed Invoice';
     }
 
     public function customer()

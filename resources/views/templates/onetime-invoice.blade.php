@@ -5,16 +5,17 @@
     <meta charset="utf-8">
     <title>{{ $data['order']->company->name }}</title>
     <link href="https://teltik.pw/pdf/css/82style.css" type="text/css" rel="stylesheet">
+    @include('templates.dynamic-invoice-branding')
 </head>
 
 <body>
     <div style='margin-bottom:500px;' class="wrapper" >
-        <div class="container" style="width: 100%; float: none; margin: 0px auto;">
+        <div class="container" style="width: 100%; float: none; margin: 0 auto;">
             <div style='position:relative;top:100px;' class="boxmain">
-                <div class="head" style="padding: 0px 0px 0px;">
+                <div class="head" style="padding:0 0 0;">
                     <div class="containerin">
                         <div class="logo" style="width: 100%; text-align: center;">
-                            <img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0px 15px 0px; width: 200px;" alt="logo">
+                            <img src="{{ isset($data['order']->company->logo) ? $data['order']->company->logo : '' }}" style="padding: -10px 0 15px 0; width: 200px;" alt="logo">
                         </div>
                         <div style='margin-top:20px' class="invoice">
                             <h2>INVOICE</h2>
@@ -423,7 +424,7 @@
                         <div class="footer">
                             <div class="container">
                                 <div class="center">
-                                    <a href="#">Contact us: <td colspan="2">{{ isset($data['order']->company->support_phone_number) ? $data['order']->phoneNumberFormatted($data['order']->company->support_phone_number) : '' }}</td></a>
+                                    <a href="javascript:void(0);">Contact us: <td colspan="2">{{ isset($data['order']->company->support_phone_number) ? $data['order']->phoneNumberFormatted($data['order']->company->support_phone_number) : '' }}</td></a>
                                     <a href="{{ isset($data['order']->company->url) ? $data['order']->company->url : '' }}">{{ $data['order']->company->url_formatted }}</a>
                                 </div>
                             </div>
@@ -436,7 +437,7 @@
                             @if (count($data['order']->subscriptions))
                                 {{ count($data['order']->subscriptions) + 2 }}
                             @else 
-                                1
+                                2
                             @endif
                         @else 
                             3
