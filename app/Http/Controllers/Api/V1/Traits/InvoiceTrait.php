@@ -220,36 +220,54 @@ trait InvoiceTrait
         $request ? $request->headers->set('authorization', $order->company->api_key) : null;
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
-            $data = $this->dataForInvoice($order);
-            if ($order->invoice->type == Invoice::TYPES['one-time']) {
-                $planChange = $this->ifUpgradeOrDowngradeInvoice($order);
-                if ($planChange) {
-                    $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data', 'planChange'));
-					// return View('templates/onetime-invoice', compact('data', 'planChange'));
-                    $request && $mail ? event(new UpgradeDowngradeInvoice($order, $generatePdf)) : null;
-                    return $generatePdf->download('Invoice.pdf');
+			$customer = $order->customer;
+//			if(!$customer->csv_invoice_enabled) {
+			if(false) {
+				$data = $this->dataForInvoice( $order );
+				if ( $order->invoice->type == Invoice::TYPES[ 'one-time' ] ) {
+					$planChange = $this->ifUpgradeOrDowngradeInvoice( $order );
+					if ( $planChange ) {
+						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data', 'planChange' ) );
+						// return View('templates/onetime-invoice', compact('data', 'planChange'));
+						$request && $mail ? event( new UpgradeDowngradeInvoice( $order, $generatePdf ) ) : null;
 
-                } else {
-					// return View('templates/onetime-invoice', compact('data'));
-                    $generatePdf = PDF::loadView('templates/onetime-invoice', compact('data'));
-                }
-            } else {   
-                $subscriptions = $this->subscriptionData($order);
-                
-                if (!$subscriptions) {
-                    return 'Api error: missing subscriptions data';
-                }
-				// return View('templates/monthly-invoice', compact('data', 'subscriptions'));
-                $generatePdf = PDF::loadView('templates/monthly-invoice', compact('data', 'subscriptions'))->setPaper('letter', 'portrait');
-            }
-            !isset($planChange) && $request && $mail ? event(new InvoiceGenerated($order, $generatePdf)) : null;
-            try {
+						return $generatePdf->download( 'Invoice.pdf' );
 
-            } catch (Exception $e) {
-                \Log::info($e->getMessage());
-                return 'Order placed but invoice was not generated, please try again later.';
-            }
-            return $generatePdf->download('Invoice.pdf');
+					} else {
+						// return View('templates/onetime-invoice', compact('data'));
+						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data' ) );
+					}
+				} else {
+					$subscriptions = $this->subscriptionData( $order );
+
+					if ( ! $subscriptions ) {
+						return 'Api error: missing subscriptions data';
+					}
+					// return View('templates/monthly-invoice', compact('data', 'subscriptions'));
+					$generatePdf = PDF::loadView( 'templates/monthly-invoice', compact( 'data', 'subscriptions' ) )->setPaper( 'letter', 'portrait' );
+				}
+			} else {
+				/**
+				 * CSV Logic here
+				 */
+				$csvData                    = $this->dataForInvoice( $order );   // Get the data for the csv file
+				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
+
+				$generatePdf = $this->generateCSVInvoice( $csvData );
+			}
+
+	        try {
+		        ! isset( $planChange ) && $request && $mail ? event( new InvoiceGenerated( $order, $generatePdf ) ) : null;
+	        } catch ( Exception $e ) {
+		        \Log::info( $e->getMessage() );
+		        return 'Order placed but invoice was not generated, please try again later.';
+	        }
+			if(false) {
+				return $generatePdf->download( 'Invoice.pdf' );
+			} else {
+				$this->downloadCSVInvoice( $csvData );
+			}
+
         } else {
             return 'Sorry, we could not find the details for your invoice';
         }
@@ -570,5 +588,119 @@ trait InvoiceTrait
 	        return ['amount' => 0, 'eligible_product' => []];
         }
     }
+
+	/**
+	 * @param $csvData
+	 *
+	 * @return \Symfony\Component\HttpFoundation\StreamedResponse
+	 */
+	protected function generateCSVInvoice($csvData)
+	{
+		$fileHandle = fopen('php://output', 'wb');
+		fputcsv($fileHandle, ['', 'INVOICE', '', 'CUSTOMER INFO', '', 'YOUR MONTHLY BILL AS OF', '', '', '', '']);
+		fputcsv($fileHandle, [
+			'',
+			'Invoice No. ' . $csvData['invoice']->id,
+			'',
+			$csvData['order']->customer->full_name,
+			'',
+			$csvData['invoice']->dateFormatForInvoice($csvData['invoice']->created_at),
+			'', '', '', ''
+		]);
+		fputcsv($fileHandle, [
+			'',
+			'Period Beginning. ' . @date($csvData['order']->formatDate($csvData['order']->invoice->start_date)),
+			'',
+			$csvData['order']->customer->billing_address1,
+			'', '', '', '', '', '']);
+		fputcsv($fileHandle, [
+			'',
+			'Period Ending. ' . @date($csvData['order']->formatDate($csvData['order']->invoice->end_date)),
+			'',
+			$csvData['order']->customer->billing_address2,
+			'', '', '', '']);
+		fputcsv($fileHandle, [
+			'',
+			'Due Date. ' . @date($csvData['order']->formatDate($csvData['order']->invoice->due_date)),
+			'', '', '', '', '', '', '', ''
+		]);
+		fputcsv($fileHandle, ['', '', '', '', '', '', '', '', '', '']);
+		fputcsv($fileHandle, ['', '', '', '', '', '', '', '', '', '']);
+		fputcsv($fileHandle, ['', '', '', '', '', '', '', '', '', '']);
+		fputcsv($fileHandle, ['', '', '', '', '', '', '', '', '', '']);
+		fputcsv($fileHandle, ['', 'LAST BILL', '', 'CURRENT BILL', '', 'TOTAL AMOUNT DUE', '', '', '', '']);
+		fputcsv($fileHandle, ['',
+			'Previous Balance $'. $csvData['previous_bill']['previous_amount'] ?? '0.00',
+			'',
+			isset($csvData['invoice']->cal_service_charges) ? "Services, Usages & Charges $ " . number_format($csvData['invoice']->cal_service_charges, 2) : "Services, Usages & Charges $ 0.00",
+			'',
+			isset($csvData['invoice']->creditsToInvoice) ? 'Payments/Credits $ '. number_format($csvData['invoice']->creditsToInvoice->sum('amount'), 2) : 'Payments/Credits $ 0.00',
+			'', '', '', '']);
+		$invoiceTotalDue = $csvData['invoice']->total_due ? '$ '. number_format($csvData['invoice']->total_due, 2) : '$ 0.00';
+		fputcsv($fileHandle, ['',
+			'Payments Received -$ '. $csvData['previous_bill']['previous_payment'] ?? '0.00',
+			'',
+			isset($csvData['invoice']->cal_taxes) ? 'Fees/Taxes $ '. number_format($csvData['invoice']->cal_taxes, 2) : 'Fees/Taxes $ 0.00',
+			'',
+			'Due: ' . date('M', strtotime($csvData['invoice']->due_date)) . ' ' . date('j', strtotime($csvData['invoice']->due_date)) . ' '. $invoiceTotalDue, '', '', '', '']);
+		fputcsv($fileHandle, ['', 'Thank you!', '', isset($csvData['invoice']->cal_credits) ? 'Coupons -$ '. number_format($csvData['invoice']->cal_credits, 2): 'Coupons -$ 0.00', '', 'Let\'s talk! Call us anytime!', '', '', '', '']);
+		fputcsv($fileHandle, ['', 'Balance Forward $'. $csvData['previous_bill']['previous_pending'] ?? '0.00', '', isset($csvData['invoice']->subtotal) ? 'Total Charges this Bill $ '. number_format($csvData['invoice']->subtotal, 2) : 'Total Charges this Bill $ 0.00', '', isset($csvData['order']->company->support_phone_number) ? $csvData['order']->phoneNumberFormatted($csvData['order']->company->support_phone_number) : '', '', '', '', '']);
+		fputcsv($fileHandle, ['', '', '', '', '', '', '', '', '', '']);
+		fputcsv($fileHandle, ['', 'TOTAL LINES', 'PLAN CHARGES', 'ONE-TIME CHARGES', 'USAGE CHARGES', 'TAXES/FEES', 'COUPONS', 'SUB-TOTAL', 'SURCHARGE', 'TOTAL']);
+		fputcsv($fileHandle, [
+			'',
+			isset($csvData['subscription']) ? count($csvData['subscription']) : 0,
+			$csvData['invoice']->cal_plan_charges ? '$ '. number_format($csvData['invoice']->cal_plan_charges, 2) : '$ 0.00',
+			$csvData['invoice']->cal_onetime ? '$ '. number_format($csvData['invoice']->cal_onetime, 2) : '$ 0.00',
+			$csvData['invoice']->cal_usage_charges ? '$ '. number_format($csvData['invoice']->cal_usage_charges, 2): '$ 0.00',
+			$csvData['invoice']->cal_taxes ? '$ '. number_format($csvData['invoice']->cal_taxes, 2): '$ 0.00',
+			isset($csvData['invoice']->cal_credits) && $csvData['invoice']->cal_credits ? '-$ '.number_format($csvData['invoice']->cal_credits, 2): '-$ 0.00',
+			$csvData['invoice']->subtotal ? '$ '. number_format($csvData['invoice']->subtotal, 2): '$ 0.00',
+			$csvData['invoice']->cal_surcharge ? '$ '. number_format($csvData['invoice']->cal_surcharge, 2): '$ 0.00',
+			$csvData['invoice']->cal_total_charges ? '$ '. number_format($csvData['invoice']->cal_total_charges, 2): '$ 0.00',
+		]);
+		fputcsv($fileHandle, ['', '', '', '', '', '', '', '', '', '']);
+		fputcsv($fileHandle, ['', '', '', '', '', '', '', '', '', '']);
+		if(isset($csvData['subscription'])) {
+			fputcsv($fileHandle, ['', 'PHONE NUMBER', 'SIM NUMBER', 'PLAN NAME', 'PLAN CHARGES', 'ONE TIME', 'USAGE CHARGES', 'TAXES/FEES', 'COUPONS', 'TOTAL CURRENT CHARGES']);
+			$subscriptionEpoch = 0;
+			foreach ($csvData['subscriptions'] as $subscription) {
+				$subscriptionEpoch++;
+				fputcsv($fileHandle, [
+					$subscriptionEpoch,
+					isset($subscription->phone_number) ? $csvData['order']->phoneNumberFormatted($subscription->phone_number) : 'Pending',
+					$subscription->sim_card_num,
+					$subscription->plan->name,
+					$subscription->cal_plan_charges ? '$ '. number_format($subscription->calculateChargesForAllproducts([1, 2], $csvData['invoice']->id, $subscription->id), 2) : '$ 0.00',
+					$subscription->cal_onetime_charges ? '$ '. number_format($subscription->calculateChargesForAllproducts([3], $csvData['invoice']->id, $subscription->id), 2 ) : '$ 0.00',
+					$subscription->cal_usage_charges ? '$ '. number_format($subscription->calculateChargesForAllproducts([4], $csvData['invoice']->id, $subscription->id), 2) : '$ 0.00',
+					$subscription->cal_taxes ? '$ '. number_format($subscription->calculateChargesForAllproducts([7, 5], $csvData['invoice']->id, $subscription->id), 2) : '$ 0.00',
+					$subscription->cal_credits ? '-$ '. number_format($subscription->calculateChargesForAllproducts([6, 8, 10], $csvData['invoice']->id, $subscription->id), 2): '-$ 0.00',
+					$subscription->cal_total_charges ? '$ '. number_format($subscription->totalSubscriptionCharges($csvData['invoice']->id, $subscription) - $subscription->totalSubscriptionDiscounts($csvData['invoice']->id, $subscription), 2 ) : '$ 0.00',
+				]);
+			}
+			fputcsv($fileHandle, ['', '', '', '', '', '', '', '', 'Subtotal', '']);
+			fputcsv($fileHandle, ['', '', '', '', '', '', '', '', 'Surcharge', '']);
+			fputcsv($fileHandle, ['', '', '', '', '', '', '', '', 'Total', '']);
+		}
+		fclose($fileHandle);
+	}
+
+	/**
+	 * @param $csvData
+	 *
+	 * @return \Symfony\Component\HttpFoundation\StreamedResponse
+	 */
+	protected function downloadCSVInvoice($csvData) {
+		$fileName = 'Invoice.csv';
+		$headers = array(
+			"Content-type"        => "text/csv",
+			"Content-Disposition" => "attachment; filename=$fileName",
+			"Pragma"              => "no-cache",
+			"Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+			"Expires"             => "0"
+		);
+		return response()->stream($this->generateCSVInvoice($csvData), 200, $headers);
+	}
 
 }

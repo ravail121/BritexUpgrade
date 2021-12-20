@@ -69,6 +69,9 @@ class InvoiceController extends BaseController implements ConstantInterface
 	 */
 	const DESCRIPTION = 'Activation Fee';
 
+
+	const SURCHARGE_DESCRIPTION = 'Surcharge';
+
 	/**
 	 *
 	 */

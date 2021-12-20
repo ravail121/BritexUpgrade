@@ -72,7 +72,9 @@ class Customer extends Authenticatable
 		'shipping_lname',
 		'billing_fname',
 		'billing_lname',
-		'auto_pay'
+		'auto_pay',
+		'csv_enabled',
+		'surcharge'
 	];
 
 	/**

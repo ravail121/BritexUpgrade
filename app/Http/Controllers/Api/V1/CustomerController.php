@@ -20,7 +20,6 @@ use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\Http\Resources\CustomerCollection;
 
-
 /**
  * Class CustomerController
  *
@@ -620,6 +619,8 @@ class CustomerController extends BaseController
 				'primary_payment_method'		=> 'digits',
 				'primary_payment_card'		    => 'digits',
 				'auto_pay'		                => 'digits',
+				'surcharge'		                => 'digits',
+				'csv_invoice_enabled'		    => 'digits',
 			] );
 
 			if ($validator->fails()) {
@@ -656,6 +657,12 @@ class CustomerController extends BaseController
 			}
 			if($request->has('auto_pay')) {
 				$customerData['auto_pay'] = $request->get('auto_pay');
+			}
+			if($request->has('surcharge')) {
+				$customerData['surcharge'] = $request->get('surcharge');
+			}
+			if($request->has('csv_invoice_enabled')) {
+				$customerData['csv_invoice_enabled'] = $request->get('csv_invoice_enabled');
 			}
 			if($request->has('billing_state_id')) {
 				$customerData['billing_state_id'] = $request->get('billing_state_id');

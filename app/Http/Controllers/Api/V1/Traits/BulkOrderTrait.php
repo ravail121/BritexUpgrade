@@ -39,7 +39,12 @@ trait BulkOrderTrait
 	 */
 	protected function totalPriceForPreview(Request $request, $orderItems)
 	{
-		$price[] = $this->subTotalPriceForPreview($request, $orderItems);
+		$customer = Customer::find($request->get('customer_id'));
+		$subtotal = $this->subTotalPriceForPreview($request, $orderItems);
+		$price[] = $subtotal;
+		if($customer->surcharge > 0) {
+			$price[] = ($subtotal * $customer->surcharge) / 100;
+		}
  		$price[] = $this->calRegulatoryForPreview($request, $orderItems);
 		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
 		return $this->convertToTwoDecimals(array_sum($price), 2);
@@ -375,11 +380,11 @@ trait BulkOrderTrait
 	}
 
 	/**
-	 * @param Request $request
-	 * @param         $order
-	 * @param         $orderItems
-	 * @param         $planActivation
-	 * @param         $hasSubscription
+	 * @param Request  $request
+	 * @param          $order
+	 * @param          $orderItems
+	 * @param          $planActivation
+	 * @param          $hasSubscription
 	 */
 	public function createInvoice(Request $request, $order, $orderItems, $planActivation, $hasSubscription)
 	{
@@ -471,6 +476,7 @@ trait BulkOrderTrait
 		$standAloneSims = [];
 		$standAloneDevices = [];
 		$order = Order::where('invoice_id', $invoice->id)->first();
+		$customer = Customer::find($invoice->customer_id);
 		foreach($orderItems as $orderItem) {
 			if(isset($orderItem['subscription_id'])){
 				$subscriptionIds[] = $orderItem['subscription_id'];
@@ -500,7 +506,9 @@ trait BulkOrderTrait
 		if(!empty($standAloneDevices) && !$planActivation){
 			$this->standaloneDeviceInvoiceItem($standAloneDevices, $invoice);
 		}
-
+		if($customer->surcharge > 0){
+			$this->surchargeInvoiceItem($customer, $invoice);
+		}
 	}
 
 	/**
@@ -679,7 +687,6 @@ trait BulkOrderTrait
 			$invoiceItemArray['taxable'] = $device->taxable;
 			$invoiceItemArray['description'] = '';
 			$invoiceItem = InvoiceItem::create($invoiceItemArray);
-			Log::info($invoiceItem, 'Create Invoice Item');
 			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::DEVICE_TYPE);
 		}
 		return $invoiceItem;
@@ -861,4 +868,24 @@ trait BulkOrderTrait
 		return $dues;
 	}
 
+	/**
+	 * @param $customer
+	 * @param $invoice
+	 */
+	protected function surchargeInvoiceItem($customer, $invoice)
+	{
+		$surchargeAmount = ($customer->surcharge * $invoice->sub_total) / 100;
+		$invoiceItemArray = [
+			'product_id'        => 0,
+			'amount'            => $surchargeAmount,
+			'product_type'      => InvoiceController::SIM_TYPE,
+			'subscription_id'   => 0,
+			'invoice_id'        => $invoice->id,
+			'type'              => 10,
+			'start_date'        => $invoice->start_date,
+			'description'       => InvoiceController::SURCHARGE_DESCRIPTION,
+			'taxable'           => InvoiceController::DEFAULT_INT,
+		];
+		InvoiceItem::create($invoiceItemArray);
+	}
 }
