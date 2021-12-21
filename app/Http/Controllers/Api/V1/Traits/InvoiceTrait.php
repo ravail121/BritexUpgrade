@@ -252,7 +252,7 @@ trait InvoiceTrait
 			} else {
 				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
 
-				$generatePdf = stream_get_contents($this->generateCSVInvoice( $csvData, true ));
+				$generatePdf = $this->generateCSVInvoice( $csvData, true );
 			}
 
 	        try {
@@ -597,6 +597,9 @@ trait InvoiceTrait
 	protected function generateCSVInvoice($csvData, $return=false)
 	{
 		$fileHandle = fopen('php://output', 'wb');
+		if($return){
+			$fileHandle = fopen('php://temp/maxmemory:'. (5*1024*1024), 'r+');
+		}
 		fputcsv($fileHandle, ['', 'INVOICE', '', 'CUSTOMER INFO', '', 'YOUR MONTHLY BILL AS OF', '', '', '', '']);
 		fputcsv($fileHandle, [
 			'',
@@ -686,7 +689,7 @@ trait InvoiceTrait
 		fclose($fileHandle);
 		if($return){
 			rewind($fileHandle);
-			return $fileHandle;
+			return stream_get_contents($fileHandle);
 		}
 	}
 
