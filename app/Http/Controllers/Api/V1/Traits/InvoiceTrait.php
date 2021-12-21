@@ -221,12 +221,8 @@ trait InvoiceTrait
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
 			$customer = $order->customer;
-	        /**
-	         * CSV Logic here
-	         */
-	        $csvData                    = $this->dataForInvoice( $order );   // Get the data for the csv file
+	        $data = $this->dataForInvoice( $order );
 			if(!$customer->csv_invoice_enabled) {
-				$data = $this->dataForInvoice( $order );
 				if ( $order->invoice->type == Invoice::TYPES[ 'one-time' ] ) {
 					$planChange = $this->ifUpgradeOrDowngradeInvoice( $order );
 					if ( $planChange ) {
@@ -250,9 +246,10 @@ trait InvoiceTrait
 					$generatePdf = PDF::loadView( 'templates/monthly-invoice', compact( 'data', 'subscriptions' ) )->setPaper( 'letter', 'portrait' );
 				}
 			} else {
-				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
+				$data[ 'subscriptions' ] = $this->subscriptionData( $order );
 
-				$generatePdf = $this->generateCSVInvoice( $csvData );
+				$generatePdf = $this->generateCSVInvoice( $data );
+				dd($generatePdf);
 			}
 
 	        try {
@@ -264,7 +261,7 @@ trait InvoiceTrait
 	        if(!$customer->csv_invoice_enabled) {
 				return $generatePdf->download( 'Invoice.pdf' );
 			} else {
-				return $this->downloadCSVInvoice( $csvData );
+				return $this->downloadCSVInvoice( $data );
 			}
 
         } else {
@@ -595,7 +592,8 @@ trait InvoiceTrait
 	 */
 	protected function generateCSVInvoice($csvData)
 	{
-		$fileHandle = fopen('php://output', 'wb');
+//		$fileHandle = fopen('php://output', 'wb');
+		$fileHandle = fopen('php://temp', 'r+');
 		fputcsv($fileHandle, ['', 'INVOICE', '', 'CUSTOMER INFO', '', 'YOUR MONTHLY BILL AS OF', '', '', '', '']);
 		fputcsv($fileHandle, [
 			'',
@@ -682,7 +680,10 @@ trait InvoiceTrait
 			fputcsv($fileHandle, ['', '', '', '', '', '', '', '', 'Surcharge', '']);
 			fputcsv($fileHandle, ['', '', '', '', '', '', '', '', 'Total', '']);
 		}
-		fclose($fileHandle);
+		rewind( $fileHandle );
+		$csv = fgets( $fileHandle );
+		fclose( $fileHandle );
+		return $csv;
 	}
 
 	/**
