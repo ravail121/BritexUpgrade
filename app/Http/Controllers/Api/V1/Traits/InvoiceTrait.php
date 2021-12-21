@@ -261,7 +261,7 @@ trait InvoiceTrait
 		        \Log::info( $e->getMessage() );
 		        return 'Order placed but invoice was not generated, please try again later.';
 	        }
-			if(false) {
+	        if(!$customer->csv_invoice_enabled) {
 				return $generatePdf->download( 'Invoice.pdf' );
 			} else {
 				$this->downloadCSVInvoice( $csvData );
