@@ -253,6 +253,7 @@ trait InvoiceTrait
 				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
 
 				$generatePdf = $this->generateCSVInvoice( $csvData );
+				dd($generatePdf);
 			}
 
 	        try {
@@ -264,7 +265,7 @@ trait InvoiceTrait
 	        if(!$customer->csv_invoice_enabled) {
 				return $generatePdf->download( 'Invoice.pdf' );
 			} else {
-				$this->downloadCSVInvoice( $csvData );
+				return $this->downloadCSVInvoice( $csvData );
 			}
 
         } else {
