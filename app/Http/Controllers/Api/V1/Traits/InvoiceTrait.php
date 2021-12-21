@@ -252,11 +252,11 @@ trait InvoiceTrait
 			} else {
 				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
 
-				$generatePdf = $this->generateCSVInvoice( $csvData, true );
+				$generatePdf = $this->generateCSVInvoice( $csvData );
 			}
 
 	        try {
-		        ! isset( $planChange ) && $request && $mail ? event( new InvoiceGenerated( $order, $generatePdf ) ) : null;
+		        // ! isset( $planChange ) && $request && $mail ? event( new InvoiceGenerated( $order, $generatePdf ) ) : null;
 	        } catch ( Exception $e ) {
 		        \Log::info( $e->getMessage() );
 		        return 'Order placed but invoice was not generated, please try again later.';
@@ -590,16 +590,12 @@ trait InvoiceTrait
 
 	/**
 	 * @param       $csvData
-	 * @param false $return
 	 *
 	 * @return false|resource|void
 	 */
-	protected function generateCSVInvoice($csvData, $return=false)
+	protected function generateCSVInvoice($csvData)
 	{
 		$fileHandle = fopen('php://output', 'wb');
-		if($return){
-			$fileHandle = fopen('php://temp/maxmemory:'. (5*1024*1024), 'r+');
-		}
 		fputcsv($fileHandle, ['', 'INVOICE', '', 'CUSTOMER INFO', '', 'YOUR MONTHLY BILL AS OF', '', '', '', '']);
 		fputcsv($fileHandle, [
 			'',
@@ -687,10 +683,6 @@ trait InvoiceTrait
 			fputcsv($fileHandle, ['', '', '', '', '', '', '', '', 'Total', '']);
 		}
 		fclose($fileHandle);
-		if($return){
-			rewind($fileHandle);
-			return stream_get_contents($fileHandle);
-		}
 	}
 
 	/**
