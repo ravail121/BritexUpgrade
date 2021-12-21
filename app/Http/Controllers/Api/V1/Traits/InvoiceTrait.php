@@ -252,7 +252,7 @@ trait InvoiceTrait
 			} else {
 				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
 
-				$generatePdf = $this->generateCSVInvoice( $csvData );
+				$generatePdf = stream_get_contents($this->generateCSVInvoice( $csvData ));
 				dd($generatePdf);
 			}
 
