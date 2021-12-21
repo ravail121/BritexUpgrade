@@ -221,8 +221,7 @@ trait InvoiceTrait
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
 			$customer = $order->customer;
-//			if(!$customer->csv_invoice_enabled) {
-			if(false) {
+			if(!$customer->csv_invoice_enabled) {
 				$data = $this->dataForInvoice( $order );
 				if ( $order->invoice->type == Invoice::TYPES[ 'one-time' ] ) {
 					$planChange = $this->ifUpgradeOrDowngradeInvoice( $order );
