@@ -221,6 +221,10 @@ trait InvoiceTrait
         $order = Order::find($order->id);
         if ($order && $order->invoice && $order->invoice->invoiceItem) {
 			$customer = $order->customer;
+	        /**
+	         * CSV Logic here
+	         */
+	        $csvData                    = $this->dataForInvoice( $order );   // Get the data for the csv file
 			if(!$customer->csv_invoice_enabled) {
 				$data = $this->dataForInvoice( $order );
 				if ( $order->invoice->type == Invoice::TYPES[ 'one-time' ] ) {
@@ -246,10 +250,6 @@ trait InvoiceTrait
 					$generatePdf = PDF::loadView( 'templates/monthly-invoice', compact( 'data', 'subscriptions' ) )->setPaper( 'letter', 'portrait' );
 				}
 			} else {
-				/**
-				 * CSV Logic here
-				 */
-				$csvData                    = $this->dataForInvoice( $order );   // Get the data for the csv file
 				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
 
 				$generatePdf = $this->generateCSVInvoice( $csvData );
