@@ -252,7 +252,7 @@ trait InvoiceTrait
 			} else {
 				$csvData[ 'subscriptions' ] = $this->subscriptionData( $order );
 
-				$generatePdf = stream_get_contents($this->generateCSVInvoice( $csvData ));
+				$generatePdf = $this->generateCSVInvoice( $csvData, true );
 				dd($generatePdf);
 			}
 
@@ -590,11 +590,12 @@ trait InvoiceTrait
     }
 
 	/**
-	 * @param $csvData
+	 * @param       $csvData
+	 * @param false $return
 	 *
-	 * @return \Symfony\Component\HttpFoundation\StreamedResponse
+	 * @return false|resource|void
 	 */
-	protected function generateCSVInvoice($csvData)
+	protected function generateCSVInvoice($csvData, $return=false)
 	{
 		$fileHandle = fopen('php://output', 'wb');
 		fputcsv($fileHandle, ['', 'INVOICE', '', 'CUSTOMER INFO', '', 'YOUR MONTHLY BILL AS OF', '', '', '', '']);
@@ -684,6 +685,9 @@ trait InvoiceTrait
 			fputcsv($fileHandle, ['', '', '', '', '', '', '', '', 'Total', '']);
 		}
 		fclose($fileHandle);
+		if($return){
+			return $fileHandle;
+		}
 	}
 
 	/**
