@@ -749,6 +749,7 @@ trait InvoiceTrait
 				'TOTAL CURRENT CHARGES'
 			];
 			$subscriptionEpoch = 0;
+			$customerSurcharge = $csvData[ 'invoice' ]->customer->surcharge;
 			foreach ( $csvData[ 'subscriptions' ] as $subscription ) {
 				$subscriptionEpoch ++;
 				$csvRows[] = [
@@ -795,7 +796,7 @@ trait InvoiceTrait
 				'',
 				'',
 				'',
-				'Surcharge',
+				$customerSurcharge . ' % '. 'Surcharge',
 				$csvData[ 'invoice' ]->cal_surcharge ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_surcharge, 2 ) : '$ 0.00'
 			];
 			$csvRows[] = [
