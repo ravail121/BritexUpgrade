@@ -722,7 +722,7 @@ trait InvoiceTrait
 			],
 			[
 				'',
-				isset( $csvData[ 'subscription' ] ) ? count( $csvData[ 'subscription' ] ) : 0,
+				isset( $csvData[ 'subscriptions' ] ) ? count( $csvData[ 'subscriptions' ] ) : 0,
 				$csvData[ 'invoice' ]->cal_plan_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_plan_charges, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_onetime ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_onetime, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_usage_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_usage_charges, 2 ) : '$ 0.00',
@@ -735,7 +735,7 @@ trait InvoiceTrait
 			[ '', '', '', '', '', '', '', '', '', '' ],
 			[ '', '', '', '', '', '', '', '', '', '' ]
 		];
-		if ( isset( $csvData[ 'subscription' ] ) ) {
+		if ( isset( $csvData[ 'subscriptions' ] ) ) {
 			$csvRows[]         = [
 				'',
 				'PHONE NUMBER',
