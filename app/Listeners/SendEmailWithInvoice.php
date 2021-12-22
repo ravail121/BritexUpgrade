@@ -47,6 +47,8 @@ class SendEmailWithInvoice
         $pdf           = $event->pdf;
 
         $customer = $customerOrder->customer;
+		$is_csv_enabled = (bool) $customer->is_csv_enabled;
+
         $dataRow = [
             'customer' =>  $customer,
             'order'    =>  $customerOrder,
@@ -72,7 +74,7 @@ class SendEmailWithInvoice
 		        return false;
 	        }
             
-            Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
+            Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note, $is_csv_enabled));
         }        
     }
 }
