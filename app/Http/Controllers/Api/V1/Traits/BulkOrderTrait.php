@@ -878,7 +878,7 @@ trait BulkOrderTrait
 		$invoiceItemArray = [
 			'product_id'        => 0,
 			'amount'            => $surchargeAmount,
-			'product_type'      => InvoiceController::SIM_TYPE,
+			'product_type'      => InvoiceController::SURCHARGE_TYPE,
 			'subscription_id'   => 0,
 			'invoice_id'        => $invoice->id,
 			'type'              => 10,
