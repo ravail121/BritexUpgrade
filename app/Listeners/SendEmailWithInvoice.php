@@ -47,7 +47,7 @@ class SendEmailWithInvoice
         $pdf           = $event->pdf;
 
         $customer = $customerOrder->customer;
-		$is_csv_enabled = (bool) $customer->is_csv_enabled;
+		$is_csv_enabled = (bool) $customer->csv_invoice_enabled;
 
         $dataRow = [
             'customer' =>  $customer,

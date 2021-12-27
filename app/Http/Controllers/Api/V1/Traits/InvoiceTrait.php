@@ -254,7 +254,7 @@ trait InvoiceTrait
 				$generatePdf = \Excel::raw($generatedCSV, BaseExcel::CSV);
 			}
 			try {
-				! isset( $planChange ) && $request && $mail ? event( new InvoiceGenerated( $order, $generatePdf ) ) : null;
+				 ! isset( $planChange ) && $request && $mail ? event( new InvoiceGenerated( $order, $generatePdf ) ) : null;
 			} catch ( Exception $e ) {
 				\Log::info( $e->getMessage() );
 				return 'Order placed but invoice was not generated, please try again later.';
