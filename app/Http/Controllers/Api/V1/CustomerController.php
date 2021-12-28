@@ -616,11 +616,11 @@ class CustomerController extends BaseController
 				'billing_address2'              => 'nullable|string',
 				'billing_city'                  => 'required_with:billing_state_id|string',
 				'billing_zip'		            => 'required_with:billing_state_id|string',
-				'primary_payment_method'		=> 'digits',
-				'primary_payment_card'		    => 'digits',
-				'auto_pay'		                => 'digits',
-				'surcharge'		                => 'digits',
-				'csv_invoice_enabled'		    => 'digits',
+				'primary_payment_method'		=> 'nullable|digits',
+				'primary_payment_card'		    => 'nullable|digits',
+				'auto_pay'		                => 'nullable|digits',
+				'surcharge'		                => 'nullable|digits',
+				'csv_invoice_enabled'		    => 'nullable|digits',
 			] );
 
 			if ($validator->fails()) {
