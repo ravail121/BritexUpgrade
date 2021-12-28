@@ -750,6 +750,7 @@ trait InvoiceTrait
 			];
 			$subscriptionEpoch = 0;
 			$customerSurcharge = $csvData[ 'invoice' ]->customer->surcharge;
+			dd($csvData);
 			foreach ( $csvData[ 'subscriptions' ] as $subscription ) {
 				$subscriptionEpoch ++;
 				$csvRows[] = [
