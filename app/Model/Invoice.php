@@ -501,7 +501,7 @@ class Invoice extends Model implements ConstantInterface
 	/**
 	 * @return string
 	 */
-	public function getCalSubtotal()
+	public function getCalSubtotalAttribute()
 	{
 		$subTotal = $this->subtotal;
 
