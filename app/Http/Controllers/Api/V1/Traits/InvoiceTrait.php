@@ -728,7 +728,7 @@ trait InvoiceTrait
 				$csvData[ 'invoice' ]->cal_usage_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_usage_charges, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_taxes ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_taxes, 2 ) : '$ 0.00',
 				isset( $csvData[ 'invoice' ]->cal_credits ) && $csvData[ 'invoice' ]->cal_credits ? '-$ ' . number_format( $csvData[ 'invoice' ]->cal_credits, 2 ) : '-$ 0.00',
-				$csvData[ 'invoice' ]->subtotal ? '$ ' . number_format( $csvData[ 'invoice' ]->subtotal, 2 ) : '$ 0.00',
+				$csvData[ 'invoice' ]->cal_subtotal ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_subtotal, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_surcharge ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_surcharge, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_total_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_total_charges, 2 ) : '$ 0.00'
 			],
@@ -785,7 +785,7 @@ trait InvoiceTrait
 				'',
 				'',
 				'Subtotal',
-				$csvData[ 'invoice' ]->subtotal ? '$ ' . number_format( $csvData[ 'invoice' ]->subtotal, 2 ) : '$ 0.00'
+				$csvData[ 'invoice' ]->cal_subtotal ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_subtotal, 2 ) : '$ 0.00'
 			];
 			$csvRows[] = [
 				'',

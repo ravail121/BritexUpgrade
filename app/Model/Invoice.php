@@ -497,4 +497,18 @@ class Invoice extends Model implements ConstantInterface
 		return $this->calAmount($invoiceItems);
 	}
 
+
+	/**
+	 * @return string
+	 */
+	public function getCalSubtotal()
+	{
+		$subTotal = $this->subtotal;
+
+		$subTotalWithoutSurcharge = $subTotal - $this->cal_surcharge;
+
+		return self::toTwoDecimals($subTotalWithoutSurcharge);
+
+	}
+
 }

@@ -39,12 +39,7 @@ trait BulkOrderTrait
 	 */
 	protected function totalPriceForPreview(Request $request, $orderItems)
 	{
-		$customer = Customer::find($request->get('customer_id'));
-		$subtotal = $this->subTotalPriceForPreview($request, $orderItems);
-		$price[] = $subtotal;
-		if($customer->surcharge > 0) {
-			$price[] = ($subtotal * $customer->surcharge) / 100;
-		}
+		$price[] = $this->subTotalPriceForPreview($request, $orderItems);
  		$price[] = $this->calRegulatoryForPreview($request, $orderItems);
 		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
 		return $this->convertToTwoDecimals(array_sum($price), 2);
@@ -54,17 +49,23 @@ trait BulkOrderTrait
 	/**
 	 * @param Request $request
 	 * @param         $orderItems
+	 * @param bool    $applySurcharge
 	 *
-	 * @return float|int
+	 * @return string
 	 */
-	protected function subTotalPriceForPreview(Request $request, $orderItems)
+	protected function subTotalPriceForPreview(Request $request, $orderItems, $applySurcharge=true)
 	{
+		$customer = Customer::find($request->get('customer_id'));
 		$price[] = $this->calDevicePricesForPreview($request, $orderItems);
 		$price[] = $this->getPlanPricesForPreview($request, $orderItems);
 		$price[] = $this->getSimPricesForPreview($request, $orderItems);
 		$price[] = $this->getAddonPricesForPreview($request, $orderItems);
-		return $this->convertToTwoDecimals(array_sum($price), 2);
-
+		$subTotal = array_sum($price);
+		if($applySurcharge && $customer->surcharge > 0) {
+			$surcharge = ($subTotal * $customer->surcharge) / 100;
+			$subTotal += $surcharge;
+		}
+		return $this->convertToTwoDecimals($subTotal, 2);
 	}
 
 	/**
@@ -432,6 +433,15 @@ trait BulkOrderTrait
 		]);
 
 		$this->invoiceItem($orderItems, $invoice, $planActivation);
+
+		/**
+		 * Insert record for surcharge amount
+		 */
+		if($customer->surcharge > 0) {
+			$subTotalAmountWithoutSurcharge = $this->subTotalPriceForPreview($request, $orderItems, false);
+			$surchargeAmount = ($customer->surcharge * $subTotalAmountWithoutSurcharge) / 100;
+			$this->surchargeInvoiceItem($invoice, $surchargeAmount);
+		}
 		$updateDevicesWithNoId =  $order->invoice->invoiceItem->where('product_type', 'device')->where('product_id', 0);
 
 		foreach ($updateDevicesWithNoId as $item) {
@@ -869,9 +879,8 @@ trait BulkOrderTrait
 	 * @param $customer
 	 * @param $invoice
 	 */
-	protected function surchargeInvoiceItem($customer, $invoice)
+	protected function surchargeInvoiceItem($invoice, $surchargeAmount)
 	{
-		$surchargeAmount = ($customer->surcharge * $invoice->sub_total) / 100;
 		$invoiceItemArray = [
 			'product_id'        => 0,
 			'amount'            => $surchargeAmount,
