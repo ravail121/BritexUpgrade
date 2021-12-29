@@ -73,7 +73,7 @@ class Customer extends Authenticatable
 		'billing_fname',
 		'billing_lname',
 		'auto_pay',
-		'csv_enabled',
+		'csv_invoice_enabled',
 		'surcharge'
 	];
 
