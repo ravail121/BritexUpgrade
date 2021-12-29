@@ -883,7 +883,7 @@ trait BulkOrderTrait
 	{
 		$invoiceItemArray = [
 			'product_id'        => 0,
-			'amount'            => $surchargeAmount,
+			'amount'            => $this->convertToTwoDecimals($surchargeAmount, 2),
 			'product_type'      => InvoiceController::SURCHARGE_TYPE,
 			'subscription_id'   => 0,
 			'invoice_id'        => $invoice->id,
