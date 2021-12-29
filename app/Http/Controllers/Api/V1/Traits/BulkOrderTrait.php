@@ -439,6 +439,7 @@ trait BulkOrderTrait
 		 */
 		if($customer->surcharge > 0) {
 			$subTotalAmountWithoutSurcharge = $this->subTotalPriceForPreview($request, $orderItems, false);
+			dd($subTotalAmountWithoutSurcharge);
 			$surchargeAmount = ($customer->surcharge * $subTotalAmountWithoutSurcharge) / 100;
 			$this->surchargeInvoiceItem($invoice, $surchargeAmount);
 		}
