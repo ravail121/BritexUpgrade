@@ -809,7 +809,7 @@ trait InvoiceTrait
 				'',
 				'',
 				'Total',
-				$csvData[ 'invoice' ]->cal_total_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_total_charges, 2 ) : '$ 0.00'
+				$csvData[ 'invoice' ]->cal_subtotal ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_subtotal, 2 ) : '$ 0.00'
 			];
 		}
 		return $csvRows;
