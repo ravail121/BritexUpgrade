@@ -426,12 +426,9 @@ trait BulkOrderTrait
 			'shipping_zip'            => $order->shipping_zip
 		]);
 
-		$orderCount = Order::where([['status', 1],['company_id', $customer->company_id]])->max('order_num');
-
 		$order->update([
 			'invoice_id'    => $invoice->id,
-			'status'        => '1',
-			'order_num'     => $orderCount + 1,
+			'status'        => '1'
 		]);
 
 		$this->invoiceItem($orderItems, $invoice, $planActivation);

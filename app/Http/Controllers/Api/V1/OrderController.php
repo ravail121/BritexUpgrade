@@ -666,6 +666,8 @@ class OrderController extends BaseController
 
 				$customer = Customer::find($request->get('customer_id'));
 
+				$orderCount = Order::where([['status', 1],['company_id', $customer->company_id]])->max('order_num');
+
 
 				/**
 				 * Create new row in order table if the order is not for plan activation
@@ -680,7 +682,8 @@ class OrderController extends BaseController
 					'shipping_address2' => $customer->billing_address2,
 					'shipping_city'     => $customer->billing_city,
 					'shipping_state_id' => $customer->billing_state_id,
-					'shipping_zip'      => $customer->billing_zip
+					'shipping_zip'      => $customer->billing_zip,
+					'order_num'         => $orderCount + 1
 				] );
 
 				$orderItems = $request->get( 'orders' );

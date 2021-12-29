@@ -14,9 +14,9 @@ class AddSurchargeCsvInvoiceEnabledToCustomerTable extends Migration
     public function up()
     {
 	    Schema::table('customer', function (Blueprint $table) {
-		    $table->boolean('csv_invoice_enabled')
+		    $table->integer('csv_invoice_enabled')
 		          ->after('shipping_zip')
-		          ->default(false)
+		          ->default(0)
 		          ->comment('CSV Invoice Enabled');
 			$table->integer('surcharge')
 		          ->after('csv_invoice_enabled')
