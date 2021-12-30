@@ -9,27 +9,62 @@ class EmailWithAttachment extends Notification
 {
     use Queueable  , EmailRecord;
 
+	/**
+	 * @var
+	 */
     public $order;
+
+	/**
+	 * @var
+	 */
     public $pdf;
+
+	/**
+	 * @var
+	 */
     public $emailTemplate;
+
+	/**
+	 * @var
+	 */
     public $bizVerificationId;
+
+	/**
+	 * @var
+	 */
     public $email;
+
+	/**
+	 * @var
+	 */
     public $note;
 
-    /**
-     * Create a new notification instance.
-     *
-     * @return Order $order
-     */
-    public function __construct($order, $pdf, $emailTemplate, $bizVerificationId, $body, $email, $note)
+	/**
+	 *
+	 */
+    public $is_csv_enabled;
+
+	/**
+	 * Create a new notification instance.
+	 * @param       $order
+	 * @param       $pdf
+	 * @param       $emailTemplate
+	 * @param       $bizVerificationId
+	 * @param       $body
+	 * @param       $email
+	 * @param       $note
+	 * @param false $is_csv_enabled
+	 */
+    public function __construct($order, $pdf, $emailTemplate, $bizVerificationId, $body, $email, $note, $is_csv_enabled=false)
     {
         $this->order = $order;
         $this->pdf   = $pdf;
         $this->emailTemplate = $emailTemplate;
-        $this->bizVerificationId   = $bizVerificationId;
+        $this->bizVerificationId = $bizVerificationId;
         $this->body = $body;
         $this->email = $email;
         $this->note = $note;
+		$this->is_csv_enabled = $is_csv_enabled;
     }
 
     /**
@@ -51,7 +86,11 @@ class EmailWithAttachment extends Notification
      */
     public function toMail($notifiable)
     {
-        $mailMessage = $this->getEmailWithAttachment($this->emailTemplate, $this->order, $this->bizVerificationId, $this->body, $this->email, $this->pdf->output(), 'Invoice.pdf', ['mime' => 'application/pdf',], $this->note);
+		if($this->is_csv_enabled) {
+			$mailMessage = $this->getEmailWithAttachment( $this->emailTemplate, $this->order, $this->bizVerificationId, $this->body, $this->email, $this->pdf, 'Invoice.csv', [ 'mime' => 'text/csv', ], $this->note );
+		} else {
+			$mailMessage = $this->getEmailWithAttachment( $this->emailTemplate, $this->order, $this->bizVerificationId, $this->body, $this->email, $this->pdf->output(), 'Invoice.pdf', [ 'mime' => 'application/pdf', ], $this->note );
+		}
 
         return $mailMessage;
     }

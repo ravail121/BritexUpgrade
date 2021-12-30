@@ -49,17 +49,23 @@ trait BulkOrderTrait
 	/**
 	 * @param Request $request
 	 * @param         $orderItems
+	 * @param bool    $applySurcharge
 	 *
-	 * @return float|int
+	 * @return string
 	 */
-	protected function subTotalPriceForPreview(Request $request, $orderItems)
+	protected function subTotalPriceForPreview(Request $request, $orderItems, $applySurcharge=true)
 	{
+		$customer = Customer::find($request->get('customer_id'));
 		$price[] = $this->calDevicePricesForPreview($request, $orderItems);
 		$price[] = $this->getPlanPricesForPreview($request, $orderItems);
 		$price[] = $this->getSimPricesForPreview($request, $orderItems);
 		$price[] = $this->getAddonPricesForPreview($request, $orderItems);
-		return $this->convertToTwoDecimals(array_sum($price), 2);
-
+		$subTotal = array_sum($price);
+		if($applySurcharge && $customer->surcharge > 0) {
+			$surcharge = ($subTotal * $customer->surcharge) / 100;
+			$subTotal += $surcharge;
+		}
+		return $this->convertToTwoDecimals($subTotal, 2);
 	}
 
 	/**
@@ -375,11 +381,11 @@ trait BulkOrderTrait
 	}
 
 	/**
-	 * @param Request $request
-	 * @param         $order
-	 * @param         $orderItems
-	 * @param         $planActivation
-	 * @param         $hasSubscription
+	 * @param Request  $request
+	 * @param          $order
+	 * @param          $orderItems
+	 * @param          $planActivation
+	 * @param          $hasSubscription
 	 */
 	public function createInvoice(Request $request, $order, $orderItems, $planActivation, $hasSubscription)
 	{
@@ -421,15 +427,21 @@ trait BulkOrderTrait
 			'shipping_zip'            => $order->shipping_zip
 		]);
 
-		$orderCount = Order::where([['status', 1],['company_id', $customer->company_id]])->max('order_num');
-
 		$order->update([
 			'invoice_id'    => $invoice->id,
-			'status'        => '1',
-			'order_num'     => $orderCount + 1,
+			'status'        => '1'
 		]);
 
 		$this->invoiceItem($orderItems, $invoice, $planActivation);
+
+		/**
+		 * Insert record for surcharge amount
+		 */
+		if($customer->surcharge > 0) {
+			$subTotalAmountWithoutSurcharge = $this->subTotalPriceForPreview($request, $orderItems, false);
+			$surchargeAmount = ($customer->surcharge * $subTotalAmountWithoutSurcharge) / 100;
+			$this->surchargeInvoiceItem($invoice, $surchargeAmount);
+		}
 		$updateDevicesWithNoId =  $order->invoice->invoiceItem->where('product_type', 'device')->where('product_id', 0);
 
 		foreach ($updateDevicesWithNoId as $item) {
@@ -471,6 +483,7 @@ trait BulkOrderTrait
 		$standAloneSims = [];
 		$standAloneDevices = [];
 		$order = Order::where('invoice_id', $invoice->id)->first();
+		$customer = Customer::find($invoice->customer_id);
 		foreach($orderItems as $orderItem) {
 			if(isset($orderItem['subscription_id'])){
 				$subscriptionIds[] = $orderItem['subscription_id'];
@@ -500,7 +513,6 @@ trait BulkOrderTrait
 		if(!empty($standAloneDevices) && !$planActivation){
 			$this->standaloneDeviceInvoiceItem($standAloneDevices, $invoice);
 		}
-
 	}
 
 	/**
@@ -679,7 +691,6 @@ trait BulkOrderTrait
 			$invoiceItemArray['taxable'] = $device->taxable;
 			$invoiceItemArray['description'] = '';
 			$invoiceItem = InvoiceItem::create($invoiceItemArray);
-			Log::info($invoiceItem, 'Create Invoice Item');
 			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::DEVICE_TYPE);
 		}
 		return $invoiceItem;
@@ -861,4 +872,23 @@ trait BulkOrderTrait
 		return $dues;
 	}
 
+	/**
+	 * @param $customer
+	 * @param $invoice
+	 */
+	protected function surchargeInvoiceItem($invoice, $surchargeAmount)
+	{
+		$invoiceItemArray = [
+			'product_id'        => 0,
+			'amount'            => $this->convertToTwoDecimals($surchargeAmount, 2),
+			'product_type'      => InvoiceController::SURCHARGE_TYPE,
+			'subscription_id'   => 0,
+			'invoice_id'        => $invoice->id,
+			'type'              => 10,
+			'start_date'        => $invoice->start_date,
+			'description'       => InvoiceController::SURCHARGE_DESCRIPTION,
+			'taxable'           => InvoiceController::DEFAULT_INT,
+		];
+		InvoiceItem::create($invoiceItemArray);
+	}
 }

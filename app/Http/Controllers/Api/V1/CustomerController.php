@@ -20,7 +20,6 @@ use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\Http\Resources\CustomerCollection;
 
-
 /**
  * Class CustomerController
  *
@@ -617,9 +616,11 @@ class CustomerController extends BaseController
 				'billing_address2'              => 'nullable|string',
 				'billing_city'                  => 'required_with:billing_state_id|string',
 				'billing_zip'		            => 'required_with:billing_state_id|string',
-				'primary_payment_method'		=> 'digits',
-				'primary_payment_card'		    => 'digits',
-				'auto_pay'		                => 'digits',
+				'primary_payment_method'		=> 'integer',
+				'primary_payment_card'		    => 'integer',
+				'auto_pay'		                => 'integer',
+				'surcharge'		                => 'integer',
+				'csv_invoice_enabled'		    => 'integer'
 			] );
 
 			if ($validator->fails()) {
@@ -656,6 +657,12 @@ class CustomerController extends BaseController
 			}
 			if($request->has('auto_pay')) {
 				$customerData['auto_pay'] = $request->get('auto_pay');
+			}
+			if($request->has('surcharge')) {
+				$customerData['surcharge'] = $request->get('surcharge');
+			}
+			if($request->has('csv_invoice_enabled')) {
+				$customerData['csv_invoice_enabled'] = $request->get('csv_invoice_enabled');
 			}
 			if($request->has('billing_state_id')) {
 				$customerData['billing_state_id'] = $request->get('billing_state_id');

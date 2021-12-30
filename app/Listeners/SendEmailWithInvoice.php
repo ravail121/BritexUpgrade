@@ -47,6 +47,8 @@ class SendEmailWithInvoice
         $pdf           = $event->pdf;
 
         $customer = $customerOrder->customer;
+		$is_csv_enabled = (bool) $customer->csv_invoice_enabled;
+
         $dataRow = [
             'customer' =>  $customer,
             'order'    =>  $customerOrder,
@@ -65,6 +67,12 @@ class SendEmailWithInvoice
         foreach ($emailTemplates as $key => $emailTemplate) {
             $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
 
+	        /**
+	         * Change PDF to CSV if there is any text within the email body for CSV invoice
+	         */
+			if($is_csv_enabled){
+				$row[ 'body' ]    = $this->addFieldsToBody( [ 'PDF' ], [ 'CSV' ], $row[ 'body' ] );
+			}
 
 	        $configurationSet = $this->setMailConfiguration($customerOrder);
 
@@ -72,7 +80,7 @@ class SendEmailWithInvoice
 		        return false;
 	        }
             
-            Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note));
+            Notification::route('mail', $row['email'])->notify(new EmailWithAttachment($customerOrder, $pdf, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email'], $note, $is_csv_enabled));
         }        
     }
 }
