@@ -417,9 +417,7 @@ class Invoice extends Model implements ConstantInterface
 
     public static function standAloneTotal($id)
     {
-        
-        // return Invoice::find($id);
-        $invoice = self::find($id)->invoiceItem->where('subscription_id', null);
+		$invoice = self::find($id)->invoiceItem->where('subscription_id', null);
         $total = $invoice
             ->where('type', '!=', self::InvoiceItemTypes['coupon'])
             ->where('type', '!=', self::InvoiceItemTypes['manual'])
@@ -489,5 +487,28 @@ class Invoice extends Model implements ConstantInterface
     {
         return $query->has('customer');
     }
+
+	/**
+	 * @return string
+	 */
+	public function getCalSurchargeAttribute()
+	{
+		$invoiceItems = $this->invoiceItem()->surcharge()->get();
+		return $this->calAmount($invoiceItems);
+	}
+
+
+	/**
+	 * @return string
+	 */
+	public function getCalSubtotalAttribute()
+	{
+		$subTotal = $this->subtotal;
+
+		$subTotalWithoutSurcharge = $subTotal - $this->cal_surcharge;
+
+		return self::toTwoDecimals($subTotalWithoutSurcharge);
+
+	}
 
 }
