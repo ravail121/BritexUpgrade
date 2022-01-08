@@ -112,7 +112,7 @@ class OrderDataController extends BaseController
     {
         try {
             $url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
-            $client = new Client();
+	        $client = new Client();
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));
 
