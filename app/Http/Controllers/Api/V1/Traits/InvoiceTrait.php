@@ -15,7 +15,6 @@ use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
-use Maatwebsite\Excel\Excel;
 use App\Model\PendingCharge;
 use App\Exports\InvoiceExport;
 use App\Model\CreditToInvoice;
