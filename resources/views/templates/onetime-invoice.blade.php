@@ -74,11 +74,12 @@
                             <div class="customer_info" style='margin-top: 5px;'>
                                 @if ($data['order']->customer->company_name)
                                     <p><span>
-                                        {{ $data['order']->customer->company_name }},
+                                        {{ $data['order']->customer->company_name }}
                                     </span></p>
                                 @endif
-                                <p><span>{{ $data['order']->customer->full_name }},</span></p>
+                                <p><span>{{ $data['order']->customer->full_name }}</span></p>
                                 <p><span>{{ $data['order']->customer->shipping_address1 }}</span></p>
+                                <p><span>{{ $data['order']->customer->shipping_address2 }}</span></p>
                                 <p><span>{{ $data['order']->customer->zip_address }}</span></p>
                             </div>
                         </div>
