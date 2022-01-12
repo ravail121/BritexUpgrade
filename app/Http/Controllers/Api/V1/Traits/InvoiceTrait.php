@@ -756,7 +756,7 @@ trait InvoiceTrait
 				$csvRows[] = [
 					$subscriptionEpoch,
 					isset( $subscription->phone_number ) ? $csvData[ 'order' ]->phoneNumberFormatted( $subscription->phone_number ) : 'Pending',
-					(float) $subscription->sim_card_num,
+					sprintf('%f', $subscription->sim_card_num),
 					$subscription->plan->name,
 					$subscription->cal_plan_charges ? '$ ' . number_format( $subscription->calculateChargesForAllproducts( [
 							1,
