@@ -15,7 +15,6 @@ use App\Model\Invoice;
 use App\Model\Customer;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
-use Maatwebsite\Excel\Excel;
 use App\Model\PendingCharge;
 use App\Exports\InvoiceExport;
 use App\Model\CreditToInvoice;
@@ -612,7 +611,7 @@ trait InvoiceTrait
 				'',
 				'Invoice No. ' . $csvData[ 'invoice' ]->id,
 				'',
-				$csvData[ 'order' ]->customer->full_name,
+				$csvData[ 'order' ]->customer->company_name ?? '',
 				'',
 				$csvData[ 'invoice' ]->dateFormatForInvoice( $csvData[ 'invoice' ]->created_at ),
 				'',
@@ -624,7 +623,7 @@ trait InvoiceTrait
 				'',
 				'Period Beginning. ' . @date( $csvData[ 'order' ]->formatDate( $csvData[ 'order' ]->invoice->start_date ) ),
 				'',
-				$csvData[ 'order' ]->customer->billing_address1,
+				$csvData[ 'order' ]->customer->full_name,
 				'',
 				'',
 				'',
@@ -636,7 +635,7 @@ trait InvoiceTrait
 				'',
 				'Period Ending. ' . @date( $csvData[ 'order' ]->formatDate( $csvData[ 'order' ]->invoice->end_date ) ),
 				'',
-				$csvData[ 'order' ]->customer->billing_address2,
+				$csvData[ 'order' ]->customer->shipping_address1,
 				'',
 				'',
 				'',
@@ -646,7 +645,7 @@ trait InvoiceTrait
 				'',
 				'Due Date. ' . @date( $csvData[ 'order' ]->formatDate( $csvData[ 'order' ]->invoice->due_date ) ),
 				'',
-				'',
+				$csvData[ 'order' ]->customer->shipping_address2,
 				'',
 				'',
 				'',
@@ -654,7 +653,9 @@ trait InvoiceTrait
 				'',
 				''
 			],
-			[ '', '', '', '', '', '', '', '', '', '' ],
+			[ '', '', '',
+				$csvData[ 'order' ]->customer->zip_address,
+			'', '', '', '', '', '' ],
 			[ '', '', '', '', '', '', '', '', '', '' ],
 			[ '', '', '', '', '', '', '', '', '', '' ],
 			[ '', '', '', '', '', '', '', '', '', '' ],
@@ -755,7 +756,7 @@ trait InvoiceTrait
 				$csvRows[] = [
 					$subscriptionEpoch,
 					isset( $subscription->phone_number ) ? $csvData[ 'order' ]->phoneNumberFormatted( $subscription->phone_number ) : 'Pending',
-					$subscription->sim_card_num,
+					sprintf("'%d", $subscription->sim_card_num),
 					$subscription->plan->name,
 					$subscription->cal_plan_charges ? '$ ' . number_format( $subscription->calculateChargesForAllproducts( [
 							1,

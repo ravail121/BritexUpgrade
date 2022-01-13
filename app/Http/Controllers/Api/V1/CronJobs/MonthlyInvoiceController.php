@@ -13,8 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
-use App\Http\Controllers\Api\V1\Traits\InvoiceTrait;
+use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
+
 
 /**
  * Class MonthlyInvoiceController
@@ -23,7 +24,7 @@ use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
  */
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {
-	use InvoiceTrait, InvoiceCouponTrait;
+	use InvoiceCouponTrait, BulkOrderTrait;
 
 	/**
 	 * Responses from various sources
@@ -104,6 +105,15 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 			}
 
 			$monthlyCharges = $invoice->cal_total_charges;
+
+			/**
+			 * Apply Surcharge
+			 */
+			if($customer->surcharge > 0) {
+				$surcharge = ($monthlyCharges * $customer->surcharge) / 100;
+				$this->surchargeInvoiceItem($invoice, $surcharge);
+				$monthlyCharges += $surcharge;
+			}
 
 			//Plan charge + addon charge + pending charges + taxes - discount = monthly charges
 			$subtotal = str_replace(',', '', number_format($monthlyCharges + $totalPendingCharges, 2));
@@ -338,9 +348,10 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
 	/**
 	 * Creates invoice-items for all billable subscriptions
+	 * @param $billableSubscriptions
+	 * @param $invoice
 	 *
-	 * @param  int          $customerId
-	 * @return Response
+	 * @return \Illuminate\Support\Collection
 	 */
 	protected function addBillableSubscriptions($billableSubscriptions, $invoice)
 	{
