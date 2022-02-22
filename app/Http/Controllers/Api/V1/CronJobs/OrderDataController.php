@@ -67,7 +67,7 @@ class OrderDataController extends BaseController
                 }
             }
             if($readyCloudApiKey ){
-                $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey, $url);
+                $orderData = $this->getOrderData($order['order_num'], $readyCloudApiKey, $url, $order->company->id);
                 if($orderData){
                     try{
                         if($orderData && isset($orderData['results'][0])){
@@ -104,14 +104,15 @@ class OrderDataController extends BaseController
 	 * @param        $orderNum
 	 * @param        $readyCloudApiKey
 	 * @param string $url
+	 * @param        $companyId
 	 *
 	 * @return false|\Illuminate\Support\Collection
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
-	public function getOrderData($orderNum, $readyCloudApiKey, $url = "/")
+	public function getOrderData($orderNum, $readyCloudApiKey, $url = "/", $companyId)
     {
         try {
-            $url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX-'.$orderNum;
+            $url = config('internal.__BRITEX_READY_CLOUD_BASE_URL').$url."orders/?bearer_token=".$readyCloudApiKey.'&primary_id=BX'.$companyId.'-'.$orderNum;
 	        $client = new Client();
             $response = $client->request('GET', $url);
             return collect(json_decode($response->getBody(), true));

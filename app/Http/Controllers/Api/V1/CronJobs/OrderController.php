@@ -290,7 +290,7 @@ class OrderController extends BaseController
 		$payment = $order->payLog;
 
 		$json = [
-			"primary_id"    => "BX-".$order->order_num,
+			"primary_id"    => "BX".$company->id. "-".$order->order_num,
 			"ordered_at"    => $order->created_at_format,
 			"terms"         => $payment->card_type." ".$payment->last4,
 			"billing"       => [
@@ -301,7 +301,7 @@ class OrderController extends BaseController
 			],
 			"shipping"      => [
 				"ship_to"           => [
-					"first_name"    => $order->shipping_fname,
+					"first_name"     => $order->shipping_fname,
 					"last_name"     => $order->shipping_lname,
 					"address_1"     => $order->shipping_address1,
 					"address_2"     => $order->shipping_address2,
