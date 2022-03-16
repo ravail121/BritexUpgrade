@@ -15,6 +15,7 @@ use App\Model\Subscription;
 use App\Model\CustomerCreditCard;
 use App\Events\AccountUnsuspended;
 use App\Http\Requests\CreditCardRequest;
+use App\Events\SubscriptionForReactivation;
 
 /**
  * Trait UsaEpayTransaction
@@ -202,16 +203,21 @@ trait UsaEpayTransaction
         $suspendedSubscriptions = $subscription->where('status', Subscription::STATUS['suspended']);
         $pastDueSubscriptions = $subscription->where('sub_status', Subscription::SUB_STATUSES['account-past-due']);
 
-        foreach ($suspendedSubscriptions as $key => $suspendedSubscription) {
+        foreach ($suspendedSubscriptions as $suspendedSubscription) {
             $suspendedSubscription->update([
                 'status'                    => Subscription::STATUS['active'],
                 'sub_status'                => Subscription::SUB_STATUSES['for-restoration'],
                 'scheduled_suspend_date'    => null,
                 'account_past_due_date'     => null,
-            ]); 
+            ]);
+	        event( new SubscriptionForReactivation(
+		        [
+			        'subscriptionId' => $suspendedSubscription->id
+		        ]
+	        ) );
         }
 
-        foreach ($pastDueSubscriptions as $key => $pastDueSubscription) {
+        foreach ($pastDueSubscriptions as $pastDueSubscription) {
             $pastDueSubscription->update([
                 'sub_status'                => '',
                 'scheduled_suspend_date'    => null,
