@@ -12,7 +12,7 @@ class SubscriptionForReactivation
 	/**
 	 * @var
 	 */
-	public $data;
+	public $subscriptionId;
 
 
     use Dispatchable, InteractsWithSockets, SerializesModels;
@@ -22,9 +22,9 @@ class SubscriptionForReactivation
      *
      * @return void
      */
-    public function __construct($data)
+    public function __construct($subscriptionId)
     {
-        $this->data = $data;
+	    $this->subscriptionId = $subscriptionId;
     }
 
     /**

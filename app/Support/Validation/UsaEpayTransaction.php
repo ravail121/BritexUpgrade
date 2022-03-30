@@ -210,11 +210,7 @@ trait UsaEpayTransaction
                 'scheduled_suspend_date'    => null,
                 'account_past_due_date'     => null,
             ]);
-	        event( new SubscriptionForReactivation(
-		        [
-			        'subscriptionId' => $suspendedSubscription->id
-		        ]
-	        ) );
+	        event( new SubscriptionForReactivation($suspendedSubscription->id ) );
         }
 
         foreach ($pastDueSubscriptions as $pastDueSubscription) {
