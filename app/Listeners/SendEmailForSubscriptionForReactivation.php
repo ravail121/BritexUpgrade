@@ -46,6 +46,8 @@ class SendEmailForSubscriptionForReactivation
 		    'plan'         =>  $subscription->plans,
 	    ];
 
+		dd($dataRow['customer']);
+
 	    $configurationSet = $this->setMailConfiguration($dataRow['customer']);
 
 	    if ($configurationSet) {
