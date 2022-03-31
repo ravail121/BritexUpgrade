@@ -12,6 +12,7 @@
 */
 
 // Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
+use App\Events\SubscriptionForReactivation;
 
 Route::get('/', function () {
     return  response()->json([
@@ -32,3 +33,7 @@ Route::get('britex-test-subscription-changed', function(){
 	event(new SubcriptionStatusChanged('702'));
 });
  **/
+
+Route::get('britex-test-subscription-for-restoration', function () {
+	event(new SubscriptionForReactivation('702'));
+});

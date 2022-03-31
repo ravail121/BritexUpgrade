@@ -46,21 +46,21 @@ class SendEmailForSubscriptionForReactivation
 		    'plan'         =>  $subscription->plans,
 	    ];
 
-	    $configurationSet = $this->setMailConfiguration($dataRow['customer']['company_id']);
+	    $configurationSet = $this->setMailConfiguration($dataRow['customer']);
 
 	    if ($configurationSet) {
 		    return false;
 	    }
 
-	    $emailTemplates = EmailTemplate::where('company_id', $dataRow['customer']['company_id'])
+	    $emailTemplates = EmailTemplate::where('company_id', $dataRow['customer']->company_id)
 	                                   ->where('code', self::STATUS_CODE['for-restoration'])
 	                                   ->get();
 
 	    foreach ($emailTemplates as $emailTemplate) {
 		    $row = $this->makeEmailLayout($emailTemplate, $dataRow['customer'], $dataRow);
 
-		    Notification::route('mail', $row['email'])->notify(new SendEmails( $emailTemplate, $row['body'], $row['email'], $dataRow['customer']['business_verification_id'] , $dataRow['customer']['id']));
-	    }
+		    Notification::route('mail', $row['email'])->notify(new SendEmails($dataRow['customer'], $emailTemplate, $dataRow['customer']->business_verification_id, $row['body'], $row['email']));
+		}
 
     }
 }
