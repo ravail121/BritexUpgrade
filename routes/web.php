@@ -35,5 +35,5 @@ Route::get('britex-test-subscription-changed', function(){
  **/
 
 Route::get('britex-test-subscription-for-restoration', function () {
-	event(new SubscriptionForReactivation('702'));
+	event(new SubscriptionForReactivation('1207'));
 });
