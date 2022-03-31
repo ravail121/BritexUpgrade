@@ -42,7 +42,7 @@ class SendEmailForSubscriptionForReactivation
 
 	    $dataRow = [
 		    'subscription' => $subscription,
-		    'customer'     =>  $subscription->customer,
+		    'customer'     =>  $subscription->Customer,
 		    'plan'         =>  $subscription->plans,
 	    ];
 
