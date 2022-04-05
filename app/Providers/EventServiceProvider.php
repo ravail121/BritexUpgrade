@@ -87,6 +87,10 @@ class EventServiceProvider extends ServiceProvider
 
 	    'App\Events\CreditCardExpirationReminder' => [
 		    'App\Listeners\SendEmailForCreditCardExpirationReminder'
+	    ],
+
+	    'App\Events\SubscriptionForReactivation' => [
+		    'App\Listeners\SendEmailForSubscriptionForReactivation'
 	    ]
     ];
 
