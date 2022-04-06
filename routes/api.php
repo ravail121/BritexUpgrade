@@ -667,5 +667,10 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.list.customer.id',
 			'uses' => 'OrderController@listCustomerIdFromAssignedSIMForBulkOrder',
 		]);
+
+		Route::post( '/activate-subscription', [
+			'as'   => 'api.bulk.activate.subscription',
+			'uses' => 'SubscriptionController@activateSubscription',
+		]);
 	});
 }); //APIToken middleware
