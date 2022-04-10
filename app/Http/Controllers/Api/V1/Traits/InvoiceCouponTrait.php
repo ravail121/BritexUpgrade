@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
-use App\Model\Customer;
-use App\Model\Invoice;
-use App\Model\Order;
-use App\Model\Addon;
-use App\Model\Coupon;
-use App\Model\InvoiceItem;
-use App\Model\CustomerCoupon;
-use App\Model\OrderCoupon;
-use App\Model\Plan;
-use App\Model\SubscriptionCoupon;
 use App\Model\Tax;
 use Carbon\Carbon;
+use App\Model\Plan;
+use App\Model\Addon;
+use App\Model\Order;
+use App\Model\Coupon;
+use App\Model\Invoice;
+use App\Model\Customer;
+use App\Model\OrderCoupon;
+use App\Model\InvoiceItem;
+use App\Model\CustomerCoupon;
+use App\Model\SubscriptionCoupon;
 
 /**
  * Trait InvoiceCouponTrait
