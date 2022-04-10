@@ -53,7 +53,7 @@ trait InvoiceCouponTrait
 					        'product_type'    => $this->ifMultiline( $couponToProcess ) ? Coupon::TYPES[ 'customer_coupon' ] : Coupon::TYPES[ 'subscription_coupon' ],
 					        'product_id'      => $couponToProcess->id,
 					        'type'            => InvoiceItem::TYPES[ 'coupon' ],
-					        'description'     => $couponToProcess->code,
+					        'description'     => $couponToProcess->name,
 					        'amount'          => $coupon[ 'amount' ],
 					        'start_date'      => $order->invoice->start_date,
 					        'taxable'         => false,

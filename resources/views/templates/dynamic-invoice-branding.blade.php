@@ -1,5 +1,5 @@
 @php
-    $company = $data['order']->company ?? $invoice->company;
+    $company = $data['order']->company ?? $invoice->customer->company;
     $invoice_account_summary_primary_color = $company->invoice_account_summary_primary_color;
     $invoice_account_summary_secondary_color = $company->invoice_account_summary_secondary_color;
     $invoice_background_text_color = $company->invoice_background_text_color;
