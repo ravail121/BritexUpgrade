@@ -289,13 +289,15 @@
                     <div class="container">
                         <div class="table-padding">
                             <h2>Usage Charges</h2>
-                            <table>
-	                            <tr>
-	                                <td colspan="3">
-	                                    <div class="sepratorline dark"></div>
-	                                </td>
-	                            </tr>
-	                        </table>
+                            @if ($data['order']->invoice->invoiceItem->where('type', 4)->count())
+                                <table>
+                                    <tr>
+                                        <td colspan="3">
+                                            <div class="sepratorline"></div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            @endif
                         </div>
                         <table class="test table-padding">
                             @foreach ($data['order']->invoice->invoiceItem->where('type', 4) as $usage)
