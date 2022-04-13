@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\Log;
 use PDF;
 use Exception;
 use Carbon\Carbon;
@@ -199,7 +200,6 @@ class CardController extends BaseController implements ConstantInterface
 		                ] );
 	                }
                 }
-          
             } else {
                 $this->response = $this->transactionFail($order, $this->tran);
                 if($request->without_order){
@@ -208,6 +208,9 @@ class CardController extends BaseController implements ConstantInterface
             }
         } else {
             $this->response = $this->transactionFail(null, $this->tran);
+	        if($request->without_order){
+		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+	        }
         }
         return $this->respond($this->response);
     }
