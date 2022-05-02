@@ -42,6 +42,7 @@ trait BulkOrderTrait
 		$price[] = $this->subTotalPriceForPreview($request, $orderItems);
  		$price[] = $this->calRegulatoryForPreview($request, $orderItems);
 		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
+		$price[] = $this->calTaxesForPreview($request, $orderItems);
 		return $this->convertToTwoDecimals(array_sum($price), 2);
 
 	}
