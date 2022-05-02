@@ -42,6 +42,7 @@ trait BulkOrderTrait
 		$price[] = $this->subTotalPriceForPreview($request, $orderItems);
  		$price[] = $this->calRegulatoryForPreview($request, $orderItems);
 		$price[] = $this->getPlanActivationPricesForPreview($orderItems);
+		$price[] = $this->calTaxesForPreview($request, $orderItems);
 		return $this->convertToTwoDecimals(array_sum($price), 2);
 
 	}
@@ -405,8 +406,8 @@ trait BulkOrderTrait
 			'end_date'                => $invoiceEndDate,
 			'start_date'              => $invoiceStartDate,
 			'due_date'                => $invoiceDueDate,
-			'subtotal'                => $this->subTotalPriceForPreview($request, $orderItems),
-			'total_due'               => $this->totalPriceForPreview($request, $orderItems),
+			'subtotal'                => $this->totalPriceForPreview($request, $orderItems),
+			'total_due'               => '0.00',
 			'prev_balance'            => $this->getCustomerDue($customer->id),
 			'payment_method'          => 'Bulk Order',
 			'notes'                   => 'Bulk Order | Without Payment',
