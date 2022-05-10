@@ -85,6 +85,10 @@ class EventServiceProvider extends ServiceProvider
 	        'App\Listeners\SendEmailForNullSubscriptionStartDateCustomerRecord'
         ],
 
+        'App\Events\SendMailData' => [
+	        'App\Listeners\SendMailFired'
+        ],
+
 	    'App\Events\CreditCardExpirationReminder' => [
 		    'App\Listeners\SendEmailForCreditCardExpirationReminder'
 	    ]
