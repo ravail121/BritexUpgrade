@@ -91,14 +91,16 @@ trait InvoiceTrait
 		$taxPercentage = isset($invoice->customer->stateTax->rate) ? $invoice->customer->stateTax->rate / 100 : 0;
 		if ($taxPercentage > 0) {
 			$taxableItems = $subscription->invoiceItemDetail->where('taxable', 1);
-
+			
 
 			$taxAmount = $taxableItems->sum('amount');
+			
 			if ($coupons) {
-				$taxData = $this->couponTax($taxableItems, $coupons);
+				$taxData = $this->couponTax($subscription,$taxableItems, $coupons);
 				$taxAmount = $taxData;
 				// If coupon tax amount = 0, use original.
 			}
+			
 			if ($taxAmount > 0) {
 				$subscription->invoiceItemDetail()->create(
 					[
@@ -113,6 +115,8 @@ trait InvoiceTrait
 					]
 				);
 			}
+
+			
 		}
 	}
 
@@ -394,11 +398,12 @@ trait InvoiceTrait
 	public function ifTotalDue($order)
 	{
 		$totalAmount    = $order->invoice->cal_total_charges;
+		
 		$paidAmount     = $order->invoice->creditsToInvoice->sum('amount');
 		$totalDue       = $totalAmount > $paidAmount ? $totalAmount - $paidAmount : 0;
 		if ($totalDue > 0) {
 			$order->invoice->update([
-				'total_due'     => str_replace(',', '', number_format($totalDue, 2)),
+				'total_due'     => round($totalDue),
 				'status'        => 1
 			]);
 			PendingCharge::create([
@@ -406,7 +411,7 @@ trait InvoiceTrait
 				'subscription_id'   => 0,
 				'invoice_id'        => $order->invoice_id,
 				'type'              => 3,
-				'amount'            => str_replace(',', '',number_format($totalDue)),
+				'amount'            => round($totalDue),
 				'description'       => 'Pending one time payment'
 			]);
 		}
@@ -516,8 +521,9 @@ trait InvoiceTrait
 	 *
 	 * @return float|int
 	 */
-	protected function couponTax($items, $coupons)
+	protected function couponTax($sub,$items, $coupons)
 	{
+		//dd($items);
 		$amount = [0];
 		$eligible_products = [];
 		if ($coupons) {
@@ -531,7 +537,7 @@ trait InvoiceTrait
 				} elseif ($item->product_type == InvoiceItem::PRODUCT_TYPE['addon']) {
 					$itemType = Coupon::PRODUCT_TYPE['addon'];
 				}
-				$couponTaxData = $this->getCouponDiscount($coupons, $item, $itemType);
+				$couponTaxData = $this->getCouponDiscount($coupons, $item, $itemType,$sub);
 				$amount[] = $couponTaxData['amount'];
 				$eligible_products[] = $couponTaxData['eligible_product'];
 			}
@@ -554,12 +560,14 @@ trait InvoiceTrait
 	 *
 	 * @return array
 	 */
-	protected function getCouponDiscount($couponData, $item, $itemType)
+	protected function getCouponDiscount($couponData, $item, $itemType,$sub)
 	{
 		if($couponData) {
 			$couponDiscount = 0;
 			$eligibleProduct = [];
+			$codes=[];
 			foreach($couponData as $coupon) {
+				
 				$type = $coupon[ 'coupon_type' ];
 				if ( $type == 1 ) { // Applied to all
 					$appliedTo = isset($coupon['applied_to']['applied_to_all']) ? $coupon['applied_to']['applied_to_all'] : [];
@@ -569,12 +577,27 @@ trait InvoiceTrait
 					$appliedTo = isset($coupon['applied_to']['applied_to_products']) ? $coupon['applied_to']['applied_to_products'] : [];
 				}
 				if ( count( $appliedTo ) ) {
+					// if($sub->id==51937){
+					// 	dd($appliedTo);
+					// 				}
 					foreach ( $appliedTo as $product ) {
-						if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
-							$couponDiscount += $item->amount - $product['discount'];
+						if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id && !in_array($coupon['code'],$codes)) {
+							array_push($codes,$coupon['code']);
+							if($couponDiscount!=0){
+								
+								$couponDiscount = $couponDiscount - $product['discount'];
+								// if($type==1){
+								// 	dd($couponDiscount);
+								// }
+
+							}else{
+								$couponDiscount += $item->amount - $product['discount'];
+
+							}
 							$eligibleProduct = [$item->id];
 						}
 					}
+					// dd($couponDiscount)
 				}
 			}
 			return [

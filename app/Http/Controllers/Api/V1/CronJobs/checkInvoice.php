@@ -1,0 +1,60 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1\CronJobs;
+
+use App\Http\Controllers\BaseController;
+use App\Model\Invoice;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use App\Events\ReportNullSubscriptionStartDate;
+use App\Events\SendMailData;
+
+/**
+ * Class ProcessController
+ *
+ * @package App\Http\Controllers\Api\V1\CronJobs
+ */
+class checkInvoice extends BaseController
+{
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	
+	protected function check()
+    {
+        $arr=array();
+        
+        try{
+            $invoices=Invoice::withSum(['invoiceItem as sumtotal' => function($query) {
+                $query->where('type','!=', 6)->where('type','!=', 10);
+            }], 'amount')->withSum(['invoiceItem as sumcoupon' => function($query) {
+                $query->where('type', 6);
+            }], 'amount')->withSum('creditToInvoice as sumpaid' , 'amount')->get();
+
+
+            foreach($invoices as $invoice){
+
+                if(($invoice->sumtotal - $invoice->sumcoupon) !=  $invoice['subtotal']){
+
+                   array_push($arr,$invoice);
+
+                }
+
+            }
+    
+    
+
+			// $invoiceCount = $invoices->count();
+              //dd($arr);
+
+			if(count($arr)) {
+				event( new SendMailData($arr) );
+			}
+		} catch (\Exception $e) {
+			\Log::info($e->getMessage(). ' on the line '. $e->getLine());
+		}
+
+    }
+}
