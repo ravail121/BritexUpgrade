@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
-use App\Model\Customer;
-use App\Model\Invoice;
-use App\Model\Order;
-use App\Model\Addon;
-use App\Model\Coupon;
-use App\Model\InvoiceItem;
-use App\Model\CustomerCoupon;
-use App\Model\OrderCoupon;
-use App\Model\Plan;
-use App\Model\SubscriptionCoupon;
 use App\Model\Tax;
 use Carbon\Carbon;
+use App\Model\Plan;
+use App\Model\Addon;
+use App\Model\Order;
+use App\Model\Coupon;
+use App\Model\Invoice;
+use App\Model\Customer;
+use App\Model\OrderCoupon;
+use App\Model\InvoiceItem;
+use App\Model\CustomerCoupon;
+use App\Model\SubscriptionCoupon;
 
 /**
  * Trait InvoiceCouponTrait
@@ -26,7 +26,6 @@ trait InvoiceCouponTrait
 	 * @var array
 	 */
     protected $taxDiscount = [];
-    protected $stateTax;
 
 	/**
 	 * Functions for orders
@@ -54,7 +53,7 @@ trait InvoiceCouponTrait
 					        'product_type'    => $this->ifMultiline( $couponToProcess ) ? Coupon::TYPES[ 'customer_coupon' ] : Coupon::TYPES[ 'subscription_coupon' ],
 					        'product_id'      => $couponToProcess->id,
 					        'type'            => InvoiceItem::TYPES[ 'coupon' ],
-					        'description'     => $couponToProcess->code,
+					        'description'     => $couponToProcess->name,
 					        'amount'          => $coupon[ 'amount' ],
 					        'start_date'      => $order->invoice->start_date,
 					        'taxable'         => false,
@@ -413,7 +412,6 @@ trait InvoiceCouponTrait
         $couponEligibleFor = $this->checkEligibleProducts($coupon);
 
         $stateTax = isset($customer->stateTax->rate) ? $customer->stateTax->rate : 0;
-        $this->stateTax=$stateTax;
         $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order, $stateTax) : 0;
         $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $stateTax) : 0;
         $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $stateTax) : 0;
@@ -424,41 +422,7 @@ trait InvoiceCouponTrait
                 'coupon_id'     => $coupon->id
             ]);
             $this->updateCouponNumUses($order);
-         
-            if(isset($appliedToAll['total'])){
-                $t=$appliedToAll['total'];
-            }else{
-                $t=0;
-            }
-            if(isset($appliedToTypes['total'])){
-                $p=$appliedToTypes['total'];
-            }else{
-                $p=0;
-            }
-            if(isset($appliedToProducts['total'])){
-                $o=$appliedToProducts['total'];
-            }else{
-                $o=0;
-            }
-            $total = $t + $p + $o;
-
-            if(isset($appliedToAll['applied_to'])){
-                $t=$appliedToAll['applied_to'];
-            }else{
-                $t=0;
-            }
-            if(isset($appliedToTypes['applied_to'])){
-                $p=$appliedToTypes['applied_to'];
-            }else{
-                $p=0;
-            }
-            if(isset($appliedToProducts['applied_to'])){
-                $o=$appliedToProducts['applied_to'];
-            }else{
-                $o=0;
-            }
-           
-            
+            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
             return [
                 'total'                 => $total,
@@ -466,12 +430,12 @@ trait InvoiceCouponTrait
                 'coupon_type'           => $coupon->class,
                 'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to'            => [
-                    'applied_to_all'        => $t,
-                    'applied_to_types'      => $p,
-                    'applied_to_products'   => $o,
+                    'applied_to_all'        => $appliedToAll['applied_to'],
+                    'applied_to_types'      => $appliedToTypes['applied_to'],
+                    'applied_to_products'   => $appliedToProducts['applied_to'],
                 ],
                 'coupon_amount_details' => $couponEligibleFor,
-                'coupon_tax'            => (array_sum($this->totalTaxableAmount)) * $stateTax / 100,
+                'coupon_tax'            => array_sum($this->totalTaxableAmount) * $stateTax / 100,
                 'is_stackable'          => $coupon->stackable
             ];
         } else {
@@ -569,7 +533,6 @@ trait InvoiceCouponTrait
         if ($this->cartItems != null) {
             if (count($this->cartItems['order_groups'])) {
                 foreach ($this->cartItems['order_groups'] as $cart) {
-                    // dd($cart);
                     if ($cart['plan']['amount_onetime'] > 0) {
                         $this->activation[] = $cart['plan']['amount_onetime'];
                     }
@@ -642,10 +605,6 @@ trait InvoiceCouponTrait
     public function calTaxes($taxId = null)
     {
         $this->taxes = [];
-        
-        if($this->couponAmount){
-            return ($this->subTotalPrice()+$this->coupon()) * $this->stateTax /100;
-        }
         if ($this->cartItems != null) {
             if (count($this->cartItems['order_groups'])) {
                 foreach ($this->cartItems['order_groups'] as $cart) {
@@ -782,7 +741,7 @@ trait InvoiceCouponTrait
         if (!$customer) {
             if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
-            } elseif (isset($this->cart['customer']) && isset($this->cart['customer']['billing_state_id'])) {
+            } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['customer']['billing_state_id'];
             }
         } else {
@@ -1115,7 +1074,6 @@ trait InvoiceCouponTrait
         foreach ($orderGroups as $og) {
             // plan charges
             if ($og->plan_id) {
-                
                 $planData = $this->couponForPlans($og, $isPercentage, $coupon, $tax);
                 if ($planData['discount'] == 0 || !$planData['discount']) continue;
                 $totalDiscount += $planData['discount'];
@@ -1234,22 +1192,18 @@ trait InvoiceCouponTrait
         $isPercentage       = $couponMain['fixed_or_perc'] == self::FIXED_PERC_TYPES['percentage'];
         $multilineRestrict  = $couponMain['multiline_restrict_plans'] == 1 ? $couponMain->multilinePlanTypes->pluck('plan_type')->toArray() : null;
         $totalDiscount      = 0;
-       
+
         foreach ($couponMain->couponProducts as $coupon) {
             foreach ($order->allOrderGroup as $og) {
                 // For plans
-               
                 if ($coupon->product_type == self::SPECIFIC_TYPES['PLAN'] && $coupon->product_id == $og->plan_id) {
-                    
                     $planData = $this->couponForPlans($og, $isPercentage, $coupon, $tax);
                     if ($planData['discount'] == 0 || !$planData['discount']) continue;
                     $totalDiscount += $planData['discount'];
                     $orderCouponProduct[] = $planData['products'];
                 }
                 // For devices
-                
                 if ($coupon->product_type == self::SPECIFIC_TYPES['DEVICE'] && $coupon->product_id == $og->device_id) {
-            
                     $deviceData = $this->couponForDevice($og, $isPercentage, $coupon, $tax);
                     if (!$deviceData['discount'] || $deviceData['discount'] == 0) continue;
                     $totalDiscount += $deviceData['discount'];
@@ -1257,7 +1211,6 @@ trait InvoiceCouponTrait
                 }
                 // For Sims
                 if ($coupon->product_type == self::SPECIFIC_TYPES['SIM'] && $coupon->product_id == $og->sim_id) {
-                    
                     $simData = $this->couponForSims($og, $isPercentage, $coupon, $tax);
                     if ($simData['discount'] == 0 || !$simData['discount']) continue;
                     $totalDiscount += $simData['discount'];
@@ -1292,18 +1245,15 @@ trait InvoiceCouponTrait
      */
     protected function couponForPlans($og, $isPercentage, $coupon, $tax)
     {
-      
         $planAmount = $og->plan_prorated_amt ?: $og->plan->amount_recurring;
         $planAmount += $og->plan->amount_onetime ?: 0;
         $planDiscount = ($isPercentage ? $coupon->amount * $planAmount / 100 : $coupon->amount);
-       // dd($this->totalTaxableAmount);
         /**
          * @internal Rule that coupon can never exceed the original cost
          */
         $discountAmount = $planDiscount > $planAmount ? $planAmount : $planDiscount;
         $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['PLAN'], $og->plan_id, $coupon->amount, $discountAmount, $og->id);
         $this->totalTaxableAmount[] = $og->plan->taxable && $planAmount > $discountAmount ? $planAmount - $discountAmount : 0;
-       
         return ['discount' => $discountAmount, 'products' => $orderCouponProduct];
     }
 
@@ -1403,20 +1353,15 @@ trait InvoiceCouponTrait
      */
     protected function couponForDevice($og, $isPercentage, $coupon, $tax)
     {
-        
         $deviceAmount = $og->plan_id ? $og->device->amount_w_plan : $og->device->amount;
-    //    dd($deviceAmount);
         $deviceDiscount = ($isPercentage ? $coupon->amount * $deviceAmount / 100 : $coupon->amount);
-        
-        
+
         /**
          * @internal Rule that coupon can never exceed the original cost
          */
         $discountAmount = $deviceDiscount > $deviceAmount ? $deviceAmount : $deviceDiscount;
-        
         $orderCouponProduct = $this->orderCouponProducts(self::SPECIFIC_TYPES['DEVICE'], $og->device_id, $coupon->amount, $discountAmount, $og->id);
         $this->totalTaxableAmount[] = $og->device->taxable && $deviceAmount > $discountAmount ? $deviceAmount - $discountAmount : 0;
-        
         return ['discount' => $discountAmount, 'products' => $orderCouponProduct];
     }
 
