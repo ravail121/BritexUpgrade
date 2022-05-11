@@ -43,8 +43,8 @@ class SendMailFired
 		    return false;
 	    }
 
-	    //$alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com', 'prajwal@britewireless.com'];
-		$alertEmails = ['rvlirshad@gmail.com'];
+	    $alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com', 'prajwal@britewireless.com'];
+		//$alertEmails = ['rvlirshad@gmail.com'];
 
 		foreach($alertEmails as $alertEmail){
 			Notification::route('mail', $alertEmail)->notify(new SendEmailForInvoices($invoices, $companyId));
