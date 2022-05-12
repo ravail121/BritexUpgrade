@@ -32,6 +32,11 @@ Route::get('/britex-test-cc', function(){
 //	$cc->test();
 });
 
+Route::get('/check', [
+	'as'=>'test',
+	'uses'=> 'Api\V1\CronJobs\checkInvoice@check',
+]);
+
 Route::get('britex-test-email', function(Illuminate\Http\Request $request){
 	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
 		$message->from('postmaster@mg.teltik.com');
@@ -88,7 +93,7 @@ Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], f
 	});
 });
 
-Route::group(['namespace' => '\Api\V1'],function()
+Route::group(['namespace' => 'Api\V1'],function()
 {
 	Route::post('/sample-image',[
 		'as'=>'api.image.post',
@@ -140,7 +145,7 @@ Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], f
 
 Route::middleware('APIToken')->group(function () {
 	// Orders API
-	Route::group(['prefix' => 'order', 'namespace' => '\Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
+	Route::group(['prefix' => 'order', 'namespace' => 'Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
 	{
 		Route::get('/', [
 			'as' => 'api.orders.list',
@@ -176,7 +181,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 	// Order-Group API
-	Route::group(['prefix' => 'order-group', 'namespace' => '\Api\V1'], function()
+	Route::group(['prefix' => 'order-group', 'namespace' => 'Api\V1'], function()
 	{
 		Route::get('/', [
 			'as' => 'api.order_group.list',
@@ -193,7 +198,7 @@ Route::middleware('APIToken')->group(function () {
 
 	});
 
-	Route::group(['prefix' => 'coupon', 'namespace' => '\Api\V1'], function()
+	Route::group(['prefix' => 'coupon', 'namespace' => 'Api\V1'], function()
 	{
 		Route::post('/add-coupon', [
 			'as'    => 'api.coupon.addCoupon'  ,
@@ -313,7 +318,7 @@ Route::middleware('APIToken')->group(function () {
 
 
 	// Porting
-	Route::group(['prefix' => 'porting/check', 'namespace' => '\Api\V1'], function()
+	Route::group(['prefix' => 'porting/check', 'namespace' => 'Api\V1'], function()
 	{
 		Route::get('/', [
 			'as' => 'api.porting.check',
@@ -323,7 +328,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['prefix' => 'create-customer', 'namespace' => '\Api\V1'],function()
+	Route::group(['prefix' => 'create-customer', 'namespace' => 'Api\V1'],function()
 	{
 		Route::post('/',[
 			'as'=>'api.customer.post',
@@ -339,7 +344,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['prefix' => 'biz-verification', 'namespace' => '\Api\V1'], function(){
+	Route::group(['prefix' => 'biz-verification', 'namespace' => 'Api\V1'], function(){
 		Route::post('/', [
 			'as'=>'api.bizverification.post',
 			'uses'=>'BizVerificationController@post',
@@ -408,14 +413,14 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
 		Route::get('/default-imei', [
 			'as'   => 'api.default.imei',
 			'uses' => 'DeviceController@getImei'
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
 
 		Route::post('/charge-new-card',[
 			'as'   => 'api.customer.creditcard',
@@ -463,7 +468,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
 
 		Route::post('/create-email-log',[
 			'as'   => 'api.create.emaillog',
@@ -516,7 +521,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 
-	Route::group(['namespace' => '\Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
 		Route::post('/sign-on',[
 			'as'   => 'api.customer.signon',
 			'uses' => 'SignOnController@signOn',
@@ -617,7 +622,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['namespace' => '\Api\V1'], function() {
+	Route::group(['namespace' => 'Api\V1'], function() {
 		Route::get('/subscription-by-phone-number', [
 			'as' => 'api.Subscription.phone',
 			'uses' => 'SubscriptionController@getSubscriptionByPhoneNumber',
@@ -632,7 +637,7 @@ Route::middleware('APIToken')->group(function () {
 	/**
 	 * APIS for Bulk Orders
 	 */
-	Route::group(['prefix' => 'bulk-order', 'namespace' => '\Api\V1'], function() {
+	Route::group(['prefix' => 'bulk-order', 'namespace' => 'Api\V1'], function() {
 		Route::post( '/customer', [
 			'as'   => 'api.bulk.order.create.customer',
 			'uses' => 'CustomerController@createCustomerForBulkOrder',
