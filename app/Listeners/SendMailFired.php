@@ -42,8 +42,8 @@ class SendMailFired
 	    if ($configurationSet) {
 		    return false;
 	    }
-
-	    $alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com', 'prajwal@britewireless.com'];
+        $alertEmails = ['rvlirshad@gmail.com','shlomo@britewireless.com'];
+	   // $alertEmails = ['support@britewireless.com', 'shlomo@britewireless.com', 'david@britewireless.com', 'prajwal@britewireless.com'];
 		//$alertEmails = ['rvlirshad@gmail.com'];
 
 		foreach($alertEmails as $alertEmail){
