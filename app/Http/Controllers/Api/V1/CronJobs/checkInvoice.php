@@ -23,7 +23,7 @@ class checkInvoice extends BaseController
 	 * @return \Illuminate\Http\JsonResponse
 	 */
 	
-	protected function check()
+	public function check()
     {
         $arr=array();
         
