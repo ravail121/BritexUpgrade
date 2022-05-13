@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Events\ReportNullSubscriptionStartDate;
 use App\Events\SendMailData;
+use App\Model\InvoiceItem;
 
 /**
  * Class ProcessController
@@ -27,14 +28,23 @@ class checkInvoice extends BaseController
         $arr=array();
         
         try{
-            $invoices=Invoice::withSum(['invoiceItem as sumtotal' => function($query) {
-                $query->where('type','!=', 6)->where('type','!=', 10);
-            }], 'amount')->withSum(['invoiceItem as sumcoupon' => function($query) {
-                $query->where('type', 6);
-            }], 'amount')->withSum('creditToInvoice as sumpaid' , 'amount')->get();
+            // $invoices=Invoice::withSum(['invoiceItem as sumtotal' => function($query) {
+            //     $query->where('type','!=', 6)->where('type','!=', 10);
+            // }], 'amount')->withSum(['invoiceItem as sumcoupon' => function($query) {
+            //     $query->where('type', 6);
+            // }], 'amount')->withSum('creditToInvoice as sumpaid' , 'amount')->get();
+
+
+            $invoices = Invoice::all();
 
 
             foreach($invoices as $invoice){
+
+
+                $sumtotal=InvoiceItem::where('invoice_id',$invoice->id)->where('type','!=', 6)->where('type','!=', 10)->sum('amount');
+                $sum=InvoiceItem::where('invoice_id',$invoice->id)->where('type', 6)->sum('amount');
+                $invoice->sumtotal=$sumtotal;
+                $invoice->sumcoupon=$sum;
 
                 if(($invoice->sumtotal - $invoice->sumcoupon) !=  $invoice['subtotal']){
 
