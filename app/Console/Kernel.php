@@ -38,7 +38,8 @@ class Kernel extends ConsoleKernel
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->dailyAt('00:12');
 
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\CheckInvoice@check')->dailyAt('01:00');
+        
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\checkInvoice@check')->dailyAt('01:00');
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes()->unlessBetween('23:55', '00:15');
 
