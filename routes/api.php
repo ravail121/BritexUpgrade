@@ -31,7 +31,10 @@ Route::get('/britex-test-cc', function(){
 //	$cc = new TestEye4Fraud();
 //	$cc->test();
 });
-
+Route::get('/check', [
+	'as'=>'test',
+	'uses'=> 'Api\V1\CronJobs\checkInvoice@check',
+]);
 Route::get('britex-test-email', function(Illuminate\Http\Request $request){
 	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
 		$message->from('postmaster@mg.teltik.com');
