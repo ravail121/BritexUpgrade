@@ -843,8 +843,9 @@ trait InvoiceCouponTrait
     protected function getCouponPrice($couponData, $item, $itemType)
     {
         $productDiscount = 0;
-        $dataArray=[];
+        
         foreach($couponData as $coupon) {
+            $dataArray=[];
             $type = $coupon[ 'coupon_type' ];
             if ( $type == 1 ) { // Applied to all
                 $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_all' ];
