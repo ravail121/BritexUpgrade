@@ -224,10 +224,12 @@ trait InvoiceTrait
 		if ($order && $order->invoice && $order->invoice->invoiceItem) {
 			$customer = $order->customer;
 			$data = $this->dataForInvoice( $order );
+			//dd($customer);
 			if(!$customer->csv_invoice_enabled) {
 				if ( $order->invoice->type == Invoice::TYPES[ 'one-time' ] ) {
 					$planChange = $this->ifUpgradeOrDowngradeInvoice( $order );
 					if ( $planChange ) {
+					//	dd(2);
 						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data', 'planChange' ) );
 						// return View('templates/onetime-invoice', compact('data', 'planChange'));
 						$request && $mail ? event( new UpgradeDowngradeInvoice( $order, $generatePdf ) ) : null;
@@ -236,9 +238,11 @@ trait InvoiceTrait
 
 					} else {
 						// return View('templates/onetime-invoice', compact('data'));
+					//	dd(3);
 						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data' ) );
 					}
 				} else {
+			//		dd(4);
 					$subscriptions = $this->subscriptionData( $order );
 
 					if ( ! $subscriptions ) {
@@ -559,6 +563,7 @@ trait InvoiceTrait
 		if($couponData) {
 			$couponDiscount = 0;
 			$eligibleProduct = [];
+			$dataArray=[];
 			foreach($couponData as $coupon) {
 				$type = $coupon[ 'coupon_type' ];
 				if ( $type == 1 ) { // Applied to all
@@ -570,9 +575,10 @@ trait InvoiceTrait
 				}
 				if ( count( $appliedTo ) ) {
 					foreach ( $appliedTo as $product ) {
-						if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
+						if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id && (!in_array($item->id, $dataArray))) {
 							$couponDiscount += $item->amount - $product['discount'];
 							$eligibleProduct = [$item->id];
+							array_push($dataArray,$item->id);
 						}
 					}
 				}
