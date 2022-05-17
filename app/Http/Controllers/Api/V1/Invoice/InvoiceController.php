@@ -332,8 +332,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 				$array = [
 					'product_type' => self::PLAN_TYPE,
 					'product_id'   => $subscription->plan_id,
-					'amount'       => number_format($plan->amount_recurring, 2),
-					'taxable'      => $plan->taxable,
+					'amount'       => round($plan->amount_recurring,2),
+					'taxable'      => round($plan->taxable,2),
 					'description'  => 'Auto generated as monthly is paid'
 				];
 
@@ -366,8 +366,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 						'product_type' => self::ADDON_TYPE,
 						'product_id'   => $addon->id,
 						'type'         => 2,
-						'amount'       => number_format($addonAmount, 2),
-						'taxable'      => $addon->taxable,
+						'amount'       => round($addonAmount, 2),
+						'taxable'      => round($addon->taxable,2),
 						'description'  => 'Auto generated as monthly is paid'
 					];
 
@@ -401,8 +401,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 				'subscription_id'   => $subscription->id,
 				'product_type'      => self::PLAN_TYPE,
 				'product_id'        => $subscription->plan_id,
-				'amount'            => number_format($amount, 2),
-				'taxable'           => $plan->taxable,
+				'amount'            => round($amount, 2),
+				'taxable'           => round($plan->taxable,2),
 				'description'       => ''
 			];
 			if($subscription->upgrade_downgrade_status =='for-upgrade'){
@@ -440,8 +440,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 					'product_type'      => self::ADDON_TYPE,
 					'product_id'        => $addon->id,
 					'type'              => 2,
-					'amount'            => number_format($addonAmount, 2),
-					'taxable'           => $addon->taxable,
+					'amount'            => round($addonAmount, 2),
+					'taxable'           => round($addon->taxable,2),
 					'description'       => ''
 				];
 
@@ -489,9 +489,9 @@ class InvoiceController extends BaseController implements ConstantInterface
 					$device = Device::find($subscription->device_id);
 					$array = array_merge($array, [
 						'type'           => 3,
-						'amount'        => $device->amount_w_plan,
+						'amount'        => round($device->amount_w_plan,2),
 						'description'   => '',
-						'taxable'       => $device->taxable
+						'taxable'       => round($device->taxable,2)
 					]);
 
 				}
@@ -510,8 +510,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 				$array = [
 					'product_type' => self::PLAN_TYPE,
 					'product_id'   => $subscription->plan_id,
-					'amount'       => number_format($amount, 2),
-					'taxable'      => $plan->taxable,
+					'amount'       => round($amount, 2),
+					'taxable'      => round($plan->taxable),
 					'description'  => ''
 				];
 
@@ -541,8 +541,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 					'product_type' => self::SIM_TYPE,
 					'product_id'   => $subscription->sim_id,
 					'type'         => 3,
-					'amount'       => $sim->amount_w_plan,
-					'taxable'      => $sim->taxable,
+					'amount'       => round($sim->amount_w_plan,2),
+					'taxable'      => round($sim->taxable,2),
 					'description'  => ''
 				];
 
@@ -570,8 +570,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 						'product_type' => self::ADDON_TYPE,
 						'product_id'   => $addon->id,
 						'type'         => 2,
-						'amount'       => number_format($addonAmount, 2),
-						'taxable'      => $addon->taxable,
+						'amount'       => round($addonAmount, 2),
+						'taxable'      => round($addon->taxable,2),
 						'description'  => ''
 					];
 
@@ -626,8 +626,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 						'product_type'    => self::ADDON_TYPE,
 						'product_id'      => $addon->id,
 						'type'            => 2,
-						'amount'          => number_format($addonAmount, 2),
-						'taxable'         => $addon->taxable,
+						'amount'          => round($addonAmount, 2),
+						'taxable'         => round($addon->taxable,2),
 						'subscription_id' => $subscription->id,
 						'invoice_id'      => $order->invoice_id,
 						'start_date'      => $order->invoice->start_date,
@@ -709,8 +709,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 			$array = array_merge($subArray, [
 				'product_id'    => $device->id,
 				'type'          => 3,
-				'amount'        => $device->amount,
-				'taxable'       => $device->taxable,
+				'amount'        => round($device->amount,2),
+				'taxable'       => round($device->taxable,2),
 				'description'   => ''
 			]);
 			$invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
@@ -741,8 +741,8 @@ class InvoiceController extends BaseController implements ConstantInterface
 			$array = array_merge($subArray, [
 				'product_id'    => $sim->id,
 				'type'          => 3,
-				'amount'        => $sim->amount_alone,
-				'taxable'       => $sim->taxable,
+				'amount'        => round($sim->amount_alone,2),
+				'taxable'       => round($sim->taxable,2),
 				'description'   => ''
 			]);
 			$invoiceItem = InvoiceItem::create(array_merge($this->input, $array));
@@ -864,7 +864,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 					'amount'          => 0,
 					'start_date'      => $invoice->start_date,
 					'type'            => 1,
-					'taxable'         => $orderGroup['plan']['taxable'],
+					'taxable'         => round($orderGroup['plan']['taxable'],2),
 					'description'     => $description,
 				];
 				InvoiceItem::create($data);
