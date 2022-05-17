@@ -153,8 +153,8 @@ class InvoiceController extends BaseController
 							'type'              => 1,
 							'start_date'        => $_invoice->start_date,
 							'description'       => $_subscription->plans->description,
-							'amount'            => $_subscription->plans->amount_recurring,
-							'taxable'           => $_subscription->plans->taxable,
+							'amount'            => round($_subscription->plans->amount_recurring,2),
+							'taxable'           => round($_subscription->plans->taxable,2)
 						]);
 					}
 
@@ -179,8 +179,8 @@ class InvoiceController extends BaseController
 							'type'              => 2,
 							'start_date'        => $_invoice->start_date,
 							'description'       => $subscriptionaddon->addon->description,
-							'amount'            => $subscriptionaddon->addon->amount_recurring,
-							'taxable'           => $taxable,
+							'amount'            => round($subscriptionaddon->addon->amount_recurring,2),
+							'taxable'           => round($taxable,2)
 						]);
 						$regulatory_fee_type = $_subscription->plans->regulatory_fee_type;
 						$regulatory_fee_amount = $_subscription->plans->regulatory_fee_amount;
