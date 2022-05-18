@@ -110,7 +110,7 @@ trait InvoiceTrait
 						'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
 						'start_date'   => $invoice->start_date,
 						'description'  => "(Taxes)",
-						'amount'       => round($taxPercentage * $taxAmount, 2),
+						'amount'       => $taxPercentage * $taxAmount,
 						'taxable'      => $isTaxable,
 					]
 				);
