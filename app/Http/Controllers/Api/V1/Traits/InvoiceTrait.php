@@ -110,7 +110,7 @@ trait InvoiceTrait
 						'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
 						'start_date'   => $invoice->start_date,
 						'description'  => "(Taxes)",
-						'amount'       => round($taxPercentage * $taxAmount, 2),
+						'amount'       => $taxPercentage * $taxAmount,
 						'taxable'      => $isTaxable,
 					]
 				);
@@ -232,7 +232,7 @@ trait InvoiceTrait
 				if ( $order->invoice->type == Invoice::TYPES[ 'one-time' ] ) {
 					$planChange = $this->ifUpgradeOrDowngradeInvoice( $order );
 					if ( $planChange ) {
-						//dd(2);
+						dd(2);
 						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data', 'planChange' ) );
 						// return View('templates/onetime-invoice', compact('data', 'planChange'));
 						$request && $mail ? event( new UpgradeDowngradeInvoice( $order, $generatePdf ) ) : null;
@@ -245,7 +245,7 @@ trait InvoiceTrait
 						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data' ) );
 					}
 				} else {
-					//dd(4);
+					dd(4);
 					$subscriptions = $this->subscriptionData( $order );
 
 					if ( ! $subscriptions ) {
@@ -580,7 +580,11 @@ trait InvoiceTrait
 				} elseif ( $type == 3 ) { // Applied to products
 					$appliedTo = isset($coupon['applied_to']['applied_to_products']) ? $coupon['applied_to']['applied_to_products'] : [];
 				}
-				
+				if($itemType==1){
+
+					//dd($couponData);
+	
+				}
 				if ( count( $appliedTo ) ) {
 					foreach ( $appliedTo as $product ) {
 						
