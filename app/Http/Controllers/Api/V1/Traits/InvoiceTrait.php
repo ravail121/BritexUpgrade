@@ -97,8 +97,10 @@ trait InvoiceTrait
 			if ($coupons) {
 				$taxData = $this->couponTax($taxableItems, $coupons);
 				$taxAmount = $taxData;
+			//	dd($taxAmount);
 				// If coupon tax amount = 0, use original.
 			}
+			
 			if ($taxAmount > 0) {
 				$subscription->invoiceItemDetail()->create(
 					[
@@ -108,11 +110,12 @@ trait InvoiceTrait
 						'type'         => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
 						'start_date'   => $invoice->start_date,
 						'description'  => "(Taxes)",
-						'amount'       => number_format($taxPercentage * $taxAmount, 2),
+						'amount'       => round($taxPercentage * $taxAmount, 2),
 						'taxable'      => $isTaxable,
 					]
 				);
 			}
+		//	dd($taxAmount);
 		}
 	}
 
@@ -148,7 +151,7 @@ trait InvoiceTrait
 						'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
 						'start_date'        => $invoice->start_date,
 						'description'       => "(Taxes)",
-						'amount'            => number_format($taxPercentage * $taxAmount, 2),
+						'amount'            => round($taxPercentage * $taxAmount, 2),
 						'taxable'           => $isTaxable,
 					]
 				);
@@ -202,7 +205,7 @@ trait InvoiceTrait
 					'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
 					'start_date'        => $invoice->start_date,
 					'description'       => "(Taxes)",
-					'amount'            => number_format($taxPercentage * $taxesWithoutSubscriptions, 2),
+					'amount'            => round($taxPercentage * $taxesWithoutSubscriptions, 2),
 					'taxable'           => $isTaxable,
 				]
 			);
@@ -224,10 +227,12 @@ trait InvoiceTrait
 		if ($order && $order->invoice && $order->invoice->invoiceItem) {
 			$customer = $order->customer;
 			$data = $this->dataForInvoice( $order );
+			//dd($customer);
 			if(!$customer->csv_invoice_enabled) {
 				if ( $order->invoice->type == Invoice::TYPES[ 'one-time' ] ) {
 					$planChange = $this->ifUpgradeOrDowngradeInvoice( $order );
 					if ( $planChange ) {
+						//dd(2);
 						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data', 'planChange' ) );
 						// return View('templates/onetime-invoice', compact('data', 'planChange'));
 						$request && $mail ? event( new UpgradeDowngradeInvoice( $order, $generatePdf ) ) : null;
@@ -236,9 +241,11 @@ trait InvoiceTrait
 
 					} else {
 						// return View('templates/onetime-invoice', compact('data'));
+					//	dd(3);
 						$generatePdf = PDF::loadView( 'templates/onetime-invoice', compact( 'data' ) );
 					}
 				} else {
+					//dd(4);
 					$subscriptions = $this->subscriptionData( $order );
 
 					if ( ! $subscriptions ) {
@@ -520,6 +527,7 @@ trait InvoiceTrait
 	{
 		$amount = [0];
 		$eligible_products = [];
+		//dd($items);
 		if ($coupons) {
 			foreach ($items as $item) {
 				if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device']) {
@@ -536,14 +544,16 @@ trait InvoiceTrait
 				$eligible_products[] = $couponTaxData['eligible_product'];
 			}
 		}
-		$eligibleIds = [];
-		foreach ($eligible_products as $ep) {
-			foreach ($ep as $id) {
-				$eligibleIds[] = $id;
-			}
-		}
-		$amount[] = $items->whereNotIn('id', $eligibleIds)->sum('amount');
-
+		// $eligibleIds = [];
+		// foreach ($eligible_products as $ep) {
+		// 	foreach ($ep as $id) {
+		// 		$eligibleIds[] = $id;
+		// 	}
+		// }
+	
+		
+		// $amount[] = $items->whereNotIn('id', $eligibleIds)->sum('amount');
+		//dd($amount);
 		return array_sum($amount);
 	}
 
@@ -559,7 +569,9 @@ trait InvoiceTrait
 		if($couponData) {
 			$couponDiscount = 0;
 			$eligibleProduct = [];
+			
 			foreach($couponData as $coupon) {
+				$dataArray=[];
 				$type = $coupon[ 'coupon_type' ];
 				if ( $type == 1 ) { // Applied to all
 					$appliedTo = isset($coupon['applied_to']['applied_to_all']) ? $coupon['applied_to']['applied_to_all'] : [];
@@ -568,15 +580,23 @@ trait InvoiceTrait
 				} elseif ( $type == 3 ) { // Applied to products
 					$appliedTo = isset($coupon['applied_to']['applied_to_products']) ? $coupon['applied_to']['applied_to_products'] : [];
 				}
+				
 				if ( count( $appliedTo ) ) {
 					foreach ( $appliedTo as $product ) {
-						if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id) {
-							$couponDiscount += $item->amount - $product['discount'];
+						
+						if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item->product_id && (!in_array($item->product_id, $dataArray))) {
+							
+							$couponDiscount +=  $product['discount'];
+							
 							$eligibleProduct = [$item->id];
+							array_push($dataArray,$item->product_id);
 						}
 					}
 				}
 			}
+			$couponDiscount= $item->amount -$couponDiscount;
+			
+			
 			return [
 				'amount'            => $couponDiscount,
 				'eligible_product'  => $eligibleProduct

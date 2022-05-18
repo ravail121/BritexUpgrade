@@ -761,9 +761,13 @@ trait InvoiceCouponTrait
             return $plans + $addons;
         }
         $devices        = $this->addTaxesDevices($cart, $cart['device'], $taxPercentage);
+        //dd($devices);
         $sims           = $this->addTaxesSims($cart, $cart['sim'], $taxPercentage);
+       //dd($sims);
         $plans          = $this->addTaxesToPlans($cart, $cart['plan'], $taxPercentage);
+        // dd($plans);
         $addons         = $this->addTaxesToAddons($cart, $taxPercentage);
+       // dd($devices + $sims + $plans + $addons);
         return $devices + $sims + $plans + $addons;
     }
 
@@ -822,7 +826,7 @@ trait InvoiceCouponTrait
             $amount = $item['amount_onetime'] != null ? $amount + $item['amount_onetime'] : $amount;
             if ($this->couponAmount) {
                 $discounted = $this->getCouponPrice($this->couponAmount, $item, 1);
-                $amount = $discounted > 0 && $amount > $discounted ? $amount - $discounted : 0;
+                $amount = $amount > $discounted ? $amount - $discounted : 0;
             }
             $planTax[] = $taxPercentage * $amount;
         }
@@ -839,27 +843,27 @@ trait InvoiceCouponTrait
     protected function getCouponPrice($couponData, $item, $itemType)
     {
         $productDiscount = 0;
-
-        foreach ($couponData as $coupon) {
-        	$type = array_key_exists('coupon_type', $coupon) ? $coupon['coupon_type'] : 0;
-	        $appliedTo = [];
-            if ($type == 1) { // Applied to all
-                $appliedTo = $coupon['applied_to']['applied_to_all'];
-            } elseif ($type == 2) { // Applied to types
-                $appliedTo = $coupon['applied_to']['applied_to_types'];
-            } elseif ($type == 3) { // Applied to products
-                $appliedTo = $coupon['applied_to']['applied_to_products'];
+        
+        foreach($couponData as $coupon) {
+            $dataArray=[];
+            $type = $coupon[ 'coupon_type' ];
+            if ( $type == 1 ) { // Applied to all
+                $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_all' ];
+            } elseif ( $type == 2 ) { // Applied to types
+                $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_types' ];
+            } elseif ( $type == 3 ) { // Applied to products
+                $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_products' ];
             }
-            if (count($appliedTo)) {
-                foreach ($appliedTo as $product) {
-                    if ($product['order_product_type'] == $itemType && $product['order_product_id'] == $item['id']) {
-                        $productDiscount += $product['discount'];
+            if ( count( $appliedTo ) ) {
+                foreach ( $appliedTo as $product ) {
+                    if ( $product[ 'order_product_type' ] == $itemType && $product[ 'order_product_id' ] == $item[ 'id' ] && (!in_array($item[ 'id' ], $dataArray)) ) {
+                        $productDiscount += $product[ 'discount' ];
+                        array_push($dataArray,$item[ 'id' ]);
                     }
                 }
             }
 
         }
-
         return $productDiscount;
     }
 
@@ -874,14 +878,17 @@ trait InvoiceCouponTrait
     {
         $itemTax = [];
         if ($item && $item['taxable']) {
-            $amount = $cart['plan'] != null ? $item['amount_w_plan'] : $item['amount'];
+            $amount = $cart['plan'] != null ? $item['amount_w_plan'] : $item['amount_alone'];
 
             if ($this->couponAmount ) {
+               // dd($this->couponAmount);
                 $discounted = $this->getCouponPrice($this->couponAmount, $item, 2);
                 $amount = $discounted > 0 && $amount > $discounted ? $amount - $discounted : 0;
             }
             $itemTax[] = $taxPercentage * $amount;
+            
         }
+        
         return !empty($itemTax) ? array_sum($itemTax) : 0;
     }
 
@@ -899,7 +906,7 @@ trait InvoiceCouponTrait
             $amount = $cart['plan'] != null ? $item['amount_w_plan'] : $item['amount_alone'];
             if ($this->couponAmount) {
                 $discounted = $this->getCouponPrice($this->couponAmount, $item, 3);
-                $amount = $discounted > 0 && $amount > $discounted ? $amount - $discounted : 0;
+                $amount = $amount > $discounted ? $amount - $discounted : 0;
             }
             $itemTax[] = $taxPercentage * $amount;
         }
