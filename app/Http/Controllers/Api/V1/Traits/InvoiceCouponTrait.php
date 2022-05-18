@@ -608,12 +608,11 @@ trait InvoiceCouponTrait
         if ($this->cartItems != null) {
             if (count($this->cartItems['order_groups'])) {
                 foreach ($this->cartItems['order_groups'] as $cart) {
-                    $this->taxes[] = $this->calTaxableItems($cart, $taxId);
+                    $this->taxes[] = number_format($this->calTaxableItems($cart, $taxId), 2);
                 }
             }
         }
         $taxes = ($this->taxes) ? array_sum($this->taxes) : 0;
-        $taxes=round($taxes,2);
         $taxId ?  $this->tax_total = $taxes : $this->tax_total = 0;
         $taxId ? $this->totalPrice() : null; // to add tax to total without refresh
         return $taxes;
