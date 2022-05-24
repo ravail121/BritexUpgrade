@@ -46,7 +46,7 @@ class checkInvoice extends BaseController
                 $invoice->sumtotal=$sumtotal;
                 $invoice->sumcoupon=$sum;
 
-                if(($invoice->sumtotal - $invoice->sumcoupon) !=  $invoice['subtotal']){
+                if(round(($invoice->sumtotal - $invoice->sumcoupon),2) !=  $invoice['subtotal']){
 
                    array_push($arr,$invoice);
 
