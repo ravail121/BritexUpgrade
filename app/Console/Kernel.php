@@ -35,63 +35,63 @@ class Kernel extends ConsoleKernel
         });
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice')->dailyAt('00:02')->before(function() {
-		    $this->logRecords('Check Updates');
+		    $this->logRecords('Generate Monthly Invoice');
 	    })->after(function() {
-		    $this->logRecords('Check Updates', 'after');
+		    $this->logRecords('Generate Monthly Invoice', 'after');
 	    });;
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice')->dailyAt('00:04')->before(function() {
-		    $this->logRecords('Check Updates');
+		    $this->logRecords('Generate Invoice');
 	    })->after(function() {
-		    $this->logRecords('Check Updates', 'after');
+		    $this->logRecords('Generate Invoice', 'after');
 	    });;
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CardController@autoPayInvoice')->dailyAt('00:06')->before(function() {
-		    $this->logRecords('Check Updates');
+		    $this->logRecords('Auto Pay Invoice');
 	    })->after(function() {
-		    $this->logRecords('Check Updates', 'after');
+		    $this->logRecords('Auto Pay Invoice', 'after');
 	    });;
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ProcessController@processSubscriptions')->dailyAt('00:08')->before(function() {
-		    $this->logRecords('Check Updates');
+		    $this->logRecords('Process Subscriptions');
 	    })->after(function() {
-		    $this->logRecords('Check Updates', 'after');
+		    $this->logRecords('Process Subscriptions', 'after');
 	    });;
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ReminderController@autoPayReminder')->dailyAt('00:10')->before(function() {
-	        $this->logRecords('Check Updates');
+	        $this->logRecords('Auto Pay Reminder');
         })->after(function() {
-	        $this->logRecords('Check Updates', 'after');
+	        $this->logRecords('Auto Pay Reminder', 'after');
         });;
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->dailyAt('00:12')->before(function() {
-		    $this->logRecords('Check Updates');
+		    $this->logRecords('Suspended And Null Start Date Check');
 	    })->after(function() {
-		    $this->logRecords('Check Updates', 'after');
+		    $this->logRecords('Suspended And Null Start Date Check', 'after');
 	    });;
 
 		$schedule->call('App\Http\Controllers\Api\V1\CronJobs\checkInvoice@check')->dailyAt('01:00')->before(function() {
-			$this->logRecords('Check Updates');
+			$this->logRecords('Check Invoice');
 		})->after(function() {
-			$this->logRecords('Check Updates', 'after');
+			$this->logRecords('Check Invoice', 'after');
 		});;
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes()->unlessBetween('23:55', '00:15')->before(function() {
-		    $this->logRecords('Check Updates');
+		    $this->logRecords('Ship Order');
 	    })->after(function() {
-		    $this->logRecords('Check Updates', 'after');
+		    $this->logRecords('Ship Order', 'after');
 	    });;
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyTenMinutes()->unlessBetween('23:55', '00:15')->before(function() {
-	        $this->logRecords('Check Updates');
+	        $this->logRecords('Update Tracking Number');
         })->after(function() {
-	        $this->logRecords('Check Updates', 'after');
+	        $this->logRecords('Update Tracking Number', 'after');
         });;
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\CreditCardExpirationController@cardExpirationReminder')->monthly()->before(function() {
-		    $this->logRecords('Check Updates');
+		    $this->logRecords('Card Expiration Reminder');
 	    })->after(function() {
-		    $this->logRecords('Check Updates', 'after');
+		    $this->logRecords('Card Expiration Reminder', 'after');
 	    });;
     }
 
