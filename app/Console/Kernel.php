@@ -48,7 +48,7 @@ class Kernel extends ConsoleKernel
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->dailyAt('00:12')
 		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
 
-		$schedule->call('App\Http\Controllers\Api\V1\CronJobs\checkInvoice@check')
+		$schedule->call('App\Http\Controllers\Api\V1\CronJobs\checkInvoice@check')->dailyAt('01:00')
 			->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes()->unlessBetween('23:55', '00:15')
