@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+
 use Carbon\Carbon;
 use App\Model\Invoice;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Events\AutoPayReminder;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 
 /**
  * Class ReminderController
@@ -16,6 +18,7 @@ use App\Http\Controllers\Controller;
  */
 class ReminderController extends Controller
 {
+	use CronLogTrait;
 
 	/**
 	 * @param Request $request
@@ -36,6 +39,14 @@ class ReminderController extends Controller
             $invoice = Invoice::where([['customer_id', $customer->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
             $request->headers->set('authorization', $customer->company->api_key);
             event(new AutoPayReminder($customer, $invoice));
+	        $logEntry = [
+		        'name'      => 'Auto Pay Reminder',
+		        'status'    => 'success',
+		        'payload'   => $customer,
+		        'response'  => 'Reminded Successful for ' . $customer->id
+	        ];
+
+	        $this->logCronEntries($logEntry);
         }
     }
 }

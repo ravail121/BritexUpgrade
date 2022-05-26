@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Model\CustomerCreditCard;
 use App\Http\Controllers\Controller;
 use App\Events\CreditCardExpirationReminder;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 
 /**
  * Class CreditCardExpirationController
@@ -15,6 +16,7 @@ use App\Events\CreditCardExpirationReminder;
  */
 class CreditCardExpirationController extends Controller
 {
+	use CronLogTrait;
 	/**
 	 * @param Request $request
 	 */
@@ -32,6 +34,14 @@ class CreditCardExpirationController extends Controller
 		foreach ($customerCreditCards as $customerCreditCard) {
 			$request->headers->set('authorization', $customerCreditCard->api_key);
 			event(new CreditCardExpirationReminder($customerCreditCard));
+			$logEntry = [
+				'name'      => 'Card Expiration Reminder',
+				'status'    => 'success',
+				'payload'   => $customerCreditCard,
+				'response'  => 'Reminded successfully for ' . $customerCreditCard->id
+			];
+
+			$this->logCronEntries($logEntry);
 		}
 	}
 }

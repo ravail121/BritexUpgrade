@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 use Exception;
 use Carbon\Carbon;
 use App\Model\Order;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class OrderDataController extends BaseController
 {
+	use CronLogTrait;
 
 	/**
 	 * @param null    $orderID
@@ -83,11 +85,27 @@ class OrderDataController extends BaseController
                                         continue;
                                     }
                                     $this->updateOrderDetails($boxdetail, $boxes, $request);
+	                                $logEntry = [
+		                                'name'      => 'Update tracking number',
+		                                'status'    => 'success',
+		                                'payload'   => $order,
+		                                'response'  => 'Tracking number updated for ' . $order->id
+	                                ];
+
+	                                $this->logCronEntries($logEntry);
                                 }
                             }
                         }
                     }catch (Exception $e) {
                         $msg = 'RC get ex for : order#-'.$order["order_num"]." - " .$e->getMessage();
+	                    $logEntry = [
+		                    'name'      => 'Update tracking number',
+		                    'status'    => 'error',
+		                    'payload'   => $order,
+		                    'response'  => $msg
+	                    ];
+
+	                    $this->logCronEntries($logEntry);
                         \Log::info($msg);
                         continue;
 

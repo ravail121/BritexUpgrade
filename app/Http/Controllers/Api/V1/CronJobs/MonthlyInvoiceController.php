@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+
 use Exception;
 use Carbon\Carbon;
 use App\Model\Plan;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
@@ -24,7 +26,7 @@ use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
  */
 class MonthlyInvoiceController extends BaseController implements ConstantInterface
 {
-	use InvoiceCouponTrait, BulkOrderTrait;
+	use InvoiceCouponTrait, BulkOrderTrait, CronLogTrait;
 
 	/**
 	 * Responses from various sources
@@ -60,7 +62,23 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
             try {
 	            \Log::info('Generating invoice for ' . $customer->id);
 	            $this->processMonthlyInvoice($customer, $request, true);
+	            $logEntry = [
+		            'name'      => 'Generate Monthly Invoice',
+		            'status'    => 'success',
+		            'payload'   => $customer,
+		            'response'  => 'Generated Successfully for ' . $customer->id
+	            ];
+
+	            $this->logCronEntries($logEntry);
             } catch (Exception $e) {
+	            $logEntry = [
+		            'name'      => 'Generate Monthly Invoice',
+		            'status'    => 'error',
+		            'payload'   => $customer,
+		            'response'  => $e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller for ' . $customer->id
+	            ];
+
+	            $this->logCronEntries($logEntry);
                 \Log::info($e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller');
             }
         }
@@ -537,6 +555,14 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 					$latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
 					$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
 					$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
+					$logEntry = [
+						'name'      => 'Re-generate Invoice',
+						'status'    => 'success',
+						'payload'   => $customer,
+						'response'  => 'Generated Successfully for ' . $customer->id
+					];
+
+					$this->logCronEntries($logEntry);
 				}
 			}
 		}

@@ -36,6 +36,15 @@ class UpdateController extends MonthlyInvoiceController
         $this->updateProratedAmounts();
         $this->scheduledSupensions($request);
         $this->scheduledClosings($request);
+
+		$logEntry = [
+			'name'      => 'Check Updates',
+			'status'    => 'success',
+			'payload'   => $request,
+			'response'  => 'Updated Successfully'
+		];
+
+		$this->logCronEntries($logEntry);
         
         return $this->respond(['message' => 'Updated Successfully']);
     }

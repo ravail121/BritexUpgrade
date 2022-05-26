@@ -27,38 +27,27 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\UpdateController@checkUpdates')->daily()
-	        ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\UpdateController@checkUpdates')->daily();
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice')->dailyAt('00:02')
-		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice')->dailyAt('00:02');
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice')->dailyAt('00:04')
-		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice')->dailyAt('00:04');
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CardController@autoPayInvoice')->dailyAt('00:06')
-		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+	    $schedule->call('App\Http\Controllers\Api\V1\CardController@autoPayInvoice')->dailyAt('00:06');
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ProcessController@processSubscriptions')->dailyAt('00:08')
-		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ProcessController@processSubscriptions')->dailyAt('00:08');
 
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ReminderController@autoPayReminder')->dailyAt('00:10')
-	        ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\ReminderController@autoPayReminder')->dailyAt('00:10');
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->dailyAt('00:12')
-		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck')->dailyAt('00:12');
 
-		$schedule->call('App\Http\Controllers\Api\V1\CronJobs\checkInvoice@check')->dailyAt('01:00')
-			->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+		$schedule->call('App\Http\Controllers\Api\V1\CronJobs\checkInvoice@check')->dailyAt('01:00');
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes()->unlessBetween('23:55', '00:15')
-		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes()->unlessBetween('23:55', '00:15');
 
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyTenMinutes()->unlessBetween('23:55', '00:15')
-	        ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyTenMinutes()->unlessBetween('23:55', '00:15');
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\CreditCardExpirationController@cardExpirationReminder')->monthly()
-		    ->thenPing('https://cronhub.io/ping/9e189920-dc2c-11ec-9c6a-79c61a74cb11');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\CreditCardExpirationController@cardExpirationReminder')->monthly();
     }
 
     /**
