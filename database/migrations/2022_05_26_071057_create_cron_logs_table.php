@@ -20,6 +20,7 @@ class CreateCronLogsTable extends Migration
 	        $table->longText('payload')->nullable();
 	        $table->longText('response')->nullable();
 	        $table->timestamp('ran_at')->useCurrent();
+			$table->timestamps();
         });
     }
 
