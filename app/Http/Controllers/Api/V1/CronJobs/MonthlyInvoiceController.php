@@ -65,7 +65,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 	            $logEntry = [
 		            'name'      => 'Generate Monthly Invoice',
 		            'status'    => 'success',
-		            'payload'   => $customer,
+		            'payload'   => json_encode($customer),
 		            'response'  => 'Generated Successfully for ' . $customer->id
 	            ];
 
@@ -74,7 +74,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 	            $logEntry = [
 		            'name'      => 'Generate Monthly Invoice',
 		            'status'    => 'error',
-		            'payload'   => $customer,
+		            'payload'   => json_encode($customer),
 		            'response'  => $e->getMessage(). ' on line: '.$e->getLine(). ' inside monthly invoice controller for ' . $customer->id
 	            ];
 
@@ -558,7 +558,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 					$logEntry = [
 						'name'      => 'Re-generate Invoice',
 						'status'    => 'success',
-						'payload'   => $customer,
+						'payload'   => json_encode($customer),
 						'response'  => 'Generated Successfully for ' . $customer->id
 					];
 

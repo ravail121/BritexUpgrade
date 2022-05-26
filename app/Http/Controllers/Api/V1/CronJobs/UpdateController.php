@@ -40,7 +40,7 @@ class UpdateController extends MonthlyInvoiceController
 		$logEntry = [
 			'name'      => 'Check Updates',
 			'status'    => 'success',
-			'payload'   => $request,
+			'payload'   => json_encode($request->all()),
 			'response'  => 'Updated Successfully'
 		];
 

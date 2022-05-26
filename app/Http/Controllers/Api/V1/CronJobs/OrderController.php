@@ -84,7 +84,7 @@ class OrderController extends BaseController
 						$logEntry = [
 							'name'      => 'Ship Order',
 							'status'    => 'success',
-							'payload'   => $order,
+							'payload'   => json_encode($order),
 							'response'  => 'Order shipped for ' . $order->id
 						];
 
@@ -93,7 +93,7 @@ class OrderController extends BaseController
 						$logEntry = [
 							'name'      => 'Ship Order',
 							'status'    => 'error',
-							'payload'   => $order,
+							'payload'   => json_encode($order),
 							'response'  => 'Order ship failed for ' . $order->id
 						];
 

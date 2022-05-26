@@ -88,7 +88,7 @@ class OrderDataController extends BaseController
 	                                $logEntry = [
 		                                'name'      => 'Update tracking number',
 		                                'status'    => 'success',
-		                                'payload'   => $order,
+		                                'payload'   => json_encode($order),
 		                                'response'  => 'Tracking number updated for ' . $order->id
 	                                ];
 
@@ -101,7 +101,7 @@ class OrderDataController extends BaseController
 	                    $logEntry = [
 		                    'name'      => 'Update tracking number',
 		                    'status'    => 'error',
-		                    'payload'   => $order,
+		                    'payload'   => json_encode($order),
 		                    'response'  => $msg
 	                    ];
 

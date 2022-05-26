@@ -35,7 +35,7 @@ class ProcessController extends BaseController
 	    $logEntry = [
 		    'name'      => 'Process Subscriptions',
 		    'status'    => 'success',
-		    'payload'   => $request,
+		    'payload'   => json_encode($request->all()),
 		    'response'  => 'Processed Successfully'
 	    ];
 

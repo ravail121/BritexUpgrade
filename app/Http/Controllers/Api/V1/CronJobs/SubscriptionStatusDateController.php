@@ -37,7 +37,7 @@ class SubscriptionStatusDateController extends Controller
 			$logEntry = [
 				'name'      => 'Process Account Suspended And Null StartDate Check',
 				'status'    => 'success',
-				'payload'   => $request,
+				'payload'   => json_encode($request->all()),
 				'response'  => 'Processed Successfully'
 			];
 
@@ -46,7 +46,7 @@ class SubscriptionStatusDateController extends Controller
 			$logEntry = [
 				'name'      => 'Process Account Suspended And Null StartDate Check',
 				'status'    => 'error',
-				'payload'   => $request,
+				'payload'   => json_encode($request->all()),
 				'response'  => $e->getMessage(). ' on the line '. $e->getLine()
 			];
 

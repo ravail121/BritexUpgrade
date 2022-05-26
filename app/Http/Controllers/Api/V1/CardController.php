@@ -373,7 +373,7 @@ class CardController extends BaseController implements ConstantInterface
 	                        $logEntry = [
 		                        'name'      => 'Auto Pay',
 		                        'status'    => 'success',
-		                        'payload'   => $customer,
+		                        'payload'   => json_encode($customer),
 		                        'response'  => 'Auto Paid Successfully for ' .$customer['id']
 	                        ];
 
@@ -397,7 +397,7 @@ class CardController extends BaseController implements ConstantInterface
 	                        $logEntry = [
 		                        'name'      => 'Auto Pay',
 		                        'status'    => 'error',
-		                        'payload'   => $customer,
+		                        'payload'   => json_encode($customer),
 		                        'response'  => 'Auto Paid failed for ' .$customer['id']
 	                        ];
 
@@ -409,7 +409,7 @@ class CardController extends BaseController implements ConstantInterface
 	                    $logEntry = [
 		                    'name'      => 'Auto Pay',
 		                    'status'    => 'error',
-		                    'payload'   => $customer,
+		                    'payload'   => json_encode($customer),
 		                    'response'  => 'No Saved Card Found in our record for ' .$customer['id']
 	                    ];
 
@@ -420,7 +420,7 @@ class CardController extends BaseController implements ConstantInterface
 	            $logEntry = [
 		            'name'      => 'Auto Pay',
 		            'status'    => 'error',
-		            'payload'   => $request,
+		            'payload'   => json_encode($request->all()),
 		            'response'  => $e->getMessage().' on line '.$e->getLine().' in CardController'
 	            ];
 

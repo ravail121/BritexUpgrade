@@ -49,7 +49,7 @@ class checkInvoice extends BaseController
 	        $logEntry = [
 		        'name'      => 'Check Invoice',
 		        'status'    => 'success',
-		        'payload'   => $arr,
+		        'payload'   => json_encode($arr),
 		        'response'  => 'Invoice Checked'
 	        ];
 

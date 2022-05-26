@@ -42,7 +42,7 @@ class ReminderController extends Controller
 	        $logEntry = [
 		        'name'      => 'Auto Pay Reminder',
 		        'status'    => 'success',
-		        'payload'   => $customer,
+		        'payload'   => json_encode($customer),
 		        'response'  => 'Reminded Successful for ' . $customer->id
 	        ];
 
