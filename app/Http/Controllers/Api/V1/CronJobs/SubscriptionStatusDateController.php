@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Events\ReportNullSubscriptionStartDate;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 
 /**
  * Class UpdateController
@@ -14,6 +16,7 @@ use App\Events\ReportNullSubscriptionStartDate;
  */
 class SubscriptionStatusDateController extends Controller
 {
+	use CronLogTrait;
 	/**
 	 * @param $request
 	 */
@@ -31,7 +34,23 @@ class SubscriptionStatusDateController extends Controller
 			if($customerCount) {
 				event( new ReportNullSubscriptionStartDate( $customers->toArray() ) );
 			}
+			$logEntry = [
+				'name'      => 'Process Account Suspended And Null StartDate Check',
+				'status'    => 'success',
+				'payload'   => json_encode($request->all()),
+				'response'  => 'Processed Successfully'
+			];
+
+			$this->logCronEntries($logEntry);
 		} catch (\Exception $e) {
+			$logEntry = [
+				'name'      => 'Process Account Suspended And Null StartDate Check',
+				'status'    => 'error',
+				'payload'   => json_encode($request->all()),
+				'response'  => $e->getMessage(). ' on the line '. $e->getLine()
+			];
+
+			$this->logCronEntries($logEntry);
 			\Log::info($e->getMessage(). ' on the line '. $e->getLine());
 		}
 	}
