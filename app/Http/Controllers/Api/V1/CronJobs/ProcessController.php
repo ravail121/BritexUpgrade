@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+
 use Carbon\Carbon;
 use App\Model\Invoice;
 use App\Model\CustomerLog;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Events\AccountSuspended;
 use App\Model\SubscriptionAddon;
 use App\Http\Controllers\BaseController;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 
 /**
  * Class ProcessController
@@ -18,6 +20,7 @@ use App\Http\Controllers\BaseController;
  */
 class ProcessController extends BaseController
 {
+	use CronLogTrait;
 	/**
 	 * @param Request $request
 	 *
@@ -28,6 +31,15 @@ class ProcessController extends BaseController
     	$this->processSuspensions($request);
         $this->processDowngrades();
         $this->processAddonRemovals();
+
+	    $logEntry = [
+		    'name'      => 'Process Subscriptions',
+		    'status'    => 'success',
+		    'payload'   => json_encode($request->all()),
+		    'response'  => 'Processed Successfully'
+	    ];
+
+	    $this->logCronEntries($logEntry);
 
     	return $this->respond(['message' => 'Processed Successfully']);
     }

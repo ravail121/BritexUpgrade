@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Controllers\Api\V1;
 
+use Validator;
+use App\Model\Ban;
 use Carbon\Carbon;
 use App\Model\Sim;
 use App\Model\Port;
@@ -14,10 +16,11 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 use App\Events\SubcriptionStatusChanged;
 use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
-use Illuminate\Validation\Rule;
 
 /**
  * Class SubscriptionController
@@ -630,6 +633,90 @@ class SubscriptionController extends BaseController
 		}
 
 		return $this->respond([ 'status' => true ]);
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return array|\Illuminate\Http\JsonResponse
+	 */
+	public function activateSubscription(Request $request)
+	{
+		$data = $request->all();
+		$subscription_id = $request->input('subscription_id');
+		$data['phone_number'] = preg_replace('/[^\dxX]/', '', $data['phone_number']);
+		$ban_number = $data['ban_number'];
+		$company_id = $request->get('company')->id;
+		try {
+
+			$validation = Validator::make($data, [
+				'subscription_id'  => [
+					'required',
+                    'numeric',
+					Rule::exists('subscription', 'id')->where(function ($query) use ($company_id){
+						return $query->where([
+							['status', 'for-activation'],
+							['company_id', $company_id]
+						]);
+					})
+				],
+				'phone_number'  => [
+					'required',
+					Rule::unique('subscription')->ignore($subscription_id)->where(function ($query) use ($company_id) {
+						return $query->where([
+							['status', '!=', 'closed']
+						]);
+					})
+				],
+				'ban_number'            => [
+					'required',
+					Rule::exists('ban', 'number')->where(function ($query) use ($company_id){
+						return $query->where( 'company_id', '=', $company_id);
+					}),
+				],
+			]);
+
+
+			if ( $validation->fails() ) {
+				$errors = $validation->errors();
+				$validationErrorResponse = [
+					'status' => 'error',
+					'data'   => $errors->messages()
+				];
+				return $this->respond($validationErrorResponse, 422);
+			}
+
+
+			$ban = Ban::where([['number', $ban_number], ['company_id', $company_id]])->first();
+
+			$activationData = [
+				'status'          => 'active',
+				'activation_date' => Carbon::today()->toDateString(),
+				'ban_id'          => $ban->id,
+				'phone_number'    => $data['phone_number']
+			];
+
+			$updateSubscription = Subscription::where('id', $subscription_id)->update($activationData);
+			if( !$updateSubscription )
+			{
+				$validationErrorResponse = [
+					'status' => 'error',
+					'data'   => 'Failed to activate subscription'
+				];
+				return $this->respond($validationErrorResponse, 400);
+			}
+
+			return response()->json( [
+				'status'   => 'success',
+				'messages' => 'Subscription activated'
+			] );
+		} catch (\Exception $e) {
+			Log::info($e->getMessage() . ' on line number: '.$e->getLine() . ' activate subscription');
+			return [
+				'status'  => 'error',
+				'message' => $e->getMessage()
+			];
+		}
 	}
 
 }

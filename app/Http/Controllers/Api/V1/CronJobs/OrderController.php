@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+
 use App\Model\Coupon;
 use App\Model\Device;
 use App\Model\Plan;
@@ -13,6 +14,7 @@ use App\Model\Invoice;
 use App\Http\Modules\ReadyCloud;
 use App\Http\Controllers\BaseController;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
 
 /**
@@ -22,6 +24,7 @@ use App\Http\Controllers\Api\V1\Invoice\InvoiceController;
  */
 class OrderController extends BaseController
 {
+	use CronLogTrait;
 
 	/**
 	 * @param null $orderID
@@ -78,13 +81,37 @@ class OrderController extends BaseController
 						$order->subscriptions()->update(['sent_to_readycloud' => 1]);
 						$order->standAloneDevices()->update(['processed' => 1]);
 						$order->standAloneSims()->update(['processed' => 1]);
+						$logEntry = [
+							'name'      => 'Ship Order',
+							'status'    => 'success',
+							'payload'   => json_encode($order),
+							'response'  => 'Order shipped for ' . $order->id
+						];
+
+						$this->logCronEntries($logEntry);
 					} else {
+						$logEntry = [
+							'name'      => 'Ship Order',
+							'status'    => 'error',
+							'payload'   => json_encode($order),
+							'response'  => 'Order ship failed for ' . $order->id
+						];
+
+						$this->logCronEntries($logEntry);
 						return $this->respond(['message' => 'Something went wrong!']);
 					}
 				}
 
 			}
 		}catch (Exception $e) {
+			$logEntry = [
+				'name'      => 'Ship Order',
+				'status'    => 'error',
+				'payload'   => '',
+				'response'  => $e->getMessage()
+			];
+
+			$this->logCronEntries($logEntry);
 			\Log::error($e->getMessage());
 		}
 

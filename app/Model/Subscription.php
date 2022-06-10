@@ -138,9 +138,9 @@ class Subscription extends Model
 	/**
 	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
 	 */
-	public function Customer()
+	public function customer()
 	{
-		return $this->hasOne('App\Model\Customer', 'id');
+		return $this->hasOne('App\Model\Customer', 'id', 'customer_id');
 	}
 
 	/**

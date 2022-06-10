@@ -595,56 +595,58 @@
                 <div class="container" style="margin-top: 25px;">
                     <table class="test table-padding">
                         <tbody>
-                        <tr>
                             @if ($data['credits']->count())
                                 @foreach ($data['credits'] as $c)
-                                    <td>
-                                        Payment on
-                                        {{ str_replace('-', '/', $data['order']->formatDate($c->credit->date)) }}
-                                        with
-                                        {{ ucwords(str_replace('-', ' ', $c->credit->description)) }}
-                                    </td>
-                                    <td colspan="2" class="last"><a>$
-                                            @if ($c->amount)
-                                                {{ number_format($c->amount, 2) }}
-                                            @endif
+                                    <tr>
+                                        <td>
+                                            Payment on
+                                            {{ str_replace('-', '/', $data['order']->formatDate($c->credit->date)) }}
+                                            with
+                                            {{ ucwords(str_replace('-', ' ', $c->credit->description)) }}
+                                        </td>
+                                        <td colspan="2" class="last"><a>$
+                                                @if ($c->amount)
+                                                    {{ number_format($c->amount, 2) }}
+                                                @endif
                                         </a></td>
+                                    </tr>
                                 @endforeach
                             @else
-                                <td>Payment</td>
-                                <td colspan="2" class="last"><a>$ 0.00</a></td>
+                                <tr>
+                                    <td>Payment</td>
+                                    <td colspan="2" class="last"><a>$ 0.00</a></td>
+                                </tr>
                             @endif
-                        </tr>
-                        @if(count($data['order']->credits))
-                            <tr>
-                                <td>
-                                    @if ($data['order']->oldCredits($data['order']))
-                                        Credit on
-                                        {{ str_replace('-', '/', $data['order']->credits->first()->date) }}
-                                    @endif
-                                </td>
-                                <td colspan="2" class="last"><a>
+                            @if(count($data['order']->credits))
+                                <tr>
+                                    <td>
                                         @if ($data['order']->oldCredits($data['order']))
-                                            $ {{ number_format($data['order']->oldCredits($data['order']), 2) }}
+                                            Credit on
+                                            {{ str_replace('-', '/', $data['order']->credits->first()->date) }}
                                         @endif
-                                    </a></td>
+                                    </td>
+                                    <td colspan="2" class="last"><a>
+                                            @if ($data['order']->oldCredits($data['order']))
+                                                $ {{ number_format($data['order']->oldCredits($data['order']), 2) }}
+                                            @endif
+                                        </a></td>
+                                </tr>
+                            @endif
+                            <tr>
+                                <td colspan="3">
+                                    <div class="sepratorline dark"></div>
+                                </td>
                             </tr>
-                        @endif
-                        <tr>
-                            <td colspan="3">
-                                <div class="sepratorline dark"></div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: $
-                                        @if ($data['invoice']->creditsToInvoice->sum('amount'))
-                                            {{ number_format($data['invoice']->creditsToInvoice->sum('amount'), 2) }}
-                                        @else
-                                            0.00
-                                        @endif
-                                    </strong></a></td>
-                        </tr>
+                            <tr>
+                                <td></td>
+                                <td colspan="2" class="last total_value"><a><strong>Total Payments & Credits: $
+                                            @if ($data['invoice']->creditsToInvoice->sum('amount'))
+                                                {{ number_format($data['invoice']->creditsToInvoice->sum('amount'), 2) }}
+                                            @else
+                                                0.00
+                                            @endif
+                                        </strong></a></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
