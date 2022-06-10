@@ -322,6 +322,9 @@
                                     <td colspan="3" class="right"> $&nbsp;{{ number_format($usage['amount'], 2) }} </td>
                                 </tr>
                             @endforeach
+                            <tr>
+                                <td colspan="3"></td>
+                            </tr>
                         </table>
                         <table>
                             <tr>

@@ -19,6 +19,7 @@ use App\Events\AccountUnsuspended;
 use App\Events\FailToAutoPaidInvoice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 
 /**
  * Class CardController
@@ -27,6 +28,7 @@ use App\libs\Constants\ConstantInterface;
  */
 class CardController extends BaseController implements ConstantInterface
 {
+	use CronLogTrait;
 	/**
 	 *
 	 */
@@ -199,7 +201,6 @@ class CardController extends BaseController implements ConstantInterface
 		                ] );
 	                }
                 }
-          
             } else {
                 $this->response = $this->transactionFail($order, $this->tran);
                 if($request->without_order){
@@ -208,6 +209,9 @@ class CardController extends BaseController implements ConstantInterface
             }
         } else {
             $this->response = $this->transactionFail(null, $this->tran);
+	        if($request->without_order){
+		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+	        }
         }
         return $this->respond($this->response);
     }
@@ -366,6 +370,14 @@ class CardController extends BaseController implements ConstantInterface
                             event(new InvoiceAutoPaid($customer));
                             \Log::info("AutoPaid for customer ".$customer['id']);
                             $customer_obj->account_suspended ? $customer_obj->update(['account_suspended' => 0]) && event(new AccountUnsuspended($customer)) : null;
+	                        $logEntry = [
+		                        'name'      => 'Auto Pay',
+		                        'status'    => 'success',
+		                        'payload'   => json_encode($customer),
+		                        'response'  => 'Auto Paid Successfully for ' .$customer['id']
+	                        ];
+
+	                        $this->logCronEntries($logEntry);
                         }else{
                             $request->headers->set('authorization', $api_key);
                             $message = $response;
@@ -382,13 +394,37 @@ class CardController extends BaseController implements ConstantInterface
                             $order->customer_id = $customer['id'];
                             $paymentLog = $this->createPaymentLogs($order, $this->tran, 0, $card, null);
                             \Log::info("AutoPaid Failed for customer ".$customer['id']);
+	                        $logEntry = [
+		                        'name'      => 'Auto Pay',
+		                        'status'    => 'error',
+		                        'payload'   => json_encode($customer),
+		                        'response'  => 'Auto Paid failed for ' .$customer['id']
+	                        ];
+
+	                        $this->logCronEntries($logEntry);
                         }
                     }else{
                         $request->headers->set('authorization', $api_key);
                         event(new FailToAutoPaidInvoice($customer, 'No Saved Card Found in our Record'));
+	                    $logEntry = [
+		                    'name'      => 'Auto Pay',
+		                    'status'    => 'error',
+		                    'payload'   => json_encode($customer),
+		                    'response'  => 'No Saved Card Found in our record for ' .$customer['id']
+	                    ];
+
+	                    $this->logCronEntries($logEntry);
                     }
                 }
             } catch (Exception $e) {
+	            $logEntry = [
+		            'name'      => 'Auto Pay',
+		            'status'    => 'error',
+		            'payload'   => json_encode($request->all()),
+		            'response'  => $e->getMessage().' on line '.$e->getLine().' in CardController'
+	            ];
+
+	            $this->logCronEntries($logEntry);
                 \Log::info($e->getMessage().' on line '.$e->getLine().' in CardController');
             }
         }

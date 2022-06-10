@@ -86,7 +86,7 @@
                             <thead>
                                 <tr>
                                     <th>Payment Mode</th>
-                                    <th>Amount</th>
+                                    <th>Description</th>
                                     <th>Total Amount</th>
                                     <th>Date</th>
                                 </tr>
@@ -95,6 +95,7 @@
 
                             <tr class="tfootQ">
                                 <td>Card ending in XXXXX{{ $invoice->paymentLog->last4 }}</td>
+                                <td>{{ $invoice->invoiceItem->where('type', 3)->first()->description }}</td>
                                 <td>{{ number_format($invoice->subtotal, 2) }}</td>
                                 <td>{{ number_format($invoice->subtotal, 2) }}</td>
                                 <td>{{ $invoice->createdAtFormatted }}</td>
