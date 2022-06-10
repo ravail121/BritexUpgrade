@@ -31,10 +31,22 @@ Route::get('/britex-test-cc', function(){
 //	$cc = new TestEye4Fraud();
 //	$cc->test();
 });
+
 Route::get('/check', [
 	'as'=>'test',
 	'uses'=> 'Api\V1\CronJobs\checkInvoice@check',
 ]);
+
+Route::get('/data_usage', [
+	'as'=>'api.cron.data.usage',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData',
+]);
+
+Route::post('/check2', [
+	'as'=>'api.check.data.usage',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@check2',
+]);
+
 Route::get('britex-test-email', function(Illuminate\Http\Request $request){
 	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
 		$message->from('postmaster@mg.teltik.com');
@@ -48,6 +60,10 @@ Route::get('britex-test-email', function(Illuminate\Http\Request $request){
 Route::get('/auto-pay', [
 	'as'=>'api.cron.autopay.invoice',
 	'uses'=> 'Api\V1\CardController@autoPayInvoice',
+]);
+Route::get('/invoice-email-cron', [
+	'as'=>'api.cron.email.invoice',
+	'uses'=> 'Api\V1\CronJobs\checkInvoice@check',
 ]);
 
 Route::get('/cron-jobs-monthly-invoice', [
@@ -519,7 +535,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 
-	Route::group(['namespace' => '\Api\V1'], function(){
+		Route::group(['namespace' => '\Api\V1'], function(){
 		Route::post('/sign-on',[
 			'as'   => 'api.customer.signon',
 			'uses' => 'SignOnController@signOn',
@@ -670,10 +686,9 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.list.customer.id',
 			'uses' => 'OrderController@listCustomerIdFromAssignedSIMForBulkOrder',
 		]);
-
 		Route::post( '/activate-subscription', [
 			'as'   => 'api.bulk.activate.subscription',
 			'uses' => 'SubscriptionController@activateSubscription',
 		]);
-	});
+		});
 }); //APIToken middleware
