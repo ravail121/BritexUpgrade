@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class UsageData extends Model
 {
-    use HasFactory;
+   
 
     protected $fillable = [
 		'simnumber',
