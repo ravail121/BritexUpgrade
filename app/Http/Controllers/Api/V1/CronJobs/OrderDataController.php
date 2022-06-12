@@ -89,7 +89,7 @@ class OrderDataController extends BaseController
 		                                'name'      => 'Update tracking number',
 		                                'status'    => 'success',
 		                                'payload'   => json_encode($order),
-		                                'response'  => 'Tracking number updated for ' . $order->id
+		                                'response'  => 'Tracking number updated for order ' . $order->id
 	                                ];
 
 	                                $this->logCronEntries($logEntry);

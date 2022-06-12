@@ -35,7 +35,7 @@ class ReminderController extends Controller
         })
         ->get();
 
-        foreach ($customers as $key => $customer) {
+        foreach ($customers as $customer) {
             $invoice = Invoice::where([['customer_id', $customer->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
             $request->headers->set('authorization', $customer->company->api_key);
             event(new AutoPayReminder($customer, $invoice));
@@ -43,7 +43,7 @@ class ReminderController extends Controller
 		        'name'      => 'Auto Pay Reminder',
 		        'status'    => 'success',
 		        'payload'   => json_encode($customer),
-		        'response'  => 'Reminded Successful for ' . $customer->id
+		        'response'  => 'Reminded Successful for customer ' . $customer->id
 	        ];
 
 	        $this->logCronEntries($logEntry);

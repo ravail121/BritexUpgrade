@@ -36,11 +36,11 @@ class OrderController extends BaseController
 		if($orderID){
 			$orders = Order::where('id', $orderID)->get();
 		}else{
-			$orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem', 'payLog')->whereHas('subscriptions', function(Builder $subscription) {
+			$orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem', 'payLog')->whereHas('subscriptions', function($subscription) {
 				$subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
-			})->orWhereHas('standAloneDevices', function(Builder $standAloneDevice) {
+			})->orWhereHas('standAloneDevices', function($standAloneDevice) {
 				$standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
-			})->orWhereHas('standAloneSims', function(Builder $standAloneSim) {
+			})->orWhereHas('standAloneSims', function($standAloneSim) {
 				$standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
 			})->with('company')->get();
 		}
@@ -84,7 +84,7 @@ class OrderController extends BaseController
 						$logEntry = [
 							'name'      => 'Ship Order',
 							'status'    => 'success',
-							'payload'   => json_encode($order),
+							'payload'   => json_encode($apiData),
 							'response'  => 'Order shipped for ' . $order->id
 						];
 
@@ -93,7 +93,7 @@ class OrderController extends BaseController
 						$logEntry = [
 							'name'      => 'Ship Order',
 							'status'    => 'error',
-							'payload'   => json_encode($order),
+							'payload'   => json_encode($apiData),
 							'response'  => 'Order ship failed for ' . $order->id
 						];
 
