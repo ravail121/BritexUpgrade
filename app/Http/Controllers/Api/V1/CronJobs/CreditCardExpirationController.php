@@ -38,7 +38,7 @@ class CreditCardExpirationController extends Controller
 				'name'      => 'Card Expiration Reminder',
 				'status'    => 'success',
 				'payload'   => json_encode($customerCreditCard),
-				'response'  => 'Reminded successfully for ' . $customerCreditCard->id
+				'response'  => 'Reminded successfully for customer ' . $customerCreditCard->customer->id
 			];
 
 			$this->logCronEntries($logEntry);

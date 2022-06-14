@@ -559,7 +559,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 						'name'      => 'Re-generate Invoice',
 						'status'    => 'success',
 						'payload'   => json_encode($customer),
-						'response'  => 'Generated Successfully for ' . $customer->id
+						'response'  => 'Generated Successfully for customer ' . $customer->id
 					];
 
 					$this->logCronEntries($logEntry);
