@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class UsageData extends Model
 {
    
+	protected $table = 'usage_data';
 
     protected $fillable = [
 		'simnumber',
