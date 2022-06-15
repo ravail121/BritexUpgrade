@@ -311,7 +311,7 @@ class SubscriptionController extends BaseController
         if ($request->sim_required == 1) {
             return $this->validate_input(array_merge($request->except('sim_num'), ['sim_num' => $simNum]), [
                 'sim_id'           => 'nullable|required_without:sim_num|numeric|exists:sim,id',
-                'sim_num'          => 'nullable|required_without:sim_id|min:19|max:20',
+                'sim_num'          => 'nullable|required_without:sim_id|min:11|max:20',
                 'sim_type'         => 'nullable|string',
             ]);
         }
