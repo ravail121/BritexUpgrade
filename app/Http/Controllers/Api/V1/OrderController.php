@@ -1119,7 +1119,7 @@ class OrderController extends BaseController
 				],
 				'orders.*.sim_num'              => [
 					'required_with:orders.*.sim_id',
-					'min:19',
+					'min:11',
 					'max:20',
 					'distinct',
 					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
@@ -1254,7 +1254,7 @@ class OrderController extends BaseController
 			 */
 			$baseValidation['orders.*.sim_num']             = [
 				'required',
-				'min:19',
+				'min:11',
 				'max:20',
 				'distinct',
 				Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($requestCompany) {
