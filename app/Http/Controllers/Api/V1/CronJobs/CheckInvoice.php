@@ -14,7 +14,7 @@ use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
  *
  * @package App\Http\Controllers\Api\V1\CronJobs
  */
-class checkInvoice extends BaseController
+class CheckInvoice extends BaseController
 {
 	use CronLogTrait;
 	/**
