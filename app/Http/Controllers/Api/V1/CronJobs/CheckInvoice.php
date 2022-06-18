@@ -25,7 +25,7 @@ class CheckInvoice extends BaseController
 	
 	public function check()
     {
-        $arr = array();
+        $arr = [];
         
         try{
             $invoices = Invoice::all();
@@ -38,8 +38,8 @@ class CheckInvoice extends BaseController
                 $invoice->sumtotal = $sumtotal;
                 $invoice->sumcoupon = $sum;
 
-                if(round(($invoice->sumtotal - $invoice->sumcoupon),2) !=  $invoice['subtotal']){
-                   array_push($arr, $invoice);
+                if(round(($invoice->sumtotal - $invoice->sumcoupon), 2) !=  $invoice['subtotal']){
+                   $arr[] = $invoice;
                 }
             }
 
