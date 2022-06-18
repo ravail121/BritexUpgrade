@@ -95,6 +95,10 @@ class EventServiceProvider extends ServiceProvider
 
 	    'App\Events\SubscriptionForReactivation' => [
 		    'App\Listeners\SendEmailForSubscriptionForReactivation'
+	    ],
+
+	    'App\Events\ReportSchedulerStatus' => [
+		    'App\Listeners\SendEmailForSchedulerStatus'
 	    ]
     ];
 

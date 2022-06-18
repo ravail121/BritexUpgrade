@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 use Exception;
 use Carbon\Carbon;
 use App\Model\Order;
 use GuzzleHttp\Client;
+use App\Model\CronLog;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\ShippingNumber;
@@ -16,6 +16,7 @@ use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
 use Illuminate\Database\Eloquent\Builder;
+use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
 /**
  * Class OrderDataController
  *
@@ -86,7 +87,7 @@ class OrderDataController extends BaseController
                                     }
                                     $this->updateOrderDetails($boxdetail, $boxes, $request);
 	                                $logEntry = [
-		                                'name'      => 'Update tracking number',
+		                                'name'      => CronLog::TYPES['update-tracking-number'],
 		                                'status'    => 'success',
 		                                'payload'   => json_encode($order),
 		                                'response'  => 'Tracking number updated for order ' . $order->id
@@ -99,7 +100,7 @@ class OrderDataController extends BaseController
                     }catch (Exception $e) {
                         $msg = 'RC get ex for : order#-'.$order["order_num"]." - " .$e->getMessage();
 	                    $logEntry = [
-		                    'name'      => 'Update tracking number',
+		                    'name'      => CronLog::TYPES['update-tracking-number'],
 		                    'status'    => 'error',
 		                    'payload'   => json_encode($order),
 		                    'response'  => $msg

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 
+use App\Model\CronLog;
 use Carbon\Carbon;
 use App\Model\Invoice;
 use App\Model\CustomerLog;
@@ -33,7 +34,7 @@ class ProcessController extends BaseController
         $this->processAddonRemovals();
 
 	    $logEntry = [
-		    'name'      => 'Process Subscriptions',
+		    'name'      => CronLog::TYPES['process-subscriptions'],
 		    'status'    => 'success',
 		    'payload'   => json_encode($request->all()),
 		    'response'  => 'Processed Successfully'

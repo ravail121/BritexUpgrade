@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 
+use App\Model\CronLog;
 use Exception;
 use Carbon\Carbon;
 use App\Model\Plan;
@@ -556,7 +557,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 					$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
 					$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
 					$logEntry = [
-						'name'      => 'Re-generate Invoice',
+						'name'      => CronLog::TYPES['regenerate-invoice'],
 						'status'    => 'success',
 						'payload'   => json_encode($customer),
 						'response'  => 'Generated Successfully for customer ' . $customer->id

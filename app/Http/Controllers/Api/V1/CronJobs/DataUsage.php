@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 
+use App\Model\CronLog;
 use App\UsageData;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController;
@@ -65,7 +66,7 @@ class DataUsage extends BaseController
 							] );
 						}
 						$logEntry = [
-							'name'      => 'Update Data Usage',
+							'name'      => CronLog::TYPES[''],
 							'status'    => 'success',
 							'payload'   => '',
 							'response'  => 'Data usage updated for sim number ' . $value->simnumber

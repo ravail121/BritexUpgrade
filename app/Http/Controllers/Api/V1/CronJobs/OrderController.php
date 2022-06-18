@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\CronJobs;
 
 
 use App\Model\Coupon;
+use App\Model\CronLog;
 use App\Model\Device;
 use App\Model\Plan;
 use App\Model\Sim;
@@ -82,7 +83,7 @@ class OrderController extends BaseController
 						$order->standAloneDevices()->update(['processed' => 1]);
 						$order->standAloneSims()->update(['processed' => 1]);
 						$logEntry = [
-							'name'      => 'Ship Order',
+							'name'      => CronLog::TYPES['ship-order'],
 							'status'    => 'success',
 							'payload'   => json_encode($apiData),
 							'response'  => 'Order shipped for ' . $order->id
@@ -91,7 +92,7 @@ class OrderController extends BaseController
 						$this->logCronEntries($logEntry);
 					} else {
 						$logEntry = [
-							'name'      => 'Ship Order',
+							'name'      => CronLog::TYPES['ship-order'],
 							'status'    => 'error',
 							'payload'   => json_encode($apiData),
 							'response'  => 'Order ship failed for ' . $order->id
@@ -105,7 +106,7 @@ class OrderController extends BaseController
 			}
 		}catch (Exception $e) {
 			$logEntry = [
-				'name'      => 'Ship Order',
+				'name'      => CronLog::TYPES['ship-order'],
 				'status'    => 'error',
 				'payload'   => '',
 				'response'  => $e->getMessage()

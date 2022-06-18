@@ -42,6 +42,11 @@ Route::get('/data_usage', [
 	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData',
 ]);
 
+Route::get('/scheduler-checker', [
+	'as'=>'api.cron.scheduler.checker',
+	'uses'=> 'Api\V1\CronJobs\SchedulerChecker@check',
+]);
+
 Route::post('/check2', [
 	'as'=>'api.check.data.usage',
 	'uses'=> 'Api\V1\CronJobs\DataUsage@check2',

@@ -49,6 +49,8 @@ class Kernel extends ConsoleKernel
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyTenMinutes()->unlessBetween('23:55', '00:15');
 
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SchedulerChecker@check')->dailyAt('23:58');
+
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\CreditCardExpirationController@cardExpirationReminder')->monthly();
     }
 

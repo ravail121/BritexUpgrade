@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Model\CronLog;
 use App\Model\Invoice;
 use App\Model\InvoiceItem;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class CheckInvoice extends BaseController
 				event( new SendMailData($arr) );
 			}
 	        $logEntry = [
-		        'name'      => 'Check Invoice',
+		        'name'      => CronLog::TYPES['check-invoice'],
 		        'status'    => 'success',
 		        'payload'   => json_encode($arr),
 		        'response'  => 'Invoice Checked'
@@ -56,7 +57,7 @@ class CheckInvoice extends BaseController
 	        $this->logCronEntries($logEntry);
 		} catch (\Exception $e) {
 	        $logEntry = [
-		        'name'      => 'Check Invoice',
+		        'name'      => CronLog::TYPES['check-invoice'],
 		        'status'    => 'error',
 		        'payload'   => '',
 		        'response'  => $e->getMessage(). ' on the line '. $e->getLine()

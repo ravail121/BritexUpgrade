@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 
+use App\Model\CronLog;
 use Carbon\Carbon;
 use App\Model\Invoice;
 use App\Model\Customer;
@@ -40,7 +41,7 @@ class ReminderController extends Controller
             $request->headers->set('authorization', $customer->company->api_key);
             event(new AutoPayReminder($customer, $invoice));
 	        $logEntry = [
-		        'name'      => 'Auto Pay Reminder',
+		        'name'      => CronLog::TYPES['auto-pay-reminder'],
 		        'status'    => 'success',
 		        'payload'   => json_encode($customer),
 		        'response'  => 'Reminded Successful for customer ' . $customer->id
