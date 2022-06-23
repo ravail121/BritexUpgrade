@@ -1016,7 +1016,8 @@ class OrderController extends BaseController
 
 			
 			if($request->purchase_activation){
-
+				
+				$planActivation=true;
 				$validation = $this->validationRequestForBulkOrderPA($request, $planActivation);
 
 			}else{
