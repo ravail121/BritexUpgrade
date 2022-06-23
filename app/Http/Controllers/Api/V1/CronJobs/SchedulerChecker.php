@@ -29,13 +29,6 @@ class SchedulerChecker extends BaseController
 		try {
 
 			$cronLogTypes = CronLog::TYPES;
-
-			foreach($cronLogTypes as $cronName) {
-				$cronEntries[$cronName] = CronLog::whereDate('created_at', Carbon::today())->where('name', $cronName)->exists();
-
-			}
-			event( new ReportSchedulerStatus( $cronEntries ) );
-
 			$logEntry = [
 				'name'      => CronLog::TYPES['scheduler-checker'],
 				'status'    => 'success',
@@ -44,6 +37,10 @@ class SchedulerChecker extends BaseController
 			];
 
 			$this->logCronEntries($logEntry);
+			foreach($cronLogTypes as $cronName) {
+				$cronEntries[$cronName] = CronLog::whereDate('created_at', Carbon::today())->where('name', $cronName)->exists();
+			}
+			event( new ReportSchedulerStatus( $cronEntries ) );
 		} catch (\Exception $e) {
 			$logEntry = [
 				'name'      => CronLog::TYPES['scheduler-checker'],

@@ -66,7 +66,7 @@ class DataUsage extends BaseController
 							] );
 						}
 						$logEntry = [
-							'name'      => CronLog::TYPES[''],
+							'name'      => CronLog::TYPES['update-data-usage'],
 							'status'    => 'success',
 							'payload'   => '',
 							'response'  => 'Data usage updated for sim number ' . $value->simnumber
