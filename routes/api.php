@@ -584,5 +584,15 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.activate.subscription',
 			'uses' => 'SubscriptionController@activateSubscription',
 		]);
-		});
+	});
+
+	/**
+	* APIS for Subscription Logs
+    */
+	Route::group(['prefix' => 'subscription-log', 'namespace' => '\Api\V1'], function() {
+		Route::post( '/store', [
+			'as'   => 'api.subscription.log.create.subscription.log',
+			'uses' => 'SubscriptionLogController@store',
+		] );
+	});
 }); //APIToken middleware

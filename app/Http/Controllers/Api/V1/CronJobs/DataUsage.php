@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 
-use App\Model\CronLog;
-use App\UsageData;
-use Illuminate\Http\Request;
-use App\Http\Controllers\BaseController;
 use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
+use App\Http\Controllers\BaseController;
+use App\Model\CronLog;
+use App\Model\UsageData;
+use Illuminate\Http\Request;
 
 /**
  * Class ProcessController
