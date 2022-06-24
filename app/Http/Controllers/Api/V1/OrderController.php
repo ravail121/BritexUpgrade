@@ -141,6 +141,7 @@ class OrderController extends BaseController
 	public function get(Request $request)
 	{
 
+		
 		if($request->has('customer_id')){
 			$customerId = $request->input('customer_id');
 			$order = Order::where('customer_id', $customerId)
@@ -322,6 +323,7 @@ class OrderController extends BaseController
         $order['coupons'] =  $this->coupon();
         $order['couponDetails'] =  $this->couponAmount;
         $this->content = $order;
+		
         return response()->json($this->content);
     }
 
@@ -1011,7 +1013,19 @@ class OrderController extends BaseController
 		try {
 			$output = [];
 			$planActivation = $request->get('plan_activation') ?: false;
-			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
+
+			
+			if($request->purchase_activation){
+				
+				$planActivation=true;
+				$validation = $this->validationRequestForBulkOrderPA($request, $planActivation);
+
+			}else{
+
+				$validation = $this->validationRequestForBulkOrder($request, $planActivation);
+
+			}
+			
 			if($validation !== 'valid') {
 				return $validation;
 			}
@@ -1138,6 +1152,105 @@ class OrderController extends BaseController
 			[
 				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned',
 				'orders.*.sim_num.exists'       => 'The sim with number :input is not assigned to this customer',
+			]
+		);
+
+		if ( $validation->fails() ) {
+			$errors = $validation->errors();
+			$validationErrorResponse = [
+				'status' => 'error',
+				'data'   => $errors->messages()
+			];
+			return $this->respond($validationErrorResponse, 422);
+		}
+		return 'valid';
+	}
+
+	private function validationRequestForBulkOrderPA($request, $planActivation)
+	{
+		$requestCompany = $request->get('company');
+		$customerId = $request->get('customer_id');
+		if ( !$requestCompany->enable_bulk_order ) {
+			$notAllowedResponse = [
+				'status' => 'error',
+				'data'   => 'Bulk Order not enabled for the requesting company'
+			];
+			return $this->respond($notAllowedResponse, 503);
+		}
+		if($planActivation){
+			/**
+			 * @internal When activating a plan, make sure sim is assigned to specified customer
+			 */
+			$simNumValidation = Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) use ($customerId) {
+				return $query->where('status', '!=', 'closed')
+				             ->where('customer_id', $customerId);
+			});
+		} else {
+			/**
+			 * @internal When purchasing a SIM, make sure sim is not assigned to another customer
+			 */
+			$simNumValidation =  Rule::unique('customer_standalone_sim', 'sim_num')->where(function ($query) {
+				return $query->where('status', '!=', 'closed');
+			});
+		}
+		$validation = Validator::make(
+			$request->all(),
+			[
+				'customer_id'                   => [
+					'required',
+					'numeric',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders'                        => 'required',
+				'orders.*.device_id'            => [
+					'numeric',
+					Rule::exists('device', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.plan_id'              => [
+					'required_with:plan_activation',
+					'numeric',
+					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.sim_id'               =>  [
+					'numeric',
+					'required_with:orders.*.sim_num',
+					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.subscription_id'      => [
+					'numeric',
+					Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'orders.*.sim_num'              => [
+					'required_with:orders.*.sim_id',
+					'min:19',
+					'max:20',
+					'distinct',
+					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
+						return $query->where('status', '!=', 'closed');
+					}),
+					
+
+				],
+				'orders.*.sim_type'             => 'string',
+				'orders.*.porting_number'       => 'string',
+				'orders.*.area_code'            => 'string',
+				'orders.*.operating_system'     => 'string',
+				'orders.*.imei_number'          => 'digits_between:14,16',
+				'orders.*.subscription_status'  => 'string',
+			],
+			[
+				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned',
+				
 			]
 		);
 
