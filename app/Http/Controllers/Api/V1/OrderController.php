@@ -658,7 +658,38 @@ class OrderController extends BaseController
 	public function createOrderForBulkOrder(Request $request)
 	{
 		try {
+
+			$data2=array();
+
 			$planActivation = $request->get('plan_activation') ?: false;
+
+			if($planActivation){
+
+				foreach ( $request->get( 'orders' ) as $orderItem ) {
+
+					$subscription=Subscription::where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
+					if($subscription){
+
+						$customer=Customer::where('id',$subscription->customer_id)->first();
+
+						$data2[$orderItem['sim_num']]=$customer;
+
+					}
+
+				}
+
+				if(sizeof($data2)>0){
+					$validationErrorResponse2 = [
+						'status' => 'error2',
+						'data'   => $data2
+					];
+
+					return $validationErrorResponse2;
+				}
+
+
+			}
+
 			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
 			if($validation !== 'valid') {
 				return $validation;
