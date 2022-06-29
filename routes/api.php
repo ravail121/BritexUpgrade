@@ -14,112 +14,16 @@ use App\Events\SubcriptionStatusChanged;
 |
 */
 
-
-Route::get('britex-test-subscription-changed', function(){
-	$config = [
-		'driver'   => 'smtp',
-		'host'     => 'smtp.mailgun.org',
-		'port'     =>  587,
-		'username' => 'postmaster@mg.teltik.com',
-		'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
-	];
-	Config::set('mail',$config);
-	event(new SubcriptionStatusChanged('6'));
-});
-
-Route::get('/britex-test-cc', function(){
-//	$cc = new TestEye4Fraud();
-//	$cc->test();
-});
-
-Route::get('/check', [
-	'as'=>'test',
-	'uses'=> 'Api\V1\CronJobs\checkInvoice@check',
-]);
-
-Route::get('/data_usage', [
-	'as'=>'api.cron.data.usage',
-	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData',
-]);
-
-Route::post('/check2', [
-	'as'=>'api.check.data.usage',
-	'uses'=> 'Api\V1\CronJobs\DataUsage@check2',
-]);
-
-Route::get('britex-test-email', function(Illuminate\Http\Request $request){
-	dd(Mail::raw('Hi There! You Are Awesome.', function ($message) use ($request) {
-		$message->from('postmaster@mg.teltik.com');
-		$message->to($request->to ?: 'prajwal_stha@yahoo.com');
-		$message->subject('Email Arrived');
-	}));
-});
-
-// All Cron URL need to be removed 
-// 
-Route::get('/auto-pay', [
-	'as'=>'api.cron.autopay.invoice',
-	'uses'=> 'Api\V1\CardController@autoPayInvoice',
-]);
-Route::get('/invoice-email-cron', [
-	'as'=>'api.cron.email.invoice',
-	'uses'=> 'Api\V1\CronJobs\checkInvoice@check',
-]);
-
-Route::get('/cron-jobs-monthly-invoice', [
-	'as'=>'api.cron.monthly.invoice',
-	'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
-]);
-
-Route::get('/cron-jobs-regenerate-invoice', [
-	'as'=>'api.cron.regenerate.invoice',
-	'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice',
-]);
-
-
-Route::get('/cron-jobs-orders/{orderID}', [
-	'as'=>'api.cron.orders',
-	'uses'=> 'Api\V1\CronJobs\OrderController@order',
-]);
-
-Route::get('/cron-jobs-orders-data/{orderID}', [
-	'as'=>'api.cron.orders.data',
-	'uses'=> 'Api\V1\CronJobs\OrderDataController@order',
-]);
-
-Route::get('/update-cron', [
-	'as'=>'api.cron.update',
-	'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
-]);
-
-// Route::get('/update-cron', [
-//   'as'=>'api.cron.update',
-//   'uses'=> 'Api\V1\CronJobs\ProcessController@processSubscriptions',
-// ]);
-
-
-Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
-	Route::group(['namespace' => 'CronJobs'], function(){
-		Route::get('/process-subscriptions', [
-			'as'=>'api.cron.subscriptions',
-			'uses'=> 'ProcessController@processSubscriptions',
-		]);
-	});
-});
-
-Route::group(['namespace' => '\Api\V1'],function()
-{
-	Route::post('/sample-image',[
-		'as'=>'api.image.post',
-		'uses'=>'TestingImageController@post',
-	]);
-});
-
 Route::get('/', function (Request $request) {
 	return  response()->json([
 		'message' => 'BriteX Backend !!'
 	], 200);
 });
+
+Route::get('/data_usage', [
+	'as'=>'api.cron.data.usage',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData',
+]);
 
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
@@ -145,16 +49,6 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 		'uses'=> 'InvoiceController@checkMonthlyInvoice',
 	]);
 });
-
-Route::group(['namespace'=>'Api\V1', 'prefix' => 'cron', 'as' => 'api.cron.'], function(){
-	Route::group(['namespace' => 'CronJobs'], function(){
-		Route::get('/process-suspensions', [
-			'as'=>'api.cron.suspensions',
-			'uses'=> 'ProcessController@processSuspensions',
-		]);
-	});
-});
-
 
 
 Route::middleware('APIToken')->group(function () {
@@ -525,6 +419,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.validate.simnum',
 			'uses' => 'SubscriptionController@validateIfTheSimIsUsed',
 		]);
+
+		Route::post('/query-active-sim-with-addon',[
+			'as'   => 'api.query.active-sim-with-addon',
+			'uses' => 'SubscriptionController@queryActiveSubscriptionWithAddon',
+		]);
 	});
 
 
@@ -690,5 +589,15 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.activate.subscription',
 			'uses' => 'SubscriptionController@activateSubscription',
 		]);
-		});
+	});
+
+	/**
+	* APIS for Subscription Logs
+    */
+	Route::group(['prefix' => 'subscription-log', 'namespace' => '\Api\V1'], function() {
+		Route::post( '/store', [
+			'as'   => 'api.subscription.log.create.subscription.log',
+			'uses' => 'SubscriptionLogController@store',
+		] );
+	});
 }); //APIToken middleware
