@@ -663,8 +663,7 @@ class OrderController extends BaseController
 
 			$planActivation = $request->get('plan_activation') ?: false;
 
-			if($planActivation){
-
+			
 				foreach ( $request->get( 'orders' ) as $orderItem ) {
 
 					$subscription=Subscription::where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
@@ -688,7 +687,7 @@ class OrderController extends BaseController
 				}
 
 
-			}
+			
 
 			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
 			if($validation !== 'valid') {
