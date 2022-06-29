@@ -20,10 +20,12 @@ Route::get('/', function (Request $request) {
 	], 200);
 });
 
+
 Route::get('/data_usage', [
 	'as'=>'api.cron.data.usage',
 	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData',
 ]);
+
 
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
@@ -600,4 +602,6 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'SubscriptionLogController@store',
 		] );
 	});
+
 }); //APIToken middleware
+

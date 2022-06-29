@@ -374,7 +374,7 @@ class CardController extends BaseController implements ConstantInterface
 		                        'name'      => 'Auto Pay',
 		                        'status'    => 'success',
 		                        'payload'   => json_encode($customer),
-		                        'response'  => 'Auto Paid Successfully for ' .$customer['id']
+		                        'response'  => 'Auto Paid Successfully for customer ' .$customer['id']
 	                        ];
 
 	                        $this->logCronEntries($logEntry);
@@ -398,7 +398,7 @@ class CardController extends BaseController implements ConstantInterface
 		                        'name'      => 'Auto Pay',
 		                        'status'    => 'error',
 		                        'payload'   => json_encode($customer),
-		                        'response'  => 'Auto Paid failed for ' .$customer['id']
+		                        'response'  => 'Auto Paid failed for customer ' .$customer['id']
 	                        ];
 
 	                        $this->logCronEntries($logEntry);
@@ -410,7 +410,7 @@ class CardController extends BaseController implements ConstantInterface
 		                    'name'      => 'Auto Pay',
 		                    'status'    => 'error',
 		                    'payload'   => json_encode($customer),
-		                    'response'  => 'No Saved Card Found in our record for ' .$customer['id']
+		                    'response'  => 'No Saved Card Found in our record for customer ' .$customer['id']
 	                    ];
 
 	                    $this->logCronEntries($logEntry);

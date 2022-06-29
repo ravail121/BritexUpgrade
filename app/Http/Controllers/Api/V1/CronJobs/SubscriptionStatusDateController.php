@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 
+use App\Model\CronLog;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -35,7 +36,7 @@ class SubscriptionStatusDateController extends Controller
 				event( new ReportNullSubscriptionStartDate( $customers->toArray() ) );
 			}
 			$logEntry = [
-				'name'      => 'Process Account Suspended And Null StartDate Check',
+				'name'      => CronLog::TYPES['process-account-suspended'],
 				'status'    => 'success',
 				'payload'   => json_encode($request->all()),
 				'response'  => 'Processed Successfully'
@@ -44,7 +45,7 @@ class SubscriptionStatusDateController extends Controller
 			$this->logCronEntries($logEntry);
 		} catch (\Exception $e) {
 			$logEntry = [
-				'name'      => 'Process Account Suspended And Null StartDate Check',
+				'name'      => CronLog::TYPES['process-account-suspended'],
 				'status'    => 'error',
 				'payload'   => json_encode($request->all()),
 				'response'  => $e->getMessage(). ' on the line '. $e->getLine()

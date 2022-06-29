@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use Exception;
+use Carbon\Carbon;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Model\Addon;
 use App\Model\Invoice;
+use App\Model\CronLog;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Events\AccountSuspended;
-use Carbon\Carbon;
-use App\Http\Controllers\BaseController;
 use App\Events\SubcriptionStatusChanged;
-use Exception;
 
 /**
  * Class UpdateController
@@ -38,7 +38,7 @@ class UpdateController extends MonthlyInvoiceController
         $this->scheduledClosings($request);
 
 		$logEntry = [
-			'name'      => 'Check Updates',
+			'name'      => CronLog::TYPES['check-updates'],
 			'status'    => 'success',
 			'payload'   => json_encode($request->all()),
 			'response'  => 'Updated Successfully'

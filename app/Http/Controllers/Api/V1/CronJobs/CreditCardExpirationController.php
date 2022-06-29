@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
 use Carbon\Carbon;
+use App\Model\CronLog;
 use Illuminate\Http\Request;
 use App\Model\CustomerCreditCard;
 use App\Http\Controllers\Controller;
@@ -35,10 +36,10 @@ class CreditCardExpirationController extends Controller
 			$request->headers->set('authorization', $customerCreditCard->api_key);
 			event(new CreditCardExpirationReminder($customerCreditCard));
 			$logEntry = [
-				'name'      => 'Card Expiration Reminder',
+				'name'      => CronLog::TYPES['card-expiration-reminder'],
 				'status'    => 'success',
 				'payload'   => json_encode($customerCreditCard),
-				'response'  => 'Reminded successfully for ' . $customerCreditCard->id
+				'response'  => 'Reminded successfully for customer ' . $customerCreditCard->customer->id
 			];
 
 			$this->logCronEntries($logEntry);

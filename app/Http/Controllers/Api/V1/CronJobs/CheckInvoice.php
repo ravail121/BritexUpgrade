@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Model\CronLog;
 use App\Model\Invoice;
 use App\Model\InvoiceItem;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use App\Http\Controllers\Api\V1\Traits\CronLogTrait;
  *
  * @package App\Http\Controllers\Api\V1\CronJobs
  */
-class checkInvoice extends BaseController
+class CheckInvoice extends BaseController
 {
 	use CronLogTrait;
 	/**
@@ -25,7 +26,7 @@ class checkInvoice extends BaseController
 	
 	public function check()
     {
-        $arr = array();
+        $arr = [];
         
         try{
             $invoices = Invoice::all();
@@ -38,8 +39,8 @@ class checkInvoice extends BaseController
                 $invoice->sumtotal = $sumtotal;
                 $invoice->sumcoupon = $sum;
 
-                if(round(($invoice->sumtotal - $invoice->sumcoupon),2) !=  $invoice['subtotal']){
-                   array_push($arr, $invoice);
+                if(round(($invoice->sumtotal - $invoice->sumcoupon), 2) !=  $invoice['subtotal']){
+                   $arr[] = $invoice;
                 }
             }
 
@@ -47,7 +48,7 @@ class checkInvoice extends BaseController
 				event( new SendMailData($arr) );
 			}
 	        $logEntry = [
-		        'name'      => 'Check Invoice',
+		        'name'      => CronLog::TYPES['check-invoice'],
 		        'status'    => 'success',
 		        'payload'   => json_encode($arr),
 		        'response'  => 'Invoice Checked'
@@ -56,7 +57,7 @@ class checkInvoice extends BaseController
 	        $this->logCronEntries($logEntry);
 		} catch (\Exception $e) {
 	        $logEntry = [
-		        'name'      => 'Check Invoice',
+		        'name'      => CronLog::TYPES['check-invoice'],
 		        'status'    => 'error',
 		        'payload'   => '',
 		        'response'  => $e->getMessage(). ' on the line '. $e->getLine()
