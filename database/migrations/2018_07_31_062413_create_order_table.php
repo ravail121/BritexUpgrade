@@ -256,13 +256,9 @@ class CreateOrderTable extends Migration
 			$table->date('date');
 			$table->text('text');
 			$table->timestamps();
-
 		});
 
-
-
 		Schema::create('default_imei',function(Blueprint $table){
-
 			$table->increments('id');
 			$table->integer('sort')->default(0);
 			$table->integer('type');
@@ -273,17 +269,12 @@ class CreateOrderTable extends Migration
 		});
 
 		Schema::create('tag',function(Blueprint $table){
-
 			$table->increments('id');
 			$table->unsignedInteger('company_id')->nullable();
 			$table->foreign('company_id')->references('id')->on('company');
 			$table->text('name');
 			$table->timestamps();
-
 		});
-
-
-
 
 
 		Schema::create('device',function(Blueprint $table){
@@ -334,20 +325,12 @@ class CreateOrderTable extends Migration
 		});
 
 
-
-
-
-
-
-
 		Schema::create('device_image',function(Blueprint $table){
-
 			$table->increments('id');
 			$table->unsignedInteger('device_id')->nullable();
 			$table->foreign('device_id')->references('id')->on('device');
 			$table ->text('source');
 			$table->timestamps();
-
 		});
 
 

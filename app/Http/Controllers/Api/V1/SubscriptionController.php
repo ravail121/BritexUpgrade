@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Api\V1;
 
+
 use Validator;
 use App\Model\Ban;
 use Carbon\Carbon;
@@ -20,6 +21,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 use App\Events\SubcriptionStatusChanged;
 use App\Http\Controllers\BaseController;
+use Illuminate\Database\Eloquent\Builder;
 use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 
 /**
@@ -717,6 +719,53 @@ class SubscriptionController extends BaseController
 				'message' => $e->getMessage()
 			];
 		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return array|\Illuminate\Http\JsonResponse
+	 */
+	public function queryActiveSubscriptionWithAddon(Request $request) {
+		$data = $request->all();
+		$addonId = $request->input('addon_id');
+		try {
+
+			$validation = Validator::make($data, [
+				'addon_id'  => [
+					'required',
+					'numeric',
+					'exists:addon,id',
+					'exists:subscription_addon,addon_id'
+				]
+			]);
+
+
+			if ( $validation->fails() ) {
+				$errors = $validation->errors();
+				$validationErrorResponse = [
+					'status' => 'error',
+					'data'   => $errors->messages()
+				];
+				return $this->respond($validationErrorResponse, 422);
+			}
+			$subscriptions = Subscription::where('status', '!=', 'closed')
+			                             ->whereHas('subscriptionAddon', function(Builder $subscriptionAddon) use ($addonId) {
+												$subscriptionAddon->where('addon_id', $addonId);
+										})->get(['id', 'company_id', 'phone_number', 'status', 'sim_card_num', 'device_imei']);
+
+			return response()->json( [
+				'status'   => 'success',
+				'data'      => $subscriptions
+			] );
+		} catch (\Exception $e) {
+			Log::info($e->getMessage() . ' on line number: '.$e->getLine() . ' query active subscription with addon');
+			return [
+				'status'  => 'error',
+				'message' => $e->getMessage()
+			];
+		}
+
 	}
 
 }

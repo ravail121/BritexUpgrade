@@ -43,11 +43,11 @@ class Kernel extends ConsoleKernel
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\CheckInvoice@check')->dailyAt('01:00');
 
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\DataUsage@getUsageData')->everyTenMinutes()->unlessBetween('23:55', '00:15');
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\DataUsage@getUsageData')->everyTenMinutes()->between('00:30', '23:45');
 
-	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes()->unlessBetween('23:55', '00:15');
+	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderController@order')->everyFiveMinutes()->between('00:30', '23:45');
 
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyTenMinutes()->unlessBetween('23:55', '00:15');
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\OrderDataController@order')->everyTenMinutes()->between('00:30', '23:45');
 
 	    $schedule->call('App\Http\Controllers\Api\V1\CronJobs\SchedulerChecker@check')->dailyAt('23:58');
 
