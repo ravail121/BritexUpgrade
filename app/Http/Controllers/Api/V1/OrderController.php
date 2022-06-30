@@ -670,6 +670,8 @@ class OrderController extends BaseController
 					if($subscription){
 
 						$customer=Customer::where('id',$subscription->customer_id)->first();
+						$customer = Subscription::with(['customer'])->where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
+						
 
 						$data2[$orderItem['sim_num']]=$customer;
 
