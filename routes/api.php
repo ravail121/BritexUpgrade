@@ -26,6 +26,11 @@ Route::get('/data_usage', [
 	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData',
 ]);
 
+Route::post('/check2', [
+	'as'=>'api.check.data.usage',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@check2',
+]);
+
 
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
