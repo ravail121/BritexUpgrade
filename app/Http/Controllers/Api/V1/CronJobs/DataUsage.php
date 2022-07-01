@@ -24,7 +24,13 @@ class DataUsage extends BaseController
 	 */
     public function check2(Request $request)
     {
-        $usageData = UsageData::where('simnumber', $request->sim_card_num)->first();
+		$string=$request->sim_card_num;
+		if(substr($request->sim_card_num, -1)=='F'){
+
+			$string=substr($request->sim_card_num, 0, -1);
+
+		}
+        $usageData = UsageData::where('simnumber', $string)->first();
         return $usageData;
     }
 
