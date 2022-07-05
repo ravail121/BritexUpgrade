@@ -735,8 +735,7 @@ class SubscriptionController extends BaseController
 				'addon_id'  => [
 					'required',
 					'numeric',
-					'exists:addon,id',
-					'exists:subscription_addon,addon_id'
+					'exists:addon,id'
 				]
 			]);
 
