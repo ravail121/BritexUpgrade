@@ -19,7 +19,6 @@ class SubscriptionLog extends Model
 		'company_id',
 		'customer_id',
 		'subscription_id',
-		'date',
 		'category',
 		'product_id',
 		'description',
