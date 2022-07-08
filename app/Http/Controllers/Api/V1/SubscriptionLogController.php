@@ -28,11 +28,6 @@ class SubscriptionLogController extends BaseController
 				'customer_id' => $subscription->customer_id
 			]);
 
-			if(!$request->has('date')){
-				$request->merge( [
-					'date' => Carbon::now()->toDateTimeString()
-				]);
-			}
 
 			$subscriptionLog = SubscriptionLog::create($request->all());
 			$response = [
