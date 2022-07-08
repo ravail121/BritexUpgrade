@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use Carbon\Carbon;
 use App\Helpers\Log;
+use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\SubscriptionLog;
 use App\Http\Controllers\BaseController;
@@ -15,28 +16,28 @@ class SubscriptionLogController extends BaseController
 {
 	public function store(Request $request)
 	{
-		$request->merge( [
-			'company_id' => $request->get('company')->id,
-		]);
-
-		if(!$request->has('date')){
-			$request->merge( [
-				'date' => Carbon::now()->toDateTimeString()
-			]);
-		}
 		try {
 			$this->validate($request, [
-				'customer_id'       => 'required',
-				'subscription_id'   => 'required',
-				'product_id'        => 'required',
-				'old_product'       => 'required',
-				'new_product'       => 'required'
+				'subscription_id'   => 'required|exists:subscription,id',
 			]);
 
-			$subscription = SubscriptionLog::create($request->all());
+			$subscription = Subscription::find($request->get('subscription_id'));
+
+			$request->merge( [
+				'company_id' => $subscription->company_id,
+				'customer_id' => $subscription->customer_id
+			]);
+
+			if(!$request->has('date')){
+				$request->merge( [
+					'date' => Carbon::now()->toDateTimeString()
+				]);
+			}
+
+			$subscriptionLog = SubscriptionLog::create($request->all());
 			$response = [
 				'status' => 'success',
-				'data'   => $subscription
+				'data'   => $subscriptionLog
 			];
 			return $this->respond( $response );
 		} catch (\Exception $e) {
