@@ -20,6 +20,11 @@ Route::get('/', function (Request $request) {
 	], 200);
 });
 
+Route::get('/test', [
+	'as'=>'api.cron.data.usage2',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData2',
+]);
+
 
 Route::get('/data_usage', [
 	'as'=>'api.cron.data.usage',
