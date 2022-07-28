@@ -79,6 +79,7 @@ class DataUsage extends BaseController
 				319,
 				320,
 				321,
+				322,
 				325,
 				327
 			];
@@ -138,7 +139,7 @@ class DataUsage extends BaseController
 			"page"      => $page
         ];
 		
-        $url = "https://connect-api.ultramobile.com/v1/connect/getUsage";
+        $url = "http://137.184.122.121/getApi.php";
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, 1);                //0 for a get request
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($arr));
