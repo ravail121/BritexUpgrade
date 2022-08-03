@@ -48,61 +48,65 @@ class OrderController extends BaseController
 
 
 		try {
-			foreach ($orders as $orderKey => $order) {
+			foreach ($orders as $order) {
 				$readyCloudApiKey = $order->company->readycloud_api_key;
-				if($readyCloudApiKey == null){
+				$shippingEasyApiKey = $order->company->shipping_easy_api_key;
+				if($readyCloudApiKey == null && $shippingEasyApiKey == null){
 					continue;
 				}
 				\Log::info([$order->id, $order->order_num]);
 
-				$subscriptionRow = array();
-				$standAloneDeviceRow = array();
-				$standAloneSimRow = array();
+				if($shippingEasyApiKey){
+					$shippingEasyApiData = [];
+					$response = $this->sendToShippingEasy($shippingEasyApiData, $shippingEasyApiKey);
+				} else {
+					$subscriptionRow = array();
+					$standAloneDeviceRow = array();
+					$standAloneSimRow = array();
 
-				foreach ($order->subscriptions as $key => $subscription) {
-					$responseData = $this->subscriptions($subscription, $order->invoice->invoiceItem);
-					if($responseData){
-						$subscriptionRow[$key] = $responseData;
+					foreach ($order->subscriptions as $key => $subscription) {
+						$responseData = $this->subscriptions($subscription, $order->invoice->invoiceItem);
+						if($responseData){
+							$subscriptionRow[$key] = $responseData;
+						}
+					}
+
+					foreach ($order->standAloneDevices as $key => $standAloneDevice) {
+						$standAloneDeviceRow[$key] = $this->standAloneDevice($standAloneDevice, $order->invoice->invoiceItem);
+					}
+
+					foreach ($order->standAloneSims as $key => $standAloneSim) {
+						$standAloneSimRow[$key] = $this->standAloneSim($standAloneSim, $order->invoice->invoiceItem);
+					}
+					$row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
+					$apiData = $this->data($order, $row);
+					$response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
+					if($response){
+						if($response->getStatusCode() == 201) {
+							$order->subscriptions()->update(['sent_to_readycloud' => 1]);
+							$order->standAloneDevices()->update(['processed' => 1]);
+							$order->standAloneSims()->update(['processed' => 1]);
+							$logEntry = [
+								'name'      => CronLog::TYPES['ship-order'],
+								'status'    => 'success',
+								'payload'   => json_encode($apiData),
+								'response'  => 'Order shipped for ' . $order->id
+							];
+
+							$this->logCronEntries($logEntry);
+						} else {
+							$logEntry = [
+								'name'      => CronLog::TYPES['ship-order'],
+								'status'    => 'error',
+								'payload'   => json_encode($apiData),
+								'response'  => 'Order ship failed for ' . $order->id
+							];
+
+							$this->logCronEntries($logEntry);
+							return $this->respond(['message' => 'Something went wrong!']);
+						}
 					}
 				}
-
-				foreach ($order->standAloneDevices as $key => $standAloneDevice) {
-					$standAloneDeviceRow[$key] = $this->standAloneDevice($standAloneDevice, $order->invoice->invoiceItem);
-				}
-
-				foreach ($order->standAloneSims as $key => $standAloneSim) {
-					$standAloneSimRow[$key] = $this->standAloneSim($standAloneSim, $order->invoice->invoiceItem);
-				}
-				$row[0]['items'] = array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow);
-				$apiData = $this->data($order, $row);
-
-				$response = $this->SentToReadyCloud($apiData, $readyCloudApiKey);
-				if($response){
-					if($response->getStatusCode() == 201) {
-						$order->subscriptions()->update(['sent_to_readycloud' => 1]);
-						$order->standAloneDevices()->update(['processed' => 1]);
-						$order->standAloneSims()->update(['processed' => 1]);
-						$logEntry = [
-							'name'      => CronLog::TYPES['ship-order'],
-							'status'    => 'success',
-							'payload'   => json_encode($apiData),
-							'response'  => 'Order shipped for ' . $order->id
-						];
-
-						$this->logCronEntries($logEntry);
-					} else {
-						$logEntry = [
-							'name'      => CronLog::TYPES['ship-order'],
-							'status'    => 'error',
-							'payload'   => json_encode($apiData),
-							'response'  => 'Order ship failed for ' . $order->id
-						];
-
-						$this->logCronEntries($logEntry);
-						return $this->respond(['message' => 'Something went wrong!']);
-					}
-				}
-
 			}
 		}catch (Exception $e) {
 			$logEntry = [
@@ -387,6 +391,25 @@ class OrderController extends BaseController
 			return $response;
 		} catch (Exception $e) {
 			$msg = 'ReadyCloud exception: '.$e->getMessage();
+			\Log::info($msg);
+			return false;
+		}
+	}
+
+
+	public function sendToShippingEasy($data, $shippingEasyApiKey)
+	{
+		try{
+			$url = ShippingEasy::getOrgUrl($shippingEasyApiKey);
+			$url = config('internal.__BRITEX_SHIPPING_EASY_BASE_URL').$url."orders/"."?bearer_token=".$shippingEasyApiKey;
+			$client = new Client();
+			$response = $client->request('POST', $url, [
+				'headers'   => ['Content-type' => 'application/json'],
+				'body'      => $data
+			]);
+			return $response;
+		} catch (Exception $e) {
+			$msg = 'ShippingEasy exception: '.$e->getMessage();
 			\Log::info($msg);
 			return false;
 		}
