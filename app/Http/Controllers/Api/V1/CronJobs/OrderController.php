@@ -38,7 +38,7 @@ class OrderController extends BaseController
 			$orders = Order::where('id', $orderID)->get();
 		}else{
 			$orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem', 'payLog')->whereHas('subscriptions', function($subscription) {
-				$subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
+				$subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ], ['sent_to_shipping_easy', 0]]);
 			})->orWhereHas('standAloneDevices', function($standAloneDevice) {
 				$standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
 			})->orWhereHas('standAloneSims', function($standAloneSim) {
