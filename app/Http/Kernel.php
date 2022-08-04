@@ -59,5 +59,6 @@ class Kernel extends HttpKernel
 
         'APIToken' => \App\Http\Middleware\APIToken::class,
         'JsonApiMiddleware' => \App\Http\Middleware\JsonApiMiddleware::class,
+        'ShippingEasyCallbackAuthenticator' => \App\Http\Middleware\ShippingEasyCallbackAuthenticator::class,
     ];
 }

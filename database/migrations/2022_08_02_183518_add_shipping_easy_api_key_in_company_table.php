@@ -16,6 +16,7 @@ class AddShippingEasyApiKeyInCompanyTable extends Migration
 	    Schema::table('company', function (Blueprint $table) {
 		    $table->string( 'shipping_easy_api_key' )->after( 'invoice_solid_line_color' )->nullable();
 		    $table->string( 'shipping_easy_api_secret' )->after( 'shipping_easy_api_key' )->nullable();
+		    $table->string( 'shipping_easy_store_api_key' )->after( 'shipping_easy_api_secret' )->nullable();
 	    });
     }
 
@@ -29,7 +30,8 @@ class AddShippingEasyApiKeyInCompanyTable extends Migration
 	    Schema::table('company', function (Blueprint $table) {
 		    $table->dropColumn([
 			    'shipping_easy_api_key',
-			    'shipping_easy_api_secret'
+			    'shipping_easy_api_secret',
+			    'shipping_easy_store_api_key'
 		    ]);
 	    });
     }
