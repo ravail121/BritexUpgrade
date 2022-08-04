@@ -615,3 +615,14 @@ Route::middleware('APIToken')->group(function () {
 
 }); //APIToken middleware
 
+
+//Route::middleware('ShippingEasyCallbackAuthenticator')->group(function () {
+	Route::group(['prefix' => 'shipment', 'namespace' => '\Api\V1', 'middleware' => ['JsonApiMiddleware']], function() {
+		Route::post( '/callback', [
+			'as'   => 'api.shipment.callback',
+			'uses' => 'ShippingEasyShipmentNotificationCallback@updateOrderShipment',
+		] );
+//	});
+	// Shipment Callback
+});
+
