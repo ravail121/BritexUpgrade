@@ -85,7 +85,7 @@ class OrderController extends BaseController
 					print_r($response);
 
 					if ( $response ) {
-						if ( $response['order'] ) {
+
 							$order->subscriptions()->update( [ 'sent_to_shipping_easy' => 1 ] );
 							$order->standAloneDevices()->update( [ 'processed' => 1 ] );
 							$order->standAloneSims()->update( [ 'processed' => 1 ] );
@@ -97,18 +97,18 @@ class OrderController extends BaseController
 							];
 
 							$this->logCronEntries( $logEntry );
-						} else {
-							$logEntry = [
-								'name'     => CronLog::TYPES[ 'ship-order' ],
-								'status'   => 'error',
-								'payload'  => json_encode( $shippingEasyApiData ),
-								'response' => 'Order ship failed for ' . $order->id
-							];
-
-							$this->logCronEntries( $logEntry );
-
-							return $this->respond( [ 'message' => 'Something went wrong!' ] );
-						}
+//						} else {
+//							$logEntry = [
+//								'name'     => CronLog::TYPES[ 'ship-order' ],
+//								'status'   => 'error',
+//								'payload'  => json_encode( $shippingEasyApiData ),
+//								'response' => 'Order ship failed for ' . $order->id
+//							];
+//
+//							$this->logCronEntries( $logEntry );
+//
+//							return $this->respond( [ 'message' => 'Something went wrong!' ] );
+//						}
 					}
 				} else {
 					foreach ($order->subscriptions as $key => $subscription) {
