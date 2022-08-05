@@ -631,7 +631,7 @@ class OrderController extends BaseController
 		$customer = $order->customer;
 
 		return [
-			"external_order_identifier"      => "BX".$company->id. "-".$order->order_num,
+			"external_order_identifier"      => "BX".$company->id. "-".$order->order_num."-".time(),
 			"subtotal_including_tax"        => $order->invoice->subtotal,
 			"ordered_at"                    => $order->created_at_format,
 			"discount_amount"               => "2.38",
