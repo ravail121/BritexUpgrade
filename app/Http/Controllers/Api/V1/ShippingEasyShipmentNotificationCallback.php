@@ -46,7 +46,7 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									'tracking_num'  => $tracking_num,
 									'sim_card_num'  => $productOptions->sim_card_num ?? '',
 								];
-								if (strlen($productOptions->imei_no) > 0){
+								if (property_exists($productOptions, 'imei_no')){
 									$table_data['device_imei'] = $productOptions->imei_no;
 								}
 								$table->update( $table_data );
@@ -64,7 +64,7 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num
 								];
-								if (strlen($productOptions->imei_no) > 0){
+								if (property_exists($productOptions, 'imei_no')){
 									$table_data['device_imei'] = $productOptions->imei_no ?? '';
 								}
 								$table->update( $table_data );
