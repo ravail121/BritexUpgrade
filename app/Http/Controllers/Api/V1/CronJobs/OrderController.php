@@ -83,7 +83,7 @@ class OrderController extends BaseController
 					$response            = $this->sendToShippingEasy( $shippingEasyApiData, $shippingEasyApiKey, $shippingEasySecret, $shippingEasyStoreApiKey );
 
 					if ( $response ) {
-						if ( $response->getStatusCode() == 201 ) {
+						if ( $response['order'] ) {
 							$order->subscriptions()->update( [ 'sent_to_shipping_easy' => 1 ] );
 							$order->standAloneDevices()->update( [ 'processed' => 1 ] );
 							$order->standAloneSims()->update( [ 'processed' => 1 ] );
