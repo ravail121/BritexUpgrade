@@ -82,6 +82,8 @@ class OrderController extends BaseController
 
 					$response            = $this->sendToShippingEasy( $shippingEasyApiData, $shippingEasyApiKey, $shippingEasySecret, $shippingEasyStoreApiKey );
 
+					print_r($response);
+
 					if ( $response ) {
 						if ( $response['order'] ) {
 							$order->subscriptions()->update( [ 'sent_to_shipping_easy' => 1 ] );
