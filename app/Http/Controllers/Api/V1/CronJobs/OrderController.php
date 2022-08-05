@@ -48,60 +48,64 @@ class OrderController extends BaseController
 
 		try {
 			foreach ($orders as $order) {
-				$readyCloudApiKey = $order->company->readycloud_api_key;
-				$shippingEasyApiKey = $order->company->shipping_easy_api_key;
-				$shippingEasySecret = $order->company->shipping_easy_api_secret;
+				$readyCloudApiKey        = $order->company->readycloud_api_key;
+				$shippingEasyApiKey      = $order->company->shipping_easy_api_key;
+				$shippingEasySecret      = $order->company->shipping_easy_api_secret;
 				$shippingEasyStoreApiKey = $order->company->shipping_easy_store_api_key;
-				if($readyCloudApiKey == null && $shippingEasyApiKey == null && $shippingEasySecret == null && $shippingEasyStoreApiKey == null){
+				if ( $readyCloudApiKey == null && $shippingEasyApiKey == null && $shippingEasySecret == null && $shippingEasyStoreApiKey == null ) {
 					continue;
 				}
 
-				$subscriptionRow = array();
-				$standAloneDeviceRow = array();
-				$standAloneSimRow = array();
-				if($shippingEasyApiKey && $shippingEasySecret && $shippingEasyStoreApiKey){
-					foreach ($order->subscriptions as $key => $subscription) {
-						$responseData = $this->subscriptionsForShippingEasy($subscription, $order->invoice->invoiceItem);
-						if($responseData){
-							$subscriptionRow[$key] = $responseData;
+				$subscriptionRow     = [];
+				$standAloneDeviceRow = [];
+				$standAloneSimRow    = [];
+
+
+				if ( $shippingEasyApiKey && $shippingEasySecret && $shippingEasyStoreApiKey ) {
+					foreach ( $order->subscriptions as $key => $subscription ) {
+						$responseData = $this->subscriptionsForShippingEasy( $subscription, $order->invoice->invoiceItem );
+
+						if ( $responseData ) {
+							$subscriptionRow[ $key ] = $responseData;
 						}
 					}
-
-					foreach ($order->standAloneDevices as $key => $standAloneDevice) {
-						$standAloneDeviceRow[$key] = $this->standAloneDeviceForShippingEasy($standAloneDevice, $order->invoice->invoiceItem);
+					foreach ( $order->standAloneDevices as $key => $standAloneDevice ) {
+						$standAloneDeviceRow[ $key ] = $this->standAloneDeviceForShippingEasy( $standAloneDevice, $order->invoice->invoiceItem );
 					}
 
-					foreach ($order->standAloneSims as $key => $standAloneSim) {
-						$standAloneSimRow[$key] = $this->standAloneSimForShippingEasy($standAloneSim, $order->invoice->invoiceItem);
+					foreach ( $order->standAloneSims as $key => $standAloneSim ) {
+						$standAloneSimRow[ $key ] = $this->standAloneSimForShippingEasy( $standAloneSim, $order->invoice->invoiceItem );
 					}
-					$lineItems = [
-						array_merge($subscriptionRow, $standAloneDeviceRow, $standAloneSimRow)
-					];
-					$shippingEasyApiData = $this->shippingEasyData($order, $lineItems);
-					$response = $this->sendToShippingEasy($shippingEasyApiData, $shippingEasyApiKey, $shippingEasySecret, $shippingEasyStoreApiKey);
-					if($response){
-						if($response->getStatusCode() == 201) {
-							$order->subscriptions()->update(['sent_to_shipping_easy' => 1]);
-							$order->standAloneDevices()->update(['processed' => 1]);
-							$order->standAloneSims()->update(['processed' => 1]);
+					$lineItems = array_merge( $subscriptionRow, $standAloneDeviceRow, $standAloneSimRow );
+
+					$shippingEasyApiData = $this->shippingEasyData( $order, $lineItems );
+
+					$response            = $this->sendToShippingEasy( $shippingEasyApiData, $shippingEasyApiKey, $shippingEasySecret, $shippingEasyStoreApiKey );
+
+					if ( $response ) {
+						if ( $response->getStatusCode() == 201 ) {
+							$order->subscriptions()->update( [ 'sent_to_shipping_easy' => 1 ] );
+							$order->standAloneDevices()->update( [ 'processed' => 1 ] );
+							$order->standAloneSims()->update( [ 'processed' => 1 ] );
 							$logEntry = [
-								'name'      => CronLog::TYPES['ship-order'],
-								'status'    => 'success',
-								'payload'   => json_encode($shippingEasyApiData),
-								'response'  => 'Order shipped for ' . $order->id
+								'name'     => CronLog::TYPES[ 'ship-order' ],
+								'status'   => 'success',
+								'payload'  => json_encode( $shippingEasyApiData ),
+								'response' => 'Order shipped for ' . $order->id
 							];
 
-							$this->logCronEntries($logEntry);
+							$this->logCronEntries( $logEntry );
 						} else {
 							$logEntry = [
-								'name'      => CronLog::TYPES['ship-order'],
-								'status'    => 'error',
-								'payload'   => json_encode($shippingEasyApiData),
-								'response'  => 'Order ship failed for ' . $order->id
+								'name'     => CronLog::TYPES[ 'ship-order' ],
+								'status'   => 'error',
+								'payload'  => json_encode( $shippingEasyApiData ),
+								'response' => 'Order ship failed for ' . $order->id
 							];
 
-							$this->logCronEntries($logEntry);
-							return $this->respond(['message' => 'Something went wrong!']);
+							$this->logCronEntries( $logEntry );
+
+							return $this->respond( [ 'message' => 'Something went wrong!' ] );
 						}
 					}
 				} else {
