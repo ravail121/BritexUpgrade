@@ -44,10 +44,10 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									'status'        => 'for-activation',
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num,
-									'sim_card_num'  => $productOptions['sim_card_num'],
+									'sim_card_num'  => $productOptions->sim_card_num ?? '',
 								];
-								if (strlen($productOptions['imei_no']) > 0){
-									$table_data['device_imei'] = $productOptions['imei_no'];
+								if (strlen($productOptions->imei_no) > 0){
+									$table_data['device_imei'] = $productOptions->imei_no;
 								}
 								$table->update( $table_data );
 								$table[ 'customer' ] = $table->customerRelation;
@@ -64,8 +64,8 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num
 								];
-								if (strlen($productOptions['imei_no']) > 0){
-									$table_data['device_imei'] = $productOptions['imei_no'];
+								if (strlen($productOptions->imei_no) > 0){
+									$table_data['device_imei'] = $productOptions->imei_no ?? '';
 								}
 								$table->update( $table_data );
 								$request->headers->set( 'authorization', $table->customer->company->api_key );
@@ -78,7 +78,7 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									'status'        => CustomerStandaloneSim::STATUS[ 'complete' ],
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num,
-									'sim_num'       => $productOptions['sim_card_num'],
+									'sim_num'       => $productOptions->sim_card_num ?? '',
 								] );
 								$request->headers->set( 'authorization', $table->customer->company->api_key );
 								event( new ShippingNumber( $tracking_num, $table ) );
