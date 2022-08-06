@@ -6,6 +6,14 @@ use Closure;
 use ShippingEasy;
 use ShippingEasy_Authenticator;
 
+/**
+ * The middleware to authenticate the request from ShippingEasy.
+ *
+ * @internal We can't use the middleware directly because the ShippingEasy library needs to be authenticated and since
+ *           our system using multi tenants and we don't have company infomration during the callback,
+ *           we can't use Shipping Easy Authentication mechanism.
+ * @see https://shippingeasy.readme.io/docs/shipment-notification-callback
+ */
 class ShippingEasyCallbackAuthenticator
 {
 
@@ -20,12 +28,6 @@ class ShippingEasyCallbackAuthenticator
 	 */
 	public function handle($request, Closure $next)
 	{
-//		$json = file_get_contents('php://input');
-//		$json_payload = json_decode($json);
-//		$authenticator = new ShippingEasy_Authenticator("post", "/api/shipment/callback", $request->all(), $json);
-//		if ($authenticator->isAuthenticated()) {
-//			return $next($request);
-//		}
 		if (in_array($request->getMethod(), self::PARSED_METHODS) && $request->get('api_signature')) {
 			return $next($request);
 		}
