@@ -39,7 +39,7 @@ Route::get('/test-shipping-easy', function () {
 	ShippingEasy::setApiSecret('49b1d3b8b708946b03ba2e95aac81bf64ef4fca680e7cc67f61403dbab2e0adc');
 	$shippingEasyOrder = new ShippingEasy_Order('b537f50bc5654213566d05d51fbca2a9',
 		array(
-			"external_order_identifier" => "390049",
+			"external_order_identifier" => "3900491243123131124",
           "subtotal_including_tax" => "12.38",
           "ordered_at" => "2019-10-21 08:51:00 -0500",
           "notes" => "Here is the customer note",
@@ -96,9 +96,9 @@ Route::get('/test-shipping-easy', function () {
           )
 	));
 	$order = $shippingEasyOrder->create();
-	return  response()->json([
-		'message'   => $order
-	]);
+	if($order['order']){
+		echo 'Order created successfully';
+	}
 
 });
 

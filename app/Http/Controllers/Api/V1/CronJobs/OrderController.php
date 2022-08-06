@@ -82,33 +82,30 @@ class OrderController extends BaseController
 
 					$response            = $this->sendToShippingEasy( $shippingEasyApiData, $shippingEasyApiKey, $shippingEasySecret, $shippingEasyStoreApiKey );
 
-					print_r($response);
+					if ( $response && $response['order']) {
 
-					if ( $response ) {
+						$order->subscriptions()->update( [ 'sent_to_shipping_easy' => 1 ] );
+						$order->standAloneDevices()->update( [ 'processed' => 1 ] );
+						$order->standAloneSims()->update( [ 'processed' => 1 ] );
+						$logEntry = [
+							'name'     => CronLog::TYPES[ 'ship-order' ],
+							'status'   => 'success',
+							'payload'  => json_encode( $shippingEasyApiData ),
+							'response' => 'Order shipped for ' . $order->id
+						];
 
-							$order->subscriptions()->update( [ 'sent_to_shipping_easy' => 1 ] );
-							$order->standAloneDevices()->update( [ 'processed' => 1 ] );
-							$order->standAloneSims()->update( [ 'processed' => 1 ] );
-							$logEntry = [
-								'name'     => CronLog::TYPES[ 'ship-order' ],
-								'status'   => 'success',
-								'payload'  => json_encode( $shippingEasyApiData ),
-								'response' => 'Order shipped for ' . $order->id
-							];
+						$this->logCronEntries( $logEntry );
+					} else {
+						$logEntry = [
+							'name'     => CronLog::TYPES[ 'ship-order' ],
+							'status'   => 'error',
+							'payload'  => json_encode( $shippingEasyApiData ),
+							'response' => 'Order ship failed for ' . $order->id
+						];
 
-							$this->logCronEntries( $logEntry );
-//						} else {
-//							$logEntry = [
-//								'name'     => CronLog::TYPES[ 'ship-order' ],
-//								'status'   => 'error',
-//								'payload'  => json_encode( $shippingEasyApiData ),
-//								'response' => 'Order ship failed for ' . $order->id
-//							];
-//
-//							$this->logCronEntries( $logEntry );
-//
-//							return $this->respond( [ 'message' => 'Something went wrong!' ] );
-//						}
+						$this->logCronEntries( $logEntry );
+
+						return $this->respond( [ 'message' => 'Something went wrong!' ] );
 					}
 				} else {
 					foreach ($order->subscriptions as $key => $subscription) {
