@@ -32,3 +32,7 @@ Route::get('britex-test-subscription-changed', function(){
 	event(new SubcriptionStatusChanged('702'));
 });
  **/
+
+Route::group(['namespace'=>'Api\V1\CronJobs'],function() {
+	Route::get( '/test-shipping-easy', 'OrderController@order' );
+});

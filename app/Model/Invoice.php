@@ -511,4 +511,9 @@ class Invoice extends Model implements ConstantInterface
 
 	}
 
+	public function getCalUsedCouponDiscountAttribute(){
+		$invoiceItems = $this->invoiceItem()->usedCoupon()->get();
+		return $this->calAmount($invoiceItems);
+	}
+
 }

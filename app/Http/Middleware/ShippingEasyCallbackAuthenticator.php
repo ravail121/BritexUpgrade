@@ -3,8 +3,6 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use ShippingEasy;
-use ShippingEasy_Authenticator;
 
 /**
  * The middleware to authenticate the request from ShippingEasy.
