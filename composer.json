@@ -26,6 +26,9 @@
         "filp/whoops": "~2.0"
     },
     "autoload": {
+        "files": [
+            "app/libs/ShippingEasy/ShippingEasy.php"
+        ],
         "classmap": [
             "database"
         ],

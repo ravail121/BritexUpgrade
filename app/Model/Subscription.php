@@ -55,7 +55,8 @@ class Subscription extends Model
 		'order_num',
 		'sent_to_readycloud',
 		'label',
-		'requested_zip'
+		'requested_zip',
+		'sent_to_shipping_easy'
 	];
 
 	/**
@@ -394,7 +395,7 @@ class Subscription extends Model
 	 */
 	public function scopeShipping($query)
 	{
-		return $query->where([['status', 'shipping'],['sent_to_readycloud', 0 ]]);
+		return $query->where([['status', 'shipping'], ['sent_to_readycloud', 0], ['sent_to_shipping_easy', 0]]);
 	}
 
 	/**
