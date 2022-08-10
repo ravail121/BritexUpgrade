@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-
-
 use Exception;
 use ShippingEasy;
 use App\Model\Sim;
+use Carbon\Carbon;
 use App\Model\Order;
 use App\Model\Device;
 use App\Model\CronLog;
@@ -569,7 +568,7 @@ class OrderController extends BaseController
 
 		$json = [
 			"primary_id"    => "BX".$company->id. "-".$order->order_num,
-			"ordered_at"    => $order->created_at_format,
+			"ordered_at"    => $order->updated_at_format,
 			"terms"         => $payment->card_type." ".$payment->last4,
 			"billing"       => [
 				// "subtotal" => " USD",
@@ -636,7 +635,7 @@ class OrderController extends BaseController
 		return [
 			"external_order_identifier"      => "BX".$company->id. "-".$order->order_num."-".time(),
 			"subtotal_including_tax"        => $order->invoice->subtotal,
-			"ordered_at"                    => $order->created_at_format,
+			"ordered_at"                    => $this->formatDateForShippingEasy($order->updated_at),
 			"discount_amount"               => $order->invoice->cal_credits,
 			"total_including_tax"           => $order->invoice->subtotal,
 			"total_excluding_tax"           => $order->invoice->subtotal - $taxes,
@@ -717,6 +716,16 @@ class OrderController extends BaseController
 			\Log::info($msg);
 			return false;
 		}
+	}
+
+	/**
+	 * @param $date
+	 *
+	 * @return string
+	 */
+	private function formatDateForShippingEasy($date)
+	{
+		return Carbon::parse($date)->format('Y-m-d H:i:s O');
 	}
 
 }

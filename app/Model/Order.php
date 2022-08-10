@@ -266,6 +266,15 @@ class Order extends Model
         return Carbon::parse($this->created_at)->format('Y-m-d\Th:i\Z');
     }
 
+
+	/**
+	 * @return string
+	 */
+	public function getUpdatedAtFormatAttribute()
+	{
+		return Carbon::parse($this->updated_at)->format('Y-m-d\Th:i\Z');
+	}
+
 	/**
 	 * @param $order
 	 *
