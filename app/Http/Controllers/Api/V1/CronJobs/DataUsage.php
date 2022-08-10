@@ -87,7 +87,9 @@ class DataUsage extends BaseController
 			foreach ( $offerIds as $offerId ) {
 				$page = 1;
 				while ( 1 ) {
+					
 					$response = $this->apiUsage( $offerId, $page );
+					
 					if ( ! $response->data ) {
 						break;
 					}
@@ -139,7 +141,7 @@ class DataUsage extends BaseController
 			"page"      => $page
         ];
 		
-        $url = "http://137.184.122.121/getApi.php";
+        $url = "https://connect-api.ultramobile.com/v1/connect/getUsage";
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, 1);                //0 for a get request
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($arr));
