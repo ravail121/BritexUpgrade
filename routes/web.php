@@ -13,6 +13,8 @@
 
 // Route::get('logs', '\Rap2hpoutre\LaravelLogViewer\LogViewerController@index');
 
+use App\Model\Order;
+
 Route::get('/', function () {
     return  response()->json([
         'message'   => 'BriteX Backend !!'
@@ -35,4 +37,5 @@ Route::get('britex-test-subscription-changed', function(){
 
 Route::group(['namespace'=>'Api\V1\CronJobs'],function() {
 	Route::get( '/test-shipping-easy', 'OrderController@order' );
+
 });
