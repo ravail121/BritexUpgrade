@@ -568,7 +568,7 @@ class OrderController extends BaseController
 
 		$json = [
 			"primary_id"    => "BX".$company->id. "-".$order->order_num,
-			"ordered_at"    => $order->created_at_format,
+			"ordered_at"    => $order->updated_at_format,
 			"terms"         => $payment->card_type." ".$payment->last4,
 			"billing"       => [
 				// "subtotal" => " USD",
