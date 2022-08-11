@@ -20,6 +20,23 @@ Route::get('/', function (Request $request) {
 	], 200);
 });
 
+Route::get('/test', [
+	'as'=>'api.cron.data.usage2',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData2',
+]);
+
+
+Route::get('/data_usage', [
+	'as'=>'api.cron.data.usage',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData',
+]);
+
+Route::post('/check2', [
+	'as'=>'api.check.data.usage',
+	'uses'=> 'Api\V1\CronJobs\DataUsage@check2',
+]);
+
+
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 	Route::get('/invoice/download/{companyId}', [
