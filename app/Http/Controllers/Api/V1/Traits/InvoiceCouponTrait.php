@@ -405,9 +405,10 @@ trait InvoiceCouponTrait
      *
      * @return array
      */
-    public function ifAddedByCustomerFunction($order_id, $coupon)
+    public function ifAddedByCustomerFunction($order_id, $coupon,$check=null)
     {
         $order  = Order::find($order_id);
+    //    dd($coupon);
         $customer = Customer::find($order->customer_id);
         $couponEligibleFor = $this->checkEligibleProducts($coupon);
 
@@ -415,13 +416,17 @@ trait InvoiceCouponTrait
         $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order, $stateTax) : 0;
         $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $stateTax) : 0;
         $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $stateTax) : 0;
-
+        // dd($appliedToAll);
         if ($this->isApplicable($order, $customer, $coupon)) {
-            OrderCoupon::updateOrCreate([
-                'order_id'      => $order->id,
-                'coupon_id'     => $coupon->id
-            ]);
-            $this->updateCouponNumUses($order);
+            if($check!=1){
+                OrderCoupon::updateOrCreate([
+                    'order_id'      => $order->id,
+                    'coupon_id'     => $coupon->id
+                ]);
+                $this->updateCouponNumUses($order);
+
+            }
+            
             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
             return [
@@ -540,7 +545,7 @@ trait InvoiceCouponTrait
                         $this->prices[] = $cart['plan_prorated_amt'];
                     } else {
                         $this->prices[] = ($cart['plan'] != null) ? $cart['plan']['amount_recurring'] : [];
-                    }
+                   }
                 }
             }
         }
@@ -842,8 +847,10 @@ trait InvoiceCouponTrait
      */
     protected function getCouponPrice($couponData, $item, $itemType)
     {
+
+       
         $productDiscount = 0;
-        
+      //  dd($couponData);
         foreach($couponData as $coupon) {
             $dataArray=[];
             $type = $coupon[ 'coupon_type' ];
@@ -854,6 +861,7 @@ trait InvoiceCouponTrait
             } elseif ( $type == 3 ) { // Applied to products
                 $appliedTo = $coupon[ 'applied_to' ][ 'applied_to_products' ];
             }
+            
             if ( count( $appliedTo ) ) {
                 foreach ( $appliedTo as $product ) {
                     if ( $product[ 'order_product_type' ] == $itemType && $product[ 'order_product_id' ] == $item[ 'id' ] && (!in_array($item[ 'id' ], $dataArray)) ) {

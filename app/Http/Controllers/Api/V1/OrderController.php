@@ -631,7 +631,7 @@ class OrderController extends BaseController
             foreach ($order_couppons as $coup) {
                 if ($coup->coupon) {
                     $coupon = $coup->coupon;
-                    $this->couponAmount[] = $this->ifAddedByCustomerFunction($order->id, $coupon);
+                    $this->couponAmount[] = $this->ifAddedByCustomerFunction($order->id, $coupon,1);
                 }
             }
         }
