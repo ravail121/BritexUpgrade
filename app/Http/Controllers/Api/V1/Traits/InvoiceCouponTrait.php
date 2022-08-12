@@ -538,14 +538,14 @@ trait InvoiceCouponTrait
         if ($this->cartItems != null) {
             if (count($this->cartItems['order_groups'])) {
                 foreach ($this->cartItems['order_groups'] as $cart) {
-                    // if ($cart['plan']['amount_onetime'] > 0) {
-                    //     $this->activation[] = $cart['plan']['amount_onetime'];
-                    // }
-                    // if ($cart['plan_prorated_amt']) {
-                    //     $this->prices[] = $cart['plan_prorated_amt'];
-                    // } else {
+                    if ($cart['plan']['amount_onetime'] > 0) {
+                        $this->activation[] = $cart['plan']['amount_onetime'];
+                    }
+                    if ($cart['plan_prorated_amt']) {
+                        $this->prices[] = $cart['plan_prorated_amt'];
+                    } else {
                         $this->prices[] = ($cart['plan'] != null) ? $cart['plan']['amount_recurring'] : [];
-                   // }
+                   }
                 }
             }
         }
