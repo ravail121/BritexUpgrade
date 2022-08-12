@@ -848,7 +848,7 @@ trait InvoiceCouponTrait
     protected function getCouponPrice($couponData, $item, $itemType)
     {
 
-       
+        
         $productDiscount = 0;
       //  dd($couponData);
         foreach($couponData as $coupon) {
@@ -1438,7 +1438,7 @@ trait InvoiceCouponTrait
         } elseif ($couponExpiryDate && ($today >= $couponExpiryDate)) {
             $this->failedResponse = 'Expired: '.$couponExpiryDate;
             return false;
-        } elseif ($coupon['num_uses'] >= $coupon['max_uses']) {
+        } elseif ($coupon['num_uses'] > $coupon['max_uses']) {
             $this->failedResponse = 'Not available anymore';
             return false;
         }
