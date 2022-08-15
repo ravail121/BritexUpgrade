@@ -174,7 +174,7 @@ class CouponController extends Controller
         if (!$this->isApplicable(false, $customer, $coupon, true)) {
             return ['error' => $this->failedResponse];
         }
-        $insert = $this->insertIntoTables($coupon, $customer->id, [$subscription->id], true);
+        $insert = $this->insertIntoTables($coupon, $customer->id, [$subscription->id], true,0);
         return $insert;
     }
 
