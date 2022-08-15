@@ -92,7 +92,7 @@ trait InvoiceCouponTrait
 				    //     'num_uses' => $numUses + 1
 			        // ]);
 		        }
-		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
+		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray(),1);
 	        }
             return;
         }
@@ -106,12 +106,16 @@ trait InvoiceCouponTrait
 	 *
 	 * @return array|null
 	 */
-    public function insertIntoTables($coupon, $customerId, $subscriptionIds, $admin = false)
+    public function insertIntoTables($coupon, $customerId, $subscriptionIds, $admin = false,$check=null)
     {
         $multiline     = $this->ifMultiline($coupon);
         $numCycles = $admin ? $coupon->num_cycles : $coupon->num_cycles - 1;
         $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
         $data['coupon_id']   = $coupon->id;
+
+        if($check==0){
+            $coupon->increment('num_uses');
+        }
        // $coupon->increment('num_uses');
         $response = null;
         if ($multiline) {
