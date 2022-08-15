@@ -62,9 +62,11 @@ class CouponController extends Controller
 	 */
 	public function addCoupon(Request $request)
     {
+        
         try {
             // Request from cart plans
             if ($request->for_plans) {
+                // dd($request->all());
                 $codes = [];
                 foreach ($request->data_for_plans as $data) {
                     if ($data['coupon_id']) {
@@ -81,9 +83,10 @@ class CouponController extends Controller
                 }
                 return ['coupon_data' => $codes];
             }
-
+            
             // Request from cart tooltip
             $coupon = Coupon::where('code', $request->code)->first();
+            
             if ($request->only_details) {
                 return [
                 	'coupon_amount_details' => $this->checkEligibleProducts($coupon)
@@ -101,6 +104,7 @@ class CouponController extends Controller
             if ($request->subscription_id) {
                 return $this->ifAddedFromAdmin($request, $coupon);
             } else {
+                
 	            /**
 	             * Check if the coupon are stackable
 	             */
@@ -109,6 +113,7 @@ class CouponController extends Controller
 			            'error'     => $this->failedResponse
 		            ];
 	            }
+                
                 return $this->ifAddedByCustomer($request, $coupon);
             }
 
@@ -195,6 +200,8 @@ class CouponController extends Controller
 		    $order = Order::find($request->order_id);
 		    $couponCode = $request->get('coupon_code');
 		    $coupon = Coupon::where('code', $couponCode)->first();
+            $coupon->num_uses=$coupon->num_uses-1;
+            $coupon->save();
 		    $couponToRemove = $order->orderCoupon->where('coupon_id', $coupon->id)->first();
 		    return $couponToRemove ? ['status' => $couponToRemove->delete()] : ['status' => false];
 	    } catch(Exception $e) {
