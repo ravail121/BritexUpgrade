@@ -435,7 +435,7 @@ trait InvoiceCouponTrait
                 'coupon_type'           => $coupon->class,
                 'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to'            => [
-                    'applied_to_all'        => $appliedToAll['applied_to'],
+                    
                     'applied_to_all'        => $appliedToAll['applied_to'],
                     'applied_to_types'      => $appliedToTypes['applied_to'],
                     'applied_to_products'   => $appliedToProducts['applied_to'],
