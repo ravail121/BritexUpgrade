@@ -88,9 +88,9 @@ trait InvoiceCouponTrait
         	foreach($orderCoupons as $orderCoupon){
 		        if ($orderCoupon->orderCouponProduct->count()) {
 			        $numUses = $orderCoupon->coupon->num_uses;
-			        $orderCoupon->coupon->update([
-				        'num_uses' => $numUses + 1
-			        ]);
+			        // $orderCoupon->coupon->update([
+				    //     'num_uses' => $numUses + 1
+			        // ]);
 		        }
 		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
 	        }
@@ -112,7 +112,7 @@ trait InvoiceCouponTrait
         $numCycles = $admin ? $coupon->num_cycles : $coupon->num_cycles - 1;
         $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
         $data['coupon_id']   = $coupon->id;
-        $coupon->increment('num_uses');
+       // $coupon->increment('num_uses');
         $response = null;
         if ($multiline) {
             $data['customer_id'] = $customerId;
@@ -435,6 +435,7 @@ trait InvoiceCouponTrait
                 'coupon_type'           => $coupon->class,
                 'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to'            => [
+                    'applied_to_all'        => $appliedToAll['applied_to'],
                     'applied_to_all'        => $appliedToAll['applied_to'],
                     'applied_to_types'      => $appliedToTypes['applied_to'],
                     'applied_to_products'   => $appliedToProducts['applied_to'],
@@ -1429,6 +1430,7 @@ trait InvoiceCouponTrait
      */
     protected function couponCanBeUsed($coupon)
     {
+        //dd($coupon);
         $today              = Carbon::now();
         $couponStartDate    = $coupon->start_date ? Carbon::parse($coupon->start_date) : null;
         $couponExpiryDate   = $coupon->end_date ? Carbon::parse($coupon->end_date) : null;
