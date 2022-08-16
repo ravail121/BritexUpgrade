@@ -92,7 +92,7 @@ trait InvoiceCouponTrait
 				    //     'num_uses' => $numUses + 1
 			        // ]);
 		        }
-		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray(),1);
+		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray(),0);
 	        }
             return;
         }
@@ -431,7 +431,7 @@ trait InvoiceCouponTrait
 
             }
             
-            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
+            $total = $appliedToAll['total'];
 
             return [
                 'total'                 => $total,
@@ -748,6 +748,7 @@ trait InvoiceCouponTrait
         $_tax_id = null;
         $order = Order::where('hash', $this->order_hash)->first();
         $customer = Customer::find($order->customer_id);
+        
         if (!$customer) {
             if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
