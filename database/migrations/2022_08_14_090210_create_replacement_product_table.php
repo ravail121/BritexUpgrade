@@ -15,6 +15,7 @@ class CreateReplacementProductTable extends Migration
     {
         Schema::create('replacement_products', function (Blueprint $table) {
             $table->increments('id');
+	        $table->text('name');
 	        $table->unsignedInteger('company_id');
 	        $table->foreign('company_id')->references('id')->on('company');
 	        $table->integer('product_id')->nullable();
