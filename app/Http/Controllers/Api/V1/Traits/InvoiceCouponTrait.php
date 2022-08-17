@@ -412,7 +412,7 @@ trait InvoiceCouponTrait
     public function ifAddedByCustomerFunction($order_id, $coupon,$check=null)
     {
         $order  = Order::find($order_id);
-    //    dd($coupon);
+        
         $customer = Customer::find($order->customer_id);
         $couponEligibleFor = $this->checkEligibleProducts($coupon);
 
@@ -421,7 +421,7 @@ trait InvoiceCouponTrait
         $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $stateTax) : 0;
         $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $stateTax) : 0;
         // dd($appliedToAll);
-        if ($this->isApplicable($order, $customer, $coupon)) {
+        if ($this->isApplicable($order, $customer, $coupon,false,$check)) {
             if($check!=1){
                 OrderCoupon::updateOrCreate([
                     'order_id'      => $order->id,
@@ -1394,8 +1394,9 @@ trait InvoiceCouponTrait
      *
      * @return bool
      */
-    protected function isApplicable($order, $customer, $coupon, $admin = false)
+    protected function isApplicable($order, $customer, $coupon, $admin = false,$check=null)
     {
+        
         if ($admin) {
             $totalSubscriptions = $customer->billableSubscriptionsForCoupons->count();
         } else {
@@ -1425,7 +1426,7 @@ trait InvoiceCouponTrait
             $this->failedResponse = 'Max subscriptions required: '.$coupon['multiline_max'];
             return false;
         }
-        return $this->couponCanBeUsed($coupon);
+        return $this->couponCanBeUsed($coupon,$check);
     }
 
     /**
@@ -1433,7 +1434,7 @@ trait InvoiceCouponTrait
      *
      * @return bool
      */
-    protected function couponCanBeUsed($coupon)
+    protected function couponCanBeUsed($coupon,$check=null)
     {
         //dd($coupon);
         $today              = Carbon::now();
@@ -1445,7 +1446,7 @@ trait InvoiceCouponTrait
         } elseif ($couponExpiryDate && ($today >= $couponExpiryDate)) {
             $this->failedResponse = 'Expired: '.$couponExpiryDate;
             return false;
-        } elseif ($coupon['num_uses'] > $coupon['max_uses']) {
+        } elseif ($coupon['num_uses'] >= $coupon['max_uses'] && $check!=1) {
             $this->failedResponse = 'Not available anymore';
             return false;
         }
