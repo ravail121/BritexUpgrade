@@ -88,11 +88,11 @@ trait InvoiceCouponTrait
         	foreach($orderCoupons as $orderCoupon){
 		        if ($orderCoupon->orderCouponProduct->count()) {
 			        $numUses = $orderCoupon->coupon->num_uses;
-			        $orderCoupon->coupon->update([
-				        'num_uses' => $numUses + 1
-			        ]);
+			        // $orderCoupon->coupon->update([
+				    //     'num_uses' => $numUses + 1
+			        // ]);
 		        }
-		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray());
+		        $this->insertIntoTables($orderCoupon->coupon, $order->customer_id, $order->subscriptions->pluck('id')->toArray(),0);
 	        }
             return;
         }
@@ -106,13 +106,17 @@ trait InvoiceCouponTrait
 	 *
 	 * @return array|null
 	 */
-    public function insertIntoTables($coupon, $customerId, $subscriptionIds, $admin = false)
+    public function insertIntoTables($coupon, $customerId, $subscriptionIds, $admin = false,$check=null)
     {
         $multiline     = $this->ifMultiline($coupon);
         $numCycles = $admin ? $coupon->num_cycles : $coupon->num_cycles - 1;
         $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
         $data['coupon_id']   = $coupon->id;
-        $coupon->increment('num_uses');
+
+        if($check==0){
+            $coupon->increment('num_uses');
+        }
+       // $coupon->increment('num_uses');
         $response = null;
         if ($multiline) {
             $data['customer_id'] = $customerId;
@@ -408,7 +412,7 @@ trait InvoiceCouponTrait
     public function ifAddedByCustomerFunction($order_id, $coupon,$check=null)
     {
         $order  = Order::find($order_id);
-    //    dd($coupon);
+        
         $customer = Customer::find($order->customer_id);
         $couponEligibleFor = $this->checkEligibleProducts($coupon);
 
@@ -417,7 +421,7 @@ trait InvoiceCouponTrait
         $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $stateTax) : 0;
         $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $stateTax) : 0;
         // dd($appliedToAll);
-        if ($this->isApplicable($order, $customer, $coupon)) {
+        if ($this->isApplicable($order, $customer, $coupon,false,$check)) {
             if($check!=1){
                 OrderCoupon::updateOrCreate([
                     'order_id'      => $order->id,
@@ -427,7 +431,7 @@ trait InvoiceCouponTrait
 
             }
             
-            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
+            $total = $appliedToAll['total'];
 
             return [
                 'total'                 => $total,
@@ -435,6 +439,7 @@ trait InvoiceCouponTrait
                 'coupon_type'           => $coupon->class,
                 'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to'            => [
+                    
                     'applied_to_all'        => $appliedToAll['applied_to'],
                     'applied_to_types'      => $appliedToTypes['applied_to'],
                     'applied_to_products'   => $appliedToProducts['applied_to'],
@@ -743,6 +748,7 @@ trait InvoiceCouponTrait
         $_tax_id = null;
         $order = Order::where('hash', $this->order_hash)->first();
         $customer = Customer::find($order->customer_id);
+        
         if (!$customer) {
             if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
@@ -1388,8 +1394,9 @@ trait InvoiceCouponTrait
      *
      * @return bool
      */
-    protected function isApplicable($order, $customer, $coupon, $admin = false)
+    protected function isApplicable($order, $customer, $coupon, $admin = false,$check=null)
     {
+        
         if ($admin) {
             $totalSubscriptions = $customer->billableSubscriptionsForCoupons->count();
         } else {
@@ -1419,7 +1426,7 @@ trait InvoiceCouponTrait
             $this->failedResponse = 'Max subscriptions required: '.$coupon['multiline_max'];
             return false;
         }
-        return $this->couponCanBeUsed($coupon);
+        return $this->couponCanBeUsed($coupon,$check);
     }
 
     /**
@@ -1427,8 +1434,9 @@ trait InvoiceCouponTrait
      *
      * @return bool
      */
-    protected function couponCanBeUsed($coupon)
+    protected function couponCanBeUsed($coupon,$check=null)
     {
+        //dd($coupon);
         $today              = Carbon::now();
         $couponStartDate    = $coupon->start_date ? Carbon::parse($coupon->start_date) : null;
         $couponExpiryDate   = $coupon->end_date ? Carbon::parse($coupon->end_date) : null;
@@ -1438,7 +1446,7 @@ trait InvoiceCouponTrait
         } elseif ($couponExpiryDate && ($today >= $couponExpiryDate)) {
             $this->failedResponse = 'Expired: '.$couponExpiryDate;
             return false;
-        } elseif ($coupon['num_uses'] > $coupon['max_uses']) {
+        } elseif ($coupon['num_uses'] >= $coupon['max_uses'] && $check!=1) {
             $this->failedResponse = 'Not available anymore';
             return false;
         }
