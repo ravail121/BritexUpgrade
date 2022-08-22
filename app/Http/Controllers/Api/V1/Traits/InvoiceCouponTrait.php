@@ -431,7 +431,7 @@ trait InvoiceCouponTrait
 
             }
             
-            $total = $appliedToProducts['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
+            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
             return [
                 'total'                 => $total,
