@@ -431,7 +431,7 @@ trait InvoiceCouponTrait
 
             }
             
-            $total = $appliedToAll['total'];
+            $total = $appliedToProducts['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
             return [
                 'total'                 => $total,
@@ -440,8 +440,8 @@ trait InvoiceCouponTrait
                 'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to'            => [
                     
-                    'applied_to_all'        => $appliedToAll['applied_to'],
-                    'applied_to_types'      => $appliedToTypes['applied_to'],
+                    'applied_to_all'        => 0,
+                    'applied_to_types'      => 0,
                     'applied_to_products'   => $appliedToProducts['applied_to'],
                 ],
                 'coupon_amount_details' => $couponEligibleFor,
@@ -543,14 +543,14 @@ trait InvoiceCouponTrait
         if ($this->cartItems != null) {
             if (count($this->cartItems['order_groups'])) {
                 foreach ($this->cartItems['order_groups'] as $cart) {
-                    if ($cart['plan']['amount_onetime'] > 0) {
-                        $this->activation[] = $cart['plan']['amount_onetime'];
-                    }
-                    if ($cart['plan_prorated_amt']) {
-                        $this->prices[] = $cart['plan_prorated_amt'];
-                    } else {
+                    // if ($cart['plan']['amount_onetime'] > 0) {
+                    //     $this->activation[] = $cart['plan']['amount_onetime'];
+                    // }
+                    // if ($cart['plan_prorated_amt']) {
+                    //     $this->prices[] = $cart['plan_prorated_amt'];
+                    // } else {
                         $this->prices[] = ($cart['plan'] != null) ? $cart['plan']['amount_recurring'] : [];
-                   }
+                //    }
                 }
             }
         }
@@ -749,15 +749,15 @@ trait InvoiceCouponTrait
         $order = Order::where('hash', $this->order_hash)->first();
         $customer = Customer::find($order->customer_id);
         
-        if (!$customer) {
-            if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
-                $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
-            } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
-                $_tax_id = $this->cartItems['customer']['billing_state_id'];
-            }
-        } else {
-            $_tax_id = $customer->billing_state_id;
-        }
+        // if (!$customer) {
+        //     if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
+        //         $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
+        //     } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
+        //         $_tax_id = $this->cartItems['customer']['billing_state_id'];
+        //     }
+        // } else {
+        //     $_tax_id = $customer->billing_state_id;
+        // }
         $stateId = ['tax_id' => $_tax_id];
         $taxRate    = $this->taxrate($stateId);
         $this->taxrate = isset($taxRate['tax_rate']) ? $taxRate['tax_rate'] : 0;
