@@ -16,6 +16,7 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use Illuminate\Validation\Rule;
+use App\Model\Coupon;
 use App\Model\BusinessVerification;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
@@ -562,13 +563,35 @@ class OrderController extends BaseController
         if($og->order_id != $order->id){
             return $this->respondError('Given order_group_id is not associated with provided order hash', 400);
         }
-
+//dd($data);
         if($data['paid_monthly_invoice'] == 1 && $og->plan_id != null){
+
+			$op=OrderCoupon::where('order_id',$order->id)->first();
+			if($op){
+				$coupon = Coupon::where('code', $op->coupon_id)->first();
+				$coupon->num_uses=$coupon->num_uses-1;
+				$coupon->save();
+				$couponToRemove = $order->orderCoupon->where('coupon_id', $coupon->id)->first();
+				$couponToRemove->delete();
+			}
+
+			
             $ogIds = OrderGroup::where([
                 ['order_id', $og->order_id],
                 ['plan_id', $og->plan_id],
             ])->delete();
         }else{
+			
+			$op=OrderCoupon::where('order_id',$order->id)->first();
+			
+			if($op){
+				
+				$coupon = Coupon::where('id', $op->coupon_id)->first();
+				$coupon->num_uses=$coupon->num_uses-1;
+				$coupon->save();
+				$couponToRemove = $order->orderCoupon->where('coupon_id', $coupon->id)->first();
+				$couponToRemove->delete();
+			}
             $og->delete();
         }
         $order->update(['active_group_id' => 0]);
@@ -632,6 +655,7 @@ class OrderController extends BaseController
                 if ($coup->coupon) {
                     $coupon = $coup->coupon;
                     $this->couponAmount[] = $this->ifAddedByCustomerFunction($order->id, $coupon,1);
+					  
                 }
             }
         }
