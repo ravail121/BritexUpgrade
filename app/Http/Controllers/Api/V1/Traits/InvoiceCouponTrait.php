@@ -113,9 +113,9 @@ trait InvoiceCouponTrait
         $data['cycles_remaining'] = $coupon->num_cycles == 0 ? -1 : $numCycles;
         $data['coupon_id']   = $coupon->id;
 
-        if($check==0){
+        
             $coupon->increment('num_uses');
-        }
+        
        // $coupon->increment('num_uses');
         $response = null;
         if ($multiline) {
@@ -421,13 +421,15 @@ trait InvoiceCouponTrait
         $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $stateTax) : 0;
         $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $stateTax) : 0;
         // dd($appliedToAll);
+        
         if ($this->isApplicable($order, $customer, $coupon,false,$check)) {
+            
             if($check!=1){
                 OrderCoupon::updateOrCreate([
                     'order_id'      => $order->id,
                     'coupon_id'     => $coupon->id
                 ]);
-                $this->updateCouponNumUses($order);
+                // $this->updateCouponNumUses($order);
 
             }
             

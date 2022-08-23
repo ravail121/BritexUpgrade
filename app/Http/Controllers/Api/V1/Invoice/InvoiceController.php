@@ -191,7 +191,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 
 			$this->addShippingCharges($order->id); // giving order directly excludes shipping fee in some cases.
 
-			// $this->updateCouponNumUses($order);
+			 $this->updateCouponNumUses($order);
 
 			if ($request->customer_id) {
 				$this->availableCreditsAmount($request->customer_id);
