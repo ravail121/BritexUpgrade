@@ -199,9 +199,7 @@ class CouponController extends Controller
     	try {
 		    $order = Order::find($request->order_id);
 		    $couponCode = $request->get('coupon_code');
-		    $coupon = Coupon::where('code', $couponCode)->first();
-            $coupon->num_uses=$coupon->num_uses-1;
-            $coupon->save();
+            $coupon = Coupon::where('code', $couponCode)->first();
 		    $couponToRemove = $order->orderCoupon->where('coupon_id', $coupon->id)->first();
 		    return $couponToRemove ? ['status' => $couponToRemove->delete()] : ['status' => false];
 	    } catch(Exception $e) {

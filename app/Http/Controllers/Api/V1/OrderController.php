@@ -569,8 +569,6 @@ class OrderController extends BaseController
 			$op=OrderCoupon::where('order_id',$order->id)->first();
 			if($op){
 				$coupon = Coupon::where('code', $op->coupon_id)->first();
-				$coupon->num_uses=$coupon->num_uses-1;
-				$coupon->save();
 				$couponToRemove = $order->orderCoupon->where('coupon_id', $coupon->id)->first();
 				$couponToRemove->delete();
 			}
@@ -587,8 +585,6 @@ class OrderController extends BaseController
 			if($op){
 				
 				$coupon = Coupon::where('id', $op->coupon_id)->first();
-				$coupon->num_uses=$coupon->num_uses-1;
-				$coupon->save();
 				$couponToRemove = $order->orderCoupon->where('coupon_id', $coupon->id)->first();
 				$couponToRemove->delete();
 			}
