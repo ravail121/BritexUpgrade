@@ -431,7 +431,7 @@ trait InvoiceCouponTrait
 
             }
             
-            $total = $appliedToAll['total'];
+            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
             return [
                 'total'                 => $total,
@@ -549,6 +549,7 @@ trait InvoiceCouponTrait
                     if ($cart['plan_prorated_amt']) {
                         $this->prices[] = $cart['plan_prorated_amt'];
                     } else {
+                    
                         $this->prices[] = ($cart['plan'] != null) ? $cart['plan']['amount_recurring'] : [];
                    }
                 }
