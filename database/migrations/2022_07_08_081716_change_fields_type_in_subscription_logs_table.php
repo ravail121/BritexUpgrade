@@ -36,6 +36,7 @@ class ChangeFieldsTypeInSubscriptionLogsTable extends Migration
 		    $table->text('description')->change();
 		    $table->integer('old_product')->change();
 		    $table->integer('new_product')->change();
+		    $table->date('date');
 	    });
     }
 }
