@@ -64,22 +64,36 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num
 								];
-								if (property_exists($productOptions, 'imei_no')){
-									$table_data['device_imei'] = $productOptions->imei_no ?? '';
+								if (property_exists($productOptions, 'imei_no')) {
+									$deviceImei                  = $productOptions->imei_no ?? 'null';
+									$table_data[ 'device_imei' ] = $deviceImei;
+									if ( $table->subscription_id ) {
+										$subscription = Subscription::whereId( $table->subscription_id )->first();
+										$subscription->update( [ 'device_imei' => $deviceImei ] );
+									}
 								}
 								$table->update( $table_data );
+
 								$request->headers->set( 'authorization', $table->customer->company->api_key );
 								event( new ShippingNumber( $tracking_num, $table ) );
 							}
 						} elseif ( $subString == 'SIM' ) {
 							$table = CustomerStandaloneSim::whereId( $partNumId )->with( 'sim', 'customer.company' )->first();
 							if ( $table ) {
-								$table->update( [
+								$table_data = [
 									'status'        => CustomerStandaloneSim::STATUS[ 'complete' ],
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num,
-									'sim_num'       => $productOptions->sim_card_num ?? '',
-								] );
+								];
+								if (property_exists($productOptions, 'sim_num')) {
+									$simNum                  = $productOptions->sim_card_num ?? 'null';
+									$table_data[ 'sim_num' ] = $simNum;
+									if ( $table->subscription_id ) {
+										$subscription = Subscription::whereId( $table->subscription_id )->first();
+										$subscription->update( [ 'sim_num' => $simNum ] );
+									}
+								}
+								$table->update($table_data);
 								$request->headers->set( 'authorization', $table->customer->company->api_key );
 								event( new ShippingNumber( $tracking_num, $table ) );
 							}
