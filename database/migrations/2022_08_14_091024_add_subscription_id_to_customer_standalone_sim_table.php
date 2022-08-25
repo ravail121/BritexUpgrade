@@ -15,6 +15,7 @@ class AddSubscriptionIdToCustomerStandaloneSimTable extends Migration
     {
 	    Schema::table('customer_standalone_sim', function (Blueprint $table) {
 		    $table->unsignedInteger( 'subscription_id' )
+		          ->after('shipping_date')
 		          ->nullable()
 		          ->comment('Subscription ID for the sim');
 		    $table->foreign('subscription_id')

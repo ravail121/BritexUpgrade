@@ -19,7 +19,8 @@ class CustomerStandaloneSim extends Model
         'shipping_date',
         'order_num',
         'processed',
-	    'closed_date'
+	    'closed_date',
+	    'subscription_id'
     ];
 
     const STATUS = [
