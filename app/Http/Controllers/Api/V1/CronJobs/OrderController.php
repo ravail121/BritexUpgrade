@@ -632,7 +632,7 @@ class OrderController extends BaseController
 		$company = $order->company;
 		$customer = $order->customer;
 
-		$internalNotes = $order->invoice->internal_notes;
+		$internalNotes = $order->invoice->notes;
 
 		if(strpos($internalNotes, 'Replacement order') !== false){
 			$internalNotes = trim(substr($internalNotes, strrpos($internalNotes, '|') + 1));
