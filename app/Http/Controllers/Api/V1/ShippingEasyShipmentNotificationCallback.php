@@ -66,10 +66,12 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 								];
 								if (property_exists($productOptions, 'imei_no')) {
 									$deviceImei                  = $productOptions->imei_no ?? 'null';
-									$table_data[ 'device_imei' ] = $deviceImei;
+									$table_data[ 'imei' ] = $deviceImei;
 									if ( $table->subscription_id ) {
 										$subscription = Subscription::whereId( $table->subscription_id )->first();
-										$subscription->update( [ 'device_imei' => $deviceImei ] );
+										if($subscription){
+											$subscription->update( [ 'device_imei' => $deviceImei ] );
+										}
 									}
 								}
 								$table->update( $table_data );
@@ -90,7 +92,9 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									$table_data[ 'sim_num' ] = $simNum;
 									if ( $table->subscription_id ) {
 										$subscription = Subscription::whereId( $table->subscription_id )->first();
-										$subscription->update( [ 'sim_num' => $simNum ] );
+										if($subscription){
+											$subscription->update( [ 'sim_card_num' => $simNum ] );
+										}
 									}
 								}
 								$table->update($table_data);

@@ -632,10 +632,17 @@ class OrderController extends BaseController
 		$company = $order->company;
 		$customer = $order->customer;
 
+		$internalNotes = $order->invoice->internal_notes;
+
+		if(strpos($internalNotes, 'Replacement order') !== false){
+			$internalNotes = trim(substr($internalNotes, strrpos($internalNotes, '|') + 1));
+		}
+
 		return [
 			"external_order_identifier"      => "BX".$company->id. "-".$order->order_num."-".time(),
 			"subtotal_including_tax"        => $order->invoice->subtotal,
 			"ordered_at"                    => $this->formatDateForShippingEasy($order->updated_at),
+			"internal_notes"                => $internalNotes,
 			"discount_amount"               => $order->invoice->cal_credits,
 			"total_including_tax"           => $order->invoice->subtotal,
 			"total_excluding_tax"           => $order->invoice->subtotal - $taxes,

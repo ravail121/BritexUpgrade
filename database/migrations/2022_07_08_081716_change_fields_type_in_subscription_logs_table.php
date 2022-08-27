@@ -19,7 +19,7 @@ class ChangeFieldsTypeInSubscriptionLogsTable extends Migration
 		    $table->text('description')->nullable()->change();
 		    $table->integer('old_product')->nullable()->change();
 		    $table->integer('new_product')->nullable()->change();
-		    $table->dropColumn('date');
+//		    $table->dropColumn('date');
 	    });
     }
 
@@ -36,7 +36,7 @@ class ChangeFieldsTypeInSubscriptionLogsTable extends Migration
 		    $table->text('description')->change();
 		    $table->integer('old_product')->change();
 		    $table->integer('new_product')->change();
-		    $table->date('date');
+//		    $table->date('date');
 	    });
     }
 }

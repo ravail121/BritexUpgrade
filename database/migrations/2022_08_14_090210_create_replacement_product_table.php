@@ -15,11 +15,11 @@ class CreateReplacementProductTable extends Migration
     {
         Schema::create('replacement_products', function (Blueprint $table) {
             $table->increments('id');
-	        $table->text('name');
 	        $table->unsignedInteger('company_id');
 	        $table->foreign('company_id')->references('id')->on('company');
 	        $table->integer('product_id')->nullable();
-	        $table->text('product_type');
+	        $table->string('product_type', 50);
+	        $table->unique(['product_id', 'product_type'], 'product_id_product_type_unique');
             $table->timestamps();
         });
     }
@@ -31,6 +31,9 @@ class CreateReplacementProductTable extends Migration
      */
     public function down()
     {
+	    Schema::table('replacement_products', function (Blueprint $table) {
+		    $table->dropUnique('product_id_product_type_unique');
+	    });
         Schema::dropIfExists('replacement_products');
     }
 }
