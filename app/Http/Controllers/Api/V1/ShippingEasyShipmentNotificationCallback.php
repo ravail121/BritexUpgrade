@@ -87,7 +87,7 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num,
 								];
-								if (property_exists($productOptions, 'sim_num')) {
+								if (property_exists($productOptions, 'sim_card_num')) {
 									$simNum                  = $productOptions->sim_card_num ?? 'null';
 									$table_data[ 'sim_num' ] = $simNum;
 									if ( $table->subscription_id ) {
