@@ -207,7 +207,7 @@ class OrderDataController extends BaseController
                         'tracking_num' => $boxes['tracking_number']
                     ];
                     if (strlen($pick_location) > 0){
-                        $table_data['device_imei'] = $pick_location;
+                        $table_data['imei'] = $pick_location;
                     }
                     $table->update($table_data);
                     $request->headers->set('authorization', $table->customer->company->api_key);
