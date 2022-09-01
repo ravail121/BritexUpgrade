@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Model\SubscriptionLog;
 use Carbon\Carbon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
@@ -70,7 +71,17 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									if ( $table->subscription_id ) {
 										$subscription = Subscription::whereId( $table->subscription_id )->first();
 										if($subscription){
+											$currentDeviceImei = $subscription->device_imei;
 											$subscription->update( [ 'device_imei' => $deviceImei ] );
+											SubscriptionLog::create( [
+												'subscription_id'   => $subscription->id,
+												'company_id'        => $table->customerRelation->company->id,
+												'customer_id'       => $table->customer->id,
+												'description'       => 'Replacement Device shipped',
+												'category'          => SubscriptionLog::CATEGORY['device-imei-changed'],
+												'old_product'       => $currentDeviceImei,
+												'new_product'       => $deviceImei
+											]);
 										}
 									}
 								}
@@ -93,7 +104,17 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 									if ( $table->subscription_id ) {
 										$subscription = Subscription::whereId( $table->subscription_id )->first();
 										if($subscription){
+											$currentSimNum = $subscription->sim_card_num;
 											$subscription->update( [ 'sim_card_num' => $simNum ] );
+											SubscriptionLog::create( [
+												'subscription_id'   => $subscription->id,
+												'company_id'        => $table->customerRelation->company->id,
+												'customer_id'       => $table->customer->id,
+												'description'       => 'Replacement SIM shipped',
+												'category'          => SubscriptionLog::CATEGORY['sim-num-changed'],
+												'old_product'       => $currentSimNum,
+												'new_product'       => $simNum
+											]);
 										}
 									}
 								}
