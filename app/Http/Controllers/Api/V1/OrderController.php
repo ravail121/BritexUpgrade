@@ -708,9 +708,6 @@ class OrderController extends BaseController
 					return $validationErrorResponse2;
 				}
 
-
-			
-
 			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
 			if($validation !== 'valid') {
 				return $validation;
