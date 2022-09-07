@@ -348,6 +348,7 @@ class OrderController extends BaseController
 			'quantity'              => '1',
 			'total_excluding_tax'   => $amount,
 			'price_excluding_tax'   => $amount,
+			'weight_in_ounces'      => $subscription->device['weight'],
 			'product_options'       => [
 				'imei_no' => '',
 			]
@@ -409,6 +410,7 @@ class OrderController extends BaseController
 			'quantity'              => '1',
 			'total_excluding_tax'   => $amount,
 			'price_excluding_tax'   => $amount,
+			'weight_in_ounces'      => $subscription->device['weight'],
 			'product_options'       => [
 				'sim_card_num'  => '',
 				'imei_no'       => '',
@@ -476,6 +478,7 @@ class OrderController extends BaseController
 			'quantity'              => '1',
 			'total_excluding_tax'   => $amount,
 			'price_excluding_tax'   => $amount,
+			'weight_in_ounces'      => $standAloneDevice->device['weight'],
 			'product_options'       => [
 				'imei_no'       => '',
 			]
