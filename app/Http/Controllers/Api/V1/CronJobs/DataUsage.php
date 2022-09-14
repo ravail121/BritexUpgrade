@@ -50,16 +50,16 @@ class DataUsage extends BaseController
 				}
 				$page ++;
 				foreach ( $response->data as $value ) {
-					$usageData = UsageData::where( 'simnumber', $value->simnumber )->first();
+					$usageData = UsageData::where( 'simnumber', $value->iccid )->first();
 					if ( $usageData ) {
-						UsageData::where( 'simnumber', $value->simnumber )->update( [
+						UsageData::where( 'simnumber', $value->iccid )->update( [
 							'data'  => $value->data_usage,
 							'voice' => $value->voice_usage,
 							'sms'   => $value->sms_usage
 						] );
 					} else {
 						UsageData::create( [
-							'simnumber' => $value->simnumber,
+							'simnumber' => $value->iccid,
 							'data'      => $value->data_usage,
 							'voice'     => $value->voice_usage,
 							'sms'       => $value->sms_usage,
@@ -96,16 +96,16 @@ class DataUsage extends BaseController
 					$page ++;
 
 					foreach ( $response->data as $value ) {
-						$usageData = UsageData::where( 'simnumber', $value->simnumber )->first();
+						$usageData = UsageData::where( 'simnumber', $value->iccid )->first();
 						if ( $usageData ) {
-							UsageData::where( 'simnumber', $value->simnumber )->update( [
+							UsageData::where( 'simnumber', $value->iccid )->update( [
 								'data'  => $value->data_usage,
 								'voice' => $value->voice_usage,
 								'sms'   => $value->sms_usage
 							] );
 						} else {
 							UsageData::create( [
-								'simnumber' => $value->simnumber,
+								'simnumber' => $value->iccid,
 								'data'      => $value->data_usage,
 								'voice'     => $value->voice_usage,
 								'sms'       => $value->sms_usage,
@@ -115,7 +115,7 @@ class DataUsage extends BaseController
 							'name'      => CronLog::TYPES['update-data-usage'],
 							'status'    => 'success',
 							'payload'   => '',
-							'response'  => 'Data usage updated for sim number ' . $value->simnumber
+							'response'  => 'Data usage updated for sim number ' . $value->iccid
 						];
 						$this->logCronEntries($logEntry);
 					}
