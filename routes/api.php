@@ -390,6 +390,21 @@ Route::middleware('APIToken')->group(function () {
 
 	Route::group(['namespace' => '\Api\V1'], function(){
 
+		Route::get('/blogs',[
+			'as' => 'api.blogs.list',
+			'uses' => 'BlogsController@get',
+		]);
+
+		Route::post('/blogs',[
+			'as' => 'api.blogs.post',
+			'uses' => 'BlogsController@post',
+		]);
+
+		Route::post('/blogsById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@blogsById',
+		]);
+
 		Route::post('/create-email-log',[
 			'as'   => 'api.create.emaillog',
 			'uses' => 'EmailLogController@store'
