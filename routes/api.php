@@ -14,6 +14,48 @@ use App\Events\SubcriptionStatusChanged;
 |
 */
 
+Route::get('/update-con', [
+	'as'=>'api.sample.invoice2',
+	'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
+
+   ]);
+   
+
+   Route::get('/update-con999', [
+	   'as'=>'api.monthly.invoice',
+	   'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
+
+   ]);
+   Route::get('/update-con2', [
+	   'as'=>'api.sample.invoice22',
+	   'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice',
+
+	  ]);
+
+	  Route::get('/update-con3', [
+		'as'=>'api.sample.invoice33',
+		'uses'=> 'Api\V1\CardController@autoPayInvoice',
+ 
+	   ]);
+
+	   Route::get('/update-con6', [
+		'as'=>'api.sample.invoice6',
+		'uses'=> 'Api\V1\CronJobs\ProcessController@processSubscriptions',
+ 
+	   ]);
+
+	   Route::get('/update-con7', [
+		'as'=>'api.sample.invoice7',
+		'uses'=> 'Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck',
+ 
+	   ]);
+	   
+	   
+
+
+
+
+
 Route::get('/', function (Request $request) {
 	return  response()->json([
 		'message' => 'BriteX Backend !!'
@@ -38,6 +80,17 @@ Route::post('/check2', [
 
 
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
+
+	Route::get('/cron-jobs', [
+		'as'=>'api.monthly.invoice',
+		'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
+
+	]);
+
+	Route::post('/generate-one-time-invoice',[
+		'as'   => 'api.onetime.invoice',
+		'uses' => 'InvoiceController@oneTimeInvoice',
+	]);
 
 	Route::get('/invoice/download/{companyId}', [
 		'as' => 'api.invoice.download',
@@ -65,7 +118,7 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 Route::middleware('APIToken')->group(function () {
 	// Orders API
-	Route::group(['prefix' => 'order', 'namespace' => '\Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
+	Route::group(['prefix' => 'order', 'namespace' => 'Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
 	{
 		Route::get('/', [
 			'as' => 'api.orders.list',
@@ -101,7 +154,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 	// Order-Group API
-	Route::group(['prefix' => 'order-group', 'namespace' => '\Api\V1'], function()
+	Route::group(['prefix' => 'order-group', 'namespace' => 'Api\V1'], function()
 	{
 		Route::get('/', [
 			'as' => 'api.order_group.list',
@@ -118,7 +171,7 @@ Route::middleware('APIToken')->group(function () {
 
 	});
 
-	Route::group(['prefix' => 'coupon', 'namespace' => '\Api\V1'], function()
+	Route::group(['prefix' => 'coupon', 'namespace' => 'Api\V1'], function()
 	{
 		Route::post('/add-coupon', [
 			'as'    => 'api.coupon.addCoupon'  ,
@@ -238,7 +291,7 @@ Route::middleware('APIToken')->group(function () {
 
 
 	// Porting
-	Route::group(['prefix' => 'porting/check', 'namespace' => '\Api\V1'], function()
+	Route::group(['prefix' => 'porting/check', 'namespace' => 'Api\V1'], function()
 	{
 		Route::get('/', [
 			'as' => 'api.porting.check',
@@ -248,7 +301,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['prefix' => 'create-customer', 'namespace' => '\Api\V1'],function()
+	Route::group(['prefix' => 'create-customer', 'namespace' => 'Api\V1'],function()
 	{
 		Route::post('/',[
 			'as'=>'api.customer.post',
@@ -264,7 +317,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['prefix' => 'biz-verification', 'namespace' => '\Api\V1'], function(){
+	Route::group(['prefix' => 'biz-verification', 'namespace' => 'Api\V1'], function(){
 		Route::post('/', [
 			'as'=>'api.bizverification.post',
 			'uses'=>'BizVerificationController@post',
@@ -300,6 +353,7 @@ Route::middleware('APIToken')->group(function () {
 			'as'=>'api.support.email',
 			'uses'=>'SupportController@sendEmail',
 		]);
+		
 	});
 
 
@@ -310,22 +364,7 @@ Route::middleware('APIToken')->group(function () {
 
 		// ]);
 
-		// Route::get('/sample-invoice', [
-		//  'as'=>'api.sample.invoice',
-		//  'uses'=> 'SampleInvoiceGenerationController@get',
-
-		// ]);
-
-		Route::get('/cron-jobs', [
-			'as'=>'api.monthly.invoice',
-			'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
-
-		]);
-
-		Route::post('/generate-one-time-invoice',[
-			'as'   => 'api.onetime.invoice',
-			'uses' => 'InvoiceController@oneTimeInvoice',
-		]);
+		
 
 		Route::post('/start-billing',[
 			'as'   => 'api.start.billing',
@@ -333,14 +372,36 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
 		Route::get('/default-imei', [
 			'as'   => 'api.default.imei',
 			'uses' => 'DeviceController@getImei'
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
+
+		Route::get('/blogs',[
+			'as' => 'api.blogs.list',
+			'uses' => 'BlogsController@get',
+		]);
+		
+		Route::post('/deleteBlogById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@deleteBlogById',
+		]);
+
+		Route::post('/blogs',[
+			'as' => 'api.blogs.post',
+			'uses' => 'BlogsController@post',
+		]);
+
+		Route::post('/blogsById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@blogsById',
+		]);
+
+		
 
 		Route::post('/charge-new-card',[
 			'as'   => 'api.customer.creditcard',
@@ -388,22 +449,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-	Route::group(['namespace' => '\Api\V1'], function(){
-
-		Route::get('/blogs',[
-			'as' => 'api.blogs.list',
-			'uses' => 'BlogsController@get',
-		]);
-
-		Route::post('/blogs',[
-			'as' => 'api.blogs.post',
-			'uses' => 'BlogsController@post',
-		]);
-
-		Route::post('/blogsById',[
-			'as' => 'api.blogs.id',
-			'uses' => 'BlogsController@blogsById',
-		]);
+	Route::group(['namespace' => 'Api\V1'], function(){
 
 		Route::post('/create-email-log',[
 			'as'   => 'api.create.emaillog',
@@ -461,7 +507,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 
-		Route::group(['namespace' => '\Api\V1'], function(){
+		Route::group(['namespace' => 'Api\V1'], function(){
 		Route::post('/sign-on',[
 			'as'   => 'api.customer.signon',
 			'uses' => 'SignOnController@signOn',
@@ -562,7 +608,7 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 
-	Route::group(['namespace' => '\Api\V1'], function() {
+	Route::group(['namespace' => 'Api\V1'], function() {
 		Route::get('/subscription-by-phone-number', [
 			'as' => 'api.Subscription.phone',
 			'uses' => 'SubscriptionController@getSubscriptionByPhoneNumber',
@@ -577,7 +623,7 @@ Route::middleware('APIToken')->group(function () {
 	/**
 	 * APIS for Bulk Orders
 	 */
-	Route::group(['prefix' => 'bulk-order', 'namespace' => '\Api\V1'], function() {
+	Route::group(['prefix' => 'bulk-order', 'namespace' => 'Api\V1'], function() {
 		Route::post( '/customer', [
 			'as'   => 'api.bulk.order.create.customer',
 			'uses' => 'CustomerController@createCustomerForBulkOrder',
@@ -621,7 +667,7 @@ Route::middleware('APIToken')->group(function () {
 	/**
 	* APIS for Subscription Logs
     */
-	Route::group(['prefix' => 'subscription-log', 'namespace' => '\Api\V1'], function() {
+	Route::group(['prefix' => 'subscription-log', 'namespace' => 'Api\V1'], function() {
 		Route::post( '/store', [
 			'as'   => 'api.subscription.log.create.subscription.log',
 			'uses' => 'SubscriptionLogController@store',
