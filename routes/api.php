@@ -400,6 +400,10 @@ Route::middleware('APIToken')->group(function () {
 			'as' => 'api.blogs.id',
 			'uses' => 'BlogsController@blogsById',
 		]);
+		Route::post('/edit-blog-by-id',[
+			'as' => 'api.blogs.post',
+			'uses' => 'BlogsController@update',
+		]);
 
 		
 

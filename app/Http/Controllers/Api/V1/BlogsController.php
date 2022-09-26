@@ -48,6 +48,16 @@ class BlogsController extends BaseController
         return $this->respond($results);
         
     }
+    
+    public function update(Request $request)
+    {
+        $id = $request->id;
+        $data = $request->except('id');
+        return Blogs::where('id',$id)->update(
+            $data
+        );
+        
+    }
 
     public function deleteBlogById(Request $request)
     {
