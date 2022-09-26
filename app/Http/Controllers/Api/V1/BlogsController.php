@@ -52,7 +52,16 @@ class BlogsController extends BaseController
     public function update(Request $request)
     {
         $id = $request->id;
-        $data = $request->except('id');
+        $data = [
+            'title'    => $request->title,
+            'description'     => $request->description,
+            'shortDesc'   => $request->shortDesc,
+            'owner' => $request->owner,
+            'date' => $request->date
+        ];
+        if(isset($request->image)){
+            $data['image']    = $request->image;
+        }
         return Blogs::where('id',$id)->update(
             $data
         );
