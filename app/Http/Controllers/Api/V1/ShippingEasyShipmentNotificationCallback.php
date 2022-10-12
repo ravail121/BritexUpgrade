@@ -27,10 +27,6 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 	 */
 	public function updateOrderShipment(Request $request)
 	{
-		Log::info( 'updateOrderShipment' );
-		return response()->json([
-			'message' => 'I am working.',
-		]);
 		try {
 			$date = Carbon::today();
 			if ( $request->has( 'shipment' ) ) {
@@ -96,8 +92,6 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 								event( new ShippingNumber( $tracking_num, $table ) );
 							}
 						} elseif ( $subString == 'SIM' ) {
-							Log::info( $subString, 'SIM 1' );
-							Log::info( $partNumId, 'SIM 2' );
 							$table = CustomerStandaloneSim::whereId( $partNumId )->with( 'sim', 'customer.company' )->first();
 							if ( $table ) {
 								Log::info( $subString, 'SIM 3' );
@@ -109,6 +103,9 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 								if (property_exists($productOptions, 'sim_card_num')) {
 									Log::info( $subString, 'SIM 4' );
 									$simNum                  = $productOptions->sim_card_num ?? 'null';
+									return response()->json([
+										'message' => $simNum
+									]);
 									$table_data[ 'sim_num' ] = $simNum;
 									if ( $table->subscription_id ) {
 										Log::info( $simNum, 'SIM 5' );
