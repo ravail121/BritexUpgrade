@@ -28,6 +28,9 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 	public function updateOrderShipment(Request $request)
 	{
 		Log::info( 'updateOrderShipment' );
+		return response()->json([
+			'message' => 'I am working.',
+		]);
 		try {
 			$date = Carbon::today();
 			if ( $request->has( 'shipment' ) ) {
