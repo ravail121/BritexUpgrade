@@ -94,25 +94,18 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 						} elseif ( $subString == 'SIM' ) {
 							$table = CustomerStandaloneSim::whereId( $partNumId )->with( 'sim', 'customer.company' )->first();
 							if ( $table ) {
-								Log::info( $subString, 'SIM 3' );
 								$table_data = [
 									'status'        => CustomerStandaloneSim::STATUS[ 'complete' ],
 									'shipping_date' => $date,
 									'tracking_num'  => $tracking_num,
 								];
 								if (property_exists($productOptions, 'sim_card_num')) {
-									Log::info( $subString, 'SIM 4' );
 									$simNum                  = $productOptions->sim_card_num ?? 'null';
-									return response()->json([
-										'message' => $simNum
-									]);
 									$table_data[ 'sim_num' ] = $simNum;
 									if ( $table->subscription_id ) {
-										Log::info( $simNum, 'SIM 5' );
 										$subscription = Subscription::whereId( $table->subscription_id )->first();
 										if($subscription){
 											$currentSimNum = $subscription->sim_card_num;
-											Log::info( $currentSimNum, 'SIM 6' );
 											$subscription->update( [ 'sim_card_num' => $simNum ] );
 											SubscriptionLog::create( [
 												'subscription_id'   => $subscription->id,
