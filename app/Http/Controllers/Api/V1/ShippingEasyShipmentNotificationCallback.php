@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\Log;
 use Carbon\Carbon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
@@ -75,7 +76,7 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 											$subscription->update( [ 'device_imei' => $deviceImei ] );
 											SubscriptionLog::create( [
 												'subscription_id'   => $subscription->id,
-												'company_id'        => $table->customerRelation->company->id,
+												'company_id'        => $table->customer->company->id,
 												'customer_id'       => $table->customer->id,
 												'description'       => 'Replacement Device shipped',
 												'category'          => SubscriptionLog::CATEGORY['device-imei-changed'],
@@ -108,7 +109,7 @@ class ShippingEasyShipmentNotificationCallback extends Controller
 											$subscription->update( [ 'sim_card_num' => $simNum ] );
 											SubscriptionLog::create( [
 												'subscription_id'   => $subscription->id,
-												'company_id'        => $table->customerRelation->company->id,
+												'company_id'        => $table->customer->company->id,
 												'customer_id'       => $table->customer->id,
 												'description'       => 'Replacement SIM shipped',
 												'category'          => SubscriptionLog::CATEGORY['sim-num-changed'],
