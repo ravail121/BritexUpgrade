@@ -30,6 +30,7 @@ class UpdateController extends MonthlyInvoiceController
      */
     public function checkUpdates(Request $request)
     {
+
         $this->updateCustomerDates($request);
         // $this->updateInvoiceStatus($request);
         $this->moveSubscriptionSuspendToClose($request);
@@ -39,7 +40,7 @@ class UpdateController extends MonthlyInvoiceController
 
 		$logEntry = [
 			'name'      => CronLog::TYPES['check-updates'],
-			'status'    => 'success',
+			'status'    => 'ravail',
 			'payload'   => json_encode($request->all()),
 			'response'  => 'Updated Successfully'
 		];
