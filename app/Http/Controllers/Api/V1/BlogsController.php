@@ -68,6 +68,15 @@ class BlogsController extends BaseController
         
     }
 
+    public function removeImageById(Request $request)
+    {
+        $data=$request->all();
+        $arr['image'] = '';
+        $results=Blogs::where('id',$data[0])->update($arr);
+        return $this->respond('Image Deleted');
+        
+    }
+
     public function deleteBlogById(Request $request)
     {
 
