@@ -14,42 +14,7 @@ use App\Events\SubcriptionStatusChanged;
 |
 */
 
-Route::get('/update-con', [
-	'as'=>'api.sample.invoice2',
-	'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
 
-   ]);
-   
-
-   Route::get('/update-con999', [
-	   'as'=>'api.monthly.invoice',
-	   'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
-
-   ]);
-   Route::get('/update-con2', [
-	   'as'=>'api.sample.invoice22',
-	   'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice',
-
-	  ]);
-
-	  Route::get('/update-con3', [
-		'as'=>'api.sample.invoice33',
-		'uses'=> 'Api\V1\CardController@autoPayInvoice',
- 
-	   ]);
-
-	   Route::get('/update-con6', [
-		'as'=>'api.sample.invoice6',
-		'uses'=> 'Api\V1\CronJobs\ProcessController@processSubscriptions',
- 
-	   ]);
-
-	   Route::get('/update-con7', [
-		'as'=>'api.sample.invoice7',
-		'uses'=> 'Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck',
- 
-	   ]);
-	   
 	   
 
 
@@ -394,6 +359,11 @@ Route::middleware('APIToken')->group(function () {
 		Route::post('/blogs',[
 			'as' => 'api.blogs.post',
 			'uses' => 'BlogsController@post',
+		]);
+
+		Route::post('/removeImageById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@removeImageById',
 		]);
 
 		Route::post('/blogsById',[
