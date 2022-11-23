@@ -84,7 +84,8 @@ class Invoice extends Model implements ConstantInterface
 		'shipping_state',
 		'shipping_zip',
 		'created_at',
-		'staff_id'
+		'staff_id',
+        'regenerate'
 	];
 
 	/**
