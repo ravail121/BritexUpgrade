@@ -14,7 +14,7 @@ class AddRegenerateToCustomerTable extends Migration
     public function up()
     {
         Schema::table('customer', function (Blueprint $table) {
-            $table->integer('regenerate');
+            $table->integer('regenerate')->default(0);
         });
     }
 
@@ -26,7 +26,7 @@ class AddRegenerateToCustomerTable extends Migration
     public function down()
     {
         Schema::table('customer', function (Blueprint $table) {
-            $table->dropColumn('regenerate')->default(0);;
+            $table->dropColumn('regenerate');
         });
     }
 }
