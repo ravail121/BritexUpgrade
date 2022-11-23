@@ -608,6 +608,12 @@ class Customer extends Authenticatable
 		$amountDue = $this->nonCreditInvoice() - $this->credit->sum('amount');
 		return number_format((float)$amountDue, 2, '.', '');
 	}
+	public function getAmountDue2Attribute()
+    {
+      //  dd(1);
+        $amountDue = $this->nonCreditInvoice() - $this->credit->sum('amount');
+        return $amountDue;
+    }
 
 	/**
 	 * @return float|int

@@ -58,7 +58,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     public function generateMonthlyInvoice(Request $request)
     {
         $customers = Customer::shouldBeGeneratedNewInvoices();
-        
         foreach ($customers as $customer) {
             try {
 	            \Log::info('Generating invoice for ' . $customer->id);
@@ -154,6 +153,71 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 			$request->headers->set('authorization', $order->company->api_key);
 
 			$this->generateInvoice($order, $mail, $request);
+		}
+	}
+
+	public function processMonthlyInvoice2($invoice,$customer, $request, $mail = true)
+	{
+		if ($customer->billableSubscriptions->count()) {
+			// $invoice = Invoice::create($this->getInvoiceData($customer));
+
+			$dueDate = Carbon::parse($invoice->start_date)->subDay();
+
+			$dueDateChange = $invoice->update([
+				'due_date' => $dueDate
+			]);
+
+			$billableSubscriptionInvoiceItems = $this->addBillableSubscriptions($customer->billableSubscriptions, $invoice);
+
+			$billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
+
+			$regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
+
+			$pendingCharges = $this->pendingCharges($invoice);
+
+			$totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
+
+			// Add Coupons
+			$couponAccount = $this->customerAccountCoupons($customer, $invoice);
+
+			$couponSubscription = $this->customerSubscriptionCoupons($invoice, $customer->billableSubscriptions);
+
+			if($customer->stateTax) {
+				$taxes = $this->addTaxes( $customer, $invoice, $billableSubscriptionInvoiceItems );
+				\Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Tax Calculation skipped");
+			}
+
+			$monthlyCharges = $invoice->cal_total_charges;
+
+			/**
+			 * Apply Surcharge
+			 */
+			if($customer->surcharge > 0) {
+				$surcharge = ($monthlyCharges * $customer->surcharge) / 100;
+				$this->surchargeInvoiceItem($invoice, $surcharge);
+				$monthlyCharges += $surcharge;
+			}
+
+			//Plan charge + addon charge + pending charges + taxes - discount = monthly charges
+			$subtotal = str_replace(',', '', number_format($monthlyCharges + $totalPendingCharges, 2));
+
+			$invoiceUpdate = $invoice->update(compact('subtotal'));
+
+			$totalDue = $this->applyCredits($customer, $invoice);
+
+			$invoice->update(['total_due' => $totalDue]);
+
+			if ($totalDue == 0) {
+				$invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
+			}
+
+			// $insertOrder = $this->insertOrder($invoice);
+
+			// $order       = Order::where('invoice_id', $invoice->id)->first();
+
+			// $request->headers->set('authorization', $order->company->api_key);
+
+			// $this->generateInvoice($order, $mail, $request);
 		}
 	}
 	/**
@@ -546,25 +610,28 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 					$latestPaidInvoice = $invoice;
 				}
 			}
-			if (isset($latestPaidInvoice->id) && isset($latestUnpaidInvoice->id) && $latestPaidInvoice->id > $latestUnpaidInvoice->id) { // If latest order invoice was made after latest open unpaid invoice
+	
+			if (isset($latestPaidInvoice->id) && isset($latestUnpaidInvoice->id) && $latestPaidInvoice->id > $latestUnpaidInvoice->id && $latestUnpaidInvoice->regenerate==0) { // If latest order invoice was made after latest open unpaid invoice
 				$this->regenerateCoupons($latestUnpaidInvoice->couponUsed); // Regenerate used coupons (add to cycles remaining)
-				$regenerateInvoice = $this->processMonthlyInvoice($customer, $request, false); // Regenerate monthly invoice
+				$regenerateInvoice = $this->processMonthlyInvoice2($latestUnpaidInvoice,$customer, $request, false); // Regenerate monthly invoice
 				$updatedLatestUnpaidInvoice = $customer->openAndUnpaidInvoices()->orderBy('id', 'desc')->first(); // Get latest generated monthly invoice
-				if ($updatedLatestUnpaidInvoice->id > $latestPaidInvoice->id) { // Confirm latest monthly invoice->id is greater than old monthly invoice
-					$creditsUsed = $latestUnpaidInvoice->creditsToInvoice->sum('amount');
-					$latestUnpaidInvoice->creditsToInvoice()->update(['invoice_id' => $updatedLatestUnpaidInvoice->id]); // Update invoice id of used credits
-					$latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
-					$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
-					$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
-					$logEntry = [
-						'name'      => CronLog::TYPES['regenerate-invoice'],
-						'status'    => 'success',
-						'payload'   => json_encode($customer),
-						'response'  => 'Generated Successfully for customer ' . $customer->id
-					];
+				// if ($updatedLatestUnpaidInvoice->id > $latestPaidInvoice->id) { // Confirm latest monthly invoice->id is greater than old monthly invoice
+				// 	$creditsUsed = $latestUnpaidInvoice->creditsToInvoice->sum('amount');
+				// 	$latestUnpaidInvoice->creditsToInvoice()->update(['invoice_id' => $updatedLatestUnpaidInvoice->id]); // Update invoice id of used credits
+				// 	$latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
+				// 	$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
+				// 	$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
+				// 	$logEntry = [
+				// 		'name'      => CronLog::TYPES['regenerate-invoice'],
+				// 		'status'    => 'success',
+				// 		'payload'   => json_encode($customer),
+				// 		'response'  => 'Generated Successfully for customer ' . $customer->id
+				// 	];
 
-					$this->logCronEntries($logEntry);
-				}
+				// 	$this->logCronEntries($logEntry);
+				// }
+				$latestUnpaidInvoice->update(['regenerate' => 1]);
+				$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request);
 			}
 		}
 	}
