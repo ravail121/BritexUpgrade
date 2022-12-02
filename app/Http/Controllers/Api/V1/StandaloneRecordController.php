@@ -101,7 +101,7 @@ class StandaloneRecordController extends BaseController
 
 		$record = CustomerStandaloneSim::create(array_merge($this->data, [
 			'sim_id'  => $request->sim_id,
-			'sim_num' => $request->sim_num
+			'sim_num' => $request->sim_num ?? 'null'
 		]));
 
 		$order = Order::find($request->order_id);
