@@ -16,6 +16,7 @@ use App\Events\SubcriptionStatusChanged;
 
 
 	   
+	   
 
 
 
@@ -169,6 +170,10 @@ Route::middleware('APIToken')->group(function () {
 			//'middleware' => 'auth:api',
 			'uses' => 'DeviceController@delete',
 
+		]);
+		Route::post('/updateOrder',[
+			'as' => 'api.devices.order',
+			'uses' => 'DeviceController@updateOrder',
 		]);
 	});
 
