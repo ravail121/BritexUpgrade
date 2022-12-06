@@ -15,13 +15,6 @@ use App\Events\SubcriptionStatusChanged;
 */
 
 
-	   
-	   
-
-
-
-
-
 Route::get('/', function (Request $request) {
 	return  response()->json([
 		'message' => 'BriteX Backend !!'
@@ -343,92 +336,6 @@ Route::middleware('APIToken')->group(function () {
 	});
 
 	Route::group(['namespace' => 'Api\V1'], function(){
-		Route::get('/default-imei', [
-			'as'   => 'api.default.imei',
-			'uses' => 'DeviceController@getImei'
-		]);
-	});
-
-	Route::group(['namespace' => 'Api\V1'], function(){
-
-		Route::get('/blogs',[
-			'as' => 'api.blogs.list',
-			'uses' => 'BlogsController@get',
-		]);
-		
-		Route::post('/deleteBlogById',[
-			'as' => 'api.blogs.id',
-			'uses' => 'BlogsController@deleteBlogById',
-		]);
-
-		Route::post('/blogs',[
-			'as' => 'api.blogs.post',
-			'uses' => 'BlogsController@post',
-		]);
-
-		Route::post('/removeImageById',[
-			'as' => 'api.blogs.id',
-			'uses' => 'BlogsController@removeImageById',
-		]);
-
-		Route::post('/blogsById',[
-			'as' => 'api.blogs.id',
-			'uses' => 'BlogsController@blogsById',
-		]);
-		Route::post('/edit-blog-by-id',[
-			'as' => 'api.blogs.post',
-			'uses' => 'BlogsController@update',
-		]);
-
-		
-
-		Route::post('/charge-new-card',[
-			'as'   => 'api.customer.creditcard',
-			'uses' => 'PaymentController@chargeNewCard',
-		]);
-
-		Route::post('/process-refund',[
-			'as'   => 'api.process.refund',
-			'uses' => 'PaymentController@processRefund',
-		]);
-
-		Route::post('/payment-failed',[
-			'as'   => 'api.payment.failed',
-			'uses' => 'PaymentController@paymentFailed',
-		]);
-
-		Route::get('/customer-cards',[
-			'as'   => 'api.get.customercards',
-			'uses' => 'CardController@getCustomerCards',
-		]);
-
-		Route::post('/add-card',[
-			'as'   => 'api.add.cards',
-			'uses' => 'CardController@addCard',
-		]);
-
-		Route::post('/remove-card',[
-			'as'   => 'api.add.cards',
-			'uses' => 'CardController@removeCard',
-		]);
-
-		Route::post('/charge-card',[
-			'as'   => 'api.charge.cards',
-			'uses' => 'CardController@chargeCard',
-		]);
-
-		Route::post('/primary-card',[
-			'as'   => 'api.charge.cards',
-			'uses' => 'CardController@primaryCard',
-		]);
-
-		Route::post('/pay-unpaied-invoice',[
-			'as'   => 'api.pay.unpaied.invoice',
-			'uses' => 'CardController@payCreditToInvoice',
-		]);
-	});
-
-	Route::group(['namespace' => 'Api\V1'], function(){
 
 		Route::post('/create-email-log',[
 			'as'   => 'api.create.emaillog',
@@ -476,6 +383,86 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.query.active-sim-with-addon',
 			'uses' => 'SubscriptionController@queryActiveSubscriptionWithAddon',
 		]);
+
+		Route::get('/blogs',[
+			'as' => 'api.blogs.list',
+			'uses' => 'BlogsController@get',
+		]);
+
+		Route::post('/deleteBlogById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@deleteBlogById',
+		]);
+
+		Route::post('/blogs',[
+			'as' => 'api.blogs.post',
+			'uses' => 'BlogsController@post',
+		]);
+
+		Route::post('/removeImageById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@removeImageById',
+		]);
+
+		Route::post('/blogsById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@blogsById',
+		]);
+		Route::post('/edit-blog-by-id',[
+			'as' => 'api.blogs.post',
+			'uses' => 'BlogsController@update',
+		]);
+
+
+		Route::post('/charge-new-card',[
+			'as'   => 'api.customer.creditcard',
+			'uses' => 'PaymentController@chargeNewCard',
+		]);
+
+		Route::post('/process-refund',[
+			'as'   => 'api.process.refund',
+			'uses' => 'PaymentController@processRefund',
+		]);
+
+		Route::post('/payment-failed',[
+			'as'   => 'api.payment.failed',
+			'uses' => 'PaymentController@paymentFailed',
+		]);
+
+		Route::get('/customer-cards',[
+			'as'   => 'api.get.customercards',
+			'uses' => 'CardController@getCustomerCards',
+		]);
+
+		Route::post('/add-card',[
+			'as'   => 'api.add.cards',
+			'uses' => 'CardController@addCard',
+		]);
+
+		Route::post('/remove-card',[
+			'as'   => 'api.add.cards',
+			'uses' => 'CardController@removeCard',
+		]);
+
+		Route::post('/charge-card',[
+			'as'   => 'api.charge.cards',
+			'uses' => 'CardController@chargeCard',
+		]);
+
+		Route::post('/primary-card',[
+			'as'   => 'api.charge.cards',
+			'uses' => 'CardController@primaryCard',
+		]);
+
+		Route::post('/pay-unpaied-invoice',[
+			'as'   => 'api.pay.unpaied.invoice',
+			'uses' => 'CardController@payCreditToInvoice',
+		]);
+
+		Route::get('/default-imei', [
+			'as'   => 'api.default.imei',
+			'uses' => 'DeviceController@getImei'
+		]);
 	});
 
 
@@ -486,7 +473,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 
-		Route::group(['namespace' => 'Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
 		Route::post('/sign-on',[
 			'as'   => 'api.customer.signon',
 			'uses' => 'SignOnController@signOn',
@@ -640,6 +627,11 @@ Route::middleware('APIToken')->group(function () {
 		Route::post( '/activate-subscription', [
 			'as'   => 'api.bulk.activate.subscription',
 			'uses' => 'SubscriptionController@activateSubscription',
+		]);
+
+		Route::post( '/list-sims', [
+			'as'   => 'api.bulk.list.sims',
+			'uses' => 'BulkOrder\OrderController@listSims',
 		]);
 	});
 
