@@ -631,7 +631,12 @@ Route::middleware('APIToken')->group(function () {
 
 		Route::post( '/list-sims', [
 			'as'   => 'api.bulk.list.sims',
-			'uses' => 'BulkOrder\OrderController@listSims',
+			'uses' => 'BulkOrder\OrderController@simsForCatalogue',
+		]);
+
+		Route::post( '/create-bulk-order', [
+			'as'   => 'api.bulk.order.create.bulk-order',
+			'uses' => 'BulkOrder\OrderController@createOrder',
 		]);
 	});
 
