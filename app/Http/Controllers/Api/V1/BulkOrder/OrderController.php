@@ -113,11 +113,9 @@ class OrderController extends BaseController
 					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, $hasSubscription);
 				}
 			});
-
-
 			$successResponse = [
-				'status'    => 'success',
-				'data'      => 'Orders created successfully'
+				'status'  => 'success',
+				'message' => 'Order created successfully'
 			];
 			return $this->respond($successResponse);
 
@@ -127,7 +125,7 @@ class OrderController extends BaseController
 				'status' => 'error',
 				'data'   => $e->getMessage()
 			];
-			return $this->respond( $response, 503 );
+			return $this->respond( $response, 400 );
 		}
 
 	}
@@ -191,7 +189,6 @@ class OrderController extends BaseController
 				],
 				'orders.*.sim_id'               =>  [
 					'numeric',
-					'required_with:orders.*.sim_num',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
 					})
@@ -203,7 +200,7 @@ class OrderController extends BaseController
 					})
 				],
 				'orders.*.sim_num'              => [
-					'required_with:orders.*.sim_id',
+					'required_with:plan_activation',
 					'min:11',
 					'max:20',
 					'distinct',
@@ -211,7 +208,6 @@ class OrderController extends BaseController
 						return $query->where('status', '!=', 'closed');
 					}),
 					$simNumValidation
-
 				],
 				'orders.*.sim_type'             => 'string',
 				'orders.*.porting_number'       => 'string',

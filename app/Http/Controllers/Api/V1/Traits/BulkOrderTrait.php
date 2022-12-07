@@ -495,7 +495,7 @@ trait BulkOrderTrait
 				if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id'])){
 					$standAloneSims[] = (object) [
 						'id'        => $orderItem['sim_id'],
-						'sim_num'   => $orderItem['sim_num']
+						'sim_num'   => $orderItem['sim_num'] ?? 'null'
 					];
 				}
 				if(isset($orderItem['device_id']) && !isset($orderItem['plan_id']) && !isset($orderItem['sim_id'])){
