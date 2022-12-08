@@ -127,7 +127,47 @@ class OrderController extends BaseController
 			];
 			return $this->respond( $response, 400 );
 		}
+	}
 
+	/**
+	 * Preview Order for Bulk Order
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|string
+	 */
+	public function orderSummaryForBulkOrder(Request $request)
+	{
+		try {
+			$output = [];
+			$orderItems = $request->get( 'orders' );
+
+			$output['totalPrice'] =  $this->totalPriceForPreview($request, $orderItems);
+			$output['subtotalPrice'] = $this->subTotalPriceForPreview($request, $orderItems);
+			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
+			$output['taxes'] = $this->calTaxesForPreview($request, $orderItems);
+			$output['regulatory'] = $this->calRegulatoryForPreview($request, $orderItems);
+			$output['activationFees'] = $this->getPlanActivationPricesForPreview($orderItems);
+			$costBreakDown = (object) [
+				'devices'   => $this->getCostBreakDownPreviewForDevices($request, $orderItems),
+				'plans'     => $this->getCostBreakDownPreviewForPlans($request, $orderItems),
+				'sims'      => $this->getCostBreakDownPreviewForSims($request, $orderItems)
+			];
+
+			$output['summary'] = $costBreakDown;
+			$successResponse = [
+				'status'    => 'success',
+				'data'      => $output
+			];
+			return $this->respond($successResponse);
+
+		} catch(\Exception $e) {
+			Log::info( $e->getMessage(), 'Order Summary for Bulk Order' );
+			$response = [
+				'status' => 'error',
+				'data'   => $e->getMessage()
+			];
+			return $this->respond( $response, 503 );
+		}
 	}
 
 	/**

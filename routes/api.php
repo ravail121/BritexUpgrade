@@ -638,6 +638,12 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.create.bulk-order',
 			'uses' => 'BulkOrder\OrderController@createOrder',
 		]);
+
+		Route::post( '/order-summary', [
+			'as'   => 'api.bulk.order.preview.order-summary',
+			'uses' => 'BulkOrder\OrderController@orderSummaryForBulkOrder'
+		]);
+
 	});
 
 	/**
