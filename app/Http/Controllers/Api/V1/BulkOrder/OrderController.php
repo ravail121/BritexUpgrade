@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-
+use DateTime;
 use Validator;
 use App\Model\Sim;
 use App\Helpers\Log;
@@ -238,5 +238,65 @@ class OrderController extends BaseController
 			return $this->respond($validationErrorResponse, 422);
 		}
 		return 'valid';
+	}
+
+	public function storeCustomerCard(Request $request)
+	{
+		$data     = $this->validateCardData($request);
+		$response = $this->validateCardMonth($data);
+		if (isset($response)) {
+			return $this->respond($response, 422);
+		}
+		$data  = $this->addCardAdditionalData($data);
+
+		if(isset($cards['success'])){
+			return $this->successRedirect('account', 'New Card Added successfully.');
+		}else if(isset($cards['message'])) {
+			if (is_array($cards['message'])) {
+				$cards['message'] = $cards['message'][0];
+			}
+			return $this->failRedirect('account', 'Card Declined Due to '.$cards['message']);
+		}else{
+			return $this->failRedirect('account', 'Card Declined Please  Try again after some time');
+		}
+	}
+
+	protected function validateCardData($request)
+	{
+		$data = $request->validate([
+			'payment_card_no'        => 'required|min:12|max:19',
+			'month'                  => 'required',
+			'year'                   => 'required',
+			'payment_cvc'            => 'required|max:4',
+			'payment_card_holder'    => 'required',
+			'billing_address1'       => 'required',
+			'billing_city'           => 'required',
+			'billing_state_id'       => 'required',
+			'billing_zip'            => 'required',
+		]);
+
+		return $data;
+	}
+
+	private function validateCardMonth($data)
+	{
+		$now   = new DateTime('now');
+		$month = $now->format('m');
+		$year  = $now->format('y');
+		if ($year == $data['year'] && $data['month'] < $month) {
+			return "New Card Can't be added due to Invalid Expiration Month";
+		}
+	}
+
+	private function addCardAdditionalData($data)
+	{
+		$data['api_key']       =  env('API_KEY');
+		$data['customer_id']   =  session('id');
+		$data['expires_mmyy']  =  [$data['month'], $data['year']];
+		$data['expires_mmyy']  =  implode("/",$data['expires_mmyy']);
+		$data['billing_fname'] =  "Test fname";
+		$data['billing_lname'] =  "Test lname";
+
+		return $data;
 	}
 }
