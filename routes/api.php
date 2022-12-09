@@ -648,6 +648,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.list.order-sims',
 			'uses' => 'BulkOrder\OrderController@listOrderSims'
 		]);
+
+		Route::post( '/list-order-plans', [
+			'as'   => 'api.bulk.order.list.order-plans',
+			'uses' => 'BulkOrder\OrderController@listOrderPlans'
+		]);
 	});
 
 	/**

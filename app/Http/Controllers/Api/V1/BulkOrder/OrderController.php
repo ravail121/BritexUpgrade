@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\BulkOrder;
 
 use Validator;
 use App\Model\Sim;
+use App\Model\Plan;
 use App\Helpers\Log;
 use App\Model\Order;
 use App\Model\Customer;
@@ -13,6 +14,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
 use App\Http\Controllers\BaseController;
+use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 
 /**
@@ -20,7 +22,7 @@ use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
  *
  * @package App\Http\Controllers\Api\V1
  */
-class OrderController extends BaseController
+class OrderController extends BaseController implements ConstantInterface
 {
 
 	use BulkOrderTrait;
@@ -32,9 +34,14 @@ class OrderController extends BaseController
 	public function simsForCatalogue(Request $request)
 	{
 		try {
-			$company = $request->get('company');
+			$requestCompany = $request->get('company');
 
-			$sims = Sim::whereCompanyId($company->id)->get();
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 5;
+
+			$sims = Sim::where( [
+				['company_id', $requestCompany->id],
+				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']]
+			] )->paginate($perPage);
 
 			return $this->respond($sims);
 
@@ -288,19 +295,66 @@ class OrderController extends BaseController
 	public function listOrderSims(Request $request)
 	{
 		try {
-			$company = $request->get('company');
+			$requestCompany = $request->get('company');
 
-			$customer = Customer::where('company_id', $company->id)->where('id', $request->get('customer_id'))->first();
+			$customer = Customer::where('company_id', $requestCompany->id)->where('id', $request->get('customer_id'))->first();
 			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 25;
 
 			$orderSims = CustomerStandaloneSim::where([
 				['customer_id', $customer->id],
-				['subscription_id', null]])->shipping()->with('sim')->paginate($perPage);
+				['subscription_id', null]])->whereHas('sim', function($query) use ($requestCompany) {
+					$query->where(
+						[
+							['company_id', $requestCompany->id],
+							['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']]
+						]
+					);
+				})->shipping()->with('sim')->paginate($perPage);
 
 			return $this->respond($orderSims);
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in list order sims');
+			return $this->respondError($e->getMessage());
+		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|void
+	 */
+	public function listOrderPlans(Request $request)
+	{
+		try {
+			$requestCompany = $request->get('company');
+			$validator = Validator::make( $request->all(), [
+				'sim_id'               =>  [
+					'numeric',
+					'required',
+					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
+			]);
+
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return $this->respondError($errors->messages(), 422);
+			}
+
+			$sim = Sim::where('id', $request->get('sim_id'))->first();
+
+			$orderPlans = Plan::where( [
+				['company_id', $requestCompany->id],
+				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
+				['carrier_id', $sim->carrier_id]
+			] )->get();
+
+			return $this->respond($orderPlans);
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in list order plans');
 			return $this->respondError($e->getMessage());
 		}
 	}
