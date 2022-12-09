@@ -2,10 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
-use App\Helpers\Log;
-use App\Model\OrderGroup;
-use App\Model\OrderGroupAddon;
-use App\Model\PlanToAddon;
 use App\Model\Sim;
 use App\Model\Tax;
 use Carbon\Carbon;
@@ -15,9 +11,12 @@ use App\Model\Addon;
 use App\Model\Device;
 use App\Model\Invoice;
 use App\Model\Customer;
+use App\Model\OrderGroup;
+use App\Model\PlanToAddon;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Model\OrderGroupAddon;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\Api\V1\CardController;
@@ -385,13 +384,16 @@ trait BulkOrderTrait
 	}
 
 	/**
-	 * @param Request  $request
-	 * @param          $order
-	 * @param          $orderItems
-	 * @param          $planActivation
-	 * @param          $hasSubscription
+	 * @param Request $request
+	 * @param         $order
+	 * @param         $orderItems
+	 * @param         $planActivation
+	 * @param         $hasSubscription
+	 * @param         $itemStatus
+	 *
+	 * @return void
 	 */
-	public function createInvoice(Request $request, $order, $orderItems, $planActivation, $hasSubscription)
+	public function createInvoice(Request $request, $order, $orderItems, $planActivation, $hasSubscription, $itemStatus=null)
 	{
 		$customer = Customer::find($request->get('customer_id'));
 		$order = Order::whereHash($order->hash)->first();
@@ -436,7 +438,7 @@ trait BulkOrderTrait
 			'status'        => '1'
 		]);
 
-		$this->invoiceItem($orderItems, $invoice, $planActivation);
+		$this->invoiceItem($orderItems, $invoice, $planActivation, $itemStatus);
 
 		/**
 		 * Insert record for surcharge amount
@@ -480,14 +482,16 @@ trait BulkOrderTrait
 	 * @param $orderItems
 	 * @param $invoice
 	 * @param $planActivation
+	 * @param $itemStatus
+	 *
+	 * @return void
 	 */
-	protected function invoiceItem($orderItems, $invoice, $planActivation)
+	protected function invoiceItem($orderItems, $invoice, $planActivation, $itemStatus)
 	{
 		$subscriptionIds = [];
 		$standAloneSims = [];
 		$standAloneDevices = [];
 		$order = Order::where('invoice_id', $invoice->id)->first();
-		$customer = Customer::find($invoice->customer_id);
 		foreach($orderItems as $orderItem) {
 			if(isset($orderItem['subscription_id'])){
 				$subscriptionIds[] = $orderItem['subscription_id'];
@@ -512,10 +516,10 @@ trait BulkOrderTrait
 			$this->subscriptionInvoiceItem($subscriptionIds, $invoice, $planActivation, $order);
 		}
 		if(!empty($standAloneSims) && !$planActivation){
-			$this->standaloneSimInvoiceItem($standAloneSims, $invoice);
+			$this->standaloneSimInvoiceItem($standAloneSims, $invoice, $itemStatus);
 		}
 		if(!empty($standAloneDevices) && !$planActivation){
-			$this->standaloneDeviceInvoiceItem($standAloneDevices, $invoice);
+			$this->standaloneDeviceInvoiceItem($standAloneDevices, $invoice, $itemStatus);
 		}
 	}
 
@@ -658,13 +662,14 @@ trait BulkOrderTrait
 	}
 
 	/**
-	 *  Creates invoice_item for customer_standalone_device
+	 * Creates invoice_item for customer_standalone_device
 	 * @param $standAloneDevices
 	 * @param $invoice
+	 * @param $itemStatus
 	 *
 	 * @return null
 	 */
-	protected function standaloneDeviceInvoiceItem($standAloneDevices, $invoice)
+	protected function standaloneDeviceInvoiceItem($standAloneDevices, $invoice, $itemStatus)
 	{
 		$invoiceItem = null;
 		$invoiceItemArray = [
@@ -683,7 +688,7 @@ trait BulkOrderTrait
 				 * @internal since these are bulk orders, we don't want these
 				 * to go into shipping status, set a special rule for these lines to complete
 				 */
-				'status'        => CustomerStandaloneDevice::STATUS['complete'],
+				'status'        => $itemStatus ?: CustomerStandaloneDevice::STATUS['complete'],
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
 				'device_id'     => $standAloneDevice->id,
 				'imei'          => $standAloneDevice->imei
@@ -703,10 +708,12 @@ trait BulkOrderTrait
 	/**
 	 * Creates invoice item for customer_standalone_sim
 	 * @param $standaloneSims
+	 * @param $invoice
+	 * @param $itemStatus
 	 *
 	 * @return null
 	 */
-	protected function standaloneSimInvoiceItem($standaloneSims, $invoice)
+	protected function standaloneSimInvoiceItem($standaloneSims, $invoice, $itemStatus)
 	{
 		$invoiceItem = null;
 		$invoiceItemArray = [
@@ -728,7 +735,7 @@ trait BulkOrderTrait
 				 * @internal since these are bulk orders, we don't want these
 				 * to go into shipping status, set a special rule for these lines to complete
 				 */
-				'status'        => CustomerStandaloneSim::STATUS['complete'],
+				'status'        => $itemStatus ?: CustomerStandaloneSim::STATUS['complete'],
 				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
 				'sim_id'        => $standaloneSim->id,
 				'sim_num'       => $standaloneSim->sim_num,
@@ -987,7 +994,6 @@ trait BulkOrderTrait
 				$og_params['require_device'] = $data['require_device'];
 			}
 		}
-
 
 		if(isset($data['addon_id'][0])){
 			foreach ($data['addon_id'] as $key => $addon) {
