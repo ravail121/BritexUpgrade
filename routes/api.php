@@ -631,27 +631,27 @@ Route::middleware('APIToken')->group(function () {
 
 		Route::post( '/list-sims', [
 			'as'   => 'api.bulk.list.sims',
-			'uses' => 'BulkOrder\OrderController@simsForCatalogue',
+			'uses' => 'BulkOrder\CheckoutController@simsForCatalogue',
 		]);
 
 		Route::post( '/create-bulk-order', [
 			'as'   => 'api.bulk.order.create.bulk-order',
-			'uses' => 'BulkOrder\OrderController@createOrder',
+			'uses' => 'BulkOrder\CheckoutController@createOrder',
 		]);
 
 		Route::post( '/order-summary', [
 			'as'   => 'api.bulk.order.preview.order-summary',
-			'uses' => 'BulkOrder\OrderController@orderSummaryForBulkOrder'
+			'uses' => 'BulkOrder\CheckoutController@orderSummaryForBulkOrder'
 		]);
 
 		Route::post( '/list-order-sims', [
 			'as'   => 'api.bulk.order.list.order-sims',
-			'uses' => 'BulkOrder\OrderController@listOrderSims'
+			'uses' => 'BulkOrder\CheckoutController@listOrderSims'
 		]);
 
 		Route::post( '/list-order-plans', [
 			'as'   => 'api.bulk.order.list.order-plans',
-			'uses' => 'BulkOrder\OrderController@listOrderPlans'
+			'uses' => 'BulkOrder\CheckoutController@listOrderPlans'
 		]);
 	});
 

@@ -18,11 +18,11 @@ use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 
 /**
- * Class OrderController
+ * Class CheckoutController
  *
  * @package App\Http\Controllers\Api\V1
  */
-class OrderController extends BaseController implements ConstantInterface
+class CheckoutController extends BaseController implements ConstantInterface
 {
 
 	use BulkOrderTrait;
