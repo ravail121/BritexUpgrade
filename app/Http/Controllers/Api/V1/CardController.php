@@ -73,13 +73,14 @@ class CardController extends BaseController implements ConstantInterface
 	 */
     public function getCustomerCards(Request $request)
     {
+		$requestCompany = $request->get('company');
         if ($request->hash) {
             $customer = Customer::where('hash', $request->hash)->first();
             $customerCreditCard =  $customer->customerCreditCards;
 
         } elseif ($request->customer_id) {
             $customerCreditCard = CustomerCreditCard::where([
-                'api_key'     => $request->api_key,
+                'api_key'     => $request->api_key ?? $requestCompany->api_key,
                 'customer_id' =>  $request->customer_id
             ])->get();
 
@@ -89,8 +90,7 @@ class CardController extends BaseController implements ConstantInterface
 
         if (!$customerCreditCard) {
             return $this->respond(['message' => 'no cards available']);
-
-        } 
+        }
 
         foreach ($customerCreditCard as $card) {
             $card->expiration = $card->addPrefixSlash();
