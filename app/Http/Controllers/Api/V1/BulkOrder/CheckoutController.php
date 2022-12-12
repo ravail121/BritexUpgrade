@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
+use App\Model\Subscription;
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -355,6 +356,55 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in list order plans');
+			return $this->respondError($e->getMessage());
+		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|void
+	 */
+	public function orderSubscriptions(Request $request)
+	{
+		try {
+			$error = [];
+			$requestCompany = $request->get('company');
+
+			$csvFile = $request->file('csv_file');
+			$csvFile = base64_decode($request->post('csv_file'));
+			if ($csvFile) {
+				$csvAsArray = str_getcsv( $csvFile, "\n" );
+				$headerRows = array_shift( $csvAsArray );
+				$subscriptions = [];
+				foreach ( $csvAsArray as $rowIndex => $row ) {
+					if($this->isZipCodeValid($row['area_code'])) {
+						$subscriptions[] = array_combine( $headerRows, $row );
+					} else {
+						$error[] = 'Zip code is not valid for row ' . $rowIndex;
+					}
+				}
+				if($error) {
+					return $this->respondError($error, 422);
+				} else {
+					foreach ($subscriptions as $subscription){
+						/**
+						 *
+						 */
+						$subscriptionData = $this->generateSubscriptionData( $subscription, $order );
+						$subscription     = Subscription::create( $subscriptionData );
+						$subscription_id  = $subscription->id;
+
+					}
+				}
+
+			} else {
+				Log::info('CSV File not uploaded', 'Error in order subscriptions');
+				return $this->respondError('CSV File not uploaded');
+			}
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in order subscriptions');
 			return $this->respondError($e->getMessage());
 		}
 	}

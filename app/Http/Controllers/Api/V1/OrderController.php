@@ -787,52 +787,6 @@ class OrderController extends BaseController
 	}
 
 
-
-	/**
-	 * Returns data as array which is to be inserted in subscription table
-	 *
-	 * @param  $data
-	 * @param  Order  $order
-	 * @return array
-	 */
-	protected function generateSubscriptionData($data, $order)
-	{
-		$plan  = Plan::find($data['plan_id']);
-
-		if ((!isset($data['sim_type']) || $data['sim_type'] == null) && isset($data['sim_id'])) {
-			$sim = Sim::find($data['sim_id']);
-			$data['sim_type'] = ($sim) ? $sim->name : null;
-		}
-		if(!isset($data['subscription_status'])){
-			$subscriptionStatus = isset($data['sim_id']) || isset($data['device_id']) ? 'shipping' : 'for-activation';
-		} else {
-			$subscriptionStatus = $data['subscription_status'];
-		}
-
-		$output = [
-			'order_id'                         =>  $order->id,
-			'customer_id'                      =>  $order->customer->id,
-			'company_id'                       =>  $order->customer->company_id,
-			'order_num'                        =>  $order->order_num,
-			'plan_id'                          =>  $data['plan_id'],
-			'status'                           =>  $plan && $plan->type === 4 ? 'active' : $subscriptionStatus,
-			'sim_id'                           =>  $data['sim_id'] ?? null,
-			'sim_name'                         =>  $data['sim_type'] ?? '',
-			'sim_card_num'                     =>  $data['sim_num'] ?? '',
-			'device_id'                        =>  $data['device_id'] ?? null,
-			'device_os'                        =>  $data['operating_system'] ?? '',
-			'device_imei'                      =>  $data['imei_number'] ?? '',
-			'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : 0,
-			'requested_area_code'              =>  $data['area_code'] ?? '',
-		];
-
-		if($plan && $plan->type === 4){
-			$output['activation_date']  = Carbon::now();
-		}
-
-		return $output;
-	}
-
 	/**
 	 * @param Request $request
 	 *

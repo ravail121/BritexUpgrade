@@ -251,8 +251,6 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-
-
 	// Porting
 	Route::group(['prefix' => 'porting/check', 'namespace' => 'Api\V1'], function()
 	{
@@ -260,7 +258,6 @@ Route::middleware('APIToken')->group(function () {
 			'as' => 'api.porting.check',
 			'uses' => 'PortingController@check',
 		]);
-
 	});
 
 
@@ -326,8 +323,6 @@ Route::middleware('APIToken')->group(function () {
 		//  'uses'=> 'InvoiceController@get',
 
 		// ]);
-
-		
 
 		Route::post('/start-billing',[
 			'as'   => 'api.start.billing',
@@ -555,12 +550,10 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'SubscriptionController@updateSubLabel',
 		]);
 
-		Route::group([], function(){
-			Route::post('/update-port',[
-				'as'   => 'api.update.port',
-				'uses' => 'CustomerPlanController@updatePort',
-			]);
-		});
+		Route::post('/update-port',[
+			'as'   => 'api.update.port',
+			'uses' => 'CustomerPlanController@updatePort',
+		]);
 
 		Route::post('/subscription/update-requested-zip',[
 			'as'   => 'api.Subscription.requestedZip',
@@ -571,10 +564,7 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.customers.list',
 			'uses' => 'CustomerController@listCustomers',
 		]);
-	});
 
-
-	Route::group(['namespace' => 'Api\V1'], function() {
 		Route::get('/subscription-by-phone-number', [
 			'as' => 'api.Subscription.phone',
 			'uses' => 'SubscriptionController@getSubscriptionByPhoneNumber',
@@ -652,6 +642,11 @@ Route::middleware('APIToken')->group(function () {
 		Route::post( '/list-order-plans', [
 			'as'   => 'api.bulk.order.list.order-plans',
 			'uses' => 'BulkOrder\CheckoutController@listOrderPlans'
+		]);
+
+		Route::post('/order-subscriptions', [
+			'as'   => 'api.bulk.order.order-subscriptions',
+			'uses' => 'BulkOrder\CheckoutController@orderSubscriptions'
 		]);
 	});
 
