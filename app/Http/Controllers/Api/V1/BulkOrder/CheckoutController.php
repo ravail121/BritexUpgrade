@@ -591,7 +591,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				return $this->respond($successResponse);
 			} else {
 				Log::info('Sim Numbers not added', 'Error in order subscriptions');
-				return $this->respondError('CSV File not uploaded');
+				return $this->respondError('Sim Numbers not added');
 			}
 
 		} catch(\Exception $e) {
