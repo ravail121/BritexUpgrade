@@ -269,7 +269,7 @@ class CardController extends BaseController implements ConstantInterface
             }else{
                 $customerCreditCard->delete();
             }
-            return $this->respond(['details' => 'Card Sucessfully Deleted']);
+            return $this->respond(['details' => 'Card Successfully Deleted']);
         }
         else{
             return $this->respondError("Card Not Found");

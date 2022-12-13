@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
 use App\Model\Subscription;
+
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -10,6 +11,7 @@ use App\Helpers\Log;
 use App\Model\Order;
 use App\Model\Customer;
 use App\Model\OrderGroup;
+use App\Rules\ValidZipCode;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +43,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$sims = Sim::where( [
 				['company_id', $requestCompany->id],
-				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']]
+				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
+				['carrier_id', 5]
 			] )->paginate($perPage);
 
 			return $this->respond($sims);
@@ -232,13 +235,16 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required_with:plan_activation',
 					'numeric',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where('company_id', $requestCompany->id)
+							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
 				'orders.*.sim_id'               =>  [
 					'numeric',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where('company_id', $requestCompany->id)
+									->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable'])
+									->where('carrier_id', 5);
 					})
 				],
 				'orders.*.subscription_id'      => [
@@ -307,7 +313,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 					$query->where(
 						[
 							['company_id', $requestCompany->id],
-							['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']]
+							['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
+							['carrier_id', 5]
 						]
 					);
 				})->shipping()->with('sim')->paginate($perPage);
@@ -321,6 +328,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 	}
 
 	/**
+	 * List order plans
 	 * @param Request $request
 	 *
 	 * @return \Illuminate\Http\JsonResponse|void
@@ -361,6 +369,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 	}
 
 	/**
+	 * Order subscription from CSV file
 	 * @param Request $request
 	 *
 	 * @return \Illuminate\Http\JsonResponse|void
@@ -372,19 +381,25 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$requestCompany = $request->get('company');
 
 			$validator = Validator::make( $request->all(), [
-				'csv_file'   =>  'required',
+				'csv_file'              =>  'required',
 				'sim_id'               =>  [
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where('company_id', $requestCompany->id)
+							/**
+							 * Check if the carrier is ultra mobile
+							 */
+							->where('carrier_id', 5)
+							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
 				'plan_id'               =>  [
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where('company_id', $requestCompany->id)
+							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
 				'customer_id'           => [
@@ -410,10 +425,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$csvAsArray = str_getcsv( $csvFile, "\n" );
 				$headerRows = array_shift( $csvAsArray );
 				array_push($headerRows, 'plan_id', 'sim_id');
-				$subscriptions = [];
 
 				foreach ( $csvAsArray as $rowIndex => $row ) {
-					if($this->isZipCodeValid($row['area_code'])) {
+					if($this->isZipCodeValid($row['zip_code'])) {
 						$row['plan_id'] = $request->get('plan_id');
 						$row['sim_id'] = $request->get('sim_id');
 						$subscriptionOrders[] = array_combine( $headerRows, $row );
@@ -474,6 +488,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 
 	/**
+	 * Order subscription
 	 * @param Request $request
 	 *
 	 * @return \Illuminate\Http\JsonResponse|void
@@ -481,7 +496,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 	public function orderSubscriptions(Request $request)
 	{
 		try {
-			$error = [];
 			$requestCompany = $request->get('company');
 
 			$validator = Validator::make( $request->all(), [
@@ -490,17 +504,34 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where('company_id', $requestCompany->id)
+						->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
-				'area_code'        => 'nullable|string|max:3',
+				'zip_code'              => [
+					'nullable',
+					'regex:/^(?:(\d{5})(?:[ \-](\d{4}))?)$/i',
+					new ValidZipCode
+				],
 				'customer_id'           => [
 					'numeric',
 					'required',
 					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
 					})
-				]
+				],
+				'sim_id'               =>  [
+					'numeric',
+					'required',
+					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id)
+							/**
+						    * Check if the carrier is ultra mobile
+						    */
+							->where('carrier_id', 5)
+					        ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+					})
+				],
 			]);
 
 			if ($validator->fails()) {
@@ -539,9 +570,10 @@ class CheckoutController extends BaseController implements ConstantInterface
 						'order_id' => $order->id
 					] );
 					$subscriptionOrder = [
-						'sim_number'    => $simNumber,
+						'sim_id'        => $request->get('sim_id'),
+						'sim_num'       => $simNumber,
 						'plan_id'       => $request->get('plan_id'),
-						'area_code'     => $request->get('area_code'),
+						'zip_code'      => $request->get('zip_code')
 					];
 					if($orderGroup) {
 						$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );

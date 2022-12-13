@@ -1203,6 +1203,7 @@ trait BulkOrderTrait
 			'device_imei'                      =>  $data['imei_number'] ?? '',
 			'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : 0,
 			'requested_area_code'              =>  $data['area_code'] ?? '',
+			'requested_zip'                    =>  $data['zip_code'] ?? '',
 		];
 
 		if($plan && $plan->type === 4){
