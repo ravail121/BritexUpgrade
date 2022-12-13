@@ -1153,6 +1153,8 @@ trait BulkOrderTrait
 
 	}
 
+
+
 	/**
 	 * Check if the Zip Codes are valid
 	 * @param $zipCode
@@ -1208,5 +1210,16 @@ trait BulkOrderTrait
 		}
 
 		return $output;
+	}
+
+	/**
+	 * Return order count
+	 * @param Customer $customer
+	 *
+	 * @return mixed
+	 */
+	private function getOrderCount(Customer $customer)
+	{
+		return Order::where([['status', 1], ['company_id', $customer->company_id]])->max('order_num');
 	}
 }

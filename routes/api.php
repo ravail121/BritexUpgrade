@@ -644,6 +644,11 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'BulkOrder\CheckoutController@listOrderPlans'
 		]);
 
+		Route::post('/csv-order-subscriptions', [
+			'as'   => 'api.bulk.order.csv-order-subscriptions',
+			'uses' => 'BulkOrder\CheckoutController@csvOrderSubscriptions'
+		]);
+
 		Route::post('/order-subscriptions', [
 			'as'   => 'api.bulk.order.order-subscriptions',
 			'uses' => 'BulkOrder\CheckoutController@orderSubscriptions'

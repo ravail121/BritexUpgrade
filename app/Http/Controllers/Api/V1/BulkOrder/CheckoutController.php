@@ -72,7 +72,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 				$customer = Customer::find($request->get('customer_id'));
 
-				$orderCount = Order::where([['status', 1],['company_id', $customer->company_id]])->max('order_num');
+				$orderCount = $this->getOrderCount($customer);
 
 				/**
 				 * Create new row in order table if the order is not for plan activation
@@ -365,21 +365,58 @@ class CheckoutController extends BaseController implements ConstantInterface
 	 *
 	 * @return \Illuminate\Http\JsonResponse|void
 	 */
-	public function orderSubscriptions(Request $request)
+	public function csvOrderSubscriptions(Request $request)
 	{
 		try {
 			$error = [];
 			$requestCompany = $request->get('company');
 
-			$csvFile = $request->file('csv_file');
+			$validator = Validator::make( $request->all(), [
+				'csv_file'   =>  'required',
+				'sim_id'               =>  [
+					'numeric',
+					'required',
+					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'plan_id'               =>  [
+					'numeric',
+					'required',
+					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'customer_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
+			]);
+
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return $this->respondError($errors->messages(), 422);
+			}
+			$customerId = $request->get('customer_id');
+
+			$customer = Customer::find($customerId);
+			$planActivation = false;
+
 			$csvFile = base64_decode($request->post('csv_file'));
 			if ($csvFile) {
 				$csvAsArray = str_getcsv( $csvFile, "\n" );
 				$headerRows = array_shift( $csvAsArray );
+				array_push($headerRows, 'plan_id', 'sim_id');
 				$subscriptions = [];
+
 				foreach ( $csvAsArray as $rowIndex => $row ) {
 					if($this->isZipCodeValid($row['area_code'])) {
-						$subscriptions[] = array_combine( $headerRows, $row );
+						$row['plan_id'] = $request->get('plan_id');
+						$row['sim_id'] = $request->get('sim_id');
+						$subscriptionOrders[] = array_combine( $headerRows, $row );
 					} else {
 						$error[] = 'Zip code is not valid for row ' . $rowIndex;
 					}
@@ -387,19 +424,141 @@ class CheckoutController extends BaseController implements ConstantInterface
 				if($error) {
 					return $this->respondError($error, 422);
 				} else {
-					foreach ($subscriptions as $subscription){
-						/**
-						 *
-						 */
-						$subscriptionData = $this->generateSubscriptionData( $subscription, $order );
-						$subscription     = Subscription::create( $subscriptionData );
-						$subscription_id  = $subscription->id;
+					$orderCount = $this->getOrderCount($customer);
+					/**
+					 * Create new row in order table if the order is not for plan activation
+					 */
+					$order = Order::create( [
+						'hash'              => sha1( time() . rand() ),
+						'company_id'        => $request->get( 'company' )->id,
+						'customer_id'       => $customerId,
+						'shipping_fname'    => $request->get('shipping_fname') ?: $customer->billing_fname,
+						'shipping_lname'    => $request->get('shipping_lname') ?: $customer->billing_lname,
+						'shipping_address1' => $request->get('shipping_address1') ?: $customer->billing_address1,
+						'shipping_address2' => $request->get('shipping_address2') ?: $customer->billing_address2,
+						'shipping_city'     => $request->get('shipping_city') ?: $customer->billing_city,
+						'shipping_state_id' => $request->get('shipping_state_id') ?: $customer->billing_state_id,
+						'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip,
+						'order_num'         => $orderCount + 1
+					] );
+					$outputOrderItems = [];
+					foreach ($subscriptionOrders as $subscriptionOrder){
+						$orderGroup = OrderGroup::create( [
+							'order_id' => $order->id
+						] );
+						if($orderGroup) {
+							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
 
+							$outputOrderItems[] = $outputOrderItem;
+						}
 					}
 				}
-
+				if($order) {
+					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true);
+				}
+				$successResponse = [
+					'status'  => 'success',
+					'message' => 'Subscription order created successfully'
+				];
+				return $this->respond($successResponse);
 			} else {
-				Log::info('CSV File not uploaded', 'Error in order subscriptions');
+				Log::info('CSV File not uploaded', 'Error in CSV order subscriptions');
+				return $this->respondError('CSV File not uploaded');
+			}
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in CSV order subscriptions');
+			return $this->respondError($e->getMessage());
+		}
+	}
+
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|void
+	 */
+	public function orderSubscriptions(Request $request)
+	{
+		try {
+			$error = [];
+			$requestCompany = $request->get('company');
+
+			$validator = Validator::make( $request->all(), [
+				'sim_numbers'           =>  'required',
+				'plan_id'               =>  [
+					'numeric',
+					'required',
+					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'area_code'        => 'nullable|string|max:3',
+				'customer_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
+			]);
+
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return $this->respondError($errors->messages(), 422);
+			}
+
+			$simNumbers = $request->post('sim_numbers');
+			$customerId = $request->get('customer_id');
+
+			$customer = Customer::find($customerId);
+			$planActivation = false;
+
+			if ($simNumbers) {
+				$simNumbers = explode(PHP_EOL, $simNumbers);
+				$orderCount = $this->getOrderCount($customer);
+				/**
+				 * Create new row in order table if the order is not for plan activation
+				 */
+				$order = Order::create( [
+					'hash'              => sha1( time() . rand() ),
+					'company_id'        => $request->get( 'company' )->id,
+					'customer_id'       => $customerId,
+					'shipping_fname'    => $request->get('shipping_fname') ?: $customer->billing_fname,
+					'shipping_lname'    => $request->get('shipping_lname') ?: $customer->billing_lname,
+					'shipping_address1' => $request->get('shipping_address1') ?: $customer->billing_address1,
+					'shipping_address2' => $request->get('shipping_address2') ?: $customer->billing_address2,
+					'shipping_city'     => $request->get('shipping_city') ?: $customer->billing_city,
+					'shipping_state_id' => $request->get('shipping_state_id') ?: $customer->billing_state_id,
+					'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip,
+					'order_num'         => $orderCount + 1
+				] );
+				$outputOrderItems = [];
+				foreach ($simNumbers as $simNumber){
+					$orderGroup = OrderGroup::create( [
+						'order_id' => $order->id
+					] );
+					$subscriptionOrder = [
+						'sim_number'    => $simNumber,
+						'plan_id'       => $request->get('plan_id'),
+						'area_code'     => $request->get('area_code'),
+					];
+					if($orderGroup) {
+						$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
+
+						$outputOrderItems[] = $outputOrderItem;
+					}
+				}
+				if($order) {
+					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true);
+				}
+				$successResponse = [
+					'status'  => 'success',
+					'message' => 'Subscription order created successfully'
+				];
+				return $this->respond($successResponse);
+			} else {
+				Log::info('Sim Numbers not added', 'Error in order subscriptions');
 				return $this->respondError('CSV File not uploaded');
 			}
 
