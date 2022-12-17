@@ -202,19 +202,30 @@ class CardController extends BaseController implements ConstantInterface
 	                }
                 }
             } else {
-                $this->response = $this->transactionFail($order, $this->tran);
+	            $cardDetails = $this->getCustomerCard($request);
+                $this->response = $this->transactionFail($order, $this->tran, $cardDetails);
                 if($request->without_order){
                     return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
                 }
             }
         } else {
-            $this->response = $this->transactionFail(null, $this->tran);
+			$cardDetails = $this->getCustomerCard($request);
+            $this->response = $this->transactionFail(null, $this->tran, $cardDetails);
 	        if($request->without_order){
 		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
 	        }
         }
         return $this->respond($this->response);
     }
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return null
+	 */
+	protected function getCustomerCard(Request $request){
+		return $request->card_id ? CustomerCreditCard::find($request->card_id) : null;
+	}
 
 
 	/**

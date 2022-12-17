@@ -279,9 +279,9 @@ trait UsaEpayTransaction
      * @param  UsaEpay   $tranFail
      * @return string
      */
-    protected function transactionFail($order, $tranFail)
+    protected function transactionFail($order, $tranFail, $card=null)
     {
-        $this->createPaymentLogs($order, $tranFail, 0);
+        $this->createPaymentLogs($order, $tranFail, 0, $card);
         return ['message' => $tranFail->error];
     }
 
