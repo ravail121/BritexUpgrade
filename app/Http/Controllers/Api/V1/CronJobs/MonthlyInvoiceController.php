@@ -611,27 +611,25 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 				}
 			}
 	
-			if (isset($latestPaidInvoice->id) && isset($latestUnpaidInvoice->id) && $latestPaidInvoice->id > $latestUnpaidInvoice->id && $latestUnpaidInvoice->regenerate==0) { // If latest order invoice was made after latest open unpaid invoice
+			if (isset($latestPaidInvoice->id) && isset($latestUnpaidInvoice->id) && $latestPaidInvoice->id > $latestUnpaidInvoice->id) { // If latest order invoice was made after latest open unpaid invoice
 				$this->regenerateCoupons($latestUnpaidInvoice->couponUsed); // Regenerate used coupons (add to cycles remaining)
-				$regenerateInvoice = $this->processMonthlyInvoice2($latestUnpaidInvoice,$customer, $request, false); // Regenerate monthly invoice
+				$regenerateInvoice = $this->processMonthlyInvoice($customer, $request, false); // Regenerate monthly invoice
 				$updatedLatestUnpaidInvoice = $customer->openAndUnpaidInvoices()->orderBy('id', 'desc')->first(); // Get latest generated monthly invoice
-				// if ($updatedLatestUnpaidInvoice->id > $latestPaidInvoice->id) { // Confirm latest monthly invoice->id is greater than old monthly invoice
-				// 	$creditsUsed = $latestUnpaidInvoice->creditsToInvoice->sum('amount');
-				// 	$latestUnpaidInvoice->creditsToInvoice()->update(['invoice_id' => $updatedLatestUnpaidInvoice->id]); // Update invoice id of used credits
-				// 	$latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
-				// 	$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
-				// 	$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
-				// 	$logEntry = [
-				// 		'name'      => CronLog::TYPES['regenerate-invoice'],
-				// 		'status'    => 'success',
-				// 		'payload'   => json_encode($customer),
-				// 		'response'  => 'Generated Successfully for customer ' . $customer->id
-				// 	];
+				if ($updatedLatestUnpaidInvoice->id > $latestPaidInvoice->id) { // Confirm latest monthly invoice->id is greater than old monthly invoice
+					$creditsUsed = $latestUnpaidInvoice->creditsToInvoice->sum('amount');
+					$latestUnpaidInvoice->creditsToInvoice()->update(['invoice_id' => $updatedLatestUnpaidInvoice->id]); // Update invoice id of used credits
+					$latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
+					$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
+					$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
+					$logEntry = [
+						'name'      => CronLog::TYPES['regenerate-invoice'],
+						'status'    => 'success',
+						'payload'   => json_encode($customer),
+						'response'  => 'Generated Successfully for customer ' . $customer->id
+					];
 
-				// 	$this->logCronEntries($logEntry);
-				// }
-				$latestUnpaidInvoice->update(['regenerate' => 1]);
-				$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request);
+					$this->logCronEntries($logEntry);
+				}
 			}
 		}
 	}
