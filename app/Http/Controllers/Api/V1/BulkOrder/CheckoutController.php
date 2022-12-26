@@ -311,12 +311,12 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			if($simId) {
 				$orderSims = CustomerStandaloneSim::where( [
+					[ 'sim_id', $simId ],
 					[ 'customer_id', $customer->id ],
 					[ 'subscription_id', null ]
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany, $simId ) {
 					$query->where(
 						[
-							['id', $simId],
 							[ 'company_id', $requestCompany->id ],
 							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
 							[ 'carrier_id', 5 ]
