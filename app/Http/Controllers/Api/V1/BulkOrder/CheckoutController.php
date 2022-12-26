@@ -305,18 +305,38 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$requestCompany = $request->get('company');
 
 			$customer = Customer::where('company_id', $requestCompany->id)->where('id', $request->get('customer_id'))->first();
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 25;
 
-			$orderSims = CustomerStandaloneSim::where([
-				['customer_id', $customer->id],
-				['subscription_id', null]])->whereHas('sim', function($query) use ($requestCompany) {
+			$simId = $request->get('sim_id');
+
+			if($simId) {
+				$orderSims = CustomerStandaloneSim::where( [
+					[ 'customer_id', $customer->id ],
+					[ 'subscription_id', null ]
+				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany, $simId ) {
 					$query->where(
 						[
-							['company_id', $requestCompany->id],
-							['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
-							['carrier_id', 5]
+							['id', $simId],
+							[ 'company_id', $requestCompany->id ],
+							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
+							[ 'carrier_id', 5 ]
 						]
 					);
-				})->shipping()->distinct('sim_id')->with('sim')->get();
+				} )->shipping()->with( 'sim' )->paginate( $perPage );
+			} else {
+				$orderSims = CustomerStandaloneSim::where( [
+					[ 'customer_id', $customer->id ],
+					[ 'subscription_id', null ]
+				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany ) {
+					$query->where(
+						[
+							[ 'company_id', $requestCompany->id ],
+							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
+							[ 'carrier_id', 5 ]
+						]
+					);
+				} )->shipping()->with( 'sim' )->paginate( $perPage );
+			}
 
 			return $this->respond($orderSims);
 

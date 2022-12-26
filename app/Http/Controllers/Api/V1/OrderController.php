@@ -141,8 +141,6 @@ class OrderController extends BaseController
 	 */
 	public function get(Request $request)
 	{
-
-		
 		if($request->has('customer_id')){
 			$customerId = $request->input('customer_id');
 			$order = Order::where('customer_id', $customerId)
@@ -563,7 +561,7 @@ class OrderController extends BaseController
         if($og->order_id != $order->id){
             return $this->respondError('Given order_group_id is not associated with provided order hash', 400);
         }
-//dd($data);
+		//dd($data);
         if($data['paid_monthly_invoice'] == 1 && $og->plan_id != null){
 
 			$op=OrderCoupon::where('order_id',$order->id)->first();
