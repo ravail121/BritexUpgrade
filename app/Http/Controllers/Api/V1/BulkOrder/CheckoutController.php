@@ -321,7 +321,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						[
 							[ 'company_id', $requestCompany->id ],
 							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-//							[ 'carrier_id', 5 ]
+							[ 'carrier_id', 5 ]
 						]
 					);
 				} )->shipping()->with( 'sim' )->paginate( $perPage );
@@ -336,7 +336,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						[
 							[ 'company_id', $requestCompany->id ],
 							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-//							[ 'carrier_id', 5 ]
+							[ 'carrier_id', 5 ]
 						]
 					);
 				} )->shipping()->with( 'sim' )->paginate( $perPage );
@@ -413,7 +413,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							/**
 							 * Check if the carrier is ultra mobile
 							 */
-//							->where('carrier_id', 5)
+							->where('carrier_id', 5)
 							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
@@ -563,7 +563,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							/**
 						    * Check if the carrier is ultra mobile
 						    */
-//							->where('carrier_id', 5)
+							->where('carrier_id', 5)
 					        ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
