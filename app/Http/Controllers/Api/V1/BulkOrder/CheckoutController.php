@@ -445,13 +445,15 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$csvFile = $request->post('csv_file');
 
+			/**
+			 * Validate if the input file is CSV file
+			 */
 			if (preg_match('/^data:text\/(\w+);base64,/', $csvFile) || preg_match('/^data:application\/(\w+);base64,/', $csvFile) || preg_match('/^data:@file\/(\w+);base64,/', $csvFile)) {
 				$csvFile = substr($csvFile, strpos($csvFile, ',') + 1);
 				$csvFile = base64_decode($csvFile);
 			} else {
 				return $this->respondError('CSV file not uploaded', 422);
 			}
-
 
 			if ($csvFile) {
 				$csvAsArray = str_getcsv( $csvFile, "\n" );
