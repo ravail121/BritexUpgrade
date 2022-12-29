@@ -31,7 +31,6 @@ use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 class OrderController extends BaseController
 {
     use InvoiceCouponTrait, BulkOrderTrait;
-
     /**
      *
      */
@@ -676,33 +675,23 @@ class OrderController extends BaseController
 	public function createOrderForBulkOrder(Request $request)
 	{
 		try {
-
-			$data2=array();
-
+			$data2 = [];
 			$planActivation = $request->get('plan_activation') ?: false;
-
-			
 				foreach ( $request->get( 'orders' ) as $orderItem ) {
 
-					$subscription=Subscription::where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
+					$subscription = Subscription::where('sim_card_num', $orderItem['sim_num'])->where('status', '!=', 'closed')->first();
 					if($subscription){
-
-						$customer=Customer::where('id',$subscription->customer_id)->first();
-						$customer = Subscription::with(['customer'])->where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
-						
-
-						$data2[$orderItem['sim_num']]=$customer;
-
+						$customer = Customer::where('id', $subscription->customer_id)->first();
+						$customer = Subscription::with(['customer'])->where('sim_card_num', $orderItem['sim_num'])->where('status', '!=', 'closed')->first();
+						$data2[$orderItem['sim_num']] = $customer;
 					}
-
 				}
 
-				if(sizeof($data2)>0){
+				if(sizeof($data2) > 0){
 					$validationErrorResponse2 = [
 						'status' => 'error2',
 						'data'   => $data2
 					];
-
 					return $validationErrorResponse2;
 				}
 

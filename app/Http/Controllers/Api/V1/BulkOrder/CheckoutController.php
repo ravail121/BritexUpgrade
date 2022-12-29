@@ -321,7 +321,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						[
 							[ 'company_id', $requestCompany->id ],
 							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-							[ 'carrier_id', 5 ]
+//							[ 'carrier_id', 5 ]
 						]
 					);
 				} )->shipping()->with( 'sim' )->paginate( $perPage );
@@ -336,7 +336,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						[
 							[ 'company_id', $requestCompany->id ],
 							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-							[ 'carrier_id', 5 ]
+//							[ 'carrier_id', 5 ]
 						]
 					);
 				} )->shipping()->with( 'sim' )->paginate( $perPage );
@@ -413,7 +413,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							/**
 							 * Check if the carrier is ultra mobile
 							 */
-							->where('carrier_id', 5)
+//							->where('carrier_id', 5)
 							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
@@ -443,21 +443,33 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$customer = Customer::find($customerId);
 			$planActivation = false;
 
-			$csvFile = base64_decode($request->post('csv_file'));
+			$csvFile = $request->post('csv_file');
+
+			if (preg_match('/^data:text\/(\w+);base64,/', $csvFile) || preg_match('/^data:application\/(\w+);base64,/', $csvFile) || preg_match('/^data:@file\/(\w+);base64,/', $csvFile)) {
+				$csvFile = substr($csvFile, strpos($csvFile, ',') + 1);
+				$csvFile = base64_decode($csvFile);
+			} else {
+				return $this->respondError('CSV file not uploaded', 422);
+			}
+
+
 			if ($csvFile) {
 				$csvAsArray = str_getcsv( $csvFile, "\n" );
 				$headerRows = array_shift( $csvAsArray );
-				array_push($headerRows, 'plan_id', 'sim_id');
-
+				$headerRowsArray = explode( ',', $headerRows );
+				$csvAsArray = array_map( function ( $row ) use ( $headerRowsArray ) {
+					return array_combine( $headerRowsArray, str_getcsv( $row ) );
+				}, $csvAsArray );
 				foreach ( $csvAsArray as $rowIndex => $row ) {
 					if($this->isZipCodeValid($row['zip_code'])) {
 						$row['plan_id'] = $request->get('plan_id');
 						$row['sim_id'] = $request->get('sim_id');
-						$subscriptionOrders[] = array_combine( $headerRows, $row );
+						$subscriptionOrders[] = $row;
 					} else {
 						$error[] = 'Zip code is not valid for row ' . $rowIndex;
 					}
 				}
+
 				if($error) {
 					return $this->respondError($error, 422);
 				} else {
@@ -551,7 +563,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							/**
 						    * Check if the carrier is ultra mobile
 						    */
-							->where('carrier_id', 5)
+//							->where('carrier_id', 5)
 					        ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
 					})
 				],
