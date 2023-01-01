@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-use App\Model\Subscription;
-
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;

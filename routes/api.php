@@ -474,7 +474,7 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'SignOnController@signOn',
 		]);
 
-		Route::get('customer',[
+		Route::any('customer',[
 			'as'   => 'api.customer.details',
 			'uses' => 'CustomerController@customerDetails',
 		]);
