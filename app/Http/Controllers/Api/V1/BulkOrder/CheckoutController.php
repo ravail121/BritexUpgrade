@@ -151,7 +151,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$orderItems = $request->get( 'orders' );
 
 			$output['totalPrice'] =  $this->totalPriceForPreview($request, $orderItems);
-			$output['subtotalPrice'] = $this->subTotalPriceForPreview($request, $orderItems);
+			$output['subtotalPrice'] = $this->subTotalPriceForPreview($request, $orderItems, false);
 			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
 			$output['taxes'] = $this->calTaxesForPreview($request, $orderItems);
 			$output['regulatory'] = $this->calRegulatoryForPreview($request, $orderItems);
