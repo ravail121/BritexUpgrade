@@ -147,6 +147,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 	public function orderSummaryForBulkOrder(Request $request)
 	{
 		try {
+			$planActivation = $request->get('plan_activation') ?: false;
+			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
+			if($validation !== 'valid') {
+				return $validation;
+			}
 			$output = [];
 			$orderItems = $request->get( 'orders' );
 			$customer = Customer::find($request->get('customer_id'));
