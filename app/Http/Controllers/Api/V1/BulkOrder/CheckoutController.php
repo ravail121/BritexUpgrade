@@ -149,13 +149,17 @@ class CheckoutController extends BaseController implements ConstantInterface
 		try {
 			$output = [];
 			$orderItems = $request->get( 'orders' );
+			$customer = Customer::find($request->get('customer_id'));
+
+			$subTotalWithoutSurcharge = $this->subTotalPriceForPreview($request, $orderItems, false);
 
 			$output['totalPrice'] =  $this->totalPriceForPreview($request, $orderItems);
-			$output['subtotalPrice'] = $this->subTotalPriceForPreview($request, $orderItems, false);
+			$output['subtotalPrice'] = $subTotalWithoutSurcharge;
 			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
 			$output['taxes'] = $this->calTaxesForPreview($request, $orderItems);
 			$output['regulatory'] = $this->calRegulatoryForPreview($request, $orderItems);
 			$output['activationFees'] = $this->getPlanActivationPricesForPreview($orderItems);
+			$output['surcharge'] = $this->getSurchargeAmountForPreview($subTotalWithoutSurcharge, $customer);
 			$costBreakDown = (object) [
 				'devices'   => $this->getCostBreakDownPreviewForDevices($request, $orderItems),
 				'plans'     => $this->getCostBreakDownPreviewForPlans($request, $orderItems),

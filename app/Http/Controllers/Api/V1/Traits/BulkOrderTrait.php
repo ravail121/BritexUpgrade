@@ -72,6 +72,20 @@ trait BulkOrderTrait
 	}
 
 	/**
+	 * @param          $subTotal
+	 * @param Customer $customer
+	 *
+	 * @return string
+	 */
+	protected function getSurchargeAmountForPreview($subTotal, Customer $customer)
+	{
+		if($customer->surcharge > 0) {
+			$surcharge = ( $subTotal * $customer->surcharge ) / 100;
+			return $this->convertToTwoDecimals( $surcharge, 2 );
+		}
+	}
+
+	/**
 	 * @param         $orderItems
 	 *
 	 * @return float|int
