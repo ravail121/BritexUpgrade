@@ -171,6 +171,8 @@ class OrderController extends BaseController
                 $query->where('hash', $hash);
             })->get();
 
+
+
             foreach($order_groups as $key => $og){
 
                 if($order == []){

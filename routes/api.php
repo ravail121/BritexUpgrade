@@ -653,6 +653,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.order-subscriptions',
 			'uses' => 'BulkOrder\CheckoutController@orderSubscriptions'
 		]);
+
+		Route::any('/get-orders', [
+			'as'   => 'api.bulk.order.get-orders',
+			'uses' => 'BulkOrder\CheckoutController@getOrders'
+		]);
 	});
 
 	/**

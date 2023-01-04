@@ -320,8 +320,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$orderSims = CustomerStandaloneSim::where( [
 					[ 'sim_id', $simId ],
 					[ 'customer_id', $customer->id ],
-					[ 'status', 'shipping'],
-					[ 'processed', 0 ],
 					[ 'subscription_id', null ]
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany, $simId ) {
 					$query->where(
@@ -335,9 +333,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			} else {
 				$orderSims = CustomerStandaloneSim::where( [
 					[ 'customer_id', $customer->id ],
-					[ 'subscription_id', null ],
-					[ 'status', 'shipping' ],
-					[ 'processed', 0 ]
+					[ 'subscription_id', null ]
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany ) {
 					$query->where(
 						[
@@ -640,6 +636,57 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in order subscriptions');
+			return $this->respondError($e->getMessage());
+		}
+	}
+
+	public function getOrders(Request $request) {
+		try {
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 10;
+			$requestCompany = $request->get( 'company' );
+
+			$validator = Validator::make( $request->all(), [
+				'customer_id' => [
+					'numeric',
+					'required',
+					Rule::exists( 'customer', 'id' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} )
+				]
+			] );
+
+			if ( $validator->fails() ) {
+				$errors = $validator->errors();
+
+				return $this->respondError( $errors->messages(), 422 );
+			}
+
+			$orders = Order::where( 'status', '1' )->with( 'subscriptions', 'standAloneDevices', 'standAloneSims', 'customer' )
+			               ->whereHas( 'customer', function ( $query ) {
+				               $query->where( 'company_id', '=', auth()->user()->company_id );
+			               } )
+			               ->where( function($builder) {
+				               $builder->whereHas( 'subscriptions', function ( $subscription ) {
+					               $subscription->where( [
+						               [ 'status', 'shipping' ],
+						               [ 'sent_to_readycloud', 0 ],
+						               [ 'sent_to_shipping_easy', 0 ]
+					               ] );
+				               } )->orWhereHas( 'standAloneDevices', function ( $standAloneDevice ) {
+					               $standAloneDevice->where( [ [ 'status', 'shipping' ], [ 'processed', 0 ] ] );
+				               } )->orWhereHas( 'standAloneSims', function ( $standAloneSim ) {
+					               $standAloneSim->where( [ [ 'status', 'shipping' ], [ 'processed', 0 ] ] );
+				               } );
+			               } )->get();
+
+			$successResponse = [
+				'status'  => 'success',
+				'data'    => $orders
+			];
+			return $this->respond($successResponse);
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in get orders');
 			return $this->respondError($e->getMessage());
 		}
 	}
