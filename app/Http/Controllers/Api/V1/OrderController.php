@@ -1121,8 +1121,6 @@ class OrderController extends BaseController
 					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
 						return $query->where('status', '!=', 'closed');
 					}),
-					
-
 				],
 				'orders.*.sim_type'             => 'string',
 				'orders.*.porting_number'       => 'string',

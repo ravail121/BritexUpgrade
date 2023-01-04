@@ -94,9 +94,10 @@ class Subscription extends Model
 	 *
 	 */
 	const STATUS = [
-		'suspended'  => 'suspended',
-		'closed'     => 'closed',
-		'active'     => 'active',
+		'suspended'         => 'suspended',
+		'closed'            => 'closed',
+		'active'            => 'active',
+		'for-activation'    => 'for-activation',
 	];
 
 	/**

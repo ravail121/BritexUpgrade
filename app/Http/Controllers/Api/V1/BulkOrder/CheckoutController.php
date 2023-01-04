@@ -313,6 +313,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 	{
 		try {
 			$requestCompany = $request->get('company');
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 10;
 
 			$customer = Customer::where('company_id', $requestCompany->id)->where('id', $request->get('customer_id'))->first();
 
@@ -332,7 +333,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							[ 'carrier_id', 5 ]
 						]
 					);
-				} )->with( 'sim' )->get();
+				} )->with( 'sim' )->paginate($perPage);
 			} else {
 				$orderSims = CustomerStandaloneSim::where( [
 					[ 'customer_id', $customer->id ],
@@ -346,7 +347,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							[ 'carrier_id', 5 ]
 						]
 					);
-				} )->with( 'sim' )->get();
+				} )->with( 'sim' )->paginate($perPage);
 			}
 
 			return $this->respond($orderSims);
@@ -470,13 +471,17 @@ class CheckoutController extends BaseController implements ConstantInterface
 					return array_combine( $headerRowsArray, str_getcsv( $row ) );
 				}, $csvAsArray );
 				foreach ( $csvAsArray as $rowIndex => $row ) {
-					if($this->isZipCodeValid($row['zip_code'])) {
-						$row['plan_id'] = $request->get('plan_id');
-						$row['sim_id'] = $request->get('sim_id');
-						$subscriptionOrders[] = $row;
-					} else {
+					if(!$this->isZipCodeValid($row['zip_code'])) {
 						$error[] = 'Zip code is not valid for row ' . $rowIndex;
+						break;
 					}
+					if(!$this->simNumberExistsForCustomer($row['sim_num'], $customer)) {
+						$error[] = 'Phone number is not valid for row ' . $rowIndex;
+						break;
+					}
+					$row['plan_id'] = $request->get('plan_id');
+					$row['sim_id'] = $request->get('sim_id');
+					$subscriptionOrders[] = $row;
 				}
 
 				if($error) {
@@ -505,7 +510,26 @@ class CheckoutController extends BaseController implements ConstantInterface
 							'order_id' => $order->id
 						] );
 						if($orderGroup) {
+							/**
+							 * @internal Adding the for activation status in the subscription table
+							 */
+							$subscriptionOrder['subscription_status'] = Subscription::STATUS['for-activation'];
 							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
+
+							/**
+							 * Updating the subscription id in the customer standalone sim table
+							 */
+							if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
+								$customerStandAloneSim = CustomerStandaloneSim::where( [
+									[ 'sim_id', $outputOrderItem['sim_id'] ],
+									[ 'customer_id', $customer->id ],
+									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
+									[ 'subscription_id', null ]]
+								)->first();
+								$customerStandAloneSim->update([
+									'subscription_id' => $outputOrderItem['subscription_id']
+								]);
+							}
 
 							$outputOrderItems[] = $outputOrderItem;
 						}
@@ -614,13 +638,29 @@ class CheckoutController extends BaseController implements ConstantInterface
 						'order_id' => $order->id
 					] );
 					$subscriptionOrder = [
-						'sim_id'        => $request->get('sim_id'),
-						'sim_num'       => $simNumber,
-						'plan_id'       => $request->get('plan_id'),
-						'zip_code'      => $request->get('zip_code')
+						'sim_id'                => $request->get('sim_id'),
+						'sim_num'               => $simNumber,
+						'plan_id'               => $request->get('plan_id'),
+						'zip_code'              => $request->get('zip_code'),
+						'subscription_status'   => Subscription::STATUS['for-activation']
 					];
 					if($orderGroup) {
 						$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
+
+						/**
+						 * Updating the subscription id in the customer standalone sim table
+						 */
+						if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
+							$customerStandAloneSim = CustomerStandaloneSim::where( [
+									[ 'sim_id', $outputOrderItem['sim_id'] ],
+									[ 'customer_id', $customer->id ],
+									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
+									[ 'subscription_id', null ]]
+							)->first();
+							$customerStandAloneSim->update([
+								'subscription_id' => $outputOrderItem['subscription_id']
+							]);
+						}
 
 						$outputOrderItems[] = $outputOrderItem;
 					}
@@ -757,5 +797,19 @@ class CheckoutController extends BaseController implements ConstantInterface
 			}
 		}
 		return $products;
+	}
+
+	/**
+	 * @param          $simNumber
+	 * @param Customer $customer
+	 *
+	 * @return mixed
+	 */
+	protected function simNumberExistsForCustomer($simNumber, Customer $customer) {
+		return CustomerStandaloneSim::where([
+			['status', '!=', CustomerStandaloneSim::STATUS['closed']],
+			['sim_num', $simNumber],
+			['customer_id', $customer->id]
+		])->exists();
 	}
 }
