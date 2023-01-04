@@ -329,11 +329,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 							[ 'carrier_id', 5 ]
 						]
 					);
-				} )->shipping()->with( 'sim' )->paginate( $perPage );
+				} )->with( 'sim' )->paginate( $perPage );
 			} else {
 				$orderSims = CustomerStandaloneSim::where( [
 					[ 'customer_id', $customer->id ],
-					[ 'subscription_id', null ]
+					[ 'subscription_id', null ],
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany ) {
 					$query->where(
 						[
@@ -342,7 +342,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							[ 'carrier_id', 5 ]
 						]
 					);
-				} )->shipping()->with( 'sim' )->paginate( $perPage );
+				} )->with( 'sim' )->paginate( $perPage );
 			}
 
 			return $this->respond($orderSims);
@@ -661,23 +661,10 @@ class CheckoutController extends BaseController implements ConstantInterface
 				return $this->respondError( $errors->messages(), 422 );
 			}
 
-			$orders = Order::where( 'status', '1' )->with( 'subscriptions', 'standAloneDevices', 'standAloneSims', 'customer' )
-			               ->whereHas( 'customer', function ( $query ) {
-				               $query->where( 'company_id', '=', auth()->user()->company_id );
-			               } )
-			               ->where( function($builder) {
-				               $builder->whereHas( 'subscriptions', function ( $subscription ) {
-					               $subscription->where( [
-						               [ 'status', 'shipping' ],
-						               [ 'sent_to_readycloud', 0 ],
-						               [ 'sent_to_shipping_easy', 0 ]
-					               ] );
-				               } )->orWhereHas( 'standAloneDevices', function ( $standAloneDevice ) {
-					               $standAloneDevice->where( [ [ 'status', 'shipping' ], [ 'processed', 0 ] ] );
-				               } )->orWhereHas( 'standAloneSims', function ( $standAloneSim ) {
-					               $standAloneSim->where( [ [ 'status', 'shipping' ], [ 'processed', 0 ] ] );
-				               } );
-			               } )->get();
+			$orders = Order::with( 'subscriptions', 'standAloneDevices', 'standAloneSims', 'invoice' )
+			     ->whereHas( 'customer', function ( $query ) use ($requestCompany){
+				     $query->where( 'company_id', '=', $requestCompany->id );
+			     } )->select('order_num', 'status', 'created_at')->paginate($perPage);
 
 			$successResponse = [
 				'status'  => 'success',
