@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
+
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
 use App\Helpers\Log;
 use App\Model\Order;
+use App\Model\Device;
 use App\Model\Customer;
 use App\Model\OrderGroup;
+use App\Model\Subscription;
 use App\Rules\ValidZipCode;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -661,14 +664,27 @@ class CheckoutController extends BaseController implements ConstantInterface
 				return $this->respondError( $errors->messages(), 422 );
 			}
 
-			$orders = Order::with( 'subscriptions', 'standAloneDevices', 'standAloneSims', 'invoice' )
+			$output = [];
+
+			$orders = Order::where( 'status', '1' )->with( 'subscriptions', 'standAloneDevices', 'standAloneSims', 'invoice' )
 			     ->whereHas( 'customer', function ( $query ) use ($requestCompany){
 				     $query->where( 'company_id', '=', $requestCompany->id );
-			     } )->select('order_num', 'status', 'created_at')->paginate($perPage);
+			     } )->orderBy('created_at', 'DESC')->paginate($perPage);
+
+			foreach($orders as $order){
+				$output[] = [
+					'hash'                  => $order->hash,
+					'status'                => $order->status,
+					'order_num'             => $order->order_num,
+					'created_at'            => $order->created_at,
+					'items'                 => $this->getOrderProducts($order),
+					'total'                 => $order->invoice ? $order->invoice->cal_total_charges : null
+				];
+			}
 
 			$successResponse = [
 				'status'  => 'success',
-				'data'    => $orders
+				'data'    => $output
 			];
 			return $this->respond($successResponse);
 
@@ -676,5 +692,64 @@ class CheckoutController extends BaseController implements ConstantInterface
 			Log::info($e->getMessage(), 'Error in get orders');
 			return $this->respondError($e->getMessage());
 		}
+	}
+
+	/**
+	 * @param Order $order
+	 *
+	 * @return array
+	 */
+	private function getOrderProducts(Order $order)
+	{
+		$products = [];
+		$standAloneSims = $order->standAloneSims()->get();
+		$standAloneDevices = $order->standAloneDevices()->get();
+		$subscriptions = $order->subscriptions()->get();
+
+		$groupedSims = $standAloneSims->groupBy(function($standAloneSim) {
+			return $standAloneSim->sim_id;
+		});
+
+		$groupedDevices = $standAloneDevices->groupBy(function($standAloneDevice) {
+			return $standAloneDevice->device_id;
+		});
+
+		$groupedSubscriptions = $subscriptions->groupBy(function($subscription) {
+			return $subscription->id;
+		});
+
+		if($groupedSims->count() > 0) {
+			foreach($groupedSims as $simId => $sim) {
+				$simRecord = Sim::find($simId);
+				$products[] = [
+					'product_type' => 'sim',
+					'product_name' => $simRecord->name,
+					'quantity'     => $sim->count()
+				];
+			}
+		}
+
+		if($groupedDevices->count() > 0) {
+			foreach($groupedDevices as $deviceId => $device) {
+				$deviceRecord = Device::find($deviceId);
+				$products[] = [
+					'product_type' => 'device',
+					'product_name' => $deviceRecord->name,
+					'quantity'     => $device->count()
+				];
+			}
+		}
+
+		if($groupedSubscriptions->count() > 0) {
+			foreach($groupedSubscriptions as $subscriptionId => $subscription) {
+				$subscriptionRecord = Subscription::find($subscriptionId);
+				$products[] = [
+					'product_type' => 'subscription',
+					'product_name' => $subscriptionRecord->plans->name,
+					'quantity'     => $subscription->count()
+				];
+			}
+		}
+		return $products;
 	}
 }
