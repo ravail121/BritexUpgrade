@@ -66,7 +66,7 @@ class CustomerStandaloneSim extends Model
 	 */
     public function scopeShipping($query)
     {
-        return $query->where([['status', 'shipping'],['processed', 0 ]]);
+        return $query->where([['status', 'shipping'], ['processed', 0 ]]);
     }
 
 	/**

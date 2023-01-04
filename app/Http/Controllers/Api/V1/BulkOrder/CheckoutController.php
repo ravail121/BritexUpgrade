@@ -322,6 +322,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$orderSims = CustomerStandaloneSim::where( [
 					[ 'sim_id', $simId ],
 					[ 'customer_id', $customer->id ],
+					[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 					[ 'subscription_id', null ]
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany, $simId ) {
 					$query->where(
@@ -336,6 +337,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$orderSims = CustomerStandaloneSim::where( [
 					[ 'customer_id', $customer->id ],
 					[ 'subscription_id', null ],
+					[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany ) {
 					$query->where(
 						[
