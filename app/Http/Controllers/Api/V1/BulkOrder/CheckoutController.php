@@ -722,7 +722,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			foreach($groupedSims as $simId => $sim) {
 				$simRecord = Sim::find($simId);
 				$products[] = [
-					'product_type' => 'sim',
+					'product_type' => 'SIM',
 					'product_name' => $simRecord->name,
 					'quantity'     => $sim->count()
 				];
@@ -733,7 +733,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			foreach($groupedDevices as $deviceId => $device) {
 				$deviceRecord = Device::find($deviceId);
 				$products[] = [
-					'product_type' => 'device',
+					'product_type' => 'Device',
 					'product_name' => $deviceRecord->name,
 					'quantity'     => $device->count()
 				];
@@ -744,7 +744,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			foreach($groupedSubscriptions as $subscriptionId => $subscription) {
 				$subscriptionRecord = Subscription::find($subscriptionId);
 				$products[] = [
-					'product_type' => 'subscription',
+					'product_type' => 'Subscription',
 					'product_name' => $subscriptionRecord->plans->name,
 					'quantity'     => $subscription->count()
 				];
