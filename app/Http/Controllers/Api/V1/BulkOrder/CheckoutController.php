@@ -521,12 +521,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 							 * Updating the subscription id in the customer standalone sim table
 							 */
 							if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
-								$customerStandAloneSim = CustomerStandaloneSim::where( [
-									[ 'sim_id', $outputOrderItem['sim_id'] ],
-									[ 'customer_id', $customer->id ],
-									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
-									[ 'subscription_id', null ]]
-								)->first();
+								$customerStandAloneSim = CustomerStandaloneSim::where( 'sim_num', $subscriptionOrder['sim_num'])->whereNull('subscription_id')->first();
 								if($customerStandAloneSim) {
 									$customerStandAloneSim->update( [
 										'subscription_id' => $outputOrderItem[ 'subscription_id' ]
@@ -656,12 +651,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						 * Updating the subscription id in the customer standalone sim table
 						 */
 						if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
-							$customerStandAloneSim = CustomerStandaloneSim::where( [
-									[ 'sim_id', $outputOrderItem['sim_id'] ],
-									[ 'customer_id', $customer->id ],
-									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
-									[ 'subscription_id', null ]]
-							)->first();
+							$customerStandAloneSim = CustomerStandaloneSim::where( 'sim_num', $simNumber )->whereNull('subscription_id')->first();
 							if($customerStandAloneSim) {
 								$customerStandAloneSim->update( [
 									'subscription_id' => $outputOrderItem[ 'subscription_id' ]
