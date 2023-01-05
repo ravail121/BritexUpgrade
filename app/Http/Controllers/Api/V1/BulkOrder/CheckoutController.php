@@ -472,11 +472,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 				}, $csvAsArray );
 				foreach ( $csvAsArray as $rowIndex => $row ) {
 					if(!$this->isZipCodeValid($row['zip_code'])) {
-						$error[] = 'Zip code is not valid for row ' . $rowIndex;
+						$error[] = "Zip code {$row['zip_code']} is not valid for row $rowIndex";
 						break;
 					}
 					if(!$this->simNumberExistsForCustomer($row['sim_num'], $customer)) {
-						$error[] = 'Phone number is not valid for row ' . $rowIndex;
+						$error[] = "Phone number {$row['sim_num']} is not valid for row $rowIndex";
 						break;
 					}
 					$row['plan_id'] = $request->get('plan_id');
