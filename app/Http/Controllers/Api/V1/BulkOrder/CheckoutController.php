@@ -527,9 +527,13 @@ class CheckoutController extends BaseController implements ConstantInterface
 									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 									[ 'subscription_id', null ]]
 								)->first();
-								$customerStandAloneSim->update([
-									'subscription_id' => $outputOrderItem['subscription_id']
-								]);
+								if($customerStandAloneSim) {
+									$customerStandAloneSim->update( [
+										'subscription_id' => $outputOrderItem[ 'subscription_id' ]
+									] );
+								} else {
+									Log::info('Customer Standalone sim record not found for SIM id'. $outputOrderItem['sim_id'], 'Error in CSV order subscriptions');
+								}
 							}
 
 							$outputOrderItems[] = $outputOrderItem;
@@ -658,9 +662,13 @@ class CheckoutController extends BaseController implements ConstantInterface
 									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 									[ 'subscription_id', null ]]
 							)->first();
-							$customerStandAloneSim->update([
-								'subscription_id' => $outputOrderItem['subscription_id']
-							]);
+							if($customerStandAloneSim) {
+								$customerStandAloneSim->update( [
+									'subscription_id' => $outputOrderItem[ 'subscription_id' ]
+								] );
+							} else {
+								Log::info('Customer Standalone sim record not found for SIM id'. $outputOrderItem['sim_id'], 'Error in order subscriptions');
+							}
 						}
 
 						$outputOrderItems[] = $outputOrderItem;
