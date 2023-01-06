@@ -770,7 +770,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 		});
 
 		$groupedSubscriptions = $subscriptions->groupBy(function($subscription) {
-			return $subscription->id;
+			return $subscription->plan_id;
 		});
 
 		if($groupedSims->count() > 0) {
