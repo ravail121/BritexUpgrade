@@ -22,6 +22,7 @@ class ForgotPasswordController extends BaseController
 	 */
 	public function password(Request $request)
     {
+	    $requestCompany = $request->get('company');
         $data = $request->validate([
             'identifier'     => 'required'
         ]);
@@ -32,17 +33,17 @@ class ForgotPasswordController extends BaseController
                 return $this->respond("Sorry Customer ID is not valid");
             }
 
-            $email=$customer['email'];
+            $email = $customer['email'];
 
         }else {
-            $email=$data['identifier'];
-            $count = Customer::whereEmail($email)->count();
+            $email = $data['identifier'];
+            $count = Customer::whereEmail($email)->where('company_id', $requestCompany->id)->count();
             if($count < 1){
                 return $this->respond("Sorry Email ID is not Valid");
             }
         }
 
-        $customer = Customer::where('email', $email)->first();
+        $customer = Customer::where('email', $email)->where('company_id', $requestCompany->id)->first();
         $request->headers->set('authorization', $customer->company->api_key);
 
         return $this->insertToken($email);
@@ -90,7 +91,7 @@ class ForgotPasswordController extends BaseController
             'token'      => 'required',
             'password'   => 'required|min:6',
         ]);
-        $companyId = \Request::get('company')->id;
+        $companyId = $request->get('company')->id;
 
         $passwordReset = PasswordReset::where([
             'token'         => $data['token'],
@@ -100,13 +101,13 @@ class ForgotPasswordController extends BaseController
         if(isset($passwordReset['email'])){
             $password['password'] = bcrypt($data['password']);
             Customer::where([
-                'email' => $passwordReset['email'],
-                'company_id' => $companyId
+                'email'         => $passwordReset['email'],
+                'company_id'    => $companyId
             ])->update($password);
 
             PasswordReset::where([
-                'token' => $data['token'],
-                'company_id' => $companyId,
+                'token'         => $data['token'],
+                'company_id'    => $companyId,
             ])->delete();
         }else{
             return $this->respond('Sorry Reset Password is no longer valid');
