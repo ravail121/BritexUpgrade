@@ -45,7 +45,7 @@ class ForgotPasswordController extends BaseController
 				if ( ! $customer ) {
 					return $this->respondError( "Sorry Customer ID is not valid" );
 				}
-				$email = $customer[ 'email' ];
+				$email = $customer->email;
 			} else {
 				$email = $identifier;
 				$count = Customer::whereEmail( $email )->where( 'company_id', $requestCompany->id )->count();
