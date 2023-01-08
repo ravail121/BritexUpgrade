@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class PasswordReset extends Model
 {
+
+	/**
+	 * @var string
+	 */
 	public $table = 'password_reset';
     /**
      * The attributes that are mass assignable.
@@ -13,7 +17,10 @@ class PasswordReset extends Model
      * @var array
      */
     protected $fillable = [
-        'email', 'token', 'company_id',
+        'email',
+	    'token',
+	    'company_id',
+	    'created_at'
     ];
 
     public $timestamps = false;

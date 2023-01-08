@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Validator;
+use Carbon\Carbon;
+use App\Helpers\Log;
 use App\PasswordReset;
 use App\Model\Customer;
 use Illuminate\Http\Request;
@@ -22,37 +25,49 @@ class ForgotPasswordController extends BaseController
 	 */
 	public function password(Request $request)
     {
-	    $requestCompany = $request->get('company');
-        $data = $request->validate([
-            'identifier'     => 'required'
-        ]);
+		try {
+			$requestCompany = $request->get( 'company' );
 
-        if ($this->isNumeric($data['identifier'])) {
-            $customer = Customer::find($data['identifier']);
-            if(!$customer){
-                return $this->respond("Sorry Customer ID is not valid");
-            }
+			$validator = Validator::make( $request->all(), [
+				'identifier' => 'required'
+			] );
 
-            $email = $customer['email'];
+			if ( $validator->fails() ) {
+				$errors = $validator->errors();
 
-        }else {
-            $email = $data['identifier'];
-            $count = Customer::whereEmail($email)->where('company_id', $requestCompany->id)->count();
-            if($count < 1){
-                return $this->respond("Sorry Email ID is not Valid");
-            }
-        }
+				return $this->respondError( $errors->messages(), 422 );
+			}
 
-        $customer = Customer::where('email', $email)->where('company_id', $requestCompany->id)->first();
-        $request->headers->set('authorization', $customer->company->api_key);
+			$identifier = $request->get( 'identifier' );
 
-        return $this->insertToken($email);
+			if ( $this->isNumeric( $identifier ) ) {
+				$customer = Customer::find( $identifier );
+				if ( ! $customer ) {
+					return $this->respondError( "Sorry Customer ID is not valid" );
+				}
+				$email = $customer[ 'email' ];
+			} else {
+				$email = $identifier;
+				$count = Customer::whereEmail( $email )->where( 'company_id', $requestCompany->id )->count();
+				if ( $count < 1 ) {
+					return $this->respondError( "Sorry Email ID is not Valid" );
+				}
+			}
+
+			$customer = Customer::where( 'email', $email )->where( 'company_id', $requestCompany->id )->first();
+			$request->headers->set( 'authorization', $customer->company->api_key );
+
+			return $this->insertToken( $email );
+		} catch ( \Exception $e ) {
+			Log::info($e->getMessage(), 'Error in forgot password');
+			return $this->respondError( $e->getMessage() );
+		}
     }
 
     /**
      * [isNumeric description]
      * @param  [type]  $value [description]
-     * @return boolean        [return true for nunmaric value false for rest]
+     * @return boolean        [return true for numeric value false for rest]
      */
     private function isNumeric($value)
     {
@@ -72,10 +87,11 @@ class ForgotPasswordController extends BaseController
             'email'      => $email,
             'token'      => $hash,
             'company_id' => \Request::get('company')->id,
+	        'created_at' => Carbon::now()
         ];
 
         PasswordReset::create($user);
-        event(new ForgotPassword($user));
+         event(new ForgotPassword($user));
         return $user;
     }
 
@@ -85,32 +101,49 @@ class ForgotPasswordController extends BaseController
 	 *
 	 * @return \Illuminate\Http\JsonResponse
 	 */
-	public function resetPassword(Request $request)
-    {
-        $data = $request->validate([
-            'token'      => 'required',
-            'password'   => 'required|min:6',
-        ]);
-        $companyId = $request->get('company')->id;
+	public function resetPassword(Request $request) {
+		try {
+			$requestCompany = $request->get( 'company' );
+			$validator = Validator::make( $request->all(), [
+				'token'     => 'required',
+				'password'  => 'required|min:6',
+			] );
 
-        $passwordReset = PasswordReset::where([
-            'token'         => $data['token'],
-            'company_id'    => $companyId,
-        ])->first();
+			if ( $validator->fails() ) {
+				$errors = $validator->errors();
 
-        if(isset($passwordReset['email'])){
-            $password['password'] = bcrypt($data['password']);
-            Customer::where([
-                'email'         => $passwordReset['email'],
-                'company_id'    => $companyId
-            ])->update($password);
+				return $this->respondError( $errors->messages(), 422 );
+			}
 
-            PasswordReset::where([
-                'token'         => $data['token'],
-                'company_id'    => $companyId,
-            ])->delete();
-        }else{
-            return $this->respond('Sorry Reset Password is no longer valid');
-        }
-    }
+			$token = $request->get( 'token' );
+
+			$passwordReset = PasswordReset::where( [
+				'token'      => $token,
+				'company_id' => $requestCompany->id
+			] )->first();
+
+			if ( $passwordReset && $passwordReset->email ) {
+				$password[ 'password' ] = bcrypt( $request->get('password') );
+				Customer::where( [
+					'email'      => $passwordReset->email,
+					'company_id' => $requestCompany->id
+				] )->update( $password );
+
+				PasswordReset::where( [
+					'token'      => $token,
+					'company_id' => $requestCompany->id
+				] )->delete();
+				$successResponse = [
+					'status'  => 'success',
+					'message' => 'Password reset successfully, please login with your new password'
+				];
+				return $this->respond($successResponse);
+			} else {
+				return $this->respondError( 'Sorry Reset Password is no longer valid' );
+			}
+		} catch ( \Exception $e ) {
+			Log::info($e->getMessage(), 'Error in password reset');
+			return $this->respond( $e->getMessage() );
+		}
+	}
 }
