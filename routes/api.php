@@ -38,41 +38,41 @@ Route::post('/check2', [
 ]);
 
 
-Route::group(['namespace'=>'Api\V1\Invoice'],function(){
-
-	Route::get('/cron-jobs', [
-		'as'=>'api.monthly.invoice',
-		'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
-
-	]);
-
-	Route::post('/generate-one-time-invoice',[
-		'as'   => 'api.onetime.invoice',
-		'uses' => 'InvoiceController@oneTimeInvoice',
-	]);
-
-	Route::get('/invoice/download/{companyId}', [
-		'as' => 'api.invoice.download',
-		'uses' => 'InvoiceController@get'
-	]);
-
-	Route::get('/sample-invoice', [
-		'as'=>'api.sample.invoice',
-		'uses'=> 'SampleInvoiceGenerationController@getInvoice',
-
-	]);
-
-	Route::get('/sample-statement-invoice', [
-		'as'=>'api.sample.statement',
-		'uses'=> 'SampleInvoiceGenerationController@getStatement',
-
-	]);
-
-	Route::get('/check-monthly-invoice', [
-		'as'=>'api.invoice.get',
-		'uses'=> 'InvoiceController@checkMonthlyInvoice',
-	]);
-});
+//Route::group(['namespace'=>'Api\V1\Invoice'],function(){
+//
+//	Route::get('/cron-jobs', [
+//		'as'=>'api.monthly.invoice',
+//		'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
+//
+//	]);
+//
+//	Route::post('/generate-one-time-invoice',[
+//		'as'   => 'api.onetime.invoice',
+//		'uses' => 'InvoiceController@oneTimeInvoice',
+//	]);
+//
+//	Route::get('/invoice/download/{companyId}', [
+//		'as' => 'api.invoice.download',
+//		'uses' => 'InvoiceController@get'
+//	]);
+//
+//	Route::get('/sample-invoice', [
+//		'as'=>'api.sample.invoice',
+//		'uses'=> 'SampleInvoiceGenerationController@getInvoice',
+//
+//	]);
+//
+//	Route::get('/sample-statement-invoice', [
+//		'as'=>'api.sample.statement',
+//		'uses'=> 'SampleInvoiceGenerationController@getStatement',
+//
+//	]);
+//
+//	Route::get('/check-monthly-invoice', [
+//		'as'=>'api.invoice.get',
+//		'uses'=> 'InvoiceController@checkMonthlyInvoice',
+//	]);
+//});
 
 
 Route::middleware('APIToken')->group(function () {
