@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Helpers\Log;
+
 use Carbon\Carbon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
