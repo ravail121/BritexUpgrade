@@ -525,7 +525,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 									[ 'sim_id', $outputOrderItem['sim_id'] ],
 									[ 'customer_id', $customer->id ],
 									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
-									[ 'sim_num', $outputOrderItem['sim_num'] ]
+									[ 'sim_num', trim($outputOrderItem['sim_num']) ]
 								] )->whereNull('subscription_id')->first();
 								if($customerStandAloneSim) {
 									$customerStandAloneSim->update( [
@@ -644,7 +644,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					] );
 					$subscriptionOrder = [
 						'sim_id'                => $request->get('sim_id'),
-						'sim_num'               => $simNumber,
+						'sim_num'               => trim($simNumber),
 						'plan_id'               => $request->get('plan_id'),
 						'zip_code'              => $request->get('zip_code'),
 						'subscription_status'   => Subscription::STATUS['for-activation']
@@ -660,7 +660,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 								[ 'sim_id', $outputOrderItem['sim_id'] ],
 								[ 'customer_id', $customer->id ],
 								[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
-								[ 'sim_num', $simNumber ]
+								[ 'sim_num', trim($simNumber) ]
 							] )->whereNull('subscription_id')->first();
 							if($customerStandAloneSim) {
 								$customerStandAloneSim->update( [

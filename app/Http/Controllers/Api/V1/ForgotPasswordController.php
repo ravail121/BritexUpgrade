@@ -91,7 +91,7 @@ class ForgotPasswordController extends BaseController
         ];
 
         PasswordReset::create($user);
-         event(new ForgotPassword($user));
+		event(new ForgotPassword($user));
         return $user;
     }
 
