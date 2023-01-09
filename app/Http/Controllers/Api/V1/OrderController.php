@@ -8,6 +8,7 @@ use App\Model\Sim;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Helpers\Log;
+use App\Model\Coupon;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\OrderCoupon;
@@ -16,7 +17,6 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use Illuminate\Validation\Rule;
-use App\Model\Coupon;
 use App\Model\BusinessVerification;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
@@ -31,7 +31,6 @@ use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 class OrderController extends BaseController
 {
     use InvoiceCouponTrait, BulkOrderTrait;
-
     /**
      *
      */
@@ -141,8 +140,6 @@ class OrderController extends BaseController
 	 */
 	public function get(Request $request)
 	{
-
-		
 		if($request->has('customer_id')){
 			$customerId = $request->input('customer_id');
 			$order = Order::where('customer_id', $customerId)
@@ -173,6 +170,8 @@ class OrderController extends BaseController
             $order_groups = OrderGroup::with(['order', 'sim', 'device', 'device.device_image'])->whereHas('order', function($query) use ($hash) {
                 $query->where('hash', $hash);
             })->get();
+
+
 
             foreach($order_groups as $key => $og){
 
@@ -563,7 +562,7 @@ class OrderController extends BaseController
         if($og->order_id != $order->id){
             return $this->respondError('Given order_group_id is not associated with provided order hash', 400);
         }
-//dd($data);
+		//dd($data);
         if($data['paid_monthly_invoice'] == 1 && $og->plan_id != null){
 
 			$op=OrderCoupon::where('order_id',$order->id)->first();
@@ -678,33 +677,23 @@ class OrderController extends BaseController
 	public function createOrderForBulkOrder(Request $request)
 	{
 		try {
-
-			$data2=array();
-
+			$data2 = [];
 			$planActivation = $request->get('plan_activation') ?: false;
-
-			
 				foreach ( $request->get( 'orders' ) as $orderItem ) {
 
-					$subscription=Subscription::where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
+					$subscription = Subscription::where('sim_card_num', $orderItem['sim_num'])->where('status', '!=', 'closed')->first();
 					if($subscription){
-
-						$customer=Customer::where('id',$subscription->customer_id)->first();
-						$customer = Subscription::with(['customer'])->where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
-						
-
-						$data2[$orderItem['sim_num']]=$customer;
-
+						$customer = Customer::where('id', $subscription->customer_id)->first();
+						$customer = Subscription::with(['customer'])->where('sim_card_num', $orderItem['sim_num'])->where('status', '!=', 'closed')->first();
+						$data2[$orderItem['sim_num']] = $customer;
 					}
-
 				}
 
-				if(sizeof($data2)>0){
+				if(sizeof($data2) > 0){
 					$validationErrorResponse2 = [
 						'status' => 'error2',
 						'data'   => $data2
 					];
-
 					return $validationErrorResponse2;
 				}
 
@@ -786,161 +775,6 @@ class OrderController extends BaseController
 		}
 	}
 
-	/**
-	 * @param     $data
-	 * @param     $order
-	 * @param     $order_group
-	 * @param int $paidMonthlyInvoice
-	 *
-	 * @return mixed
-	 */
-	private function insertOrderGroupForBulkOrder($data, $order, $order_group, $paidMonthlyInvoice = 0)
-	{
-		$og_params = [];
-		if(isset($data['device_id']) && $paidMonthlyInvoice == 0){
-			$og_params['device_id'] = $data['device_id'];
-		}
-		if(isset($data['plan_id'])){
-
-			$og_params['plan_id'] = $data['plan_id'];
-
-			if ($order->customer && $order->compare_dates && $paidMonthlyInvoice == 0) {
-				$og_params['plan_prorated_amt'] = $order->planProRate($data['plan_id']);
-			}
-			// delete all rows in order_group_addon table associated with this order
-
-			$_oga = OrderGroupAddon::where('order_group_id', $order_group->id)
-			                       ->get();
-
-			$planToAddon = PlanToAddon::wherePlanId($data['plan_id'])->get();
-
-			$addon_ids = [];
-
-			foreach ($planToAddon as $addon) {
-				array_push($addon_ids, $addon->addon_id);
-			}
-
-			foreach($_oga as $__oga){
-				if (!in_array($__oga->addon_id, $addon_ids)) {
-					$__oga->delete();
-				}
-			}
-			if(isset($data['sim_num'])) {
-				if ( ! isset( $data[ 'subscription_id' ] ) ) {
-					$subscriptionData = $this->generateSubscriptionData( $data, $order );
-					$subscription     = Subscription::create( $subscriptionData );
-					$subscription_id  = $subscription->id;
-				} else {
-					$subscription_id = $data[ 'subscription_id' ];
-				}
-
-				if ( $subscription_id ) {
-					$og_params[ 'subscription_id' ] = $subscription_id;
-				}
-			}
-		}
-
-		if($paidMonthlyInvoice == 0){
-			if(isset($data['sim_id'])){
-				$sim_id = $data['sim_id'];
-				if($sim_id == 0){
-					$sim_id = null;
-				}
-				$og_params['sim_id'] = $sim_id;
-			}
-
-			if(isset($data['sim_num'])){
-				$og_params['sim_num'] = $data['sim_num'];
-			}
-
-			if(isset($data['sim_type'])){
-				$og_params['sim_type'] = $data['sim_type'];
-			}
-
-			if(isset($data['porting_number'])){
-				$og_params['porting_number'] = $data['porting_number'];
-			}
-
-			if(isset($data['area_code'])){
-				$og_params['area_code'] = $data['area_code'];
-			}
-
-			if(isset($data['operating_system'])){
-				$og_params['operating_system'] = $data['operating_system'];
-			}
-
-			if(isset($data['imei_number'])){
-				$og_params['imei_number'] = $data['imei_number'];
-			}
-
-			if (isset($data['require_device'])) {
-				$og_params['require_device'] = $data['require_device'];
-			}
-		}
-
-
-		if(isset($data['addon_id'][0])){
-			foreach ($data['addon_id'] as $key => $addon) {
-				$ogData = [
-					'addon_id'       => $addon,
-					'order_group_id' => $order_group->id
-				];
-
-				if ($order->customer && $order->compare_dates && $paidMonthlyInvoice== 0) {
-					$amt = $order->addonProRate($addon);
-					$oga = OrderGroupAddon::create(array_merge($ogData, ['prorated_amt' => $amt]));
-				} else {
-					$oga = OrderGroupAddon::create($ogData);
-				}
-			}
-		}
-		return tap(OrderGroup::findOrFail($order_group->id))->update($og_params);
-	}
-
-	/**
-	 * Returns data as array which is to be inserted in subscription table
-	 *
-	 * @param  $data
-	 * @param  Order  $order
-	 * @return array
-	 */
-	protected function generateSubscriptionData($data, $order)
-	{
-		$plan  = Plan::find($data['plan_id']);
-
-		if ((!isset($data['sim_type']) || $data['sim_type'] == null) && isset($data['sim_id'])) {
-			$sim = Sim::find($data['sim_id']);
-			$data['sim_type'] = ($sim) ? $sim->name : null;
-		}
-		if(!isset($data['subscription_status'])){
-			$subscriptionStatus = isset($data['sim_id']) || isset($data['device_id']) ? 'shipping' : 'for-activation';
-		} else {
-			$subscriptionStatus = $data['subscription_status'];
-		}
-
-		$output = [
-			'order_id'                         =>  $order->id,
-			'customer_id'                      =>  $order->customer->id,
-			'company_id'                       =>  $order->customer->company_id,
-			'order_num'                        =>  $order->order_num,
-			'plan_id'                          =>  $data['plan_id'],
-			'status'                           =>  $plan && $plan->type === 4 ? 'active' : $subscriptionStatus,
-			'sim_id'                           =>  $data['sim_id'] ?? null,
-			'sim_name'                         =>  $data['sim_type'] ?? '',
-			'sim_card_num'                     =>  $data['sim_num'] ?? '',
-			'device_id'                        =>  $data['device_id'] ?? null,
-			'device_os'                        =>  $data['operating_system'] ?? '',
-			'device_imei'                      =>  $data['imei_number'] ?? '',
-			'subsequent_porting'               =>  ($plan) ? $plan->subsequent_porting : 0,
-			'requested_area_code'              =>  $data['area_code'] ?? '',
-		];
-
-		if($plan && $plan->type === 4){
-			$output['activation_date']  = Carbon::now();
-		}
-
-		return $output;
-	}
 
 	/**
 	 * @param Request $request
@@ -1287,8 +1121,6 @@ class OrderController extends BaseController
 					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
 						return $query->where('status', '!=', 'closed');
 					}),
-					
-
 				],
 				'orders.*.sim_type'             => 'string',
 				'orders.*.porting_number'       => 'string',

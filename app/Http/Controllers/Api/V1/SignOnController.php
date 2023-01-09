@@ -26,10 +26,10 @@ class SignOnController extends BaseController
 	public function signOn(Request $request)
     {
         $data = $request->validate([
-            'identifier' => 'required',
-            'password'   => 'required',
+            'identifier'    => 'required',
+            'password'      => 'required',
         ]);
-        $companyId = \Request::get('company')->id;
+        $companyId = $request->get('company')->id;
 
         if ($this->isNumeric($data['identifier'])) {
             $customer = Customer::find($data['identifier']);
@@ -55,7 +55,7 @@ class SignOnController extends BaseController
 
         if(Auth::validate($data))
         {
-            $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id','hash', 'account_suspended']);
+            $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id', 'hash', 'account_suspended']);
 
             $date = Carbon::today()->addDays(6)->endOfDay();
             $invoice = Invoice::where([
