@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\Traits\InvoiceCouponTrait;
 class OrderController extends BaseController
 {
     use InvoiceCouponTrait, BulkOrderTrait;
+
     /**
      *
      */
@@ -56,75 +57,88 @@ class OrderController extends BaseController
         'Voice'     => 1,
         'Data'      => 2
     ];
+
     /**
      * $cartItems
      *
      * @var array
      */
     protected $cartItems;
+
     /**
      * $prices
      *
      * @var array
      */
     protected $prices;
+
     /**
      * $regulatory
      *
      * @var array
      */
     protected $regulatory;
+
     /**
      * $taxes
      *
      * @var array
      */
     protected $taxes;
+
     /**
      * $shippingFee
      *
      * @var array
      */
     protected $shippingFee;
+
     /**
      * $activation
      *
      * @var array
      */
     protected $activation;
+
 	/**
 	 * @var
 	 */
 	protected $tax_id;
+
 	/**
 	 * @var
 	 */
 	protected $tax_total;
+
 	/**
 	 * @var
 	 */
 	protected $total_price;
+
 	/**
 	 * @var
 	 */
 	protected $couponAmount;
+
 	/**
 	 * @var
 	 */
 	protected $taxrate;
+
 	/**
 	 * @var
 	 */
 	protected $order_hash;
+
 	/**
 	 * @var int[]
 	 */
 	protected $totalTaxableAmount = [0];
+
 	/**
 	 * @var
 	 */
 	protected  $cart;
-
 
     /**
 	 * OrderController constructor.
@@ -633,7 +647,6 @@ class OrderController extends BaseController
     {
         return \Request::get('company');
     }
-
 
 	/**
 	 * Get Coupon Details

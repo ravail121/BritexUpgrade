@@ -37,13 +37,11 @@ Route::post('/check2', [
 	'uses'=> 'Api\V1\CronJobs\DataUsage@check2',
 ]);
 
-
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 	Route::get('/cron-jobs', [
 		'as'=>'api.monthly.invoice',
 		'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
-
 	]);
 
 	Route::post('/generate-one-time-invoice',[

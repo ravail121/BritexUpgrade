@@ -9,6 +9,7 @@ use App\PasswordReset;
 use App\Model\Customer;
 use Illuminate\Http\Request;
 use App\Events\ForgotPassword;
+use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\BaseController;
 
 /**
@@ -74,7 +75,6 @@ class ForgotPasswordController extends BaseController
         return (filter_var($value, FILTER_VALIDATE_INT));
     }
 
-
 	/**
 	 * @param $email
 	 *
@@ -122,8 +122,12 @@ class ForgotPasswordController extends BaseController
 				'company_id' => $requestCompany->id
 			] )->first();
 
+			Log::info($token, 'Token in password reset');
+
 			if ( $passwordReset && $passwordReset->email ) {
 				$password[ 'password' ] = bcrypt( $request->get('password') );
+				Log::info($password, 'Password in password reset');
+				Log::info($request->get('password'), 'Request Password in password reset');
 				Customer::where( [
 					'email'      => $passwordReset->email,
 					'company_id' => $requestCompany->id
