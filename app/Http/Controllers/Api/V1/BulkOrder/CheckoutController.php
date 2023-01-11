@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -72,6 +71,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$data = $request->all();
 
+			$order = null;
+
 			DB::transaction(function () use ($request, $data, $planActivation) {
 
 				$customer = Customer::find($request->get('customer_id'));
@@ -122,11 +123,15 @@ class CheckoutController extends BaseController implements ConstantInterface
 					}
 				}
 				if($order) {
-					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, $hasSubscription, 'shipping');
+					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, $hasSubscription, 'shipping', 'Bulk Order');
 				}
 			});
 			$successResponse = [
 				'status'  => 'success',
+				'data'    => [
+					'order_hash'    => $order ? $order->hash : null,
+					'order_num'     => $order ? $order->order_num : null
+				],
 				'message' => 'Order created successfully'
 			];
 			return $this->respond($successResponse);
@@ -541,10 +546,14 @@ class CheckoutController extends BaseController implements ConstantInterface
 					}
 				}
 				if($order) {
-					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true);
+					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true, null, 'Bulk Order');
 				}
 				$successResponse = [
 					'status'  => 'success',
+					'data'    => [
+						'order_hash'    => $order->hash,
+						'order_num'     => $order->order_num,
+					],
 					'message' => 'Subscription order created successfully'
 				];
 				return $this->respond($successResponse);
@@ -675,10 +684,14 @@ class CheckoutController extends BaseController implements ConstantInterface
 					}
 				}
 				if($order) {
-					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true);
+					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true, null, 'Bulk Order');
 				}
 				$successResponse = [
 					'status'  => 'success',
+					'data'    => [
+						'order_hash'    => $order->hash,
+						'order_num'     => $order->order_num,
+					],
 					'message' => 'Subscription order created successfully'
 				];
 				return $this->respond($successResponse);

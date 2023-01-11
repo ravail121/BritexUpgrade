@@ -404,11 +404,19 @@ trait BulkOrderTrait
 	 * @param         $planActivation
 	 * @param         $hasSubscription
 	 * @param         $itemStatus
+	 * @param         $notes
 	 *
 	 * @return void
 	 */
-	public function createInvoice(Request $request, $order, $orderItems, $planActivation, $hasSubscription, $itemStatus=null)
+	public function createInvoice(Request $request,
+		$order,
+		$orderItems,
+		$planActivation,
+		$hasSubscription,
+		$itemStatus=null,
+		$notes=null)
 	{
+		$notes = $notes ?: 'Bulk Order | Without Payment';
 		$customer = Customer::find($request->get('customer_id'));
 		$order = Order::whereHash($order->hash)->first();
 		if($hasSubscription) {
@@ -429,7 +437,7 @@ trait BulkOrderTrait
 			'total_due'               => '0.00',
 			'prev_balance'            => $this->getCustomerDue($customer->id),
 			'payment_method'          => 'Bulk Order',
-			'notes'                   => 'Bulk Order | Without Payment',
+			'notes'                   => $notes,
 			'business_name'           => $customer->company_name,
 			'billing_fname'           => $customer->billing_fname ?: $customer->fname,
 			'billing_lname'           => $customer->billing_lname ?: $customer->lname,
