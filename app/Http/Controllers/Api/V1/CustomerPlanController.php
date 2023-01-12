@@ -48,19 +48,20 @@ class CustomerPlanController extends BaseController
 	public function getSubscriptions($customer){
     	$subscriptions = Subscription::with('plan.carrier', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
-        $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer->tax->rate);
+        $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer);
 
     	return [$subscriptions, $subscriptionPriceDetails];
     }
 
 	/**
 	 * @param $subscriptions
-	 * @param $rate
+	 * @param $customer
 	 *
 	 * @return array
 	 */
-	private function getSubscriptionPriceDetails($subscriptions, $rate)
+	private function getSubscriptionPriceDetails($subscriptions, $customer)
     {
+		$rate = $customer->tax->rate;
         $subscriptions = $subscriptions->whereIn('status', [
                   'active', 'shipping', 'for-activation']);
 
@@ -94,12 +95,22 @@ class CustomerPlanController extends BaseController
         $stateTax = $this->toTwoDecimals($stateTax);
         $regulatoryFee = $this->toTwoDecimals($regulatoryFee);
 
-        $monthlyTotalAmount = $subtotal + $stateTax + $regulatoryFee;
+	    $surcharge = 0;
+
+	    /**
+	     * Apply Surcharge
+	     */
+	    if($customer->surcharge > 0) {
+		    $surcharge = ($subtotal * $customer->surcharge) / 100;
+	    }
+
+        $monthlyTotalAmount = $subtotal + $stateTax + $regulatoryFee + $surcharge;
         return [
-            'subtotal'      => $subtotal,
-            'stateTax'      => $stateTax,
-            'regulatoryFee' => $regulatoryFee,
-            'monthlyTotalAmount' => $monthlyTotalAmount
+            'subtotal'              => $subtotal,
+            'stateTax'              => $stateTax,
+            'regulatoryFee'         => $regulatoryFee,
+	        'surcharge'             => $surcharge,
+            'monthlyTotalAmount'    => $monthlyTotalAmount
         ];
     }
 

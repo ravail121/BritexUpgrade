@@ -125,9 +125,7 @@ class ForgotPasswordController extends BaseController
 			Log::info($token, 'Token in password reset');
 
 			if ( $passwordReset && $passwordReset->email ) {
-				$password[ 'password' ] = bcrypt( $request->get('password') );
-				Log::info($password, 'Password in password reset');
-				Log::info($request->get('password'), 'Request Password in password reset');
+				$password[ 'password' ] = bcrypt($request->get('password'));
 				Customer::where( [
 					'email'      => $passwordReset->email,
 					'company_id' => $requestCompany->id

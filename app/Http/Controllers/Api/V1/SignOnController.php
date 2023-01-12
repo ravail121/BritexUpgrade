@@ -52,6 +52,8 @@ class SignOnController extends BaseController
 
         unset($data['identifier']);
 
+		$data['company_id'] = $companyId;
+
         if(Auth::validate($data))
         {
             $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id', 'hash', 'account_suspended']);
