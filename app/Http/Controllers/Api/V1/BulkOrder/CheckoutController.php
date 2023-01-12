@@ -71,9 +71,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$data = $request->all();
 
-			$order = null;
-
-			DB::transaction(function () use ($request, $data, $planActivation) {
+			$orderTransaction = DB::transaction(function () use ($request, $data, $planActivation) {
 
 				$customer = Customer::find($request->get('customer_id'));
 
@@ -125,12 +123,13 @@ class CheckoutController extends BaseController implements ConstantInterface
 				if($order) {
 					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, $hasSubscription, 'shipping', 'Bulk Order');
 				}
+				return $order;
 			});
 			$successResponse = [
 				'status'  => 'success',
 				'data'    => [
-					'order_hash'    => $order ? $order->hash : null,
-					'order_num'     => $order ? $order->order_num : null
+					'order_hash'    => $orderTransaction ? $orderTransaction->hash : null,
+					'order_num'     => $orderTransaction ? $orderTransaction->order_num : null
 				],
 				'message' => 'Order created successfully'
 			];
@@ -258,8 +257,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id)
-									->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable'])
-									->where('carrier_id', 5);
+									->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+//									->where('carrier_id', 5);
 					})
 				],
 				'orders.*.subscription_id'      => [
