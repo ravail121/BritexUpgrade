@@ -257,8 +257,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id)
-									->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
-//									->where('carrier_id', 5);
+									->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable'])
+									->where('carrier_id', 5);
 					})
 				],
 				'orders.*.subscription_id'      => [
