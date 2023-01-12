@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Illuminate\Support\Facades\Hash;
 use Validator;
 use Carbon\Carbon;
 use App\Helpers\Log;
@@ -91,7 +92,7 @@ class ForgotPasswordController extends BaseController
         ];
 
         PasswordReset::create($user);
-//		event(new ForgotPassword($user));
+		event(new ForgotPassword($user));
         return $user;
     }
 
@@ -123,7 +124,7 @@ class ForgotPasswordController extends BaseController
 			] )->first();
 
 			if ( $passwordReset && $passwordReset->email ) {
-				$password[ 'password' ] = bcrypt( $request->get('password') );
+				$password[ 'password' ] = bcrypt($request->get('password'));
 				Customer::where( [
 					'email'      => $passwordReset->email,
 					'company_id' => $requestCompany->id

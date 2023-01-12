@@ -7,7 +7,6 @@ use Carbon\Carbon;
 use App\Model\Invoice;
 use App\Model\Customer;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
 /**
@@ -52,6 +51,8 @@ class SignOnController extends BaseController
         }
 
         unset($data['identifier']);
+
+		$data['company_id'] = $companyId;
 
         if(Auth::validate($data))
         {
