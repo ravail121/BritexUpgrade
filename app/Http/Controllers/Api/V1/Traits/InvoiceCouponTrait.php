@@ -190,6 +190,52 @@ trait InvoiceCouponTrait
         }
     }
 
+    public function customerAccountCoupons2($customer, $invoice)
+    {
+        $customerCouponRedeemable = $customer->customerCouponRedeemable;
+        if ($customerCouponRedeemable) {
+            foreach ($customerCouponRedeemable as $customerCoupon) {
+                $coupon = $customerCoupon->coupon;
+                
+                if($customerCoupon->cycles_remaining == 0) continue;
+
+                list($isApplicable, $subscriptions) = 
+                            $this->isCustomerAccountCouponApplicable2(
+                                $coupon,
+                                $customer->billableSubscriptions
+                            );
+                
+                if($isApplicable){
+                    $coupon->load('couponProductTypes', 'couponProducts');
+
+                    foreach($subscriptions as $subscription){
+
+                        $amount = $this->couponAmount($subscription, $coupon);
+
+                        // Possibility of returning 0 as well but
+                        // returns false when coupon is not applicable
+                        if($amount === false || $amount == 0) continue;
+
+                        $invoice->invoiceItem()->create([
+                            'subscription_id' => $subscription->id,
+                            'product_type'    => 'Customer Coupon',
+                            'product_id'      => $customerCoupon->id,
+                            'type'            => InvoiceItem::TYPES['coupon'],
+                            'description'     => $coupon->code,
+                            'amount'          => str_replace(',', '',number_format($amount, 2)),
+                            'start_date'      => $invoice->start_date,
+                            'taxable'         => false,
+                        ]);
+                    }
+                    if ($customerCoupon['cycles_remaining'] > 0) {
+                        $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
+                    }
+                    // ToDo: Add logs,Order not provided in requirements
+                }
+            }
+        }
+    }
+
 	/**
 	 * @param $coupon
 	 * @param $subscriptions
@@ -200,6 +246,29 @@ trait InvoiceCouponTrait
     {
         $isApplicable  = true;
         $multilineMin = $coupon->multiline_min;
+        $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
+        if($coupon->multiline_max){
+            $isApplicable = $isApplicable && $subscriptions->count() <= $coupon->multiline_max;
+        }
+        
+        return [$isApplicable, $subscriptions];
+    }
+
+    protected function isCustomerAccountCouponApplicable2($coupon, $subscriptions)
+    {
+        $isApplicable  = true;
+        $multilineMin = $coupon->multiline_min;
+
+        $today     = Carbon::yesterday();
+		
+		$subscriptions = $subscriptions->filter(function($subscriptions, $i) use ($today){
+			//dd(7);
+			$billingEndParsed = Carbon::parse($subscriptions->created_at);
+			// Is today between customer.billing_date and -5 days
+			return
+				$today <= $billingEndParsed;
+		});
+
         $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
         if($coupon->multiline_max){
             $isApplicable = $isApplicable && $subscriptions->count() <= $coupon->multiline_max;
@@ -247,6 +316,60 @@ trait InvoiceCouponTrait
 	 */
     public function customerSubscriptionCoupons($invoice, $subscriptions)
     {
+       //  dd($subscriptions);
+        foreach($subscriptions as $subscription){
+
+            $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
+
+            // Subscription doesnot has any coupons
+            if(!$subscriptionCouponRedeemable) continue;
+
+            foreach ($subscriptionCouponRedeemable as $subscriptionCoupon) {
+                
+                $coupon = $subscriptionCoupon->coupon;
+
+                if($subscriptionCoupon->cycles_remaining == 0) continue;
+
+                $coupon->load('couponProductTypes', 'couponProducts');
+
+                $amount = $this->couponAmount($subscription, $coupon);
+
+                // Possibility of returning 0 as well but
+                // returns false when coupon is not applicable
+                if($amount === false || $amount == 0) continue;
+
+                $invoice->invoiceItem()->create([
+                    'subscription_id' => $subscription->id,
+                    'product_type'    => 'Subscription Coupon',
+                    'product_id'      => $subscriptionCoupon->id,
+                    'type'            => InvoiceItem::TYPES['coupon'],
+                    'description'     => $coupon->code,
+                    'amount'          => str_replace(',', '', number_format($amount, 2)),
+                    'start_date'      => $invoice->start_date,
+                    'taxable'         => false,
+                ]);
+
+                if ($subscriptionCoupon['cycles_remaining'] > 0) {
+                    $subscriptionCoupon->decrement('cycles_remaining');
+                }
+            }
+        }
+    }
+
+    public function customerSubscriptionCoupons2($invoice, $subscriptions)
+    {
+       //  dd($subscriptions);
+
+       $today     = Carbon::yesterday();
+		
+		$subscriptions = $subscriptions->filter(function($subscriptions, $i) use ($today){
+			//dd(7);
+			$billingEndParsed = Carbon::parse($subscriptions->created_at);
+			// Is today between customer.billing_date and -5 days
+			return
+				$today <= $billingEndParsed;
+		});
+        
         foreach($subscriptions as $subscription){
 
             $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
@@ -432,6 +555,7 @@ trait InvoiceCouponTrait
                 // $this->updateCouponNumUses($order);
 
             }
+            
             
             $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
