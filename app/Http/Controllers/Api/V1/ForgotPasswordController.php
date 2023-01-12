@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Illuminate\Support\Facades\Hash;
 use Validator;
 use Carbon\Carbon;
 use App\Helpers\Log;
