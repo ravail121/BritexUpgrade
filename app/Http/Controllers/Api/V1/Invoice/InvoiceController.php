@@ -481,7 +481,7 @@ class InvoiceController extends BaseController implements ConstantInterface
 					'product_id'      => $subscription->device_id,
 				];
 
-				if ($subscription->device_id === 0) {
+				if (! $subscription->device_id ) {
 					$array = array_merge($array, [
 						'amount' => '0',
 					]);

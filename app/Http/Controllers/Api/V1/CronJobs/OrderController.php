@@ -36,13 +36,19 @@ class OrderController extends BaseController
 		if($orderID){
 			$orders = Order::where('id', $orderID)->get();
 		}else{
-			$orders = Order::where('status', '1')->with('subscriptions', 'standAloneDevices', 'standAloneSims', 'customer', 'invoice.invoiceItem', 'payLog')->whereHas('subscriptions', function($subscription) {
-				$subscription->where([['status', 'shipping'],['sent_to_readycloud', 0 ], ['sent_to_shipping_easy', 0]]);
-			})->orWhereHas('standAloneDevices', function($standAloneDevice) {
-				$standAloneDevice->where([['status', 'shipping'],['processed', 0 ]]);
-			})->orWhereHas('standAloneSims', function($standAloneSim) {
-				$standAloneSim->where([['status', 'shipping'],['processed', 0 ]]);
-			})->with('company')->get();
+			$orders = Order::where('status', '1')->with(
+				'subscriptions',
+				'standAloneDevices',
+				'standAloneSims',
+				'customer',
+				'invoice.invoiceItem',
+				'payLog')->whereHas('subscriptions', function($subscription) {
+					$subscription->where([['status', 'shipping'], ['sent_to_readycloud', 0 ], ['sent_to_shipping_easy', 0]]);
+				})->orWhereHas('standAloneDevices', function($standAloneDevice) {
+					$standAloneDevice->where([['status', 'shipping'], ['processed', 0 ]]);
+				})->orWhereHas('standAloneSims', function($standAloneSim) {
+					$standAloneSim->where([['status', 'shipping'], ['processed', 0 ]]);
+				})->with('company')->get();
 		}
 
 		try {
@@ -178,15 +184,15 @@ class OrderController extends BaseController
 	 */
 	public function subscriptions($subscription, $invoiceItem)
 	{
-		if(($subscription->sim_id != 0) && ($subscription->device_id == 0)) {
+		if(($subscription->sim_id || $subscription->sim_id != 0) && (!$subscription->device_id || $subscription->device_id == 0)) {
 			return  $this->subscriptionWithSim($subscription, $invoiceItem);
 		}
 
-		if(($subscription->device_id != 0) && ($subscription->sim_id == 0)) {
+		if(($subscription->device_id || $subscription->device_id != 0) && (!$subscription->sim_id || $subscription->sim_id == 0)) {
 			return  $this->subscriptionWithDevice($subscription, $invoiceItem);
 		}
 
-		if(($subscription->sim_id != 0) && ($subscription->device_id != 0)) {
+		if(($subscription->sim_id || $subscription->sim_id != 0) && ($subscription->device_id || $subscription->device_id != 0)) {
 			return $this->subscriptionWithSimAndDevice($subscription, $invoiceItem);
 		}
 	}
@@ -198,15 +204,15 @@ class OrderController extends BaseController
 	 * @return string[]|void
 	 */
 	public function subscriptionsForShippingEasy($subscription, $invoiceItem){
-		if(($subscription->sim_id != 0) && ($subscription->device_id == 0)) {
+		if(($subscription->sim_id || $subscription->sim_id != 0) && (!$subscription->device_id || $subscription->device_id == 0)) {
 			return  $this->subscriptionWithSimForShippingEasy($subscription, $invoiceItem);
 		}
 
-		if(($subscription->device_id != 0) && ($subscription->sim_id == 0)) {
+		if(($subscription->device_id || $subscription->device_id != 0) && (!$subscription->sim_id || $subscription->sim_id == 0)) {
 			return  $this->subscriptionWithDeviceForShippingEasy($subscription, $invoiceItem);
 		}
 
-		if(($subscription->sim_id != 0) && ($subscription->device_id != 0)) {
+		if(($subscription->sim_id || $subscription->sim_id != 0) && ($subscription->device_id || $subscription->device_id != 0)) {
 			return $this->subscriptionWithSimAndDeviceForShippingEasy($subscription, $invoiceItem);
 		}
 	}
