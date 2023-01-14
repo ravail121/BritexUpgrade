@@ -189,7 +189,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 			}
 
 			$monthlyCharges = $invoice->cal_total_charges;
-//dd($monthlyCharges);
 			/**
 			 * Apply Surcharge
 			 */
@@ -201,7 +200,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 
 			//Plan charge + addon charge + pending charges + taxes - discount = monthly charges
 			$subtotal = str_replace(',', '', number_format($monthlyCharges + $totalPendingCharges, 2));
-			//dd($subtotal);
 
 			$invoiceUpdate = $invoice->update(compact('subtotal'));
 
