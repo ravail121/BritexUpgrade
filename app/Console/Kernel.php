@@ -5,6 +5,7 @@ namespace App\Console;
 
 use Carbon\Carbon;
 use App\Helpers\Log;
+use App\Console\Commands;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -16,7 +17,7 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        //
+        Commands\ShipOrders::class
     ];
 
     /**
