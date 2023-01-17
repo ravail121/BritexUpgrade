@@ -457,6 +457,10 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$csvFile = $request->post('csv_file');
 
+			$simId = $request->get('sim_id');
+
+			$planId = $request->get('plan_id');
+
 			/**
 			 * Validate if the input file is CSV file
 			 */
@@ -474,6 +478,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$csvAsArray = array_map( function ( $row ) use ( $headerRowsArray ) {
 					return array_combine( $headerRowsArray, str_getcsv( $row ) );
 				}, $csvAsArray );
+
+				$sim = Sim::find($simId);
 				foreach ( $csvAsArray as $rowIndex => $row ) {
 					$rowNumber = $rowIndex + 1;
 					if(!$this->isZipCodeValid($row['zip_code'])) {
@@ -484,8 +490,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						$error[] = "Phone number {$row['sim_num']} is not valid for row $rowNumber";
 						break;
 					}
-					$row['plan_id'] = $request->get('plan_id');
-					$row['sim_id'] = $request->get('sim_id');
+
 					$subscriptionOrders[] = $row;
 				}
 
@@ -519,14 +524,16 @@ class CheckoutController extends BaseController implements ConstantInterface
 							 * @internal Adding the for activation status in the subscription table
 							 */
 							$subscriptionOrder['subscription_status'] = Subscription::STATUS['for-activation'];
+							$subscriptionOrder['sim_type'] = $sim->name;
+							$subscriptionOrder['plan_id'] = $planId;
 							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
 
 							/**
 							 * Updating the subscription id in the customer standalone sim table
 							 */
-							if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
+							if($outputOrderItem['subscription_id'] && $simId) {
 								$customerStandAloneSim = CustomerStandaloneSim::where( [
-									[ 'sim_id', $outputOrderItem['sim_id'] ],
+									[ 'sim_id', $simId ],
 									[ 'customer_id', $customer->id ],
 									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 									[ 'sim_num', trim($outputOrderItem['sim_num']) ]
@@ -536,7 +543,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 										'subscription_id' => $outputOrderItem[ 'subscription_id' ]
 									] );
 								} else {
-									Log::info('Customer Standalone sim record not found for SIM id'. $outputOrderItem['sim_id'], 'Error in CSV order subscriptions');
+									Log::info('Customer Standalone sim record not found for SIM id '. $simId, 'Error in CSV order subscriptions');
 								}
 							}
 
@@ -646,12 +653,16 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'order_num'         => $orderCount + 1
 				] );
 				$outputOrderItems = [];
+
+				$simId = $request->get('sim_id');
+
+				$sim = Sim::find($simId);
 				foreach ($simNumbers as $simNumber){
 					$orderGroup = OrderGroup::create( [
 						'order_id' => $order->id
 					] );
 					$subscriptionOrder = [
-						'sim_id'                => $request->get('sim_id'),
+						'sim_type'              => $sim->name,
 						'sim_num'               => trim($simNumber),
 						'plan_id'               => $request->get('plan_id'),
 						'zip_code'              => $request->get('zip_code'),
@@ -663,9 +674,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 						/**
 						 * Updating the subscription id in the customer standalone sim table
 						 */
-						if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
+						if($outputOrderItem['subscription_id'] && $simId) {
 							$customerStandAloneSim = CustomerStandaloneSim::where( [
-								[ 'sim_id', $outputOrderItem['sim_id'] ],
+								[ 'sim_id', $simId ],
 								[ 'customer_id', $customer->id ],
 								[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 								[ 'sim_num', trim($simNumber) ]
@@ -675,7 +686,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 									'subscription_id' => $outputOrderItem[ 'subscription_id' ]
 								] );
 							} else {
-								Log::info('Customer Standalone sim record not found for SIM id'. $outputOrderItem['sim_id'], 'Error in order subscriptions');
+								Log::info('Customer Standalone sim record not found for SIM id '. $simId, 'Error in order subscriptions');
 							}
 						}
 
