@@ -23,6 +23,7 @@ class InvoiceItem extends Model implements ConstantInterface
         'manual'           => 8,
         'payment'          => 9,
         'refund'           => 10,
+        'surcharge'        => 11
     ];
 
 	/**
