@@ -815,6 +815,56 @@ class CreateOrderTable extends Migration
 	 */
 	public function down()
 	{
-		//Schema::dropIfExists('order');
+		Schema::dropIfExists('company');
+		Schema::dropIfExists('addon');
+		Schema::dropIfExists('ban');
+		Schema::dropIfExists('staff');
+		Schema::dropIfExists('ban_note');
+		Schema::dropIfExists('ban_group');
+		Schema::dropIfExists('tax');
+		Schema::dropIfExists('business_verification');
+		Schema::dropIfExists('business_verification_doc');
+		Schema::dropIfExists('carrier');
+		Schema::dropIfExists('carrier_block');
+		Schema::dropIfExists('company_to_carrier');
+		Schema::dropIfExists('coupon');
+		Schema::dropIfExists('coupon_multiline_plan_type');
+		Schema::dropIfExists('coupon_product_type');
+		Schema::dropIfExists('customer');
+		Schema::dropIfExists('customer_note');
+		Schema::dropIfExists('default_imei');
+		Schema::dropIfExists('tag');
+		Schema::dropIfExists('device');
+		Schema::dropIfExists('device_group');
+		Schema::dropIfExists('device_to_group');
+		Schema::dropIfExists('device_image');
+		Schema::dropIfExists('device_to_carrier');
+		Schema::dropIfExists('plan');
+		Schema::dropIfExists('device_to_plan');
+		Schema::dropIfExists('sim');
+		Schema::dropIfExists('device_to_sim');
+		Schema::dropIfExists('email_template');
+		Schema::dropIfExists('invoice');
+		Schema::dropIfExists('subscription');
+		Schema::dropIfExists('invoice_item');
+		Schema::dropIfExists('order');
+		Schema::dropIfExists('order_plan');
+		Schema::dropIfExists('order_sim');
+		Schema::dropIfExists('order_coupon');
+		Schema::dropIfExists('order_group');
+		Schema::dropIfExists('order_group_addon');
+		Schema::dropIfExists('pending_charge');
+		Schema::dropIfExists('plan_block');
+		Schema::dropIfExists('plan_custom_type');
+		Schema::dropIfExists('plan_data_soc_bot_code');
+		Schema::dropIfExists('plan_to_addon');
+		Schema::dropIfExists('port');
+		Schema::dropIfExists('port_note');
+		Schema::dropIfExists('subscription_addon');
+		Schema::dropIfExists('subscription_coupon');
+		Schema::dropIfExists('subscription_log');
+		Schema::dropIfExists('system_global_setting');
+		Schema::dropIfExists('system_email_template');
+		Schema::dropIfExists('system_email_template_dynamic_field');
 	}
 }
