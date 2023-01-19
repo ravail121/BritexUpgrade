@@ -19,6 +19,7 @@ class AddCustomerProductsTable extends Migration
 		    $table->foreign('customer_id')->references('id')->on('customer')->onDelete('cascade');
 		    $table->string('product_type', 50)->comment('Product Type');
 		    $table->integer('product_id')->nullable()->comment('Product ID');
+		    $table->unique(['customer_id', 'product_type', 'product_id'], 'customer_product_unique');
 		    $table->timestamps();
 	    });
     }
@@ -30,6 +31,10 @@ class AddCustomerProductsTable extends Migration
      */
     public function down()
     {
+	    Schema::table('customer_products', function (Blueprint $table) {
+		    $table->dropForeign('customer_products_customer_id_foreign');
+		    $table->dropUnique('customer_product_unique');
+	    });
 	    Schema::dropIfExists('customer_products');
     }
 }
