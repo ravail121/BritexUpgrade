@@ -11,6 +11,14 @@ class CustomerProduct extends Model
 {
 
 	/**
+	 *
+	 */
+	const PRODUCT_TYPE = [
+		'device'  => 'Device',
+		'sim'     => 'Sim'
+	];
+
+	/**
 	 * @var string[]
 	 */
 	protected $fillable = [
