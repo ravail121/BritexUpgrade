@@ -27,7 +27,7 @@ interface ConstantInterface
         'manual'           => 8,
         'payment'          => 9,
 	    'refund'           => 10,
-	    'surcharge'        => 11,
+	    'surcharge'        => 11
     ];
 
     const INVOICE_ITEM_PRODUCT_TYPES = [
