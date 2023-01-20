@@ -360,7 +360,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where([
+							[ 'company_id', $requestCompany->id ],
+							[ 'show', self::SHOW_COLUMN_VALUES[ 'not-visible-at-all' ] ],
+							[ 'carrier_id', 5 ]
+						]);
 					}),
 					Rule::exists('customer_products', 'product_id')->where(function ($query) {
 						return $query->where('product_type', CustomerProduct::PRODUCT_TYPE['sim']);
