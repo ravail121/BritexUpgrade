@@ -54,6 +54,7 @@ interface ConstantInterface
     const SHOW_COLUMN_VALUES = [
         'not-visible'             => 0,
         'visible-and-orderable'   => 1,
-        'visible-and-unorderable' => 2
+        'visible-and-unorderable' => 2,
+	    'not-visible-at-all'      => 3
     ];
 }
