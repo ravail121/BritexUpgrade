@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -245,33 +244,27 @@ class CheckoutController extends BaseController implements ConstantInterface
 				'required',
 				'numeric',
 				Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['not-visible']);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 			$baseValidation['orders.*.sim_id']               =  [
 				'required',
 				'numeric',
 				Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['not-visible-at-all'])
-					             ->where('carrier_id', 5);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 		} else {
 			$baseValidation['orders.*.plan_id']              = [
 				'numeric',
 				Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['not-visible']);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 			$baseValidation['orders.*.sim_id']               =  [
 				'numeric',
 				Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['not-visible-at-all'])
-					             ->where('carrier_id', 5);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 		}
@@ -315,9 +308,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany, $simId ) {
 					$query->where(
 						[
-							[ 'company_id', $requestCompany->id ],
-							[ 'show', self::SHOW_COLUMN_VALUES[ 'not-visible-at-all' ] ],
-							[ 'carrier_id', 5 ]
+							[ 'company_id', $requestCompany->id ]
 						]
 					);
 				} )->with( 'sim' )->paginate($perPage);
@@ -329,9 +320,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany ) {
 					$query->where(
 						[
-							[ 'company_id', $requestCompany->id ],
-							[ 'show', self::SHOW_COLUMN_VALUES[ 'not-visible-at-all' ] ],
-							[ 'carrier_id', 5 ]
+							[ 'company_id', $requestCompany->id ]
 						]
 					);
 				} )->with( 'sim' )->paginate($perPage);
@@ -361,9 +350,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where([
-							[ 'company_id', $requestCompany->id ],
-							[ 'show', self::SHOW_COLUMN_VALUES[ 'not-visible-at-all' ] ],
-							[ 'carrier_id', 5 ]
+							[ 'company_id', $requestCompany->id ]
 						]);
 					}),
 					Rule::exists('customer_products', 'product_id')->where(function ($query) {
@@ -385,7 +372,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$orderPlans = Plan::where( [
 				['company_id', $requestCompany->id],
-				['show', self::SHOW_COLUMN_VALUES['not-visible']],
 				['carrier_id', $sim->carrier_id]
 			] )->whereIn($customerProducts)->get();
 
@@ -415,20 +401,14 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							/**
-							 * Check if the carrier is ultra mobile
-							 */
-							->where('carrier_id', 5)
-							->where('show', self::SHOW_COLUMN_VALUES['not-visible-at-all']);
+						return $query->where('company_id', $requestCompany->id);
 					})
 				],
 				'plan_id'               =>  [
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							->where('show', self::SHOW_COLUMN_VALUES['not-visible']);
+						return $query->where('company_id', $requestCompany->id);
 					})
 				],
 				'customer_id'           => [
@@ -587,8 +567,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-						->where('show', self::SHOW_COLUMN_VALUES['not-visible']);
+						return $query->where('company_id', $requestCompany->id);
 					})
 				],
 				'zip_code'              => [
@@ -607,12 +586,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							/**
-						    * Check if the carrier is ultra mobile
-						    */
-							->where('carrier_id', 5)
-					        ->where('show', self::SHOW_COLUMN_VALUES['not-visible-at-all']);
+						return $query->where('company_id', $requestCompany->id);
 					})
 				],
 			]);

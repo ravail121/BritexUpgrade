@@ -19,6 +19,7 @@ class CustomerProduct extends Model
 		'plan'      => 'Plan'
 	];
 
+
 	/**
 	 * @var string[]
 	 */
