@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
+use App\Model\CustomerProduct;
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -37,15 +38,12 @@ class CheckoutController extends BaseController implements ConstantInterface
 	public function simsForCatalogue(Request $request)
 	{
 		try {
-			$requestCompany = $request->get('company');
 
 			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 5;
-
-			$sims = Sim::where( [
-				['company_id', $requestCompany->id],
-				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
-				['carrier_id', 5]
-			] )->paginate($perPage);
+			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPE['sim'])
+			                                   ->pluck('product_id')->toArray();
+			$sims = Sim::whereIn('id', $customerProducts)->paginate($perPage);
 
 			return $this->respond($sims);
 
@@ -378,6 +376,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPE['sim']);
 					})
 				]
 			]);
@@ -389,11 +390,19 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$sim = Sim::where('id', $request->get('sim_id'))->first();
 
+			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPE['plan'])
+			                                   ->pluck('product_id')->toArray();
+
+			/**
+			 * @todo Work on this to list out the plans
+			 */
+
 			$orderPlans = Plan::where( [
 				['company_id', $requestCompany->id],
 				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
 				['carrier_id', $sim->carrier_id]
-			] )->get();
+			] )->whereIn($customerProducts)->get();
 
 			return $this->respond($orderPlans);
 
