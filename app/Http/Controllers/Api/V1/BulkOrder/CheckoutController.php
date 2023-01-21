@@ -41,7 +41,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 5;
 			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
-			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPE['sim'])
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['sim'])
 			                                   ->pluck('product_id')->toArray();
 			$sims = Sim::whereIn('id', $customerProducts)->paginate($perPage);
 
@@ -354,7 +354,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						]);
 					}),
 					Rule::exists('customer_products', 'product_id')->where(function ($query) {
-						return $query->where('product_type', CustomerProduct::PRODUCT_TYPE['sim']);
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				]
 			]);
@@ -367,7 +367,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$sim = Sim::where('id', $request->get('sim_id'))->first();
 
 			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
-			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPE['plan'])
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['plan'])
 			                                   ->pluck('product_id')->toArray();
 
 			$orderPlans = Plan::where( [
@@ -402,6 +402,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				],
 				'plan_id'               =>  [
@@ -409,6 +412,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['plan']);
 					})
 				],
 				'customer_id'           => [
@@ -568,6 +574,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['plan']);
 					})
 				],
 				'zip_code'              => [
@@ -587,6 +596,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
 						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				],
 			]);

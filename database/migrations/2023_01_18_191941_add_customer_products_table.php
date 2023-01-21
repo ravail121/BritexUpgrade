@@ -17,7 +17,7 @@ class AddCustomerProductsTable extends Migration
 		    $table->increments('id');
 		    $table->unsignedInteger('customer_id')->nullable()->comment('Customer ID');
 		    $table->foreign('customer_id')->references('id')->on('customer')->onDelete('cascade');
-		    $table->string('product_type', 50)->comment('Product Type');
+		    $table->integer('product_type')->comment('Product Type');
 		    $table->integer('product_id')->nullable()->comment('Product ID');
 		    $table->unique(['customer_id', 'product_type', 'product_id'], 'customer_product_unique');
 		    $table->timestamps();
