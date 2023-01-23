@@ -379,7 +379,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$orderPlans = Plan::where( [
 					[ 'company_id', $requestCompany->id ],
 					[ 'carrier_id', $sim->carrier_id ]
-				] )->whereIn( $customerProducts )->get();
+				] )->whereIn( 'id', $customerProducts )->get();
 
 				return $this->respond( $orderPlans );
 			} else {
