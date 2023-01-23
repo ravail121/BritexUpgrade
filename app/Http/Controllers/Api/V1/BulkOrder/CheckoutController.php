@@ -43,9 +43,14 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
 			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['sim'])
 			                                   ->pluck('product_id')->toArray();
-			$sims = Sim::whereIn('id', $customerProducts)->paginate($perPage);
 
-			return $this->respond($sims);
+			if($customerProducts) {
+				$sims = Sim::whereIn( 'id', $customerProducts )->paginate( $perPage );
+
+				return $this->respond( $sims );
+			} else {
+				return $this->respond( [] );
+			}
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in simsForCatalogue');
@@ -370,12 +375,16 @@ class CheckoutController extends BaseController implements ConstantInterface
 			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['plan'])
 			                                   ->pluck('product_id')->toArray();
 
-			$orderPlans = Plan::where( [
-				['company_id', $requestCompany->id],
-				['carrier_id', $sim->carrier_id]
-			] )->whereIn($customerProducts)->get();
+			if($customerProducts) {
+				$orderPlans = Plan::where( [
+					[ 'company_id', $requestCompany->id ],
+					[ 'carrier_id', $sim->carrier_id ]
+				] )->whereIn( $customerProducts )->get();
 
-			return $this->respond($orderPlans);
+				return $this->respond( $orderPlans );
+			} else {
+				return $this->respond( [] );
+			}
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in list order plans');
