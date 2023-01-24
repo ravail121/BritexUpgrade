@@ -121,6 +121,7 @@ class PaymentController extends BaseController implements ConstantInterface
 				$invoice = Invoice::create( $data );
 			} else {
 				$invoice->update([
+					'status'            => CardController::DEFAULT_VALUE,
 					'subtotal'          => $credit->amount,
 					'payment_method'    => $credit->payment_method,
 				]);
