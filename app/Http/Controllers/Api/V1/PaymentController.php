@@ -105,7 +105,11 @@ class PaymentController extends BaseController implements ConstantInterface
             
             $msg = $this->transactionSuccessful($request, $this->tran);
 
-			$invoice = Invoice::where('order_id', $order->id)->first();
+			if($order->invoice_id) {
+				$invoice = Invoice::find( $order->invoice_id );
+			} else {
+				$invoice = null;
+			}
 
 			$credit = $msg[ 'credit' ];
 
