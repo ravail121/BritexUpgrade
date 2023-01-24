@@ -210,8 +210,29 @@ class CardController extends BaseController implements ConstantInterface
                     $this->response = $this->transactionSuccessfulWithoutOrder($request, $this->tran);
                 }else{
                     $this->response = $this->transactionSuccessful($request, $this->tran);
-	                $data    = $this->setInvoiceData($order, $request);
-	                $invoice = Invoice::create($data);
+
+	                if($order->invoice_id) {
+		                $invoice = Invoice::find( $order->invoice_id );
+	                } else {
+		                $invoice = null;
+	                }
+
+					$credit = $this->response['credit'];
+
+	                /**
+	                 * @internal If the invoice is already created from Bulk Order System, Don't create a new invoice
+	                 */
+	                if(!$invoice) {
+		                $data    = $this->setInvoiceData($order, $request, $credit);
+		                $invoice = Invoice::create($data);
+	                } else {
+		                $invoice->update([
+			                'status'            => CardController::DEFAULT_VALUE,
+			                'subtotal'          => $credit->amount,
+			                'payment_method'    => $credit->payment_method,
+		                ]);
+	                }
+
 
 	                if ($invoice) {
 		                $orderCount = Order::where( [
