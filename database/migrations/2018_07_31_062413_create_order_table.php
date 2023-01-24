@@ -49,10 +49,6 @@ class CreateOrderTable extends Migration
 			$table->timestamps();
 		});
 
-
-
-
-
 		Schema::create('ban', function (Blueprint $table) {
 			$table->increments('id');
 			$table->text('name');
@@ -98,8 +94,6 @@ class CreateOrderTable extends Migration
 			$table->timestamps();
 		});
 
-
-
 		Schema::create('tax', function(Blueprint $table){
 
 			$table->increments('id');
@@ -128,7 +122,6 @@ class CreateOrderTable extends Migration
 
 
 		});
-
 
 		Schema::create('business_verification_doc',function(Blueprint $table){
 			$table->increments('id');

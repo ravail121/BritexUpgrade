@@ -105,10 +105,24 @@ class PaymentController extends BaseController implements ConstantInterface
             
             $msg = $this->transactionSuccessful($request, $this->tran);
 
-            $data    = $this->setInvoiceData($order, $msg['credit'], $request);
-            $invoice = Invoice::create($data);
+			$invoice = Invoice::where('order_id', $order->id)->first();
+
+			$credit = $msg[ 'credit' ];
+
+	        /**
+	         * @internal If the invoice is already created from Bulk Order System, Don't create a new invoice
+	         */
+			if(!$invoice) {
+				$data    = $this->setInvoiceData( $order, $credit, $request );
+				$invoice = Invoice::create( $data );
+			} else {
+				$invoice->update([
+					'subtotal'          => $credit->amount,
+					'payment_method'    => $credit->payment_method,
+				]);
+			}
             
-            $this->addCreditToInvoiceRow($invoice, $msg['credit'], $this->tran);
+            $this->addCreditToInvoiceRow($invoice, $credit, $this->tran);
 
             if ($invoice) {
                 
@@ -119,7 +133,7 @@ class PaymentController extends BaseController implements ConstantInterface
                 $order->update([
                     'status'            => 1,
                     'invoice_id'        => $invoice->id,
-                    'order_num'         => $orderCount+1,
+                    'order_num'         => $orderCount + 1,
                     'date_processed'    => Carbon::today()
                 ]);
 
@@ -140,7 +154,7 @@ class PaymentController extends BaseController implements ConstantInterface
                             $response = Eye4Fraud::send_order($order, $creditCard, $paymentLog->first());
                             $success = true;
                         }
-                    }catch(Exception $err){
+                    }catch(\Exception $err){
                         \Log::info(["Eye4Fraud error ", $err]);
                     }
                 }

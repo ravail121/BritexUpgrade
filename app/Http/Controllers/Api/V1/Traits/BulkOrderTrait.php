@@ -458,8 +458,7 @@ trait BulkOrderTrait
 		]);
 
 		$order->update([
-			'invoice_id'    => $invoice->id,
-			'status'        => '1'
+			'invoice_id'    => $invoice->id
 		]);
 
 		$this->invoiceItem($orderItems, $invoice, $planActivation, $itemStatus);
