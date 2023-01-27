@@ -8,11 +8,11 @@ This repository includes backend code for BriteX
 Follow given steps to run:
 
 - Clone repository
-- composer install
-- cp .env.example .env
-- put appropriate configuration in .env
-- php artisan migrate
-- php artisan serve
+- `composer install`
+- `cp .env.example .env`
+- Put appropriate configuration in .env
+- `php artisan migrate`
+- `php artisan serve`
 
 
 ### Author
