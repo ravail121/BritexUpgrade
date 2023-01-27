@@ -119,29 +119,34 @@ class PaymentController extends BaseController implements ConstantInterface
 			if(!$invoice) {
 				$data    = $this->setInvoiceData( $order, $credit, $request );
 				$invoice = Invoice::create( $data );
+
+				if($invoice) {
+					$orderCount = Order::where( [
+						[ 'status', 1 ],
+						[ 'company_id', $order->company_id ]
+					] )->max( 'order_num' );
+					$order->update( [
+						'status'         => 1,
+						'invoice_id'     => $invoice->id,
+						'order_num'      => $orderCount + 1,
+						'date_processed' => Carbon::today()
+					] );
+				}
 			} else {
 				$invoice->update([
 					'status'            => CardController::DEFAULT_VALUE,
 					'subtotal'          => $credit->amount,
 					'payment_method'    => $credit->payment_method,
 				]);
+				$order->update( [
+					'status'         => 1,
+					'date_processed' => Carbon::today()
+				] );
 			}
             
             $this->addCreditToInvoiceRow($invoice, $credit, $this->tran);
 
             if ($invoice) {
-                
-                $orderCount = Order::where([
-                	['status', 1],
-	                ['company_id', $order->company_id]
-                ])->max('order_num');
-                $order->update([
-                    'status'            => 1,
-                    'invoice_id'        => $invoice->id,
-                    'order_num'         => $orderCount + 1,
-                    'date_processed'    => Carbon::today()
-                ]);
-
                 $paymentLog = PaymentLog::where('order_id', $order->id);
                 $paymentLog->update(['invoice_id' => $invoice->id]);
 

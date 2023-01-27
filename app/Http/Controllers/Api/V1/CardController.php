@@ -118,15 +118,16 @@ class CardController extends BaseController implements ConstantInterface
             ]);
         }
         if($request->new_card==1){
-
-            $order = Order::where('customer_id', $request->customer_id)->first();
+			if ($request->order_hash) {
+		        $order = Order::where('hash', $request->order_hash)->first();
+	        } elseif ($request->customer_id) {
+		        $order = Order::where('customer_id', $request->customer_id)->first();
+	        }
         if ($order) {
             $this->tran = $this->setUsaEpayData($this->tran, $request);
             if($this->tran->Process()) {
-                
-                    $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
-	              
-                
+                $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
+
             } else {
                 $this->response = $this->transactionFail($order, $this->tran);
                 if($request->without_order){
@@ -202,7 +203,12 @@ class CardController extends BaseController implements ConstantInterface
 	 */
 	protected function processTransaction($request, $command = null)
     {
-        $order = Order::where('customer_id', $request->customer_id)->first();
+	    if ($request->order_hash) {
+		    $order = Order::where('hash', $request->order_hash)->first();
+
+	    } elseif ($request->customer_id) {
+		    $order = Order::where('customer_id', $request->customer_id)->first();
+	    }
         if ($order) {
             $this->tran = $this->setUsaEpayData($this->tran, $request, $command);
             if($this->tran->Process()) {
@@ -225,24 +231,26 @@ class CardController extends BaseController implements ConstantInterface
 	                if(!$invoice) {
 		                $data    = $this->setInvoiceData($order, $request, $credit);
 		                $invoice = Invoice::create($data);
+		                if ($invoice) {
+			                $orderCount = Order::where( [
+				                [ 'status', 1 ],
+				                [ 'company_id', $order->company_id ]
+			                ] )->max( 'order_num' );
+			                $order->update( [
+				                'status'         => 1,
+				                'invoice_id'     => $invoice->id,
+				                'order_num'      => $orderCount + 1,
+				                'date_processed' => Carbon::today()
+			                ] );
+		                }
 	                } else {
 		                $invoice->update([
 			                'status'            => CardController::DEFAULT_VALUE,
 			                'subtotal'          => $credit->amount,
 			                'payment_method'    => $credit->payment_method,
 		                ]);
-	                }
-
-
-	                if ($invoice) {
-		                $orderCount = Order::where( [
-			                [ 'status', 1 ],
-			                [ 'company_id', $order->company_id ]
-		                ] )->max( 'order_num' );
 		                $order->update( [
 			                'status'         => 1,
-			                'invoice_id'     => $invoice->id,
-			                'order_num'      => $orderCount + 1,
 			                'date_processed' => Carbon::today()
 		                ] );
 	                }
