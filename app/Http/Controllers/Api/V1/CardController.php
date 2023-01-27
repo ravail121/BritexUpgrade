@@ -117,31 +117,30 @@ class CardController extends BaseController implements ConstantInterface
                 'message' => $validation->getMessageBag()->all()
             ]);
         }
-        if($request->new_card==1){
-			if ($request->order_hash) {
-		        $order = Order::where('hash', $request->order_hash)->first();
-	        } elseif ($request->customer_id) {
-		        $order = Order::where('customer_id', $request->customer_id)->first();
+        if($request->new_card==1) {
+	        if ( $request->order_hash ) {
+		        $order = Order::where( 'hash', $request->order_hash )->first();
+	        } elseif ( $request->customer_id ) {
+		        $order = Order::where( 'customer_id', $request->customer_id )->first();
 	        }
-        if ($order) {
-            $this->tran = $this->setUsaEpayData($this->tran, $request);
-            if($this->tran->Process()) {
-                $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
+	        if ($order) {
+	            $this->tran = $this->setUsaEpayData($this->tran, $request);
+	            if($this->tran->Process()) {
+	                $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
 
-            } else {
-                $this->response = $this->transactionFail($order, $this->tran);
-                if($request->without_order){
-                    return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
-                }
-            }
-        } else {
-            $this->response = $this->transactionFail(null, $this->tran);
-	        if($request->without_order){
-		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+	            } else {
+	                $this->response = $this->transactionFail($order, $this->tran);
+	                if($request->without_order){
+	                    return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+	                }
+	            }
+	        } else {
+	            $this->response = $this->transactionFail(null, $this->tran);
+		        if($request->without_order){
+			        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+		        }
 	        }
-        }
-        return $this->respond($this->response);
-
+	        return $this->respond($this->response);
         }
         return $this->processTransaction($request, 'authonly');
     }
