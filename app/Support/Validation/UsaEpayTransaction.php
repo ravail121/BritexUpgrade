@@ -176,6 +176,22 @@ trait UsaEpayTransaction
         return $data;
     }
 
+    protected function transactionSuccessfulNewCard($request, $tran, $invoice = null)
+    {
+        $data = ['success' => false];
+        $order = $this->getOrder($request);
+
+        if(!$order){
+            return ['success' => false];
+        }
+        $data['card'] = $this->createNewCustomerCard($request, $order, $tran);
+      
+
+        $data['success'] = true;
+        
+        return $data;
+    }
+
 	/**
 	 * @param $customerId
 	 */
@@ -390,6 +406,48 @@ trait UsaEpayTransaction
      * @param  Request $request
      * @return Order object
      */
+
+
+    protected function createNewCustomerCard($request, $order, $tran)
+    {   
+            $customerCreditCard = CustomerCreditCard::where('customer_id', $order->customer_id)->get();
+            $customerCreditCard = CustomerCreditCard::create([
+                'token'            => $tran->cardref,
+                'api_key'          => $order->company->api_key, 
+                'customer_id'      => $order->customer_id, 
+                'cardholder'       => $request->payment_card_holder,
+                'expiration'       => $request->expires_mmyy,
+                'last4'            => $tran->last4,
+                'default'          => 0,
+                'card_type'        => $tran->cardType,
+                'cvc'              => $request->payment_cvc,
+                'billing_address1' => $request->billing_address1, 
+                'billing_address2' => $request->billing_address2, 
+                'billing_city'     => $request->billing_city, 
+                'billing_state_id' => $request->billing_state_id, 
+                'billing_zip'      => $request->billing_zip,
+            ]);
+            $customer = Customer::find($order->customer_id);
+           
+            if ($customer->billing_address1 == 'N/A') {
+                $customer->update([
+                    'billing_fname'    => $request->billing_fname, 
+                    'billing_lname'    => $request->billing_lname, 
+                    'billing_address1' => $request->billing_address1, 
+                    'billing_address2' => $request->billing_address2, 
+                    'billing_city'     => $request->billing_city, 
+                    'billing_state_id' => $request->billing_state_id, 
+                    'billing_zip'      => $request->billing_zip,
+                ]);
+            }
+            return ['card' => $customerCreditCard];
+
+
+        $customerCreditCard = CustomerCreditCard::find($request->card_id);
+        return ['card' => $customerCreditCard];
+
+    }
+
     protected function createCustomerCard($request, $order, $tran)
     {   
         if (!$request->card_id) {

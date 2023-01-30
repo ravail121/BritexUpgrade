@@ -49,6 +49,43 @@ class BlogsController extends BaseController
         
     }
     
+    public function update(Request $request)
+    {
+        $id = $request->id;
+        $data = [
+            'title'    => $request->title,
+            'description'     => $request->description,
+            'shortDesc'   => $request->shortDesc,
+            'owner' => $request->owner,
+            'date' => $request->date
+        ];
+        if(isset($request->image)){
+            $data['image']    = $request->image;
+        }
+        return Blogs::where('id',$id)->update(
+            $data
+        );
+        
+    }
+
+    public function removeImageById(Request $request)
+    {
+        $data=$request->all();
+        $arr['image'] = '';
+        $results=Blogs::where('id',$data[0])->update($arr);
+        return $this->respond('Image Deleted');
+        
+    }
+
+    public function deleteBlogById(Request $request)
+    {
+
+        $data=$request->all();
+        $results=Blogs::where('id',$data[0])->delete();
+        return $this->respond('Blog Deleted');
+        
+    }
+    
     
     /**
      * Approves the Business of Customer

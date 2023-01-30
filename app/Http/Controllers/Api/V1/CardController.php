@@ -117,6 +117,31 @@ class CardController extends BaseController implements ConstantInterface
                 'message' => $validation->getMessageBag()->all()
             ]);
         }
+        if($request->new_card==1){
+
+            $order = Order::where('customer_id', $request->customer_id)->first();
+        if ($order) {
+            $this->tran = $this->setUsaEpayData($this->tran, $request);
+            if($this->tran->Process()) {
+                
+                    $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
+	              
+                
+            } else {
+                $this->response = $this->transactionFail($order, $this->tran);
+                if($request->without_order){
+                    return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+                }
+            }
+        } else {
+            $this->response = $this->transactionFail(null, $this->tran);
+	        if($request->without_order){
+		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+	        }
+        }
+        return $this->respond($this->response);
+
+        }
         return $this->processTransaction($request, 'authonly');
     }
 
@@ -323,10 +348,11 @@ class CardController extends BaseController implements ConstantInterface
         ]])->with('unpaidAndClosedMounthlyInvoice', 'company')->get()->toArray();
 
         $customers = array_merge($customers, $customersB);
-
+       
         foreach ($customers as $key => $customer) {
             $customer_obj = Customer::find($customer["id"]);
 	        $invoice = Invoice::where([['customer_id', $customer_obj->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
+            
 	        $amount_due = $customer_obj->amount_due;
 	        $customer['mounthlyInvoice'] = [
 		        'total_due'     => $amount_due,
@@ -347,6 +373,7 @@ class CardController extends BaseController implements ConstantInterface
                     $card = CustomerCreditCard::where(
                         'customer_id', $customer['id']
                     )->orderBy('default', 'desc')->first();
+                   
 
                     if($card){
                         $order_hash = "";

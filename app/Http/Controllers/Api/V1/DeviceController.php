@@ -126,4 +126,31 @@ class DeviceController extends Controller
 		array_multisort($order, SORT_ASC, $this->content);
 
 	}
+	public function updateOrder(Request $request)
+    {
+        $data=$request->all();
+		$order = $data[1];
+		$ids = $data[0];
+		if(count(array_unique($order))<count($order))
+		{
+			return response()->json([
+				'status' => false,
+				'message' => 'Order not correct'
+			]);
+		}
+		else
+		{
+			$temp = 0;
+			foreach($ids as $id){
+				$arr['device_order'] = $order[$temp];
+				$results=Device::where('id',$id)->update($arr);
+				$temp = $temp+1;
+			}
+			return response()->json([
+				'status' => true,
+				'message' => 'Devices Order Updated'
+			]);
+		}
+        
+    }
 }
