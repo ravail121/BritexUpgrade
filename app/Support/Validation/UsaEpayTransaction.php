@@ -406,7 +406,7 @@ trait UsaEpayTransaction
             }
                 
             if ($count == 0) {    
-                $customerCreditCard = CustomerCreditCard::create([
+                $creditCardData = [
                     'token'            => $tran->cardref,
                     'api_key'          => $order->company->api_key, 
                     'customer_id'      => $order->customer_id, 
@@ -421,12 +421,19 @@ trait UsaEpayTransaction
                     'billing_city'     => $request->billing_city, 
                     'billing_state_id' => $request->billing_state_id, 
                     'billing_zip'      => $request->billing_zip,
-                ]);
+                ];
+                if(isset($request->make_primary)){
+                    $creditCardData['default'] = true;
+                    CustomerCreditCard::where('customer_id',$order->customer_id)->where('default',true)->update(['default'=>false]);
+                }
+                $customerCreditCard = CustomerCreditCard::create($creditCardData);
                 $customer = Customer::find($order->customer_id);
-                if($request->order_hash && $request->auto_pay){
-                    $customer->update(['auto_pay' => '1']);
-                }else{
-                    $customer->update(['auto_pay' => '0']);
+                if(!isset($request->new_card)){
+                    if($request->order_hash && $request->auto_pay){
+                        $customer->update(['auto_pay' => '1']);
+                    }else{
+                        $customer->update(['auto_pay' => '0']);
+                    }
                 }
                 if ($customer->billing_address1 == 'N/A') {
                     $customer->update([
