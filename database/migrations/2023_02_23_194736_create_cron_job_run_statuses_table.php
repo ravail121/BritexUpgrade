@@ -14,7 +14,7 @@ class CreateCronJobRunStatusesTable extends Migration
     public function up()
     {
         Schema::create('cron_job_run_statuses', function (Blueprint $table) {
-            $table->id();
+            $table->increments('id');
             $table->boolean('status');
             $table->timestamp('date_stamp');
             $table->timestamps();
