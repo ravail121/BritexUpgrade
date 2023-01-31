@@ -13,6 +13,7 @@ use App\Model\OrderGroup;
 use App\Model\Subscription;
 use App\Rules\ValidZipCode;
 use Illuminate\Http\Request;
+use App\Model\CustomerProduct;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
@@ -37,17 +38,19 @@ class CheckoutController extends BaseController implements ConstantInterface
 	public function simsForCatalogue(Request $request)
 	{
 		try {
-			$requestCompany = $request->get('company');
 
 			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 5;
+			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['sim'])
+			                                   ->pluck('product_id')->toArray();
 
-			$sims = Sim::where( [
-				['company_id', $requestCompany->id],
-				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
-				['carrier_id', 5]
-			] )->paginate($perPage);
+			if($customerProducts) {
+				$sims = Sim::whereIn( 'id', $customerProducts )->paginate( $perPage );
 
-			return $this->respond($sims);
+				return $this->respond( $sims );
+			} else {
+				return $this->respond( [] );
+			}
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in simsForCatalogue');
@@ -246,33 +249,27 @@ class CheckoutController extends BaseController implements ConstantInterface
 				'required',
 				'numeric',
 				Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 			$baseValidation['orders.*.sim_id']               =  [
 				'required',
 				'numeric',
 				Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable'])
-					             ->where('carrier_id', 5);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 		} else {
 			$baseValidation['orders.*.plan_id']              = [
 				'numeric',
 				Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 			$baseValidation['orders.*.sim_id']               =  [
 				'numeric',
 				Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id)
-					             ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable'])
-					             ->where('carrier_id', 5);
+					return $query->where('company_id', $requestCompany->id);
 				})
 			];
 		}
@@ -316,9 +313,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany, $simId ) {
 					$query->where(
 						[
-							[ 'company_id', $requestCompany->id ],
-							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-							[ 'carrier_id', 5 ]
+							[ 'company_id', $requestCompany->id ]
 						]
 					);
 				} )->with( 'sim' )->paginate($perPage);
@@ -330,9 +325,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany ) {
 					$query->where(
 						[
-							[ 'company_id', $requestCompany->id ],
-							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-							[ 'carrier_id', 5 ]
+							[ 'company_id', $requestCompany->id ]
 						]
 					);
 				} )->with( 'sim' )->paginate($perPage);
@@ -361,7 +354,12 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where([
+							[ 'company_id', $requestCompany->id ]
+						]);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				]
 			]);
@@ -373,13 +371,20 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$sim = Sim::where('id', $request->get('sim_id'))->first();
 
-			$orderPlans = Plan::where( [
-				['company_id', $requestCompany->id],
-				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
-				['carrier_id', $sim->carrier_id]
-			] )->get();
+			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['plan'])
+			                                   ->pluck('product_id')->toArray();
 
-			return $this->respond($orderPlans);
+			if($customerProducts) {
+				$orderPlans = Plan::where( [
+					[ 'company_id', $requestCompany->id ],
+					[ 'carrier_id', $sim->carrier_id ]
+				] )->whereIn( 'id', $customerProducts )->get();
+
+				return $this->respond( $orderPlans );
+			} else {
+				return $this->respond( [] );
+			}
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in list order plans');
@@ -405,20 +410,20 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							/**
-							 * Check if the carrier is ultra mobile
-							 */
-							->where('carrier_id', 5)
-							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				],
 				'plan_id'               =>  [
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['plan']);
 					})
 				],
 				'customer_id'           => [
@@ -577,8 +582,10 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-						->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['plan']);
 					})
 				],
 				'zip_code'              => [
@@ -597,12 +604,10 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							/**
-						    * Check if the carrier is ultra mobile
-						    */
-							->where('carrier_id', 5)
-					        ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				],
 			]);

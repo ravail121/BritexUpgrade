@@ -431,12 +431,12 @@ trait BulkOrderTrait
 		$invoice = Invoice::create([
 			'customer_id'             => $customer->id,
 			'type'                    => CardController::DEFAULT_VALUE,
-			'status'                  => CardController::DEFAULT_VALUE,
+			'status'                  => Invoice::INVOICESTATUS['open'],
 			'end_date'                => $invoiceEndDate,
 			'start_date'              => $invoiceStartDate,
 			'due_date'                => $invoiceDueDate,
 			'subtotal'                => $this->totalPriceForPreview($request, $orderItems),
-			'total_due'               => '0.00',
+			'total_due'               => CardController::DEFAULT_DUE,
 			'prev_balance'            => $this->getCustomerDue($customer->id),
 			'payment_method'          => 'Bulk Order',
 			'notes'                   => $notes,
@@ -458,8 +458,7 @@ trait BulkOrderTrait
 		]);
 
 		$order->update([
-			'invoice_id'    => $invoice->id,
-			'status'        => '1'
+			'invoice_id'    => $invoice->id
 		]);
 
 		$this->invoiceItem($orderItems, $invoice, $planActivation, $itemStatus);
