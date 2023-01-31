@@ -29,6 +29,8 @@ class Kernel extends ConsoleKernel
     {
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\GeneralJobController@generalCronJob')->daily();
 
+        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\GeneralJobController@generalCronJob')->daily('01:00');
+
         // $schedule->call('App\Http\Controllers\Api\V1\CronJobs\UpdateController@checkUpdates')->daily();
 
 	    // $schedule->call('App\Http\Controllers\Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice')->dailyAt('00:02');
