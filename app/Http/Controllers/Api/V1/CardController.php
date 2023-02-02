@@ -117,30 +117,30 @@ class CardController extends BaseController implements ConstantInterface
                 'message' => $validation->getMessageBag()->all()
             ]);
         }
-        if($request->new_card==1){
-
-            $order = Order::where('customer_id', $request->customer_id)->first();
-        if ($order) {
-            $this->tran = $this->setUsaEpayData($this->tran, $request);
-            if($this->tran->Process()) {
-                
-                    $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
-	              
-                
-            } else {
-                $this->response = $this->transactionFail($order, $this->tran);
-                if($request->without_order){
-                    return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
-                }
-            }
-        } else {
-            $this->response = $this->transactionFail(null, $this->tran);
-	        if($request->without_order){
-		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+        if($request->new_card==1) {
+	        if ( $request->order_hash ) {
+		        $order = Order::where( 'hash', $request->order_hash )->first();
+	        } elseif ( $request->customer_id ) {
+		        $order = Order::where( 'customer_id', $request->customer_id )->first();
 	        }
-        }
-        return $this->respond($this->response);
+	        if ($order) {
+	            $this->tran = $this->setUsaEpayData($this->tran, $request);
+	            if($this->tran->Process()) {
+	                $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
 
+	            } else {
+	                $this->response = $this->transactionFail($order, $this->tran);
+	                if($request->without_order){
+	                    return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+	                }
+	            }
+	        } else {
+	            $this->response = $this->transactionFail(null, $this->tran);
+		        if($request->without_order){
+			        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+		        }
+	        }
+	        return $this->respond($this->response);
         }
         return $this->processTransaction($request, 'authonly');
     }
@@ -202,7 +202,12 @@ class CardController extends BaseController implements ConstantInterface
 	 */
 	protected function processTransaction($request, $command = null)
     {
-        $order = Order::where('customer_id', $request->customer_id)->first();
+	    if ($request->order_hash) {
+		    $order = Order::where('hash', $request->order_hash)->first();
+
+	    } elseif ($request->customer_id) {
+		    $order = Order::where('customer_id', $request->customer_id)->first();
+	    }
         if ($order) {
             $this->tran = $this->setUsaEpayData($this->tran, $request, $command);
             if($this->tran->Process()) {
@@ -210,18 +215,41 @@ class CardController extends BaseController implements ConstantInterface
                     $this->response = $this->transactionSuccessfulWithoutOrder($request, $this->tran);
                 }else{
                     $this->response = $this->transactionSuccessful($request, $this->tran);
-	                $data    = $this->setInvoiceData($order, $request);
-	                $invoice = Invoice::create($data);
 
-	                if ($invoice) {
-		                $orderCount = Order::where( [
-			                [ 'status', 1 ],
-			                [ 'company_id', $order->company_id ]
-		                ] )->max( 'order_num' );
+	                if($order->invoice_id) {
+		                $invoice = Invoice::find( $order->invoice_id );
+	                } else {
+		                $invoice = null;
+	                }
+
+					$credit = $this->response['credit'];
+
+	                /**
+	                 * @internal If the invoice is already created from Bulk Order System, Don't create a new invoice
+	                 */
+	                if(!$invoice) {
+		                $data    = $this->setInvoiceData($order, $request, $credit);
+		                $invoice = Invoice::create($data);
+		                if ($invoice) {
+			                $orderCount = Order::where( [
+				                [ 'status', 1 ],
+				                [ 'company_id', $order->company_id ]
+			                ] )->max( 'order_num' );
+			                $order->update( [
+				                'status'         => 1,
+				                'invoice_id'     => $invoice->id,
+				                'order_num'      => $orderCount + 1,
+				                'date_processed' => Carbon::today()
+			                ] );
+		                }
+	                } else {
+		                $invoice->update([
+			                'status'            => CardController::DEFAULT_VALUE,
+			                'subtotal'          => $credit->amount,
+			                'payment_method'    => $credit->payment_method,
+		                ]);
 		                $order->update( [
 			                'status'         => 1,
-			                'invoice_id'     => $invoice->id,
-			                'order_num'      => $orderCount + 1,
 			                'date_processed' => Carbon::today()
 		                ] );
 	                }

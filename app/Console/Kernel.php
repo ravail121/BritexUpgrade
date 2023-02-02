@@ -17,7 +17,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\ShipOrders::class
+        Commands\ShipOrders::class,
+	    Commands\UpdateTrackingNumber::class
     ];
 
     /**

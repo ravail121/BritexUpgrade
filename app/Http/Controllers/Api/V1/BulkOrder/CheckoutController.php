@@ -13,6 +13,7 @@ use App\Model\OrderGroup;
 use App\Model\Subscription;
 use App\Rules\ValidZipCode;
 use Illuminate\Http\Request;
+use App\Model\CustomerProduct;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
@@ -37,17 +38,19 @@ class CheckoutController extends BaseController implements ConstantInterface
 	public function simsForCatalogue(Request $request)
 	{
 		try {
-			$requestCompany = $request->get('company');
 
 			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 5;
+			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['sim'])
+			                                   ->pluck('product_id')->toArray();
 
-			$sims = Sim::where( [
-				['company_id', $requestCompany->id],
-				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
-				['carrier_id', 5]
-			] )->paginate($perPage);
+			if($customerProducts) {
+				$sims = Sim::whereIn( 'id', $customerProducts )->paginate( $perPage );
 
-			return $this->respond($sims);
+				return $this->respond( $sims );
+			} else {
+				return $this->respond( [] );
+			}
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in simsForCatalogue');
@@ -154,8 +157,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 	public function orderSummaryForBulkOrder(Request $request)
 	{
 		try {
-			$planActivation = $request->get('plan_activation') ?: false;
-			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
+			$orderSubscription = $request->get('plan_activation') ?: false;
+			$validation = $this->validationRequestForBulkOrder($request, $orderSubscription);
 			if($validation !== 'valid') {
 				return $validation;
 			}
@@ -163,15 +166,15 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$orderItems = $request->get( 'orders' );
 			$customer = Customer::find($request->get('customer_id'));
 
-			$subTotalWithoutSurcharge = $this->subTotalPriceForPreview($request, $orderItems, false);
+			$totalWithoutSurcharge = $this->totalPriceForPreview($request, $orderItems, false);
 
 			$output['totalPrice'] =  $this->totalPriceForPreview($request, $orderItems);
-			$output['subtotalPrice'] = $subTotalWithoutSurcharge;
+			$output['subtotalPrice'] = $this->subTotalPriceForPreview($request, $orderItems);
 			$output['monthlyCharge'] = $this->calMonthlyChargeForPreview($orderItems);
 			$output['taxes'] = $this->calTaxesForPreview($request, $orderItems);
 			$output['regulatory'] = $this->calRegulatoryForPreview($request, $orderItems);
 			$output['activationFees'] = $this->getPlanActivationPricesForPreview($orderItems);
-			$output['surcharge'] = $this->getSurchargeAmountForPreview($subTotalWithoutSurcharge, $customer);
+			$output['surcharge'] = $this->getSurchargeAmountForPreview($totalWithoutSurcharge, $customer);
 			$costBreakDown = (object) [
 				'devices'   => $this->getCostBreakDownPreviewForDevices($request, $orderItems),
 				'plans'     => $this->getCostBreakDownPreviewForPlans($request, $orderItems),
@@ -201,10 +204,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 	 *
 	 * @return \Illuminate\Http\JsonResponse|string
 	 */
-	private function validationRequestForBulkOrder($request, $planActivation)
+	private function validationRequestForBulkOrder($request, $orderSubscription)
 	{
 		$requestCompany = $request->get('company');
-		$customerId = $request->get('customer_id');
 		if ( !$requestCompany->enable_bulk_order ) {
 			$notAllowedResponse = [
 				'status' => 'error',
@@ -212,89 +214,68 @@ class CheckoutController extends BaseController implements ConstantInterface
 			];
 			return $this->respond($notAllowedResponse, 503);
 		}
-		if($planActivation){
-			/**
-			 * @internal When activating a plan, make sure sim is assigned to specified customer
-			 */
-			$simNumValidation = Rule::exists('customer_standalone_sim', 'sim_num')->where(function ($query) use ($customerId) {
-				return $query->where('status', '!=', 'closed')
-				             ->where('customer_id', $customerId);
-			});
+		$baseValidation = [
+			'customer_id'                   => [
+				'required',
+				'numeric',
+				Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			],
+			'orders'                        => 'required',
+			'orders.*.device_id'            => [
+				'numeric',
+				Rule::exists('device', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			],
+			'orders.*.subscription_id'      => [
+				'numeric',
+				Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			],
+			'orders.*.subscription_status'  => 'string',
+			'shipping_fname'                => 'string',
+			'shipping_lname'                => 'string',
+			'shipping_address1'             => 'string',
+			'shipping_address2'             => 'string',
+			'shipping_city'                 => 'string',
+			'shipping_state_id'             => 'string',
+			'shipping_zip'                  => 'numeric'
+		];
+		if($orderSubscription) {
+			$baseValidation['orders.*.plan_id']              = [
+				'required',
+				'numeric',
+				Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			];
+			$baseValidation['orders.*.sim_id']               =  [
+				'required',
+				'numeric',
+				Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			];
 		} else {
-			/**
-			 * @internal When purchasing a SIM, make sure sim is not assigned to another customer
-			 */
-			$simNumValidation =  Rule::unique('customer_standalone_sim', 'sim_num')->where(function ($query) {
-				return $query->where('status', '!=', 'closed');
-			});
+			$baseValidation['orders.*.plan_id']              = [
+				'numeric',
+				Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			];
+			$baseValidation['orders.*.sim_id']               =  [
+				'numeric',
+				Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			];
 		}
 		$validation = Validator::make(
 			$request->all(),
-			[
-				'customer_id'                   => [
-					'required',
-					'numeric',
-					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
-					})
-				],
-				'orders'                        => 'required',
-				'orders.*.device_id'            => [
-					'numeric',
-					Rule::exists('device', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
-					})
-				],
-				'orders.*.plan_id'              => [
-					'required_with:plan_activation',
-					'numeric',
-					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
-					})
-				],
-				'orders.*.sim_id'               =>  [
-					'numeric',
-					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-									->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable'])
-									->where('carrier_id', 5);
-					})
-				],
-				'orders.*.subscription_id'      => [
-					'numeric',
-					Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
-					})
-				],
-				'orders.*.sim_num'              => [
-					'required_with:plan_activation',
-					'min:11',
-					'max:20',
-					'distinct',
-					Rule::unique('subscription', 'sim_card_num')->where(function ($query)  {
-						return $query->where('status', '!=', 'closed');
-					}),
-					$simNumValidation
-				],
-				'orders.*.sim_type'             => 'string',
-				'orders.*.porting_number'       => 'string',
-				'orders.*.area_code'            => 'string',
-				'orders.*.operating_system'     => 'string',
-				'orders.*.imei_number'          => 'digits_between:14,16',
-				'orders.*.subscription_status'  => 'string',
-				'shipping_fname'                => 'string',
-				'shipping_lname'                => 'string',
-				'shipping_address1'             => 'string',
-				'shipping_address2'             => 'string',
-				'shipping_city'                 => 'string',
-				'shipping_state_id'             => 'string',
-				'shipping_zip'                  => 'numeric'
-			],
-			[
-				'orders.*.sim_num.unique'       => 'The sim with number :input is already assigned',
-				'orders.*.sim_num.exists'       => 'The sim with number :input is not assigned to this customer',
-			]
+			$baseValidation
 		);
 
 		if ( $validation->fails() ) {
@@ -332,9 +313,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany, $simId ) {
 					$query->where(
 						[
-							[ 'company_id', $requestCompany->id ],
-							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-							[ 'carrier_id', 5 ]
+							[ 'company_id', $requestCompany->id ]
 						]
 					);
 				} )->with( 'sim' )->paginate($perPage);
@@ -346,9 +325,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				] )->whereHas( 'sim', function ( $query ) use ( $requestCompany ) {
 					$query->where(
 						[
-							[ 'company_id', $requestCompany->id ],
-							[ 'show', self::SHOW_COLUMN_VALUES[ 'visible-and-orderable' ] ],
-							[ 'carrier_id', 5 ]
+							[ 'company_id', $requestCompany->id ]
 						]
 					);
 				} )->with( 'sim' )->paginate($perPage);
@@ -377,7 +354,12 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id);
+						return $query->where([
+							[ 'company_id', $requestCompany->id ]
+						]);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				]
 			]);
@@ -389,13 +371,20 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$sim = Sim::where('id', $request->get('sim_id'))->first();
 
-			$orderPlans = Plan::where( [
-				['company_id', $requestCompany->id],
-				['show', self::SHOW_COLUMN_VALUES['visible-and-orderable']],
-				['carrier_id', $sim->carrier_id]
-			] )->get();
+			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['plan'])
+			                                   ->pluck('product_id')->toArray();
 
-			return $this->respond($orderPlans);
+			if($customerProducts) {
+				$orderPlans = Plan::where( [
+					[ 'company_id', $requestCompany->id ],
+					[ 'carrier_id', $sim->carrier_id ]
+				] )->whereIn( 'id', $customerProducts )->get();
+
+				return $this->respond( $orderPlans );
+			} else {
+				return $this->respond( [] );
+			}
 
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in list order plans');
@@ -421,20 +410,20 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							/**
-							 * Check if the carrier is ultra mobile
-							 */
-							->where('carrier_id', 5)
-							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				],
 				'plan_id'               =>  [
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['plan']);
 					})
 				],
 				'customer_id'           => [
@@ -453,9 +442,14 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$customerId = $request->get('customer_id');
 
 			$customer = Customer::find($customerId);
-			$planActivation = false;
+
+			$planActivation = $request->post('plan_activation') ?: true;
 
 			$csvFile = $request->post('csv_file');
+
+			$simId = $request->get('sim_id');
+
+			$planId = $request->get('plan_id');
 
 			/**
 			 * Validate if the input file is CSV file
@@ -474,6 +468,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$csvAsArray = array_map( function ( $row ) use ( $headerRowsArray ) {
 					return array_combine( $headerRowsArray, str_getcsv( $row ) );
 				}, $csvAsArray );
+
+				$sim = Sim::find($simId);
 				foreach ( $csvAsArray as $rowIndex => $row ) {
 					$rowNumber = $rowIndex + 1;
 					if(!$this->isZipCodeValid($row['zip_code'])) {
@@ -484,8 +480,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						$error[] = "Phone number {$row['sim_num']} is not valid for row $rowNumber";
 						break;
 					}
-					$row['plan_id'] = $request->get('plan_id');
-					$row['sim_id'] = $request->get('sim_id');
+
 					$subscriptionOrders[] = $row;
 				}
 
@@ -519,14 +514,16 @@ class CheckoutController extends BaseController implements ConstantInterface
 							 * @internal Adding the for activation status in the subscription table
 							 */
 							$subscriptionOrder['subscription_status'] = Subscription::STATUS['for-activation'];
+							$subscriptionOrder['sim_type'] = $sim->name;
+							$subscriptionOrder['plan_id'] = $planId;
 							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
 
 							/**
 							 * Updating the subscription id in the customer standalone sim table
 							 */
-							if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
+							if($outputOrderItem['subscription_id'] && $simId) {
 								$customerStandAloneSim = CustomerStandaloneSim::where( [
-									[ 'sim_id', $outputOrderItem['sim_id'] ],
+									[ 'sim_id', $simId ],
 									[ 'customer_id', $customer->id ],
 									[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 									[ 'sim_num', trim($outputOrderItem['sim_num']) ]
@@ -536,7 +533,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 										'subscription_id' => $outputOrderItem[ 'subscription_id' ]
 									] );
 								} else {
-									Log::info('Customer Standalone sim record not found for SIM id'. $outputOrderItem['sim_id'], 'Error in CSV order subscriptions');
+									Log::info('Customer Standalone sim record not found for SIM id '. $simId, 'Error in CSV order subscriptions');
 								}
 							}
 
@@ -585,8 +582,10 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('plan', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-						->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['plan']);
 					})
 				],
 				'zip_code'              => [
@@ -605,12 +604,10 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'numeric',
 					'required',
 					Rule::exists('sim', 'id')->where(function ($query) use ($requestCompany) {
-						return $query->where('company_id', $requestCompany->id)
-							/**
-						    * Check if the carrier is ultra mobile
-						    */
-							->where('carrier_id', 5)
-					        ->where('show', self::SHOW_COLUMN_VALUES['visible-and-orderable']);
+						return $query->where('company_id', $requestCompany->id);
+					}),
+					Rule::exists('customer_products', 'product_id')->where(function ($query) {
+						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				],
 			]);
@@ -624,7 +621,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$customerId = $request->get('customer_id');
 
 			$customer = Customer::find($customerId);
-			$planActivation = false;
+			$planActivation = $request->post('plan_activation') ?: true;
 
 			if ($simNumbers) {
 				$simNumbers = explode(PHP_EOL, $simNumbers);
@@ -646,12 +643,16 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'order_num'         => $orderCount + 1
 				] );
 				$outputOrderItems = [];
+
+				$simId = $request->get('sim_id');
+
+				$sim = Sim::find($simId);
 				foreach ($simNumbers as $simNumber){
 					$orderGroup = OrderGroup::create( [
 						'order_id' => $order->id
 					] );
 					$subscriptionOrder = [
-						'sim_id'                => $request->get('sim_id'),
+						'sim_type'              => $sim->name,
 						'sim_num'               => trim($simNumber),
 						'plan_id'               => $request->get('plan_id'),
 						'zip_code'              => $request->get('zip_code'),
@@ -663,9 +664,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 						/**
 						 * Updating the subscription id in the customer standalone sim table
 						 */
-						if($outputOrderItem['subscription_id'] && $outputOrderItem['sim_id']) {
+						if($outputOrderItem['subscription_id'] && $simId) {
 							$customerStandAloneSim = CustomerStandaloneSim::where( [
-								[ 'sim_id', $outputOrderItem['sim_id'] ],
+								[ 'sim_id', $simId ],
 								[ 'customer_id', $customer->id ],
 								[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
 								[ 'sim_num', trim($simNumber) ]
@@ -675,7 +676,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 									'subscription_id' => $outputOrderItem[ 'subscription_id' ]
 								] );
 							} else {
-								Log::info('Customer Standalone sim record not found for SIM id'. $outputOrderItem['sim_id'], 'Error in order subscriptions');
+								Log::info('Customer Standalone sim record not found for SIM id '. $simId, 'Error in order subscriptions');
 							}
 						}
 

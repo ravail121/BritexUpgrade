@@ -105,24 +105,48 @@ class PaymentController extends BaseController implements ConstantInterface
             
             $msg = $this->transactionSuccessful($request, $this->tran);
 
-            $data    = $this->setInvoiceData($order, $msg['credit'], $request);
-            $invoice = Invoice::create($data);
+			if($order->invoice_id) {
+				$invoice = Invoice::find( $order->invoice_id );
+			} else {
+				$invoice = null;
+			}
+
+			$credit = $msg[ 'credit' ];
+
+	        /**
+	         * @internal If the invoice is already created from Bulk Order System, Don't create a new invoice
+	         */
+			if(!$invoice) {
+				$data    = $this->setInvoiceData( $order, $credit, $request );
+				$invoice = Invoice::create( $data );
+
+				if($invoice) {
+					$orderCount = Order::where( [
+						[ 'status', 1 ],
+						[ 'company_id', $order->company_id ]
+					] )->max( 'order_num' );
+					$order->update( [
+						'status'         => 1,
+						'invoice_id'     => $invoice->id,
+						'order_num'      => $orderCount + 1,
+						'date_processed' => Carbon::today()
+					] );
+				}
+			} else {
+				$invoice->update([
+					'status'            => CardController::DEFAULT_VALUE,
+					'subtotal'          => $credit->amount,
+					'payment_method'    => $credit->payment_method,
+				]);
+				$order->update( [
+					'status'         => 1,
+					'date_processed' => Carbon::today()
+				] );
+			}
             
-            $this->addCreditToInvoiceRow($invoice, $msg['credit'], $this->tran);
+            $this->addCreditToInvoiceRow($invoice, $credit, $this->tran);
 
             if ($invoice) {
-                
-                $orderCount = Order::where([
-                	['status', 1],
-	                ['company_id', $order->company_id]
-                ])->max('order_num');
-                $order->update([
-                    'status'            => 1,
-                    'invoice_id'        => $invoice->id,
-                    'order_num'         => $orderCount+1,
-                    'date_processed'    => Carbon::today()
-                ]);
-
                 $paymentLog = PaymentLog::where('order_id', $order->id);
                 $paymentLog->update(['invoice_id' => $invoice->id]);
 
@@ -140,7 +164,7 @@ class PaymentController extends BaseController implements ConstantInterface
                             $response = Eye4Fraud::send_order($order, $creditCard, $paymentLog->first());
                             $success = true;
                         }
-                    }catch(Exception $err){
+                    }catch(\Exception $err){
                         \Log::info(["Eye4Fraud error ", $err]);
                     }
                 }
