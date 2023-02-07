@@ -97,6 +97,22 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'order_num'         => $orderCount + 1
 				] );
 
+				/**
+				 * @todo Whenever shipping address is different from billing address, we need to update the customer table
+				 * @todo Update the billing address and update in the customer table
+				 */
+
+				if($request->has('billing_state_id')) {
+					$customerData['billing_state_id'] = $request->get('billing_state_id');
+					$customerData['billing_fname'] = $request->get('billing_fname');
+					$customerData['billing_lname'] = $request->get('billing_lname');
+					$customerData['billing_address1'] = $request->get('billing_address1');
+					$customerData['billing_address2'] = $request->get('billing_address2');
+					$customerData['billing_city'] = $request->get('billing_city');
+					$customerData['billing_zip'] = $request->get('billing_zip');
+					$customer->update($customerData);
+				}
+
 				$orderItems = $request->get( 'orders' );
 
 				$outputOrderItems = [];
@@ -238,11 +254,18 @@ class CheckoutController extends BaseController implements ConstantInterface
 			'orders.*.subscription_status'  => 'string',
 			'shipping_fname'                => 'string',
 			'shipping_lname'                => 'string',
-			'shipping_address1'             => 'string',
-			'shipping_address2'             => 'string',
-			'shipping_city'                 => 'string',
-			'shipping_state_id'             => 'string',
-			'shipping_zip'                  => 'numeric'
+			'shipping_address1'             => 'required|string',
+			'shipping_address2'             => 'nullable|string',
+			'shipping_city'                 => 'required|string',
+			'shipping_state_id'             => 'required|string|max:2',
+			'shipping_zip'                  => 'required|string',
+			'billing_state_id'              => 'nullable|string|max:2',
+			'billing_fname'                 => 'required_with:billing_state_id|string',
+			'billing_lname'                 => 'required_with:billing_state_id|string',
+			'billing_address1'              => 'required_with:billing_state_id|string',
+			'billing_address2'              => 'nullable|string',
+			'billing_city'                  => 'required_with:billing_state_id|string',
+			'billing_zip'		            => 'required_with:billing_state_id|string',
 		];
 		if($orderSubscription) {
 			$baseValidation['orders.*.plan_id']              = [
@@ -639,8 +662,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'shipping_address2' => $request->get('shipping_address2') ?: $customer->billing_address2,
 					'shipping_city'     => $request->get('shipping_city') ?: $customer->billing_city,
 					'shipping_state_id' => $request->get('shipping_state_id') ?: $customer->billing_state_id,
-					'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip,
-					'order_num'         => $orderCount + 1
+					'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip
 				] );
 				$outputOrderItems = [];
 
@@ -690,7 +712,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'status'  => 'success',
 					'data'    => [
 						'order_hash'    => $order->hash,
-						'order_num'     => $order->order_num,
+						'order_num'     => $orderCount
 					],
 					'message' => 'Subscription order created successfully'
 				];

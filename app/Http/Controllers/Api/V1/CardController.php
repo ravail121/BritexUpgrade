@@ -203,7 +203,7 @@ class CardController extends BaseController implements ConstantInterface
 	protected function processTransaction($request, $command = null)
     {
 	    if ($request->order_hash) {
-		    $order = Order::where('hash', $request->order_hash)->first();
+		    $order = Order::where('hash', $request->order_hash)->pendingOrders()->first();
 
 	    } elseif ($request->customer_id) {
 		    $order = Order::where('customer_id', $request->customer_id)->first();
@@ -230,26 +230,16 @@ class CardController extends BaseController implements ConstantInterface
 	                if(!$invoice) {
 		                $data    = $this->setInvoiceData($order, $request, $credit);
 		                $invoice = Invoice::create($data);
-		                if ($invoice) {
-			                $orderCount = Order::where( [
-				                [ 'status', 1 ],
-				                [ 'company_id', $order->company_id ]
-			                ] )->max( 'order_num' );
-			                $order->update( [
-				                'status'         => 1,
-				                'invoice_id'     => $invoice->id,
-				                'order_num'      => $orderCount + 1,
-				                'date_processed' => Carbon::today()
-			                ] );
-		                }
-	                } else {
-		                $invoice->update([
-			                'status'            => CardController::DEFAULT_VALUE,
-			                'subtotal'          => $credit->amount,
-			                'payment_method'    => $credit->payment_method,
-		                ]);
+	                }
+	                if ($invoice) {
+		                $orderCount = Order::where( [
+			                [ 'status', 1 ],
+			                [ 'company_id', $order->company_id ]
+		                ] )->max( 'order_num' );
 		                $order->update( [
 			                'status'         => 1,
+			                'invoice_id'     => $invoice->id,
+			                'order_num'      => $orderCount + 1,
 			                'date_processed' => Carbon::today()
 		                ] );
 	                }
@@ -262,11 +252,7 @@ class CardController extends BaseController implements ConstantInterface
                 }
             }
         } else {
-			$cardDetails = $this->getCustomerCard($request);
-            $this->response = $this->transactionFail(null, $this->tran, $cardDetails);
-	        if($request->without_order){
-		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
-	        }
+	        return response()->json(['message' => 'Pending Order Not Found for the order hash'], 400);
         }
         return $this->respond($this->response);
     }

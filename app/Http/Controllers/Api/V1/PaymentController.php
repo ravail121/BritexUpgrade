@@ -98,29 +98,32 @@ class PaymentController extends BaseController implements ConstantInterface
 
 
         $order = Order::hash($request->order_hash)->first();
-        
-        $this->tran = $this->setUsaEpayData($this->tran, $request);
 
-        if($this->tran->Process()) {
-            
-            $msg = $this->transactionSuccessful($request, $this->tran);
+		if($order) {
 
-			if($order->invoice_id) {
-				$invoice = Invoice::find( $order->invoice_id );
-			} else {
-				$invoice = null;
-			}
+			$this->tran = $this->setUsaEpayData( $this->tran, $request );
 
-			$credit = $msg[ 'credit' ];
+			if ( $this->tran->Process() ) {
 
-	        /**
-	         * @internal If the invoice is already created from Bulk Order System, Don't create a new invoice
-	         */
-			if(!$invoice) {
-				$data    = $this->setInvoiceData( $order, $credit, $request );
-				$invoice = Invoice::create( $data );
+				$msg = $this->transactionSuccessful( $request, $this->tran );
 
-				if($invoice) {
+				if ( $order->invoice_id ) {
+					$invoice = Invoice::find( $order->invoice_id );
+				} else {
+					$invoice = null;
+				}
+
+				$credit = $msg[ 'credit' ];
+
+				/**
+				 * @internal If the invoice is already created from Bulk Order System, Don't create a new invoice
+				 */
+				if ( ! $invoice ) {
+					$data    = $this->setInvoiceData( $order, $credit, $request );
+					$invoice = Invoice::create( $data );
+				}
+
+				if ( $invoice ) {
 					$orderCount = Order::where( [
 						[ 'status', 1 ],
 						[ 'company_id', $order->company_id ]
@@ -132,52 +135,46 @@ class PaymentController extends BaseController implements ConstantInterface
 						'date_processed' => Carbon::today()
 					] );
 				}
+
+				$this->addCreditToInvoiceRow( $invoice, $credit, $this->tran );
+
+				if ( $invoice ) {
+					$paymentLog = PaymentLog::where( 'order_id', $order->id );
+					$paymentLog->update( [ 'invoice_id' => $invoice->id ] );
+
+					/* start send to Ey4Fraud */
+					if ( $order->company_id == 3 ) {
+						try {
+							$has_device = false;
+							foreach ( $order->allOrderGroup as $og ) {
+								if ( $og->device_id > 0 ) {
+									$has_device = true;
+									break;
+								}
+							}
+							if ( $has_device ) {
+								$response = Eye4Fraud::send_order( $order, $creditCard, $paymentLog->first() );
+								$success  = true;
+							}
+						} catch ( \Exception $err ) {
+							\Log::info( [ "Eye4Fraud error ", $err ] );
+						}
+					}
+					/* end send to Ey4Fraud */
+
+				} else {
+					$msg = $this->respond( [
+						'invoice' => 'Failed to generate invoice.'
+					] );
+				}
 			} else {
-				$invoice->update([
-					'status'            => CardController::DEFAULT_VALUE,
-					'subtotal'          => $credit->amount,
-					'payment_method'    => $credit->payment_method,
-				]);
-				$order->update( [
-					'status'         => 1,
-					'date_processed' => Carbon::today()
-				] );
+				$msg = $this->transactionFail( $order, $this->tran );
 			}
-            
-            $this->addCreditToInvoiceRow($invoice, $credit, $this->tran);
-
-            if ($invoice) {
-                $paymentLog = PaymentLog::where('order_id', $order->id);
-                $paymentLog->update(['invoice_id' => $invoice->id]);
-
-                /* start send to Ey4Fraud */
-                if($order->company_id == 3){
-                    try{
-                        $has_device = false;
-                        foreach ($order->allOrderGroup as $og) {
-                            if($og->device_id > 0){
-                                $has_device = true;
-                                break;
-                            }
-                        }
-                        if($has_device){
-                            $response = Eye4Fraud::send_order($order, $creditCard, $paymentLog->first());
-                            $success = true;
-                        }
-                    }catch(\Exception $err){
-                        \Log::info(["Eye4Fraud error ", $err]);
-                    }
-                }
-                /* end send to Ey4Fraud */
-
-            } else {
-                $msg = $this->respond([
-                    'invoice' => 'Failed to generate invoice.'
-                ]);
-            }
-        } else {
-            $msg = $this->transactionFail($order, $this->tran); 
-        }
+		} else {
+			return $this->respond( [
+				'message' => 'Pending Order Not Found for the order hash'
+			], 400 );
+		}
 
         return $this->respond($msg); 
     }
