@@ -27,9 +27,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\APICallController@callAuthentication')->everyTwoHours()->between('01:00', '24:00');
+        // $schedule->call('App\Http\Controllers\Api\V1\CronJobs\APICallController@callAuthentication')->everyTwoHours()->between('01:00', '24:00');
         
-        $schedule->call('App\Http\Controllers\Api\V1\CronJobs\APICallController@getPlans')->everyTwoHours(15)->between('01:00', '24:00');
+        // $schedule->call('App\Http\Controllers\Api\V1\CronJobs\APICallController@getPlans')->everyTwoHours(15)->between('01:00', '24:00');
 
         $schedule->call('App\Http\Controllers\Api\V1\CronJobs\UpdateController@checkUpdates')->daily();
 
