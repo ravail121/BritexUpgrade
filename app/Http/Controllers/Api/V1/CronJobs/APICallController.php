@@ -31,6 +31,7 @@ class APICallController extends Controller
         echo 'Done';
     }
     public function getPlans(){
+        ini_set('max_execution_time', 18000);
         $telitUsage = TelitUsageData::get();
         $authResponse = $this->authentication();
         $authResponse = json_decode($authResponse);
