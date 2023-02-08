@@ -661,6 +661,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.generate-one-time-invoice',
 			'uses' => 'BulkOrder\CheckoutController@generateOneTimeInvoice'
 		]);
+
+		Route::post('/close-lines', [
+			'as'   => 'api.bulk.order.close-lines',
+			'uses' => 'BulkOrder\CheckoutController@closeLines'
+		]);
 	});
 
 	/**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
+use Carbon\Carbon;
 use Validator;
 use App\Model\Sim;
 use App\Model\Plan;
@@ -480,11 +481,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					$rowNumber = $rowIndex + 1;
 					if(!$this->isZipCodeValid($row['zip_code'])) {
 						$error[] = "Zip code {$row['zip_code']} is not valid for row $rowNumber";
-						break;
 					}
 					if(!$this->simNumberExistsForCustomer($row['sim_num'], $customer)) {
 						$error[] = "Phone number {$row['sim_num']} is not valid for row $rowNumber";
-						break;
 					}
 
 					$subscriptionOrders[] = $row;
@@ -629,84 +628,100 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$customerId = $request->get('customer_id');
 
 			$customer = Customer::find($customerId);
-			$planActivation = $request->post('plan_activation') ?: true;
+
+			$error = [];
 
 			if ($simNumbers) {
 				$simNumbers = explode(PHP_EOL, $simNumbers);
-				/**
-				 * Create new row in order table if the order is not for plan activation
-				 */
-				$order = Order::create( [
-					'hash'              => sha1( time() . rand() ),
-					'company_id'        => $request->get( 'company' )->id,
-					'customer_id'       => $customerId,
-					'shipping_fname'    => $request->get('shipping_fname') ?: $customer->billing_fname,
-					'shipping_lname'    => $request->get('shipping_lname') ?: $customer->billing_lname,
-					'shipping_address1' => $request->get('shipping_address1') ?: $customer->billing_address1,
-					'shipping_address2' => $request->get('shipping_address2') ?: $customer->billing_address2,
-					'shipping_city'     => $request->get('shipping_city') ?: $customer->billing_city,
-					'shipping_state_id' => $request->get('shipping_state_id') ?: $customer->billing_state_id,
-					'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip
-				] );
 
-				if($request->has('billing_state_id')) {
-					$customerData['billing_state_id'] = $request->get('billing_state_id');
-					$customerData['billing_fname'] = $request->get('billing_fname');
-					$customerData['billing_lname'] = $request->get('billing_lname');
-					$customerData['billing_address1'] = $request->get('billing_address1');
-					$customerData['billing_address2'] = $request->get('billing_address2');
-					$customerData['billing_city'] = $request->get('billing_city');
-					$customerData['billing_zip'] = $request->get('billing_zip');
-					$customer->update($customerData);
-				}
+				foreach ($simNumbers as $rowIndex => $simNumber) {
+					$rowNumber = $rowIndex + 1;
 
-				$simId = $request->get('sim_id');
-
-				$sim = Sim::find($simId);
-				foreach ($simNumbers as $simNumber){
-					$orderGroup = OrderGroup::create( [
-						'order_id' => $order->id
-					] );
-					$subscriptionOrder = [
-						'sim_type'              => $sim->name,
-						'sim_num'               => trim($simNumber),
-						'plan_id'               => $request->get('plan_id'),
-						'zip_code'              => $request->get('zip_code'),
-						'subscription_status'   => Subscription::STATUS['for-activation']
-					];
-					if($orderGroup) {
-						$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
-
-						/**
-						 * Updating the subscription id in the customer standalone sim table
-						 */
-						if($outputOrderItem['subscription_id'] && $simId) {
-							$customerStandAloneSim = CustomerStandaloneSim::where( [
-								[ 'sim_id', $simId ],
-								[ 'customer_id', $customer->id ],
-								[ 'status', CustomerStandaloneSim::STATUS['complete'] ],
-								[ 'sim_num', trim($simNumber) ]
-							] )->whereNull('subscription_id')->first();
-							if($customerStandAloneSim) {
-								$customerStandAloneSim->update( [
-									'subscription_id' => $outputOrderItem[ 'subscription_id' ]
-								] );
-							} else {
-								Log::info('Customer Standalone sim record not found for SIM id '. $simId, 'Error in order subscriptions');
-							}
-						}
-
+					if ( !$this->simNumberExistsForCustomer( $simNumber, $customer ) ) {
+						$error[] = "Phone number {$simNumber} is not valid for row $rowNumber";
 					}
 				}
 
-				$successResponse = [
-					'status'  => 'success',
-					'data'    => [
-						'order_hash'    => $order->hash
-					],
-					'message' => 'Subscription order created successfully'
-				];
-				return $this->respond($successResponse);
+				if($error) {
+					return $this->respondError( $error, 422 );
+				} else {
+					/**
+					 * Create new row in order table if the order is not for plan activation
+					 */
+					$order = Order::create( [
+						'hash'              => sha1( time() . rand() ),
+						'company_id'        => $request->get( 'company' )->id,
+						'customer_id'       => $customerId,
+						'shipping_fname'    => $request->get( 'shipping_fname' ) ?: $customer->billing_fname,
+						'shipping_lname'    => $request->get( 'shipping_lname' ) ?: $customer->billing_lname,
+						'shipping_address1' => $request->get( 'shipping_address1' ) ?: $customer->billing_address1,
+						'shipping_address2' => $request->get( 'shipping_address2' ) ?: $customer->billing_address2,
+						'shipping_city'     => $request->get( 'shipping_city' ) ?: $customer->billing_city,
+						'shipping_state_id' => $request->get( 'shipping_state_id' ) ?: $customer->billing_state_id,
+						'shipping_zip'      => $request->get( 'shipping_zip' ) ?: $customer->billing_zip
+					] );
+
+					if ( $request->has( 'billing_state_id' ) ) {
+						$customerData[ 'billing_state_id' ] = $request->get( 'billing_state_id' );
+						$customerData[ 'billing_fname' ]    = $request->get( 'billing_fname' );
+						$customerData[ 'billing_lname' ]    = $request->get( 'billing_lname' );
+						$customerData[ 'billing_address1' ] = $request->get( 'billing_address1' );
+						$customerData[ 'billing_address2' ] = $request->get( 'billing_address2' );
+						$customerData[ 'billing_city' ]     = $request->get( 'billing_city' );
+						$customerData[ 'billing_zip' ]      = $request->get( 'billing_zip' );
+						$customer->update( $customerData );
+					}
+
+					$simId = $request->get( 'sim_id' );
+
+					$sim = Sim::find( $simId );
+					foreach ( $simNumbers as $simNumber ) {
+
+						$orderGroup        = OrderGroup::create( [
+							'order_id' => $order->id
+						] );
+						$subscriptionOrder = [
+							'sim_type'            => $sim->name,
+							'sim_num'             => trim( $simNumber ),
+							'plan_id'             => $request->get( 'plan_id' ),
+							'zip_code'            => $request->get( 'zip_code' ),
+							'subscription_status' => Subscription::STATUS[ 'for-activation' ]
+						];
+						if ( $orderGroup ) {
+							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
+
+							/**
+							 * Updating the subscription id in the customer standalone sim table
+							 */
+							if ( $outputOrderItem[ 'subscription_id' ] && $simId ) {
+								$customerStandAloneSim = CustomerStandaloneSim::where( [
+									[ 'sim_id', $simId ],
+									[ 'customer_id', $customer->id ],
+									[ 'status', CustomerStandaloneSim::STATUS[ 'complete' ] ],
+									[ 'sim_num', trim( $simNumber ) ]
+								] )->whereNull( 'subscription_id' )->first();
+								if ( $customerStandAloneSim ) {
+									$customerStandAloneSim->update( [
+										'subscription_id' => $outputOrderItem[ 'subscription_id' ]
+									] );
+								} else {
+									Log::info( 'Customer Standalone sim record not found for SIM id ' . $simId, 'Error in order subscriptions' );
+								}
+							}
+
+						}
+					}
+
+					$successResponse = [
+						'status'  => 'success',
+						'data'    => [
+							'order_hash' => $order->hash
+						],
+						'message' => 'Subscription order created successfully'
+					];
+
+					return $this->respond( $successResponse );
+				}
 			} else {
 				Log::info('Sim Numbers not added', 'Error in order subscriptions');
 				return $this->respondError('Sim Numbers not added');
@@ -916,6 +931,78 @@ class CheckoutController extends BaseController implements ConstantInterface
 			Log::info( $e->getMessage(), 'Error in create bulk one time invoice' );
 
 			return $this->respondError( $e->getMessage() );
+		}
+	}
+
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function closeLines(Request $request)
+	{
+		$requestCompany = $request->get('company');
+
+		$customerId = $request->get('customer_id');
+		try{
+			$validation = Validator::make($request->all(), [
+				'customer_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'sim_num'              => [
+					'required',
+					'min:11',
+					'max:20',
+					'distinct',
+					Rule::exists('subscription', 'sim_card_num')->where(function ($query) use ($requestCompany, $customerId) {
+						return $query->where('status', '!=', Subscription::STATUS['closed'])
+						             ->where('company_id', $requestCompany->id)
+									 ->where('customer_id', $customerId);
+					})
+				]],
+				[
+					'sim_num.exists'       => 'The sim with number :input is not assigned',
+				]
+			);
+
+			if ( $validation->fails() ) {
+				$errors = $validation->errors();
+				$validationErrorResponse = [
+					'status' => 'error',
+					'data'   => $errors->messages()
+				];
+				return $this->respond($validationErrorResponse, 422);
+			}
+
+			$activeSubscription = Subscription::where([
+				['status', '!=', Subscription::STATUS['closed']],
+				['sim_card_num', $request->get('sim_num')]
+			])->first();
+			if($activeSubscription) {
+				$activeSubscription->update([
+					'status'        => Subscription::STATUS['closed'],
+					'sub_status'    => Subscription::SUB_STATUSES['confirm-closing'],
+					'closed_date'   => Carbon::now()
+				]);
+			}
+
+			$successResponse = [
+				'status'    => 'success',
+				'data'      => 'Lines closed successfully for sim number '. $request->get('sim_num')
+			];
+			return $this->respond($successResponse);
+		} catch(\Exception $e) {
+			Log::info( $e->getMessage(), 'Close Subscription for bulk order' );
+			$response = [
+				'status' => 'error',
+				'data'   => $e->getMessage()
+			];
+			return $this->respondError( $response );
 		}
 	}
 
