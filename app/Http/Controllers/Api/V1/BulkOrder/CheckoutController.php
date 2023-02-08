@@ -898,7 +898,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$this->createInvoice( $request, $order, $orderGroups, $planActivation, $hasSubscription, $itemStatus, 'Bulk Order' );
 
 				$outputOrder = [
-					'hash'                  => $order->hash,
+					'order_hash'            => $order->hash,
 					'status'                => $order->status,
 					'order_num'             => $order->order_num,
 					'total'                 => $order->invoice ? $order->invoice->cal_total_charges : null
