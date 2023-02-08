@@ -635,6 +635,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$simNumbers = explode(PHP_EOL, $simNumbers);
 
 				foreach ($simNumbers as $rowIndex => $simNumber) {
+					$simNumber = trim( $simNumber );
 					$rowNumber = $rowIndex + 1;
 
 					if ( !$this->simNumberExistsForCustomer( $simNumber, $customer ) ) {
