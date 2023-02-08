@@ -21,6 +21,11 @@ Route::get('/', function (Request $request) {
 	], 200);
 });
 
+// Route::get('/test-general-job', [
+// 	'as'=>'api.cron.general',
+// 	'uses'=> 'Api\V1\CronJobs\GeneralJobController@generalCronJob',
+// ]);
+
 Route::get('/test', [
 	'as'=>'api.cron.data.usage2',
 	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData2',
@@ -74,6 +79,15 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 
 Route::middleware('APIToken')->group(function () {
+	Route::get('/get-sims', [
+		'as'=>'api.cron.auth',
+		'uses'=> 'Api\V1\CronJobs\APICallController@callAuthentication',
+	]);
+	Route::get('/get-plans', [
+		'as'=>'api.cron.plans',
+		'uses'=> 'Api\V1\CronJobs\APICallController@getPlans',
+	]);
+
 	// Orders API
 	Route::group(['prefix' => 'order', 'namespace' => 'Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
 	{
