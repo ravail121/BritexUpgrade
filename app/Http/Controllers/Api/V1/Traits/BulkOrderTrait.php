@@ -420,46 +420,57 @@ trait BulkOrderTrait
 	{
 		$notes = $notes ?: 'Bulk Order | Without Payment';
 		$customer = Customer::find($request->get('customer_id'));
-		$order = Order::whereHash($order->hash)->first();
 		if($hasSubscription) {
 			$this->updateCustomerDates( $customer );
 		}
-		$invoiceStartDate = $this->getInvoiceDates($customer);
-		$invoiceEndDate = $this->getInvoiceDates($customer, 'end_date');
-		$invoiceDueDate = $this->getInvoiceDates($customer, 'due_date', true);
 
-		$invoice = Invoice::create([
-			'customer_id'             => $customer->id,
-			'type'                    => CardController::DEFAULT_VALUE,
-			'status'                  => Invoice::INVOICESTATUS['open'],
-			'end_date'                => $invoiceEndDate,
-			'start_date'              => $invoiceStartDate,
-			'due_date'                => $invoiceDueDate,
-			'subtotal'                => $this->totalPriceForPreview($request, $orderItems),
-			'total_due'               => CardController::DEFAULT_DUE,
-			'prev_balance'            => $this->getCustomerDue($customer->id),
-			'payment_method'          => 'Bulk Order',
-			'notes'                   => $notes,
-			'business_name'           => $customer->company_name,
-			'billing_fname'           => $customer->billing_fname ?: $customer->fname,
-			'billing_lname'           => $customer->billing_lname ?: $customer->lname,
-			'billing_address_line_1'  => $customer->billing_address1,
-			'billing_address_line_2'  => $customer->billing_address2,
-			'billing_city'            => $customer->billing_city,
-			'billing_state'           => $customer->billing_state_id,
-			'billing_zip'             => $customer->billing_zip,
-			'shipping_fname'          => $order->shipping_fname ?: $customer->fname,
-			'shipping_lname'          => $order->shipping_lname ?: $customer->lname,
-			'shipping_address_line_1' => $order->shipping_address1,
-			'shipping_address_line_2' => $order->shipping_address2,
-			'shipping_city'           => $order->shipping_city,
-			'shipping_state'          => $order->shipping_state_id,
-			'shipping_zip'            => $order->shipping_zip
-		]);
+		if(!$order->invoice_id) {
+			$invoiceStartDate = $this->getInvoiceDates( $customer );
+			$invoiceEndDate   = $this->getInvoiceDates( $customer, 'end_date' );
+			$invoiceDueDate   = $this->getInvoiceDates( $customer, 'due_date', true );
 
-		$order->update([
-			'invoice_id'    => $invoice->id
-		]);
+			$invoice = Invoice::create( [
+				'customer_id'             => $customer->id,
+				'type'                    => CardController::DEFAULT_VALUE,
+				'status'                  => Invoice::INVOICESTATUS[ 'open' ],
+				'end_date'                => $invoiceEndDate,
+				'start_date'              => $invoiceStartDate,
+				'due_date'                => $invoiceDueDate,
+				'subtotal'                => $this->totalPriceForPreview( $request, $orderItems ),
+				'total_due'               => CardController::DEFAULT_DUE,
+				'prev_balance'            => $this->getCustomerDue( $customer->id ),
+				'payment_method'          => 'Bulk Order',
+				'notes'                   => $notes,
+				'business_name'           => $customer->company_name,
+				'billing_fname'           => $customer->billing_fname ?: $customer->fname,
+				'billing_lname'           => $customer->billing_lname ?: $customer->lname,
+				'billing_address_line_1'  => $customer->billing_address1,
+				'billing_address_line_2'  => $customer->billing_address2,
+				'billing_city'            => $customer->billing_city,
+				'billing_state'           => $customer->billing_state_id,
+				'billing_zip'             => $customer->billing_zip,
+				'shipping_fname'          => $order->shipping_fname ?: $customer->fname,
+				'shipping_lname'          => $order->shipping_lname ?: $customer->lname,
+				'shipping_address_line_1' => $order->shipping_address1,
+				'shipping_address_line_2' => $order->shipping_address2,
+				'shipping_city'           => $order->shipping_city,
+				'shipping_state'          => $order->shipping_state_id,
+				'shipping_zip'            => $order->shipping_zip
+			] );
+
+			$orderCount = Order::where( [
+				[ 'status', 1 ],
+				[ 'company_id', $customer->company_id ]
+			] )->max( 'order_num' );
+
+			$order->update( [
+				'invoice_id' => $invoice->id,
+				'status'     => '1',
+				'order_num'  => $orderCount + 1,
+			] );
+		} else {
+			$invoice = Invoice::find($order->invoice_id);
+		}
 
 		$this->invoiceItem($orderItems, $invoice, $planActivation, $itemStatus);
 
@@ -531,9 +542,7 @@ trait BulkOrderTrait
 						'imei'      => $orderItem['imei_number'] ?? 'null'
 					];
 				}
-
 			}
-
 		}
 		if(!empty($subscriptionIds)){
 			$this->subscriptionInvoiceItem($subscriptionIds, $invoice, $planActivation, $order);

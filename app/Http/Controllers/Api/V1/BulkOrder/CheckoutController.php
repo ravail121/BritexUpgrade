@@ -93,14 +93,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'shipping_address2' => $request->get('shipping_address2') ?: $customer->billing_address2,
 					'shipping_city'     => $request->get('shipping_city') ?: $customer->billing_city,
 					'shipping_state_id' => $request->get('shipping_state_id') ?: $customer->billing_state_id,
-					'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip,
-					'order_num'         => $orderCount + 1
+					'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip
 				] );
-
-				/**
-				 * @todo Whenever shipping address is different from billing address, we need to update the customer table
-				 * @todo Update the billing address and update in the customer table
-				 */
 
 				if($request->has('billing_state_id')) {
 					$customerData['billing_state_id'] = $request->get('billing_state_id');
@@ -115,9 +109,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 				$orderItems = $request->get( 'orders' );
 
-				$outputOrderItems = [];
-				$hasSubscription = false;
-
 				foreach ( $orderItems as $orderItem ) {
 					$order_group = null;
 					$paidMonthlyInvoice = isset( $orderItem[ 'paid_monthly_invoice' ] ) ? $orderItem[ 'paid_monthly_invoice' ] : null;
@@ -126,29 +117,21 @@ class CheckoutController extends BaseController implements ConstantInterface
 					] );
 
 					if($order_group) {
-						$outputOrderItem = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
+						$this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
 						if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
 							$monthly_order_group = OrderGroup::create( [
 								'order_id' => $order->id
 							] );
-							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
+							$this->insertOrderGroupForBulkOrder( $orderItem, $order, $monthly_order_group, 1 );
 						}
-						if(isset($outputOrderItem['subscription_id'])){
-							$hasSubscription = true;
-						}
-						$outputOrderItems[] = $outputOrderItem;
 					}
-				}
-				if($order) {
-					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, $hasSubscription, 'shipping', 'Bulk Order');
 				}
 				return $order;
 			});
 			$successResponse = [
 				'status'  => 'success',
 				'data'    => [
-					'order_hash'    => $orderTransaction ? $orderTransaction->hash : null,
-					'order_num'     => $orderTransaction ? $orderTransaction->order_num : null
+					'order_hash'    => $orderTransaction ? $orderTransaction->hash : null
 				],
 				'message' => 'Order created successfully'
 			];
@@ -510,7 +493,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 				if($error) {
 					return $this->respondError($error, 422);
 				} else {
-					$orderCount = $this->getOrderCount($customer);
 					/**
 					 * Create new row in order table if the order is not for plan activation
 					 */
@@ -524,10 +506,19 @@ class CheckoutController extends BaseController implements ConstantInterface
 						'shipping_address2' => $request->get('shipping_address2') ?: $customer->billing_address2,
 						'shipping_city'     => $request->get('shipping_city') ?: $customer->billing_city,
 						'shipping_state_id' => $request->get('shipping_state_id') ?: $customer->billing_state_id,
-						'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip,
-						'order_num'         => $orderCount + 1
+						'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip
 					] );
-					$outputOrderItems = [];
+
+					if($request->has('billing_state_id')) {
+						$customerData['billing_state_id'] = $request->get('billing_state_id');
+						$customerData['billing_fname'] = $request->get('billing_fname');
+						$customerData['billing_lname'] = $request->get('billing_lname');
+						$customerData['billing_address1'] = $request->get('billing_address1');
+						$customerData['billing_address2'] = $request->get('billing_address2');
+						$customerData['billing_city'] = $request->get('billing_city');
+						$customerData['billing_zip'] = $request->get('billing_zip');
+						$customer->update($customerData);
+					}
 					foreach ($subscriptionOrders as $subscriptionOrder){
 						$orderGroup = OrderGroup::create( [
 							'order_id' => $order->id
@@ -559,19 +550,13 @@ class CheckoutController extends BaseController implements ConstantInterface
 									Log::info('Customer Standalone sim record not found for SIM id '. $simId, 'Error in CSV order subscriptions');
 								}
 							}
-
-							$outputOrderItems[] = $outputOrderItem;
 						}
 					}
-				}
-				if($order) {
-					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true, null, 'Bulk Order');
 				}
 				$successResponse = [
 					'status'  => 'success',
 					'data'    => [
-						'order_hash'    => $order->hash,
-						'order_num'     => $order->order_num,
+						'order_hash'    => $order->hash
 					],
 					'message' => 'Subscription order created successfully'
 				];
@@ -648,7 +633,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			if ($simNumbers) {
 				$simNumbers = explode(PHP_EOL, $simNumbers);
-				$orderCount = $this->getOrderCount($customer);
 				/**
 				 * Create new row in order table if the order is not for plan activation
 				 */
@@ -664,7 +648,17 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'shipping_state_id' => $request->get('shipping_state_id') ?: $customer->billing_state_id,
 					'shipping_zip'      => $request->get('shipping_zip') ?: $customer->billing_zip
 				] );
-				$outputOrderItems = [];
+
+				if($request->has('billing_state_id')) {
+					$customerData['billing_state_id'] = $request->get('billing_state_id');
+					$customerData['billing_fname'] = $request->get('billing_fname');
+					$customerData['billing_lname'] = $request->get('billing_lname');
+					$customerData['billing_address1'] = $request->get('billing_address1');
+					$customerData['billing_address2'] = $request->get('billing_address2');
+					$customerData['billing_city'] = $request->get('billing_city');
+					$customerData['billing_zip'] = $request->get('billing_zip');
+					$customer->update($customerData);
+				}
 
 				$simId = $request->get('sim_id');
 
@@ -702,17 +696,13 @@ class CheckoutController extends BaseController implements ConstantInterface
 							}
 						}
 
-						$outputOrderItems[] = $outputOrderItem;
 					}
 				}
-				if($order) {
-					$this->createInvoice($request, $order, $outputOrderItems, $planActivation, true, null, 'Bulk Order');
-				}
+
 				$successResponse = [
 					'status'  => 'success',
 					'data'    => [
-						'order_hash'    => $order->hash,
-						'order_num'     => $orderCount
+						'order_hash'    => $order->hash
 					],
 					'message' => 'Subscription order created successfully'
 				];
@@ -721,7 +711,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 				Log::info('Sim Numbers not added', 'Error in order subscriptions');
 				return $this->respondError('Sim Numbers not added');
 			}
-
 		} catch(\Exception $e) {
 			Log::info($e->getMessage(), 'Error in order subscriptions');
 			return $this->respondError($e->getMessage());
@@ -856,4 +845,78 @@ class CheckoutController extends BaseController implements ConstantInterface
 			['customer_id', $customer->id]
 		])->exists();
 	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|void
+	 */
+	public function generateOneTimeInvoice(Request $request) {
+		try {
+			$requestCompany = $request->get( 'company' );
+
+			$planActivation = $request->get( 'plan_activation' ) ?: false;
+
+			$validator = Validator::make( $request->all(), [
+				'customer_id' => [
+					'numeric',
+					'required',
+					Rule::exists( 'customer', 'id' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} )
+				],
+				'order_hash'  => [
+					'required',
+					Rule::exists( 'order', 'hash' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} )
+				]
+			] );
+
+			if ( $validator->fails() ) {
+				$errors = $validator->errors();
+
+				return $this->respondError( $errors->messages(), 422 );
+			}
+
+			$order = Order::where( 'hash', $request->order_hash )->first();
+
+			$hasSubscription = (bool) $planActivation;
+
+			$itemStatus = ! $planActivation ? 'shipping' : null;
+
+			if ( $order ) {
+				$orderGroups = $order->orderGroup()->get();
+				if ( ! $planActivation ) {
+					foreach ( $orderGroups as $orderGroup ) {
+						if ( $orderGroup->subscription_id ) {
+							$hasSubscription = true;
+							break;
+						}
+					}
+				}
+				$this->createInvoice( $request, $order, $orderGroups, $planActivation, $hasSubscription, $itemStatus, 'Bulk Order' );
+
+				$outputOrder = [
+					'hash'                  => $order->hash,
+					'status'                => $order->status,
+					'order_num'             => $order->order_num,
+					'total'                 => $order->invoice ? $order->invoice->cal_total_charges : null
+				];
+
+				$successResponse = [
+					'status'  => 'success',
+					'data'    => $outputOrder
+				];
+				return $this->respond($successResponse);
+			} else {
+				return $this->respondError( 'Order not found', 404 );
+			}
+		} catch ( \Exception $e ) {
+			Log::info( $e->getMessage(), 'Error in create bulk one time invoice' );
+
+			return $this->respondError( $e->getMessage() );
+		}
+	}
+
 }

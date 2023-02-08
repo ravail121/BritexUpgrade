@@ -215,9 +215,11 @@ class Invoice extends Model implements ConstantInterface
         $total = [];
         array_push($total, $this->cal_taxes);
         array_push($total, $this->cal_service_charges);
+	    array_push($total, $this->cal_surcharge);
         $discount = $this->cal_credits;
 
         $totalCharges = array_sum($total);
+
         return self::toTwoDecimals($totalCharges - $discount);
     }
 

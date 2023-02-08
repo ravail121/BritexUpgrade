@@ -203,7 +203,7 @@ class CardController extends BaseController implements ConstantInterface
 	protected function processTransaction($request, $command = null)
     {
 	    if ($request->order_hash) {
-		    $order = Order::where('hash', $request->order_hash)->pendingOrders()->first();
+		    $order = Order::where('hash', $request->order_hash)->first();
 
 	    } elseif ($request->customer_id) {
 		    $order = Order::where('customer_id', $request->customer_id)->first();

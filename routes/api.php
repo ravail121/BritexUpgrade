@@ -656,6 +656,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.get-orders',
 			'uses' => 'BulkOrder\CheckoutController@getOrders'
 		]);
+
+		Route::post('/generate-one-time-invoice', [
+			'as'   => 'api.bulk.order.generate-one-time-invoice',
+			'uses' => 'BulkOrder\CheckoutController@generateOneTimeInvoice'
+		]);
 	});
 
 	/**
