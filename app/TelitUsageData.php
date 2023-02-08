@@ -2,10 +2,13 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TelitUsageData extends Model
 {
-    use HasFactory;
+    public $table = 'telit_usage_data';
+
+    protected $fillable = [
+        'iccid', 'carrier', 'status', 'dateActivated', 'usageData', 'usageSms', 'usageVoice'
+    ];
 }
