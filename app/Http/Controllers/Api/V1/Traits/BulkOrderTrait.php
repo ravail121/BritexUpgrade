@@ -711,28 +711,30 @@ trait BulkOrderTrait
 			'start_date'        => $invoice->start_date,
 		];
 
-		foreach ($standAloneDevices as $standAloneDevice) {
-			CustomerStandaloneDevice::create([
-				'customer_id'   => $invoice->customer_id,
-				'order_id'      => $invoice->order->id,
-				'order_num'     => $invoice->order->order_num,
-				/**
-				 * @internal since these are bulk orders, we don't want these
-				 * to go into shipping status, set a special rule for these lines to complete
-				 */
-				'status'        => $itemStatus ?: CustomerStandaloneDevice::STATUS['complete'],
-				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
-				'device_id'     => $standAloneDevice->id,
-				'imei'          => $standAloneDevice->imei
-			]);
-			$device           = Device::find($standAloneDevice->id);
-			$invoiceItemArray['product_id'] = $device->id;
-			$invoiceItemArray['type'] = 3;
-			$invoiceItemArray['amount'] = $device->amount;
-			$invoiceItemArray['taxable'] = $device->taxable;
-			$invoiceItemArray['description'] = '';
-			$invoiceItem = InvoiceItem::create($invoiceItemArray);
-			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::DEVICE_TYPE);
+		if($standAloneDevices->count() > 0) {
+			foreach ( $standAloneDevices as $standAloneDevice ) {
+				CustomerStandaloneDevice::create( [
+					'customer_id' => $invoice->customer_id,
+					'order_id'    => $invoice->order->id,
+					'order_num'   => $invoice->order->order_num,
+					/**
+					 * @internal since these are bulk orders, we don't want these
+					 * to go into shipping status, set a special rule for these lines to complete
+					 */
+					'status'      => $itemStatus ?: CustomerStandaloneDevice::STATUS[ 'complete' ],
+					'processed'   => StandaloneRecordController::DEFAULT_PROSSED,
+					'device_id'   => $standAloneDevice->id,
+					'imei'        => $standAloneDevice->imei
+				] );
+				$device                            = Device::find( $standAloneDevice->id );
+				$invoiceItemArray[ 'product_id' ]  = $device->id;
+				$invoiceItemArray[ 'type' ]        = 3;
+				$invoiceItemArray[ 'amount' ]      = $device->amount;
+				$invoiceItemArray[ 'taxable' ]     = $device->taxable;
+				$invoiceItemArray[ 'description' ] = '';
+				$invoiceItem                       = InvoiceItem::create( $invoiceItemArray );
+			}
+			$this->addTaxesToStandalone( $invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::DEVICE_TYPE );
 		}
 		return $invoiceItem;
 	}
@@ -758,28 +760,30 @@ trait BulkOrderTrait
 			'taxable'           => InvoiceController::DEFAULT_INT,
 		];
 
-		foreach ($standaloneSims as $standaloneSim) {
-			CustomerStandaloneSim::create([
-				'customer_id'   => $invoice->customer_id,
-				'order_id'      => $invoice->order->id,
-				'order_num'     => $invoice->order->order_num,
-				/**
-				 * @internal since these are bulk orders, we don't want these
-				 * to go into shipping status, set a special rule for these lines to complete
-				 */
-				'status'        => $itemStatus ?: CustomerStandaloneSim::STATUS['complete'],
-				'processed'     => StandaloneRecordController::DEFAULT_PROSSED,
-				'sim_id'        => $standaloneSim->id,
-				'sim_num'       => $standaloneSim->sim_num,
-			]);
-			$sim           = Sim::find($standaloneSim->id);
-			$invoiceItemArray['product_id'] =  $sim->id;
-			$invoiceItemArray['type'] = 3;
-			$invoiceItemArray['amount'] = $sim->amount_alone;
-			$invoiceItemArray['taxable'] = $sim->taxable;
-			$invoiceItemArray['description'] = '';
-			$invoiceItem = InvoiceItem::create($invoiceItemArray);
-			$this->addTaxesToStandalone($invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::SIM_TYPE);
+		if($standaloneSims->count() > 0) {
+			foreach ( $standaloneSims as $standaloneSim ) {
+				CustomerStandaloneSim::create( [
+					'customer_id' => $invoice->customer_id,
+					'order_id'    => $invoice->order->id,
+					'order_num'   => $invoice->order->order_num,
+					/**
+					 * @internal since these are bulk orders, we don't want these
+					 * to go into shipping status, set a special rule for these lines to complete
+					 */
+					'status'      => $itemStatus ?: CustomerStandaloneSim::STATUS[ 'complete' ],
+					'processed'   => StandaloneRecordController::DEFAULT_PROSSED,
+					'sim_id'      => $standaloneSim->id,
+					'sim_num'     => $standaloneSim->sim_num,
+				] );
+				$sim                               = Sim::find( $standaloneSim->id );
+				$invoiceItemArray[ 'product_id' ]  = $sim->id;
+				$invoiceItemArray[ 'type' ]        = 3;
+				$invoiceItemArray[ 'amount' ]      = $sim->amount_alone;
+				$invoiceItemArray[ 'taxable' ]     = $sim->taxable;
+				$invoiceItemArray[ 'description' ] = '';
+				$invoiceItem                       = InvoiceItem::create( $invoiceItemArray );
+			}
+			$this->addTaxesToStandalone( $invoice->order->id, InvoiceController::TAX_FALSE, InvoiceController::SIM_TYPE );
 		}
 		return $invoiceItem;
 	}
