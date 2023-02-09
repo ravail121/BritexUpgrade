@@ -711,7 +711,7 @@ trait BulkOrderTrait
 			'start_date'        => $invoice->start_date,
 		];
 
-		if($standAloneDevices->count() > 0) {
+		if($standAloneDevices) {
 			foreach ( $standAloneDevices as $standAloneDevice ) {
 				CustomerStandaloneDevice::create( [
 					'customer_id' => $invoice->customer_id,
@@ -760,7 +760,7 @@ trait BulkOrderTrait
 			'taxable'           => InvoiceController::DEFAULT_INT,
 		];
 
-		if($standaloneSims->count() > 0) {
+		if($standaloneSims) {
 			foreach ( $standaloneSims as $standaloneSim ) {
 				CustomerStandaloneSim::create( [
 					'customer_id' => $invoice->customer_id,
