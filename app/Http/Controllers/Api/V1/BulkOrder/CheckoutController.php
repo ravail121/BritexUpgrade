@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
+use App\Model\CustomerStandaloneDevice;
 use Carbon\Carbon;
 use Validator;
 use App\Model\Sim;
@@ -985,6 +986,14 @@ class CheckoutController extends BaseController implements ConstantInterface
 				['sim_card_num', $request->get('sim_num')]
 			])->first();
 			if($activeSubscription) {
+				/**
+				 * @internal Remove the subscription id from the standalone tables
+				 * @since V1.0.69
+				 */
+				if($activeSubscription->plans->carrier && $activeSubscription->plans->carrier->slug == 'at&t2') {
+					CustomerStandAloneSim::where( 'subscription_id', $activeSubscription->id )->update( [ 'subscription_id' => null ] );
+					CustomerStandaloneDevice::where( 'subscription_id', $activeSubscription->id )->update( [ 'subscription_id' => null ] );
+				}
 				$activeSubscription->update([
 					'status'        => Subscription::STATUS['closed'],
 					'sub_status'    => Subscription::SUB_STATUSES['confirm-closing'],
@@ -1006,5 +1015,4 @@ class CheckoutController extends BaseController implements ConstantInterface
 			return $this->respondError( $response );
 		}
 	}
-
 }
