@@ -574,6 +574,15 @@ trait BulkOrderTrait
 
 		foreach ($subscriptionIds as $subscriptionId) {
 			$subscription = Subscription::find($subscriptionId);
+
+			if(!$subscription->order_num || $subscription->order_num !== $order->order_num){
+				/**
+				 * Update order_num for subscription
+				 */
+				$subscription->update([
+					'order_num' => $order->order_num
+				]);
+			}
 			$invoiceItemArray['subscription_id'] = $subscription->id;
 
 			if ($subscription->device_id !== null && !$planActivation) {
