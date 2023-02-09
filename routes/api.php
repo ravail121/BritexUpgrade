@@ -88,11 +88,11 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 
 Route::middleware('APIToken')->group(function () {
-	Route::get('/get-sims', [
+	Route::get('/get-sims-telit', [
 		'as'=>'api.cron.auth',
 		'uses'=> 'Api\V1\CronJobs\APICallController@callAuthentication',
 	]);
-	Route::get('/get-plans', [
+	Route::get('/get-plans-telit', [
 		'as'=>'api.cron.plans',
 		'uses'=> 'Api\V1\CronJobs\APICallController@getPlans',
 	]);
