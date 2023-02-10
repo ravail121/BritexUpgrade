@@ -68,7 +68,7 @@ class APICallController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://api.devicewise.com/api',
+        CURLOPT_URL => env('CRON_API_BASE_URL'),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -80,8 +80,8 @@ class APICallController extends Controller
         "auth": {
             "command": "api.authenticate",
             "params": {
-                "username": "davidg@amcest.com",
-                "password": "Amcest321!"
+                "username": "'.env('CRON_USERNAME').'",
+                "password": "'.env('CRON_PASSWORD').'"
             }
         }
         }',
@@ -99,7 +99,7 @@ class APICallController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://api.devicewise.com/api',
+        CURLOPT_URL => env('CRON_API_BASE_URL'),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -137,7 +137,7 @@ class APICallController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://api.devicewise.com/api',
+        CURLOPT_URL => env('CRON_API_BASE_URL'),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -199,7 +199,7 @@ class APICallController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://api.devicewise.com/api',
+        CURLOPT_URL => env('CRON_API_BASE_URL'),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
