@@ -88,6 +88,11 @@ Route::middleware('APIToken')->group(function () {
 		'uses'=> 'Api\V1\CronJobs\APICallController@getPlans',
 	]);
 
+	Route::post('/activation/notify-error', [
+		'as'=>'api.activation.notify.error',
+		'uses'=> 'Api\V1\ActivationController@sendNotification',
+	]);
+
 	// Orders API
 	Route::group(['prefix' => 'order', 'namespace' => 'Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
 	{

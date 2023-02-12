@@ -99,6 +99,10 @@ class EventServiceProvider extends ServiceProvider
 
 	    'App\Events\ReportSchedulerStatus' => [
 		    'App\Listeners\SendEmailForSchedulerStatus'
+	    ],
+
+	    'App\Events\ActivationError' => [
+		    'App\Listeners\SendEmailForActivationError'
 	    ]
     ];
 
