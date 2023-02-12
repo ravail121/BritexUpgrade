@@ -59,7 +59,7 @@ class SendEmailForActivationError
 			    return false;
 		    }
 
-		    Notification::route('mail', $row['email'])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'], $row['email']));
+		    Notification::route('mail', $customer->company->support_email)->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'],  $customer->company->support_email));
 	    }
 
     }
