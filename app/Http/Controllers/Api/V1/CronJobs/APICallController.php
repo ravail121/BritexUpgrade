@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use App\TelitUsageData;
 use App\Http\Controllers\Controller;
+use App\Model\TelitUsageData;
 
 /**
  * Class APICallController
