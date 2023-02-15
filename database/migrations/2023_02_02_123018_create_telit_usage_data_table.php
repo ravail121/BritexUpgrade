@@ -20,6 +20,7 @@ class CreateTelitUsageDataTable extends Migration
             $table->string('status');
             $table->string('date_activated')->nullable();
             $table->string('usage_data')->nullable();
+	        $table->index('iccid');
             $table->timestamps();
         });
     }

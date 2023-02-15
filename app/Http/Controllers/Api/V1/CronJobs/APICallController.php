@@ -187,7 +187,7 @@ class APICallController extends Controller
             $data['count'] = $value->params->count;
           
                 foreach($value->params->result as $result){
-                if(!TelitUsageData::where('iccid',$result->iccid)->exists()){
+                if(!TelitUsageData::where('iccid', $result->iccid)->exists()){
                     $usage = new TelitUsageData();
                     $usage->iccid = $result->iccid;
                     $usage->carrier = $result->carrier;

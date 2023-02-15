@@ -15,7 +15,7 @@ class CreateUsageDataTable extends Migration
     {
         Schema::create('usage_data', function (Blueprint $table) {
 	        $table->bigIncrements('id');
-            $table->text('simnumber', 255);
+            $table->text('simnumber');
             $table->integer('data');
             $table->integer('voice');
             $table->integer('sms');
