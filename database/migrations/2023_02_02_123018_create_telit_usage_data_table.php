@@ -18,10 +18,8 @@ class CreateTelitUsageDataTable extends Migration
             $table->string('iccid');
             $table->string('carrier');
             $table->string('status');
-            $table->string('dateActivated')->nullable();
-            $table->string('usageData')->nullable();
-            $table->string('usageSms')->nullable();
-            $table->string('usageVoice')->nullable();
+            $table->string('date_activated')->nullable();
+            $table->string('usage_data')->nullable();
             $table->timestamps();
         });
     }

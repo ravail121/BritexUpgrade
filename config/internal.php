@@ -3,16 +3,9 @@
 
 return [
 
-	/*
-	|--------------------------------------------------------------------------
-	| Default Filesystem Disk
-	|--------------------------------------------------------------------------
-	|
-	| Here you may specify the default filesystem disk that should be used
-	| by the framework. The "local" disk, as well as a variety of cloud
-	| based disks are available to your application. Just store away!
-	|
-	*/
+	/**
+	 * All the internal constants
+	 */
 
 	'__BRITEX_ULTRA_API_BASE_URL'                                           => env( 'ULTRA_API_BASE_URL', 'https://ultramobile-teltik.azurewebsites.net/api/'),
 
@@ -37,4 +30,19 @@ return [
 	 * Ultra Mobile Number Validation URL
 	 */
 	'__BRITEX_ULTRA_MOBILE_NUMBER_VALIDATION_API_BASE_URL'                  => env( 'ULTRA_MOBILE_NUMBER_VALIDATION_API_BASE_URL', 'https://connect-api.ultramobile.com/v1/'),
+
+	/**
+	 * TELIT API Base URL
+	 */
+	'__BRITEX_TELIT_API_BASE_URL'                                           => env( 'TELIT_API_BASE_URL', 'https://api.devicewise.com/api'),
+
+	/**
+	 * Telit API Username
+	 */
+	'__BRITEX_TELIT_API_USERNAME'                                           => env( 'TELIT_API_USERNAME', 'davidg@amcest.com'),
+
+	/**
+	 * Telit API Password
+	 */
+	'__BRITEX_TELIT_API_PASSWORD'                                           => env( 'TELIT_API_PASSWORD', 'Amcest321!'),
 ];

@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
-use App\Helpers\Log;
-use App\Http\Controllers\Controller;
 use App\TelitUsageData;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
+/**
+ * Class APICallController
+ */
 class APICallController extends Controller
 {
+	/**
+	 * @return void
+	 */
     public function callAuthentication(){
         $authResponse = $this->authentication();
         $authResponse = json_decode($authResponse);
@@ -20,16 +24,17 @@ class APICallController extends Controller
         while($i==1){
             $data[] = $response;
             if($response['end']){
-                $i=0;
+                $i = 0;
             }else{
-                $response = $this->getAllSims($session,$response['iterator'],2);
+                $response = $this->getAllSims($session, $response['iterator'], 2);
             }
         }
-        // dd($data);
-     //   $response = $this->getAllSims($session,$response['iterator'],2);
-        // dd($response);
         echo 'Done';
     }
+
+	/**
+	 * @return void
+	 */
     public function getPlans(){
         $telitUsage = TelitUsageData::get();
         $authResponse = $this->authentication();
@@ -39,7 +44,6 @@ class APICallController extends Controller
         $check = 70;
         $i=1;
         foreach($telitUsage as $usage){
-            // Log::info('Get Plans: '.$i.' SessionId: '.$session);
             if($i == $check){
                 $check = $check+70;
 
@@ -52,23 +56,18 @@ class APICallController extends Controller
             $i++;
         }
 
-
-        // $authResponse = $this->authentication();
-        // $authResponse = json_decode($authResponse);
-        // $session = $authResponse->auth->params->sessionId;
-        // $this->changeOrganization($session);
-        // $telitUsage = TelitUsageData::skip(175)->take(25)->get();
-        // foreach($telitUsage as $usage){
-        //     $this->getAllPlans($session,$usage->iccid);
-        // }
         echo 'Done';
     }
+
+	/**
+	 * @return bool|string
+	 */
     public function authentication(){
         
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => env('CRON_API_BASE_URL'),
+        CURLOPT_URL => config('internal.__BRITEX_TELIT_API_BASE_URL'),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -80,14 +79,14 @@ class APICallController extends Controller
         "auth": {
             "command": "api.authenticate",
             "params": {
-                "username": "'.env('CRON_USERNAME').'",
-                "password": "'.env('CRON_PASSWORD').'"
+                "username": "'.config('internal.__BRITEX_TELIT_API_USERNAME').'",
+                "password": "'.config('internal.__BRITEX_TELIT_API_PASSWORD').'"
             }
         }
         }',
         CURLOPT_HTTPHEADER => array(
-        'Content-Type: application/json'
-        ),
+            'Content-Type: application/json'
+            ),
         ));
 
         $response = curl_exec($curl);
@@ -95,19 +94,25 @@ class APICallController extends Controller
         curl_close($curl);
         return $response;
     }
+
+	/**
+	 * @param $sessionId
+	 *
+	 * @return bool|string
+	 */
     public function changeOrganization($sessionId){
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => env('CRON_API_BASE_URL'),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS =>'{
+        CURLOPT_URL             => config('internal.__BRITEX_TELIT_API_BASE_URL'),
+        CURLOPT_RETURNTRANSFER  => true,
+        CURLOPT_ENCODING        => '',
+        CURLOPT_MAXREDIRS       => 10,
+        CURLOPT_TIMEOUT         => 0,
+        CURLOPT_FOLLOWLOCATION  => true,
+        CURLOPT_HTTP_VERSION    => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST   => 'POST',
+        CURLOPT_POSTFIELDS      =>'{
             "1": {
                 "command": "session.org.switch",
                 "params": {
@@ -125,10 +130,16 @@ class APICallController extends Controller
 
         curl_close($curl);
         return $response;
-
     }
-    public function getAllSims($sessionId,$iterator1=null,$ch){
-        // Log::info('Start getting sims');
+
+	/**
+	 * @param $sessionId
+	 * @param $iterator1
+	 * @param $ch
+	 *
+	 * @return array|void
+	 */
+    public function getAllSims($sessionId, $iterator1=null, $ch){
         $iterator = 'new';
         if(isset($iterator1)){
             $iterator = $iterator1;
@@ -137,15 +148,15 @@ class APICallController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => env('CRON_API_BASE_URL'),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS =>'{
+        CURLOPT_URL             => config('internal.__BRITEX_TELIT_API_BASE_URL'),
+        CURLOPT_RETURNTRANSFER  => true,
+        CURLOPT_ENCODING        => '',
+        CURLOPT_MAXREDIRS       => 10,
+        CURLOPT_TIMEOUT         => 0,
+        CURLOPT_FOLLOWLOCATION  => true,
+        CURLOPT_HTTP_VERSION    => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST   => 'POST',
+        CURLOPT_POSTFIELDS      =>'{
             "1": {
                 "command": "cdp.connection.search",
                 "params": {
@@ -167,10 +178,9 @@ class APICallController extends Controller
 
         curl_close($curl);
         $response1 = json_decode($response);
-        foreach($response1 as $key=>$value){
+        foreach($response1 as $value){
             if(!$value->success){
                 $data['end'] = true;
-                // Log::info('No Sim Found Exiting getting sims');
                 return $data;
             }
             $data['iterator'] = $value->params->iterator;
@@ -182,32 +192,34 @@ class APICallController extends Controller
                     $usage->iccid = $result->iccid;
                     $usage->carrier = $result->carrier;
                     $usage->status = $result->status;
-                    $usage->dateActivated = $result->dateActivated;
+                    $usage->date_activated = $result->dateActivated;
                     $usage->save();
                 }
             }
-
-            
-            
             $data['end'] = false;
-            // Log::info('Exiting getting sims');
             return $data;
         }
-
     }
-    public function getAllPlans($sessionId,$iccid){
+
+	/**
+	 * @param $sessionId
+	 * @param $iccid
+	 *
+	 * @return true
+	 */
+    public function getAllPlans($sessionId, $iccid){
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => env('CRON_API_BASE_URL'),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS =>'{
+        CURLOPT_URL             => config('internal.__BRITEX_TELIT_API_BASE_URL'),
+        CURLOPT_RETURNTRANSFER  => true,
+        CURLOPT_ENCODING        => '',
+        CURLOPT_MAXREDIRS       => 10,
+        CURLOPT_TIMEOUT         => 0,
+        CURLOPT_FOLLOWLOCATION  => true,
+        CURLOPT_HTTP_VERSION    => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST   => 'POST',
+        CURLOPT_POSTFIELDS      => '{
             "1": {
                 "command": "cdp.connection.find",
                 "params": {
@@ -215,35 +227,27 @@ class APICallController extends Controller
 
                 }
             }
-        }
-        ',
+        }',
         CURLOPT_HTTPHEADER => array(
             'sessionId: '.$sessionId,
             'Content-Type: application/json'
-        ),
+            ),
         ));
 
         $response = curl_exec($curl);
-        // Log::info($response);
 
         curl_close($curl);
         $response1 = json_decode($response);
-        foreach($response1 as $key=>$value){
+        foreach($response1 as $value){
             if(!$value->success){
                 return true;
             }
             $data = [];
             if(isset($value->params->usageMonthData)){
-                $data['usageData'] = $value->params->usageMonthData;
+                $data['usage_data'] = $value->params->usageMonthData;
             }
-            // if(isset($value->params->usageSms)){
-            //     $data['usageSms'] = $value->params->usageSms->last30;
-            // }
-            // if(isset($value->params->usageVoice)){
-            //     $data['usageVoice'] = $value->params->usageVoice->last30;
-            // }
             if($data){
-                TelitUsageData::where('iccid',$iccid)->update($data);
+                TelitUsageData::where('iccid', $iccid)->update($data);
             }
         }
         return true;

@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Carbon\Carbon;
-use App\Model\Plan;
 use App\Model\Port;
 use App\Model\Customer;
+use App\Events\PortPending;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
-use App\Events\PortPending;
 
 /**
  * Class CustomerPlanController
@@ -46,7 +44,10 @@ class CustomerPlanController extends BaseController
 	 * @return array
 	 */
 	public function getSubscriptions($customer){
-    	$subscriptions = Subscription::with('plan.carrier', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
+    	$subscriptions = Subscription::with('plan.carrier',
+		    'device',
+		    'subscriptionAddonNotRemoved.addons',
+		    'port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
         $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer);
 
