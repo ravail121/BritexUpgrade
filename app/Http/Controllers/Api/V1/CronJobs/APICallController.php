@@ -233,16 +233,18 @@ class APICallController extends Controller
                 return true;
             }
             $data = [];
-            if(isset($value->params->usageData)){
-                $data['usageData'] = $value->params->usageData->last30;
+            if(isset($value->params->usageMonthData)){
+                $data['usageData'] = $value->params->usageMonthData;
             }
-            if(isset($value->params->usageSms)){
-                $data['usageSms'] = $value->params->usageSms->last30;
+            // if(isset($value->params->usageSms)){
+            //     $data['usageSms'] = $value->params->usageSms->last30;
+            // }
+            // if(isset($value->params->usageVoice)){
+            //     $data['usageVoice'] = $value->params->usageVoice->last30;
+            // }
+            if($data){
+                TelitUsageData::where('iccid',$iccid)->update($data);
             }
-            if(isset($value->params->usageVoice)){
-                $data['usageVoice'] = $value->params->usageVoice->last30;
-            }
-            TelitUsageData::where('iccid',$iccid)->update($data);
         }
         return true;
     }
