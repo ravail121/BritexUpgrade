@@ -22,8 +22,8 @@ class CustomerPlanController extends BaseController
 	 *
 	 * @return bool[]|\Illuminate\Http\JsonResponse
 	 */
-	public function get(Request $request){
-
+	public function get(Request $request)
+	{
         if ($request->hash) {
     	    $customer = Customer::whereHash($request->hash)->with('tax')->first();
             $subscriptionDetails = $this->getSubscriptions($customer);
@@ -47,7 +47,9 @@ class CustomerPlanController extends BaseController
     	$subscriptions = Subscription::with('plan.carrier',
 		    'device',
 		    'subscriptionAddonNotRemoved.addons',
-		    'port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
+		    'port',
+	        'usageData',
+	        'telitUsageData')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
         $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer);
 

@@ -73,7 +73,8 @@ class Subscription extends Model
 	 * @var string[]
 	 */
 	protected $appends = [
-		'phone_number_formatted', 'status_formated'
+		'phone_number_formatted',
+		'status_formated'
 	];
 
 	/**
@@ -86,8 +87,8 @@ class Subscription extends Model
 		'account-past-due'      => 'account-past-due',
 		'for-restoration'       => 'for-restoration',
 		'closed'                => 'closed',
-		'confirm-closing'        => 'confirm-closing',
-		'confirm-suspension'     => 'confirm-suspension'
+		'confirm-closing'       => 'confirm-closing',
+		'confirm-suspension'    => 'confirm-suspension'
 	];
 
 	/**
@@ -348,6 +349,22 @@ class Subscription extends Model
 	public function subscriptionCouponRedeemable()
 	{
 		return $this->subscriptionCoupon()->redeemable();
+	}
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function usageData()
+	{
+		return $this->hasOne('App\Model\UsageData', 'simnumber', 'sim_card_num');
+	}
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function telitUsageData()
+	{
+		return $this->hasOne('App\Model\TelitUsageData', 'iccid', 'sim_card_num');
 	}
 
 	/**
