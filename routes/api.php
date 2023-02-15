@@ -685,6 +685,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.close-lines',
 			'uses' => 'BulkOrder\CheckoutController@closeLines'
 		]);
+
+		Route::post('/ultra/validate-sim-number', [
+			'as'   => 'api.bulk.order.ultra.validate-sim',
+			'uses' => 'BulkOrder\CheckoutController@validateZipCodeForUltraSims'
+		]);
 	});
 
 	/**

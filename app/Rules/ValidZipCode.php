@@ -2,12 +2,14 @@
 
 namespace App\Rules;
 
+
 use Illuminate\Contracts\Validation\Rule;
+use App\Http\Controllers\Api\V1\Traits\ApiConnect;
 use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
 
 class ValidZipCode implements Rule
 {
-	use BulkOrderTrait;
+	use BulkOrderTrait, ApiConnect;
     /**
      * Create a new rule instance.
      *
@@ -27,8 +29,7 @@ class ValidZipCode implements Rule
      */
     public function passes($attribute, $value)
     {
-	    $inValidZipCodes = $this->inValidZipCodes();
-	    return !in_array($value, $inValidZipCodes);
+	    return $this->isZipCodeValidInUltra($request->get('zip_code'), $requestCompany);
     }
 
     /**

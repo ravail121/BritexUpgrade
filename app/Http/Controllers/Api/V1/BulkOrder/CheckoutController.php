@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-use App\Model\CustomerStandaloneDevice;
-use Carbon\Carbon;
+
 use Validator;
+use Carbon\Carbon;
 use App\Model\Sim;
 use App\Model\Plan;
 use App\Helpers\Log;
@@ -19,6 +19,7 @@ use App\Model\CustomerProduct;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
+use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\BaseController;
 use App\libs\Constants\ConstantInterface;
 use App\Http\Controllers\Api\V1\Traits\BulkOrderTrait;
@@ -459,6 +460,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$planId = $request->get('plan_id');
 
+			$plan = Plan::find($planId);
+
 			/**
 			 * Validate if the input file is CSV file
 			 */
@@ -480,7 +483,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$sim = Sim::find($simId);
 				foreach ( $csvAsArray as $rowIndex => $row ) {
 					$rowNumber = $rowIndex + 1;
-					if(!$this->isZipCodeValid($row['zip_code'])) {
+					if($plan->carrier->slug === 'ultra' && !$this->isZipCodeValid($row['zip_code'], $requestCompany)) {
 						$error[] = "Zip code {$row['zip_code']} is not valid for row $rowNumber";
 					}
 					if(!$this->simNumberExistsForCustomer($row['sim_num'], $customer)) {
@@ -597,9 +600,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 					})
 				],
 				'zip_code'              => [
-					'nullable',
+					'required',
 					'regex:/^(?:(\d{5})(?:[ \-](\d{4}))?)$/i',
-					new ValidZipCode
 				],
 				'customer_id'           => [
 					'numeric',
@@ -619,6 +621,23 @@ class CheckoutController extends BaseController implements ConstantInterface
 					})
 				],
 			]);
+
+			$planId = $request->get('plan_id');
+
+			$plan = Plan::find($planId);
+
+
+			/**
+			 * If the plan is ultra validate from Ultra Connect
+			 */
+			if($plan->carrier->slug === 'ultra'){
+				$validator->after(function ($validator) use ($request){
+					if (!$this->isZipCodeValid($request->get('zip_code'), $request->get('company'))) {
+						$validator->errors()->add('zip_code', 'Zip Code is not eligible for Ultra plan.');
+					}
+				});
+			}
+
 
 			if ($validator->fails()) {
 				$errors = $validator->errors();
@@ -1012,6 +1031,52 @@ class CheckoutController extends BaseController implements ConstantInterface
 				'status' => 'error',
 				'data'   => $e->getMessage()
 			];
+			return $this->respondError( $response );
+		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function validateZipCodeForUltraSims(Request $request){
+		$requestCompany = $request->get('company');
+		try {
+			$validator = Validator::make( $request->all(), [
+				'zip_code' => [
+					'required',
+					'regex:/^(?:(\d{5})(?:[ \-](\d{4}))?)$/i',
+				]
+			] );
+			if ( $validator->fails() ) {
+				$errors                  = $validator->errors();
+				$validationErrorResponse = [
+					'status'    => 'error',
+					'data'      => false,
+					'message'   => $errors->messages()
+				];
+
+				return $this->respond( $validationErrorResponse, 422 );
+			}
+
+			$isZipCodeValidInUltra = $this->isZipCodeValidInUltra($request->get('zip_code'), $requestCompany);
+
+			$successResponse = [
+				'status'    => 'success',
+				'data'      => $isZipCodeValidInUltra,
+				'message'   => $isZipCodeValidInUltra ? 'Zip code is valid' : 'Zip code is not valid'
+			];
+
+			return $this->respond( $successResponse );
+		} catch( \Exception $e ) {
+			Log::info( $e->getMessage(), 'Error of Zip Code validation' );
+			$response = [
+				'status'    => 'error',
+				'data'      => false,
+				'message'   => 'Zip code is not valid'
+			];
+
 			return $this->respondError( $response );
 		}
 	}

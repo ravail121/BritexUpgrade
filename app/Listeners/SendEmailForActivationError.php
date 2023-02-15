@@ -29,38 +29,39 @@ class SendEmailForActivationError
      * @param  object  $event
      * @return void
      */
-    public function handle($event)
-    {
+    public function handle($event) {
 	    $subscription = $event->subscription;
-		$message = $event->message;
+	    $message      = $event->message;
 
-	    $emailTemplates = EmailTemplate::where('company_id', $subscription->company_id)
-	                                   ->where('code', 'activation-error')
+	    $emailTemplates = EmailTemplate::where( 'company_id', $subscription->company_id )
+	                                   ->where( 'code', 'activation-error' )
 	                                   ->get();
 
 	    $customer = $subscription->customer;
-	    $order = $subscription->order;
+	    $order    = $subscription->order;
 
 	    $dataRow = [
-		    'subscription'  => $subscription,
-		    'customer'      =>  $customer,
-		    'plan'          =>  $subscription->plans,
+		    'subscription' => $subscription,
+		    'customer'     => $customer,
+		    'plan'         => $subscription->plans,
 	    ];
 
 
-	    foreach ($emailTemplates as $emailTemplate) {
-		    $row = $this->makeEmailLayout($emailTemplate, $customer, $dataRow);
+	    foreach ( $emailTemplates as $emailTemplate ) {
+		    $row = $this->makeEmailLayout( $emailTemplate, $customer, $dataRow );
 
-		    $row['body'] = $this->addFieldsToBody('[error_message]', $message, $row['body']);
+		    print_r( $row );
+		    exit;
 
-		    $configurationSet = $this->setMailConfiguration($customer);
+		    $row[ 'body' ] = $this->addFieldsToBody( '[error_message]', $message, $row[ 'body' ] );
 
-		    if ($configurationSet) {
+		    $configurationSet = $this->setMailConfiguration( $customer );
+
+		    if ( $configurationSet ) {
 			    return false;
 		    }
 
-		    Notification::route('mail', $row[ 'email' ])->notify(new SendEmails($order, $emailTemplate, $customer->business_verification_id, $row['body'],  $row[ 'email' ]));
+		    Notification::route( 'mail', $customer->company->support_email )->notify( new SendEmails( $customer, $emailTemplate, $customer->business_verification_id, $row[ 'body' ], $customer->company->support_email ) );
 	    }
-
     }
 }
