@@ -599,9 +599,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['plan']);
 					})
 				],
-				'zip_code'              => [
-					'regex:/^(?:(\d{5})(?:[ \-](\d{4}))?)$/i',
-				],
 				'customer_id'           => [
 					'numeric',
 					'required',
