@@ -600,7 +600,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 					})
 				],
 				'zip_code'              => [
-					'required',
 					'regex:/^(?:(\d{5})(?:[ \-](\d{4}))?)$/i',
 				],
 				'customer_id'           => [
@@ -621,23 +620,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 					})
 				],
 			]);
-
-			$planId = $request->get('plan_id');
-
-			$plan = Plan::find($planId);
-
-
-			/**
-			 * If the plan is ultra validate from Ultra Connect
-			 */
-			if($plan->carrier->slug === 'ultra'){
-				$validator->after(function ($validator) use ($request){
-					if (!$this->isZipCodeValid($request->get('zip_code'), $request->get('company'))) {
-						$validator->errors()->add('zip_code', 'Zip Code is not eligible for Ultra plan.');
-					}
-				});
-			}
-
 
 			if ($validator->fails()) {
 				$errors = $validator->errors();
