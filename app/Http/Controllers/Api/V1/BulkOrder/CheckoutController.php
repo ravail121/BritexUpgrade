@@ -42,7 +42,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 	{
 		try {
 
-			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 5;
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 50;
 			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
 			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['sim'])
 			                                   ->pluck('product_id')->toArray();
