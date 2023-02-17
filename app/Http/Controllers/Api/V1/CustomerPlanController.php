@@ -49,7 +49,7 @@ class CustomerPlanController extends BaseController
 		    'subscriptionAddonNotRemoved.addons',
 		    'port',
 	        'usageData',
-	        'telitUsageData')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
+	        'attTwoUsageData')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
         $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer);
 

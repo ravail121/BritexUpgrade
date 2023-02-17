@@ -362,9 +362,9 @@ class Subscription extends Model
 	/**
 	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
 	 */
-	public function telitUsageData()
+	public function attTwoUsageData()
 	{
-		return $this->hasOne('App\Model\TelitUsageData', 'iccid', 'sim_card_num');
+		return $this->hasOne('App\Model\AttTwoUsageData', 'iccid', 'sim_card_num');
 	}
 
 	/**
