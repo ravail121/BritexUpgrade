@@ -13,6 +13,7 @@ class AddIndexToUsageDataTable extends Migration
      */
     public function up()
     {
+
 	    Schema::table('usage_data', function (Blueprint $table) {
 		    $table->string('simnumber')->change();
 		    $table->index('simnumber');
@@ -27,8 +28,7 @@ class AddIndexToUsageDataTable extends Migration
     public function down()
     {
 	    Schema::table('usage_data', function (Blueprint $table) {
-		    $table->text('simnumber')->change();
-		    $table->dropIndex('simnumber');
+		    $table->dropIndex('usage_data_simnumber_index');
 	    });
     }
 }

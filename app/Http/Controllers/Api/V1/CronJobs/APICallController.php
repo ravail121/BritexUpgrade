@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\CronJobs;
 
+use App\Model\AttTwoUsageData;
 use App\Http\Controllers\Controller;
-use App\Model\TelitUsageData;
+
 
 /**
  * Class APICallController
@@ -18,7 +19,7 @@ class APICallController extends Controller
         $authResponse = json_decode($authResponse);
         $session = $authResponse->auth->params->sessionId;
         $this->changeOrganization($session);
-        $response = $this->getAllSims($session,null,1);
+        $response = $this->getAllSims($session, null, 1);
         $i=1;
         $data = [];
         while($i==1){
@@ -36,14 +37,14 @@ class APICallController extends Controller
 	 * @return void
 	 */
     public function getPlans(){
-        $telitUsage = TelitUsageData::get();
+        $attTwoUsage = AttTwoUsageData::get();
         $authResponse = $this->authentication();
         $authResponse = json_decode($authResponse);
         $session = $authResponse->auth->params->sessionId;
         $this->changeOrganization($session);
         $check = 70;
         $i=1;
-        foreach($telitUsage as $usage){
+        foreach($attTwoUsage as $usage){
             if($i == $check){
                 $check = $check+70;
 
@@ -187,8 +188,8 @@ class APICallController extends Controller
             $data['count'] = $value->params->count;
           
                 foreach($value->params->result as $result){
-                if(!TelitUsageData::where('iccid', $result->iccid)->exists()){
-                    $usage = new TelitUsageData();
+                if(!AttTwoUsageData::where('iccid', $result->iccid)->exists()){
+                    $usage = new AttTwoUsageData();
                     $usage->iccid = $result->iccid;
                     $usage->carrier = $result->carrier;
                     $usage->status = $result->status;
@@ -247,7 +248,7 @@ class APICallController extends Controller
                 $data['usage_data'] = $value->params->usageMonthData;
             }
             if($data){
-                TelitUsageData::where('iccid', $iccid)->update($data);
+	            AttTwoUsageData::where('iccid', $iccid)->update($data);
             }
         }
         return true;

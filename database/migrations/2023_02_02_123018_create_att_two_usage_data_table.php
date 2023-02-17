@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateTelitUsageDataTable extends Migration
+class CreateAttTwoUsageDataTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateTelitUsageDataTable extends Migration
      */
     public function up()
     {
-        Schema::create('telit_usage_data', function (Blueprint $table) {
+        Schema::create('att_two_usage_data', function (Blueprint $table) {
             $table->increments('id');
             $table->string('iccid');
             $table->string('carrier');
@@ -32,6 +32,6 @@ class CreateTelitUsageDataTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('telit_usage_data');
+        Schema::dropIfExists('att_two_usage_data');
     }
 }

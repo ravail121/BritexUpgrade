@@ -483,7 +483,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				$sim = Sim::find($simId);
 				foreach ( $csvAsArray as $rowIndex => $row ) {
 					$rowNumber = $rowIndex + 1;
-					if($plan->carrier->slug === 'ultra' && !$this->isZipCodeValid($row['zip_code'], $requestCompany)) {
+					if($plan->carrier->slug === 'ultra' && $row['zip_code'] && !$this->isZipCodeValid($row['zip_code'], $requestCompany)) {
 						$error[] = "Zip code {$row['zip_code']} is not valid for row $rowNumber";
 					}
 					if(!$this->simNumberExistsForCustomer($row['sim_num'], $customer)) {

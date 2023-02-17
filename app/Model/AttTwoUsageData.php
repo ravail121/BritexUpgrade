@@ -5,15 +5,15 @@ namespace App\Model;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class TelitUsageData
+ * Class AttTwoUsageData
  */
-class TelitUsageData extends Model
+class AttTwoUsageData extends Model
 {
 
 	/**
 	 * @var string
 	 */
-    public $table = 'telit_usage_data';
+    public $table = 'att_two_usage_data';
 
 	/**
 	 * @var string[]
