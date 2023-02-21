@@ -124,6 +124,8 @@ class CustomerPlanController extends BaseController
 	 */
 	public function updatePort(Request $request)
     {
+		print_r('I am here');
+		exit;
         $data =  $request->validate([
             'authorized_name'               => 'required|max:20',
             'address_line1'                 => 'required',
