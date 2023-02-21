@@ -124,8 +124,6 @@ class CustomerPlanController extends BaseController
 	 */
 	public function updatePort(Request $request)
     {
-		print_r('I am here');
-		exit;
         $data =  $request->validate([
             'authorized_name'               => 'required|max:20',
             'address_line1'                 => 'required',
@@ -137,8 +135,9 @@ class CustomerPlanController extends BaseController
             'account_number_porting_from'   => 'required',
             'status'                        => 'required',
             'account_pin_porting_from'      => 'required',
-
         ]);
+	    print_r('I am here');
+	    exit;
         $data['address_line2']=  $request->address_line2;
         $data['ssn_taxid']=  $request->ssn_taxid;
         $data['id'] = $request->id;
