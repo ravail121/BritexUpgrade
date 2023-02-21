@@ -136,8 +136,6 @@ class CustomerPlanController extends BaseController
             'status'                        => 'required',
             'account_pin_porting_from'      => 'required',
         ]);
-	    print_r('I am here');
-	    exit;
         $data['address_line2']=  $request->address_line2;
         $data['ssn_taxid']=  $request->ssn_taxid;
         $data['id'] = $request->id;
