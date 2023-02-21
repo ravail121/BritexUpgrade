@@ -150,10 +150,20 @@ class CustomerPlanController extends BaseController
             }
         }else{
             $data['notes'] = '';
-            $data['subscription_id'] = $request->subscription_id;
-            $id = Port::create($data)->id;
-            event(new PortPending($id));
-            return $this->respond('sucessfully Updated');
+			$subscriptionId = $request->get('subscription_id');
+			if($subscriptionId){
+				$existingPort = Port::where('subscription_id', $subscriptionId)->first();
+				if($existingPort){
+					$existingPort->update($data);
+					event(new PortPending($existingPort->id));
+					return $this->respond('sucessfully Updated');
+				} else{
+					$data['subscription_id'] = $subscriptionId;
+					$id = Port::create($data)->id;
+					event(new PortPending($id));
+					return $this->respond('sucessfully Updated');
+				}
+			}
         }
     }
 
