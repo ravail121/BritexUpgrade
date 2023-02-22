@@ -4,19 +4,38 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * App\Model\Addon
+ */
 class Addon extends Model
 {
+
+	/**
+	 * @var string
+	 */
     protected $table = 'addon';
 
+	/**
+	 * @var string[]
+	 */
     protected $fillable = [
-        'hash', 'company_id', 'active_group_id',
+        'hash',
+	    'company_id',
+	    'active_group_id',
+	    'is_one_time'
     ];
 
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
     public function plan_to_addon()
     {
      return $this->hasMany('App\Model\PlanToAddon', 'id');
    	}
 
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
    	public function order_group_addon()
     {
      return $this->hasMany('App\Model\OrderGroupAddon', 'id');
@@ -24,7 +43,7 @@ class Addon extends Model
 
 
 
-// ----- Not touching the previously created code as they might be in use ----------
+	// ----- Not touching the previously created code as they might be in use ----------
 
     public function orderGroups()
     {
@@ -36,7 +55,7 @@ class Addon extends Model
      return $this->belongsToMany('App\Model\PlanToAddon');
     }
 
-// ----- Not touching the previously created code as they might be in use ----------
+	// ----- Not touching the previously created code as they might be in use ----------
 
     public function subscriptionAddon()
     {
