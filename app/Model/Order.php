@@ -220,7 +220,14 @@ class Order extends Model
     {
         $addon = Addon::find($addonId);
         $amount = $addon->amount_recurring;
-        return $this->calProRatedAmount($amount);
+	    /**
+	     * @internal Don't pro-rate one time addons
+	     */
+		if($addon->is_one_time) {
+			return $amount;
+		}
+	    return $this->calProRatedAmount($amount);
+
     }
 
 	/**

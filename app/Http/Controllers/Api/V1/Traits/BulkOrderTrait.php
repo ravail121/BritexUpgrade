@@ -125,9 +125,10 @@ trait BulkOrderTrait
 	{
 		$prices = [];
 		foreach ($orderItems as $orderItem) {
-			if (isset($orderItem['addons'])) {
-				foreach ($orderItem['addons'] as $addon) {
-					if ($addon['subscription_addon_id'] != null) {
+			if (isset($orderItem['addon_id'])) {
+				foreach ($orderItem['addon_id'] as $addon) {
+					$addon = Addon::find($addon);
+					if ($addon['subscription_addon_id'] != null || $addon['is_one_time']) {
 						$prices[] = [];
 					} else {
 						$prices[] = $addon['amount_recurring'];
@@ -230,7 +231,17 @@ trait BulkOrderTrait
 	 */
 	public function addTaxesToAddonsForPreview($orderItem, $taxPercentage)
 	{
-		return 0;
+		$addonTax = [];
+		if ($orderItem['addon_id']) {
+			foreach ($orderItem['addon_id'] as $addon) {
+				$addon = Addon::find($addon);
+				if ($addon['taxable'] == 1) {
+					$amount = $addon['prorated_amt'] != null ? $addon['prorated_amt'] : $addon['amount_recurring'];
+					$addonTax[] = $taxPercentage * $amount;
+				}
+			}
+		}
+		return !empty($addonTax) ? array_sum($addonTax) : 0;
 	}
 
 
@@ -529,6 +540,10 @@ trait BulkOrderTrait
 		foreach($orderItems as $orderItem) {
 			if(isset($orderItem['subscription_id'])){
 				$subscriptionIds[] = $orderItem['subscription_id'];
+				$orderGroupAddons = $orderItem->orderGroupAddon()->get();
+				if($orderGroupAddons){
+					$this->addonsInvoiceItem($orderGroupAddons, $invoice);
+				}
 			} else {
 				if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id'])){
 					$standAloneSims[] = (object) [
@@ -674,6 +689,38 @@ trait BulkOrderTrait
 		}
 	}
 
+
+
+	/**
+	 * @param $orderGroupAddons
+	 * @param $invoice
+	 * @param $order
+	 *
+	 * @return void
+	 */
+	protected function addonsInvoiceItem($orderGroupAddons, $invoice)
+	{
+		$invoiceItemArray = [
+			'invoice_id'  => $invoice->id,
+			'type'        => self::INVOICE_ITEM_TYPES['feature_charges'],
+			'start_date'  => $invoice->start_date,
+			'description' => InvoiceController::DESCRIPTION,
+			'taxable'     => InvoiceController::DEFAULT_INT,
+		];
+		foreach($orderGroupAddons as $orderGroupAddon){
+			$addon = Addon::find($orderGroupAddon->addon_id);
+			$invoiceItemArray['product_type'] = InvoiceController::ADDON_TYPE;
+			$invoiceItemArray['product_id'] = $addon->id;
+			$invoiceItemArray['amount'] = $this->convertToTwoDecimals($addon->amount_recurring, 2);
+			$invoiceItemArray['taxable'] = $addon->taxable;
+			$invoiceItemArray['description'] = "(Billable Addon) {$addon->description}";
+
+			$invoiceItem = InvoiceItem::create($invoiceItemArray);
+		}
+		$this->addTaxesToStandalone( $invoice->order->id, self::TAX_FALSE, InvoiceController::ADDON_TYPE );
+	}
+
+
 	/**
 	 * @param Request $request
 	 * @param         $orderItems
@@ -686,13 +733,17 @@ trait BulkOrderTrait
 		$customerId = $request->get('customer_id');
 		$customer = Customer::find($customerId);
 		foreach ($orderItems as $orderItem) {
-			if (isset($orderItem['addons'])) {
-				foreach ($orderItem['addons'] as $addon) {
+			if (isset($orderItem['addon_id'])) {
+				foreach ($orderItem['addon_id'] as $addon) {
 					$addon = Addon::find($addon);
 					$amount = $addon->amount_recurring;
-					$addonProRatedAmount = $this->calProRatedAmount($amount, $customer);
-					if ($addonProRatedAmount) {
-						$prices[] = $addonProRatedAmount;
+					if(!$addon->is_one_time) {
+						$addonProRatedAmount = $this->calProRatedAmount( $amount, $customer );
+						if ( $addonProRatedAmount ) {
+							$prices[] = $addonProRatedAmount;
+						} else {
+							$prices[] = $amount;
+						}
 					} else {
 						$prices[] = $amount;
 					}
@@ -897,6 +948,47 @@ trait BulkOrderTrait
 	}
 
 	/**
+	 * @param Request $request
+	 * @param         $orderItems
+	 *
+	 * @return object
+	 */
+	protected function getCostBreakDownPreviewForAddons(Request $request, $orderItems, Customer $customer)
+	{
+		$priceDetails = (object) [];
+		foreach ($orderItems as $orderItem) {
+			if (isset($orderItem['addon_id'])) {
+				foreach ($orderItem['addon_id'] as $addon) {
+					$addon = Addon::find($addon);
+					$amount = $addon->amount_recurring;
+					if(!$addon->is_one_time) {
+						$addonProRatedAmount = $this->calProRatedAmount( $amount, $customer );
+						if ( $addonProRatedAmount ) {
+							$prices[$addon->id][] = $addonProRatedAmount;
+						} else {
+							$prices[$addon->id][] = $amount;
+						}
+					} else {
+						$prices[$addon->id][] = $amount;
+					}
+
+					if(isset($priceDetails->{$addon->id})){
+						$priceDetails->{$addon->id}['prices'] = $prices[$addon->id];
+						$priceDetails->{$addon->id}['quantity'] = count($prices[$addon->id]);
+					} else {
+						$priceDetails->{$addon->id} = [
+							'addon'     => $addon->name,
+							'prices'    => $prices[$addon->id],
+							'quantity'  => count($prices[$addon->id])
+						];
+					}
+				}
+			}
+		}
+		return $priceDetails;
+	}
+
+	/**
 	 * @param $amount
 	 * @param $customer
 	 *
@@ -947,6 +1039,22 @@ trait BulkOrderTrait
 		];
 		InvoiceItem::create($invoiceItemArray);
 	}
+
+
+//	protected function subscriptionAddonInvoiceItem($invoice, $subscriptionAddon)
+//	{
+//		$invoiceItemArray = [
+//			'invoice_id'   => $invoice->id,
+//			'product_type' => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['addon'],
+//			'product_id'   => $subscriptionAddon->addon_id,
+//			'type'         => InvoiceItem::INVOICE_ITEM_TYPES['feature_charges'],
+//			'start_date'   => $invoiceItem->invoice->start_date,
+//			'description'  => "(Billable Addon) {$addon->description}",
+//			'amount'       => $addon->amount_recurring,
+//			'taxable'      => $addon->taxable,
+//		];
+//
+//	}
 
 	/**
 	 * @param     $data
@@ -1041,13 +1149,12 @@ trait BulkOrderTrait
 		}
 
 		if(isset($data['addon_id'][0])){
-			foreach ($data['addon_id'] as $key => $addon) {
+			foreach ($data['addon_id'] as $addon) {
 				$ogData = [
 					'addon_id'       => $addon,
 					'order_group_id' => $order_group->id
 				];
-
-				if ($order->customer && $order->compare_dates && $paidMonthlyInvoice== 0) {
+				if ($order->customer && $order->compare_dates && $paidMonthlyInvoice == 0) {
 					$amt = $order->addonProRate($addon);
 					$oga = OrderGroupAddon::create(array_merge($ogData, ['prorated_amt' => $amt]));
 				} else {

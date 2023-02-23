@@ -180,7 +180,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$costBreakDown = (object) [
 				'devices'   => $this->getCostBreakDownPreviewForDevices($request, $orderItems),
 				'plans'     => $this->getCostBreakDownPreviewForPlans($request, $orderItems),
-				'sims'      => $this->getCostBreakDownPreviewForSims($request, $orderItems)
+				'sims'      => $this->getCostBreakDownPreviewForSims($request, $orderItems),
+				'addons'    => $this->getCostBreakDownPreviewForAddons($request, $orderItems, $customer),
 			];
 
 			$output['summary'] = $costBreakDown;
@@ -234,6 +235,12 @@ class CheckoutController extends BaseController implements ConstantInterface
 			'orders.*.subscription_id'      => [
 				'numeric',
 				Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			],
+			'orders.*.addon_id.*'      => [
+				'numeric',
+				Rule::exists('addon', 'id')->where(function ($query) use ($requestCompany) {
 					return $query->where('company_id', $requestCompany->id);
 				})
 			],
@@ -616,6 +623,12 @@ class CheckoutController extends BaseController implements ConstantInterface
 						return $query->where('product_type', CustomerProduct::PRODUCT_TYPES['sim']);
 					})
 				],
+				'addons.*.addon_id.*'      => [
+					'numeric',
+					Rule::exists('addon', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
 			]);
 
 			if ($validator->fails()) {
@@ -625,6 +638,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$simNumbers = $request->post('sim_numbers');
 			$customerId = $request->get('customer_id');
+
+			$addons = $request->post('addons');
 
 			$customer = Customer::find($customerId);
 
@@ -637,9 +652,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					$simNumber = trim( $simNumber );
 					$rowNumber = $rowIndex + 1;
 
-					if ( !$this->simNumberExistsForCustomer( $simNumber, $customer ) ) {
-						$error[] = "Phone number {$simNumber} is not valid for row $rowNumber";
-					}
+//					if ( !$this->simNumberExistsForCustomer( $simNumber, $customer ) ) {
+//						$error[] = "Phone number {$simNumber} is not valid for row $rowNumber";
+//					}
 				}
 
 				if($error) {
@@ -675,7 +690,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					$simId = $request->get( 'sim_id' );
 
 					$sim = Sim::find( $simId );
-					foreach ( $simNumbers as $simNumber ) {
+					foreach ( $simNumbers as $simNumberKey => $simNumber ) {
 
 						$orderGroup        = OrderGroup::create( [
 							'order_id' => $order->id
@@ -687,6 +702,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 							'zip_code'            => $request->get( 'zip_code' ),
 							'subscription_status' => Subscription::STATUS[ 'for-activation' ]
 						];
+
+						if($addons && isset($addons[$simNumberKey])) {
+							$subscriptionOrder['addon_id'] = $addons[$simNumberKey]['addon_id'];
+						}
+
 						if ( $orderGroup ) {
 							$outputOrderItem = $this->insertOrderGroupForBulkOrder( $subscriptionOrder, $order, $orderGroup );
 

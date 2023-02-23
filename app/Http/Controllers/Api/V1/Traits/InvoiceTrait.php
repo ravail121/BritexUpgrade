@@ -97,8 +97,6 @@ trait InvoiceTrait
 			if ($coupons) {
 				$taxData = $this->couponTax($taxableItems, $coupons);
 				$taxAmount = $taxData;
-			//	dd($taxAmount);
-				// If coupon tax amount = 0, use original.
 			}
 			
 			if ($taxAmount > 0) {
@@ -115,7 +113,6 @@ trait InvoiceTrait
 					]
 				);
 			}
-		//	dd($taxAmount);
 		}
 	}
 
@@ -148,7 +145,7 @@ trait InvoiceTrait
 						'subscription_id'   => null,
 						'product_type'      => '',
 						'product_id'        => null,
-						'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+						'type'              => self::INVOICE_ITEM_TYPES['taxes'],
 						'start_date'        => $invoice->start_date,
 						'description'       => "(Taxes)",
 						'amount'            => round($taxPercentage * $taxAmount, 2),
@@ -173,7 +170,7 @@ trait InvoiceTrait
 				'invoice_id'   => $invoice->id,
 				'product_type' => '',
 				'product_id'   => null,
-				'type'         => InvoiceItem::INVOICE_ITEM_TYPES['one_time_charges'],
+				'type'         => self::INVOICE_ITEM_TYPES['one_time_charges'],
 				'start_date'   => $invoice->start_date,
 				'description'  => $description,
 				'amount'       => $activationFee,
@@ -202,7 +199,7 @@ trait InvoiceTrait
 					'subscription_id'   => $subscriptionId,
 					'product_type'      => '',
 					'product_id'        => null,
-					'type'              => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+					'type'              => self::INVOICE_ITEM_TYPES['taxes'],
 					'start_date'        => $invoice->start_date,
 					'description'       => "(Taxes)",
 					'amount'            => round($taxPercentage * $taxesWithoutSubscriptions, 2),
@@ -527,7 +524,6 @@ trait InvoiceTrait
 	{
 		$amount = [0];
 		$eligible_products = [];
-		//dd($items);
 		if ($coupons) {
 			foreach ($items as $item) {
 				if ($item->product_type == InvoiceItem::PRODUCT_TYPE['device']) {
@@ -544,16 +540,6 @@ trait InvoiceTrait
 				$eligible_products[] = $couponTaxData['eligible_product'];
 			}
 		}
-		// $eligibleIds = [];
-		// foreach ($eligible_products as $ep) {
-		// 	foreach ($ep as $id) {
-		// 		$eligibleIds[] = $id;
-		// 	}
-		// }
-	
-		
-		// $amount[] = $items->whereNotIn('id', $eligibleIds)->sum('amount');
-		//dd($amount);
 		return array_sum($amount);
 	}
 
