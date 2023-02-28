@@ -50,9 +50,6 @@ class SendEmailForActivationError
 	    foreach ( $emailTemplates as $emailTemplate ) {
 		    $row = $this->makeEmailLayout( $emailTemplate, $customer, $dataRow );
 
-		    print_r( $row );
-		    exit;
-
 		    $row[ 'body' ] = $this->addFieldsToBody( '[error_message]', $message, $row[ 'body' ] );
 
 		    $configurationSet = $this->setMailConfiguration( $customer );
