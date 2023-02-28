@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
+use App\Model\PlanToAddon;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -40,6 +41,22 @@ class CheckoutController extends BaseController implements ConstantInterface
 	public function simsForCatalogue(Request $request)
 	{
 		try {
+			$requestCompany = $request->get('company');
+
+			$validator = Validator::make( $request->all(), [
+				'customer_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
+			]);
+
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return $this->respondError($errors->messages(), 422);
+			}
 
 			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 50;
 			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
@@ -1088,18 +1105,91 @@ class CheckoutController extends BaseController implements ConstantInterface
 	 */
 	public function getNumberChangeAddons(Request $request)
 	{
-		$requestCompany = $request->get('company');
 		try {
-			$numberChangeAddon = Addon::where('company_id', $requestCompany->id)->oneTime()->first();
-			return $this->respond( [
-				'status'    => 'success',
-				'data'      => $numberChangeAddon
+			$requestCompany = $request->get( 'company' );
+			$validator = Validator::make( $request->all(), [
+				'customer_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
 			]);
 
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return $this->respondError($errors->messages(), 422);
+			}
+
+			$customerProducts = CustomerProduct::where('customer_id', $request->get('customer_id'))
+			                                   ->where('product_type', CustomerProduct::PRODUCT_TYPES['addon'])
+			                                   ->pluck('product_id')->toArray();
+
+			if($customerProducts) {
+				$addons = Addon::whereIn( 'id', $customerProducts )->oneTime()->get();
+
+				return $this->respond( $addons );
+			} else {
+				return $this->respond( [] );
+			}
+
 		} catch(\Exception $e) {
-			Log::info($e->getMessage(), 'Error in Get Number Change Addons');
+			Log::info($e->getMessage(), 'Error in Addons For Number Change');
 			return $this->respondError($e->getMessage());
 		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function listEligibleSimsForNumberChange(Request $request)
+	{
+		try {
+			$requestCompany = $request->get( 'company' );
+			$validator = Validator::make( $request->all(), [
+				'customer_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				],
+				'addon_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('addon', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
+			]);
+
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return $this->respondError($errors->messages(), 422);
+			}
+
+			$planIds = PlanToAddon::where('addon_id', $request->get('addon_id'))->pluck('plan_id')->toArray();
+
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 10;
+
+			$subscriptions = Subscription::where('customer_id', $request->get('customer_id'))
+										 ->whereIn( 'plan_id', $planIds )
+										 ->where( 'status', Subscription::STATUS['active'] )
+										 ->where( 'pending_number_change', 0 )
+			                             ->whereHas( 'customer', function ( $query ) use ($requestCompany){
+				                             $query->where( 'company_id', '=', $requestCompany->id );
+			                             } )->orderBy('updated_at', 'DESC')->paginate($perPage);
+
+			return $this->respond($subscriptions);
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in List Eligible Sims For Number Change');
+			return $this->respondError($e->getMessage());
+		}
+
 	}
 
 	public function getPendingNumberChanges(Request $request)
@@ -1124,9 +1214,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				return $this->respondError( $errors->messages(), 422 );
 			}
 
-			$output = [];
-
-			$subscriptions = Subscription::pendingNumberChange()
+			$subscriptions = Subscription::pendingNumberChange()->where('customer_id', $request->get('customer_id'))
 			               ->whereHas( 'customer', function ( $query ) use ($requestCompany){
 				               $query->where( 'company_id', '=', $requestCompany->id );
 			               } )->orderBy('updated_at', 'DESC')->paginate($perPage);
