@@ -680,6 +680,16 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.ultra.validate-zip-code',
 			'uses' => 'BulkOrder\CheckoutController@validateZipCodeForUltraSims'
 		]);
+
+		Route::get('/addons/number-change', [
+			'as'   => 'api.bulk.order.addons.get-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getNumberChangeAddons'
+		]);
+
+		Route::post('/lines/pending-number-change', [
+			'as'   => 'api.bulk.order.lines.pending-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getPendingNumberChanges'
+		]);
 	});
 
 	/**

@@ -17,6 +17,7 @@ use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
+use App\Model\SubscriptionAddon;
 use App\Model\CustomerStandaloneSim;
 use App\Model\CustomerStandaloneDevice;
 use App\Http\Controllers\Api\V1\CardController;
@@ -539,10 +540,11 @@ trait BulkOrderTrait
 		$order = Order::where('invoice_id', $invoice->id)->first();
 		foreach($orderItems as $orderItem) {
 			if(isset($orderItem['subscription_id'])){
-				$subscriptionIds[] = $orderItem['subscription_id'];
+				$subscriptionId = $orderItem['subscription_id'];
+				$subscriptionIds[] = $subscriptionId;
 				$orderGroupAddons = $orderItem->orderGroupAddon()->get();
 				if($orderGroupAddons){
-					$this->addonsInvoiceItem($orderGroupAddons, $invoice);
+					$this->addonsInvoiceItem($orderGroupAddons, $invoice, $subscriptionId);
 				}
 			} else {
 				if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id'])){
@@ -694,22 +696,36 @@ trait BulkOrderTrait
 	/**
 	 * @param $orderGroupAddons
 	 * @param $invoice
-	 * @param $order
+	 * @param $subscriptionId
 	 *
 	 * @return void
 	 */
-	protected function addonsInvoiceItem($orderGroupAddons, $invoice)
+	protected function addonsInvoiceItem($orderGroupAddons, $invoice, $subscriptionId)
 	{
 		$invoiceItemArray = [
-			'invoice_id'  => $invoice->id,
-			'type'        => self::INVOICE_ITEM_TYPES['feature_charges'],
-			'start_date'  => $invoice->start_date,
-			'description' => InvoiceController::DESCRIPTION,
-			'taxable'     => InvoiceController::DEFAULT_INT,
+			'invoice_id'        => $invoice->id,
+			'type'              => self::INVOICE_ITEM_TYPES['feature_charges'],
+			'start_date'        => $invoice->start_date,
+			'subscription_id'   => $subscriptionId,
+			'product_type'      => InvoiceController::ADDON_TYPE
 		];
 		foreach($orderGroupAddons as $orderGroupAddon){
 			$addon = Addon::find($orderGroupAddon->addon_id);
-			$invoiceItemArray['product_type'] = InvoiceController::ADDON_TYPE;
+			if($addon->is_one_time){
+				/**
+				 * @internal Update the pending_number_change
+				 */
+				$subscription = Subscription::find($subscriptionId);
+				$subscription->update([
+					'pending_number_change' => true
+				]);
+			} else {
+				$subscriptionAddon = SubscriptionAddon::create([
+					'subscription_id' => $subscriptionId,
+					'addon_id'        => $addon->id,
+					'status'          => SubscriptionAddon::STATUSES['for-adding']
+				]);
+			}
 			$invoiceItemArray['product_id'] = $addon->id;
 			$invoiceItemArray['amount'] = $this->convertToTwoDecimals($addon->amount_recurring, 2);
 			$invoiceItemArray['taxable'] = $addon->taxable;

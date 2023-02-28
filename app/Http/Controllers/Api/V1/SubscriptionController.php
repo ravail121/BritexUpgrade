@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers\Api\V1;
 
-
 use Validator;
 use App\Model\Ban;
 use Carbon\Carbon;

@@ -56,7 +56,8 @@ class Subscription extends Model
 		'sent_to_readycloud',
 		'label',
 		'requested_zip',
-		'sent_to_shipping_easy'
+		'sent_to_shipping_easy',
+		'pending_number_change'
 	];
 
 	/**
@@ -740,5 +741,15 @@ class Subscription extends Model
 	public function getUpgradeStatusAttribute()
 	{
 		return $this->upgrade_downgrade_status == self::UpgradeDowngradeStatus['upgrade'] ? true : false;
+	}
+
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
+	public function scopePendingNumberChange($query)
+	{
+		return $query->where('pending_number_change', 1);
 	}
 }

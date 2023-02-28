@@ -61,4 +61,9 @@ class Addon extends Model
     {
         return $this->hasMany(App\Model\SubscriptionAddon::class, 'addon_id', 'id');
     }
+
+	public function scopeOneTime($query)
+	{
+		return $query->where('is_one_time', 1);
+	}
 }

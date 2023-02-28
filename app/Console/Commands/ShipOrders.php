@@ -6,6 +6,10 @@ use App\Model\Order;
 use Illuminate\Console\Command;
 use App\Http\Controllers\Api\V1\CronJobs\OrderController;
 
+
+/**
+ *
+ */
 class ShipOrders extends Command
 {
     /**

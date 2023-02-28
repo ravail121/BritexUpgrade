@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
 use App\Model\Plan;
+use App\Model\Addon;
 use App\Helpers\Log;
 use App\Model\Order;
 use App\Model\Device;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\Subscription;
-use App\Rules\ValidZipCode;
 use Illuminate\Http\Request;
 use App\Model\CustomerProduct;
 use Illuminate\Validation\Rule;
@@ -652,9 +651,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 					$simNumber = trim( $simNumber );
 					$rowNumber = $rowIndex + 1;
 
-//					if ( !$this->simNumberExistsForCustomer( $simNumber, $customer ) ) {
-//						$error[] = "Phone number {$simNumber} is not valid for row $rowNumber";
-//					}
+					if ( !$this->simNumberExistsForCustomer( $simNumber, $customer ) ) {
+						$error[] = "Phone number {$simNumber} is not valid for row $rowNumber";
+					}
 				}
 
 				if($error) {
@@ -780,7 +779,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$output = [];
 
-			$orders = Order::where( 'status', '1' )->with( 'subscriptions', 'standAloneDevices', 'standAloneSims', 'invoice' )
+			$orders = Order::where('status', '1')->where('customer_id', $request->get('customer_id'))
+			                                     ->with( 'subscriptions', 'standAloneDevices', 'standAloneSims', 'invoice')
 			     ->whereHas( 'customer', function ( $query ) use ($requestCompany){
 				     $query->where( 'company_id', '=', $requestCompany->id );
 			     } )->orderBy('created_at', 'DESC')->paginate($perPage);
@@ -1039,7 +1039,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 	 *
 	 * @return \Illuminate\Http\JsonResponse
 	 */
-	public function validateZipCodeForUltraSims(Request $request){
+	public function validateZipCodeForUltraSims(Request $request)
+	{
 		$requestCompany = $request->get('company');
 		try {
 			$validator = Validator::make( $request->all(), [
@@ -1078,5 +1079,65 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			return $this->respondError( $response );
 		}
+	}
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function getNumberChangeAddons(Request $request)
+	{
+		$requestCompany = $request->get('company');
+		try {
+			$numberChangeAddon = Addon::where('company_id', $requestCompany->id)->oneTime()->first();
+			return $this->respond( [
+				'status'    => 'success',
+				'data'      => $numberChangeAddon
+			]);
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in Get Number Change Addons');
+			return $this->respondError($e->getMessage());
+		}
+	}
+
+	public function getPendingNumberChanges(Request $request)
+	{
+		try {
+			$perPage = $request->has('per_page') ? (int) $request->get('per_page') : 10;
+			$requestCompany = $request->get( 'company' );
+
+			$validator = Validator::make( $request->all(), [
+				'customer_id' => [
+					'numeric',
+					'required',
+					Rule::exists( 'customer', 'id' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} )
+				]
+			] );
+
+			if ( $validator->fails() ) {
+				$errors = $validator->errors();
+
+				return $this->respondError( $errors->messages(), 422 );
+			}
+
+			$output = [];
+
+			$subscriptions = Subscription::pendingNumberChange()
+			               ->whereHas( 'customer', function ( $query ) use ($requestCompany){
+				               $query->where( 'company_id', '=', $requestCompany->id );
+			               } )->orderBy('updated_at', 'DESC')->paginate($perPage);
+
+
+			return $this->respond($subscriptions);
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in get pending number changes');
+			return $this->respondError($e->getMessage());
+		}
+
 	}
 }
