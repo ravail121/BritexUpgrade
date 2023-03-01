@@ -139,7 +139,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					 */
 					if($numberChange){
 						$order_group->update([
-							'requested_zip' => $request->get('requested_zip')
+							'requested_zip' => $request->get('zip_code')
 						]);
 					}
 

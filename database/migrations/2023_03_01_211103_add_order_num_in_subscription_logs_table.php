@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddRequestedZipColumnsInOrderGroupTable extends Migration
+class AddOrderNumInSubscriptionLogsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,10 @@ class AddRequestedZipColumnsInOrderGroupTable extends Migration
      */
     public function up()
     {
-	    Schema::table('order_group', function(Blueprint $table){
-		    $table->string('requested_zip')->after('imei_number')->nullable();
+	    Schema::table('subscription_log', function(Blueprint $table){
+		    $table->integer('order_num')->after('new_product')->nullable();
 	    });
+
     }
 
     /**
@@ -25,9 +26,9 @@ class AddRequestedZipColumnsInOrderGroupTable extends Migration
      */
     public function down()
     {
-	    Schema::table('order_group', function (Blueprint $table) {
+	    Schema::table('subscription_log', function (Blueprint $table) {
 		    $table->dropColumn([
-			    'requested_zip'
+			    'order_num'
 		    ]);
 	    });
     }

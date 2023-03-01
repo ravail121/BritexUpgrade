@@ -16,6 +16,7 @@ use App\Model\PlanToAddon;
 use App\Model\InvoiceItem;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
+use App\Model\SubscriptionLog;
 use App\Model\OrderGroupAddon;
 use App\Model\SubscriptionAddon;
 use App\Model\CustomerStandaloneSim;
@@ -724,6 +725,19 @@ trait BulkOrderTrait
 				$subscription->update([
 					'pending_number_change' => true,
 					'requested_zip'         => $orderItem->requested_zip
+				]);
+				/**
+				 * Create subscription logs
+				 */
+				SubscriptionLog::create( [
+					'subscription_id'   => $subscription->id,
+					'company_id'        => $subscription->company->id,
+					'customer_id'       => $subscription->customer->id,
+					'description'       => 'Number Change Requested',
+					'category'          => SubscriptionLog::CATEGORY['sim-number-change-requested'],
+					'old_product'       => $subscription->sim_card_num,
+					'new_product'       => null,
+					'order_num'         => $invoice->order->order_num
 				]);
 			} else {
 				$subscriptionAddon = SubscriptionAddon::create([

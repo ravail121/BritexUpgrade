@@ -13,7 +13,8 @@ class SubscriptionLog extends Model
 		'replacement-device-ordered'       => 'Replacement Device Ordered',
 		'replacement-sim-ordered'          => 'Replacement SIM Ordered',
 		'sim-num-changed'                  => 'SIM Num Changed',
-		'device-imei-changed'              => 'Device IMEI Changed'
+		'device-imei-changed'              => 'Device IMEI Changed',
+		'sim-number-change-requested'      => 'SIM Number Change Requested'
 	];
 
 	/**
@@ -32,6 +33,7 @@ class SubscriptionLog extends Model
 		'product_id',
 		'description',
 		'old_product',
-		'new_product'
+		'new_product',
+		'order_num'
 	];
 }
