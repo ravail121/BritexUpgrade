@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-use App\Model\PlanToAddon;
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -13,6 +12,7 @@ use App\Model\Order;
 use App\Model\Device;
 use App\Model\Customer;
 use App\Model\OrderGroup;
+use App\Model\PlanToAddon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\CustomerProduct;
@@ -86,18 +86,17 @@ class CheckoutController extends BaseController implements ConstantInterface
 	{
 		try {
 			$planActivation = $request->get('plan_activation') ?: false;
-			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
+			$numberChange = $request->get('number_change') ?: false;
+			$validation = $this->validationRequestForBulkOrder($request, $planActivation, $numberChange);
 			if($validation !== 'valid') {
 				return $validation;
 			}
 
 			$data = $request->all();
 
-			$orderTransaction = DB::transaction(function () use ($request, $data, $planActivation) {
+			$orderTransaction = DB::transaction(function () use ($request, $data, $planActivation, $numberChange) {
 
 				$customer = Customer::find($request->get('customer_id'));
-
-				$orderCount = $this->getOrderCount($customer);
 
 				/**
 				 * Create new row in order table if the order is not for plan activation
@@ -176,7 +175,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 	{
 		try {
 			$orderSubscription = $request->get('plan_activation') ?: false;
-			$validation = $this->validationRequestForBulkOrder($request, $orderSubscription);
+			$numberChange = $request->get('number_change') ?: false;
+			$validation = $this->validationRequestForBulkOrder($request, $orderSubscription, $numberChange);
 			if($validation !== 'valid') {
 				return $validation;
 			}
@@ -219,11 +219,12 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 	/**
 	 * @param $request
-	 * @param $planActivation
+	 * @param $orderSubscription
+	 * @param $numberChange
 	 *
 	 * @return \Illuminate\Http\JsonResponse|string
 	 */
-	private function validationRequestForBulkOrder($request, $orderSubscription)
+	private function validationRequestForBulkOrder($request, $orderSubscription, $numberChange=false)
 	{
 		$requestCompany = $request->get('company');
 		if ( !$requestCompany->enable_bulk_order ) {
@@ -291,6 +292,26 @@ class CheckoutController extends BaseController implements ConstantInterface
 					return $query->where('company_id', $requestCompany->id);
 				})
 			];
+		} elseif($numberChange){
+			$baseValidation['orders.*.addon_id.*']              = [
+				'numeric',
+				'required',
+				Rule::exists('addon', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			];
+			$baseValidation['orders.*.subscription_id']              = [
+				'required',
+				'numeric',
+				Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
+					return $query->where('company_id', $requestCompany->id);
+				})
+			];
+			$baseValidation['zip_code']              = [
+				'min:5',
+				'max:5',
+			];
+
 		} else {
 			$baseValidation['orders.*.plan_id']              = [
 				'numeric',
@@ -908,6 +929,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$requestCompany = $request->get( 'company' );
 
 			$planActivation = $request->get( 'plan_activation' ) ?: false;
+			$numberChange = $request->get( 'number_change' ) ?: false;
 
 			$validator = Validator::make( $request->all(), [
 				'customer_id' => [
@@ -947,7 +969,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						}
 					}
 				}
-				$this->createInvoice( $request, $order, $orderGroups, $planActivation, $hasSubscription, $itemStatus, 'Bulk Order' );
+				$this->createInvoice( $request, $order, $orderGroups, $planActivation, $hasSubscription, $itemStatus, 'Bulk Order', $numberChange );
 
 				$outputOrder = [
 					'order_hash'            => $order->hash,
