@@ -757,7 +757,7 @@ trait BulkOrderTrait
 		foreach ($orderItems as $orderItem) {
 			$addons = $orderItem['addon_id'] ??  [];
 			if(!$addons){
-				$addons = $orderItem ? $orderItem->orderGroupAddon()->pluck('addon_id')->toArray() : [];
+				$addons = !is_array($orderItem) ? $orderItem->orderGroupAddon()->pluck('addon_id')->toArray() : [];
 			}
 			if ($addons) {
 				foreach ($addons as $addon) {
