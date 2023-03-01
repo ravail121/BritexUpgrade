@@ -549,7 +549,6 @@ trait BulkOrderTrait
 					$subscriptionIds[] = $subscriptionId;
 				} else {
 					$this->addonsInvoiceItem( $orderItem, $invoice, $subscriptionId );
-
 				}
 			} else {
 				if(isset($orderItem['sim_id']) && !isset($orderItem['device_id']) && !isset($orderItem['plan_id'])){
@@ -723,7 +722,8 @@ trait BulkOrderTrait
 				 */
 				$subscription = Subscription::find($subscriptionId);
 				$subscription->update([
-					'pending_number_change' => true
+					'pending_number_change' => true,
+					'requested_zip'         => $orderItem->requested_zip
 				]);
 			} else {
 				$subscriptionAddon = SubscriptionAddon::create([

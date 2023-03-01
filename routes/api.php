@@ -105,7 +105,7 @@ Route::middleware('APIToken')->group(function () {
 			//'middleware' => 'auth:api',
 			'uses' => 'OrderController@delete',
 		]);
-		Route::patch('/remove', [
+		Route::post('/remove', [
 			'as' => 'api.orders.patch_remove',
 			'uses' => 'OrderController@remove_from_order',
 		]);

@@ -134,6 +134,15 @@ class CheckoutController extends BaseController implements ConstantInterface
 						'order_id' => $order->id
 					] );
 
+					/**
+					 * @internal Add requested_zip for number change
+					 */
+					if($numberChange){
+						$order_group->update([
+							'requested_zip' => $request->get('requested_zip')
+						]);
+					}
+
 					if($order_group) {
 						$this->insertOrderGroupForBulkOrder( $orderItem, $order, $order_group );
 						if ( isset( $paidMonthlyInvoice ) && $paidMonthlyInvoice == "1" && isset( $orderItem[ 'plan_id' ] ) ) {
@@ -568,7 +577,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 					}
 					foreach ($subscriptionOrders as $subscriptionOrder){
 						$orderGroup = OrderGroup::create( [
-							'order_id' => $order->id
+							'order_id'      => $order->id,
+							'requested_zip' => $subscriptionOrder['zip_code']
 						] );
 						if($orderGroup) {
 							/**
@@ -730,7 +740,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 					foreach ( $simNumbers as $simNumberKey => $simNumber ) {
 
 						$orderGroup        = OrderGroup::create( [
-							'order_id' => $order->id
+							'order_id'      => $order->id,
+							'requested_zip' => $request->get( 'zip_code' )
 						] );
 						$subscriptionOrder = [
 							'sim_type'            => $sim->name,
