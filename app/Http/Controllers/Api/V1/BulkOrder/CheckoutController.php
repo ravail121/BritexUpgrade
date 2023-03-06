@@ -1227,6 +1227,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 	}
 
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
 	public function getPendingNumberChanges(Request $request)
 	{
 		try {
@@ -1282,33 +1287,22 @@ class CheckoutController extends BaseController implements ConstantInterface
 					Rule::exists( 'customer', 'id' )->where( function ( $query ) use ( $requestCompany ) {
 						return $query->where( 'company_id', $requestCompany->id );
 					} )
-				],
-				'order_num'   => [
-					'numeric',
-					'required',
-					Rule::exists( 'order', 'order_num' )->where( function ( $query ) use ( $requestCompany ) {
-						return $query->where( 'company_id', $requestCompany->id );
-					} ),
-					Rule::exists( 'subscription_log', 'order_num' )->where( function ( $query ) use ( $requestCompany ) {
-						return $query->where( 'company_id', $requestCompany->id );
-					} ),
 				]
 			] );
 
 			if ( $validator->fails() ) {
 				$errors = $validator->errors();
-
 				return $this->respondError( $errors->messages(), 422 );
 			}
 
-			$subscriptionLogs = SubscriptionLog::where('order_num', $request->get('order_num'))
-			                            ->where('customer_id', $request->get('customer_id'))
+			$subscriptionLogs = SubscriptionLog::where('customer_id', $request->get('customer_id'))
+										->whereIn('category', [ SubscriptionLog::CATEGORY['number-change-requested'], SubscriptionLog::CATEGORY['number-change-processed'] ])
 			                            ->whereHas( 'customer', function ( $query ) use ($requestCompany) {
 				                            $query->where( 'company_id', '=', $requestCompany->id );
-			                            })->with('subscription')->orderBy('created_at', 'DESC')->paginate($perPage);
-
+			                            })->orderBy('created_at', 'DESC')->paginate($perPage);
 
 			return $this->respond($subscriptionLogs);
+
 		} catch ( \Exception $e ) {
 			Log::info( $e->getMessage(), 'Error in number change history' );
 
@@ -1316,6 +1310,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 		}
 	}
 
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
 	public function processNumberChange(Request $request) {
 		try {
 			$requestCompany = $request->get( 'company' );
