@@ -1320,6 +1320,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 		try {
 			$requestCompany = $request->get( 'company' );
 
+			$subscription_id = $request->input('subscription_id');
+
 			$validator = Validator::make( $request->all(), [
 				'customer_id' => [
 					'numeric',
@@ -1339,9 +1341,11 @@ class CheckoutController extends BaseController implements ConstantInterface
 					'required',
 					'min:19',
 					'max:20',
-					'distinct',
-					Rule::unique('subscription', 'phone_number')->where(function ($query) {
-						return $query->where('status', '!=', Subscription::STATUS['closed']);
+					Rule::unique('subscription')->ignore($subscription_id)->where(function ($query) use ($requestCompany) {
+						return $query->where([
+							[ 'status', '!=', Subscription::STATUS['closed'] ],
+							[ 'company_id', $requestCompany->id ]
+						]);
 					})
 				]
 			] );
