@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
+
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -16,6 +17,7 @@ use App\Model\PlanToAddon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\CustomerProduct;
+use App\Model\SubscriptionLog;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
@@ -1260,5 +1262,57 @@ class CheckoutController extends BaseController implements ConstantInterface
 			return $this->respondError($e->getMessage());
 		}
 
+	}
+
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse
+	 */
+	public function numberChangeHistory(Request $request) {
+		try {
+			$perPage        = $request->has( 'per_page' ) ? (int) $request->get( 'per_page' ) : 10;
+			$requestCompany = $request->get( 'company' );
+
+			$validator = Validator::make( $request->all(), [
+				'customer_id' => [
+					'numeric',
+					'required',
+					Rule::exists( 'customer', 'id' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} )
+				],
+				'order_num'   => [
+					'numeric',
+					'required',
+					Rule::exists( 'order', 'order_num' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} ),
+					Rule::exists( 'subscription_log', 'order_num' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} ),
+				]
+			] );
+
+			if ( $validator->fails() ) {
+				$errors = $validator->errors();
+
+				return $this->respondError( $errors->messages(), 422 );
+			}
+
+			$subscriptionLogs = SubscriptionLog::where('order_num', $request->get('order_num'))
+			                            ->where('customer_id', $request->get('customer_id'))
+			                            ->whereHas( 'customer', function ( $query ) use ($requestCompany) {
+				                            $query->where( 'company_id', '=', $requestCompany->id );
+			                            })->with('subscription')->orderBy('created_at', 'DESC')->paginate($perPage);
+
+
+			return $this->respond($subscriptionLogs);
+		} catch ( \Exception $e ) {
+			Log::info( $e->getMessage(), 'Error in number change history' );
+
+			return $this->respondError( $e->getMessage() );
+		}
 	}
 }

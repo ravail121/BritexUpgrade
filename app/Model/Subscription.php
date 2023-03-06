@@ -752,4 +752,12 @@ class Subscription extends Model
 	{
 		return $query->where('pending_number_change', 1);
 	}
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasMany
+	 */
+	public function subscriptionLogs()
+	{
+		return $this->hasMany('App\Model\SubscriptionLog', 'subscription_id', 'id');
+	}
 }

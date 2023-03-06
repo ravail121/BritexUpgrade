@@ -36,4 +36,20 @@ class SubscriptionLog extends Model
 		'new_product',
 		'order_num'
 	];
+
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function subscription(){
+		return $this->hasOne('App\Model\Subscription' , 'id', 'subscription_id');
+	}
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function customer()
+	{
+		return $this->hasOne('App\Model\Customer', 'id', 'customer_id');
+	}
 }

@@ -695,6 +695,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.lines.eligible-for-number-change',
 			'uses' => 'BulkOrder\CheckoutController@listEligibleSimsForNumberChange'
 		]);
+
+		Route::post('/lines/number-change-history', [
+			'as'   => 'api.bulk.order.lines.number-change-history',
+			'uses' => 'BulkOrder\CheckoutController@numberChangeHistory'
+		]);
 	});
 
 	/**
