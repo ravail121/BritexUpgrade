@@ -700,6 +700,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.lines.number-change-history',
 			'uses' => 'BulkOrder\CheckoutController@numberChangeHistory'
 		]);
+
+		Route::post('/lines/process-number-change', [
+			'as'   => 'api.bulk.order.lines.process-number-change',
+			'uses' => 'BulkOrder\CheckoutController@processNumberChange'
+		]);
 	});
 
 	/**

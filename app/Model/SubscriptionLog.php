@@ -14,7 +14,8 @@ class SubscriptionLog extends Model
 		'replacement-sim-ordered'          => 'Replacement SIM Ordered',
 		'sim-num-changed'                  => 'SIM Num Changed',
 		'device-imei-changed'              => 'Device IMEI Changed',
-		'number-change-requested'          => 'Number Change Requested'
+		'number-change-requested'          => 'Number Change Requested',
+		'number-change-processed'          => 'Number Change Processed',
 	];
 
 	/**

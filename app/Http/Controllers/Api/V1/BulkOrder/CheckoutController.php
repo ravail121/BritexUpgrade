@@ -1252,9 +1252,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$subscriptions = Subscription::pendingNumberChange()->where('customer_id', $request->get('customer_id'))
 			               ->whereHas( 'customer', function ( $query ) use ($requestCompany){
 				               $query->where( 'company_id', '=', $requestCompany->id );
-			               } )->orderBy('updated_at', 'DESC')->paginate($perPage);
-
-
+			               } )->with(['subscriptionLogs' => function($query){
+								$query->orderBy('created_at', 'DESC');
+						   }])->orderBy('updated_at', 'DESC')->paginate($perPage);
 			return $this->respond($subscriptions);
 
 		} catch(\Exception $e) {
@@ -1314,5 +1314,81 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			return $this->respondError( $e->getMessage() );
 		}
+	}
+
+	public function processNumberChange(Request $request) {
+		try {
+			$requestCompany = $request->get( 'company' );
+
+			$validator = Validator::make( $request->all(), [
+				'customer_id' => [
+					'numeric',
+					'required',
+					Rule::exists( 'customer', 'id' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} )
+				],
+				'subscription_id'   => [
+					'numeric',
+					'required',
+					Rule::exists( 'subscription', 'id' )->where( function ( $query ) use ( $requestCompany ) {
+						return $query->where( 'company_id', $requestCompany->id );
+					} )
+				],
+				'phone_number'   => [
+					'required',
+					'min:19',
+					'max:20',
+					'distinct',
+					Rule::unique('subscription', 'phone_number')->where(function ($query) {
+						return $query->where('status', '!=', Subscription::STATUS['closed']);
+					})
+				]
+			] );
+
+			if ( $validator->fails() ) {
+				$errors = $validator->errors();
+
+				return $this->respondError( $errors->messages(), 422 );
+			}
+
+			$subscription = Subscription::find($request->get('subscription_id'));
+
+			$existingPhoneNumber = $subscription->phone_number;
+
+			$subscription = tap($subscription, function($subscription) use ($request) {
+				$subscription->pending_number_change = 0;
+				$subscription->phone_number = $request->get('phone_number');
+				$subscription->save();
+			});
+
+			$subscriptionLog = $subscription->subscriptionLogs()->where([
+					[ 'category', SubscriptionLog::CATEGORY['number-change-requested' ]],
+					[ 'old_product', $existingPhoneNumber ]
+				])->first();
+			$subscription->subscriptionLogs()->create([
+				'subscription_id'   => $subscription->id,
+				'company_id'        => $subscription->company->id,
+				'customer_id'       => $subscription->customer->id,
+				'description'       => 'Number Change Processed',
+				'category'          => SubscriptionLog::CATEGORY['number-change-processed'],
+				'old_product'       => $existingPhoneNumber,
+				'new_product'       => $subscription->phone_number,
+				'order_num'         => $subscriptionLog->order_num ?? null,
+			]);
+
+			$successResponse = [
+				'status'    => 'success',
+				'data'      => $subscription,
+				'message'   => 'Number change processed successfully'
+			];
+
+			return $this->respond($successResponse);
+		} catch ( \Exception $e ) {
+			Log::info( $e->getMessage(), 'Error in process number change' );
+
+			return $this->respondError( $e->getMessage() );
+		}
+
 	}
 }
