@@ -1338,8 +1338,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 				],
 				'phone_number'   => [
 					'required',
-					'min:19',
-					'max:20',
 					Rule::unique('subscription')->ignore($subscription_id)->where(function ($query) use ($requestCompany) {
 						return $query->where([
 							[ 'status', '!=', Subscription::STATUS['closed'] ],
@@ -1361,7 +1359,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$subscription = tap($subscription, function($subscription) use ($request) {
 				$subscription->pending_number_change = 0;
-				$subscription->phone_number = $request->get('phone_number');
+				$subscription->phone_number = preg_replace('/[^\dxX]/', '', $request->get('phone_number'));
 				$subscription->save();
 			});
 
