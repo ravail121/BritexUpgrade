@@ -936,6 +936,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 	 * @param Request $request
 	 *
 	 * @return \Illuminate\Http\JsonResponse|void
+	 * @return \Illuminate\Http\JsonResponse|void
 	 */
 	public function generateOneTimeInvoice(Request $request) {
 		try {
@@ -1241,7 +1242,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$validator = Validator::make( $request->all(), [
 				'customer_id' => [
 					'numeric',
-					'required',
 					Rule::exists( 'customer', 'id' )->where( function ( $query ) use ( $requestCompany ) {
 						return $query->where( 'company_id', $requestCompany->id );
 					} )
@@ -1254,12 +1254,21 @@ class CheckoutController extends BaseController implements ConstantInterface
 				return $this->respondError( $errors->messages(), 422 );
 			}
 
-			$subscriptions = Subscription::pendingNumberChange()->where('customer_id', $request->get('customer_id'))
-			               ->whereHas( 'customer', function ( $query ) use ($requestCompany){
-				               $query->where( 'company_id', '=', $requestCompany->id );
-			               } )->with(['subscriptionLogs' => function($query){
-								$query->orderBy('created_at', 'DESC');
-						   }])->orderBy('updated_at', 'DESC')->paginate($perPage);
+			if($request->has('customer_id')) {
+
+				$subscriptions = Subscription::pendingNumberChange()->where( 'customer_id', $request->get( 'customer_id' ) )
+				                             ->whereHas( 'customer', function ( $query ) use ( $requestCompany ) {
+					                             $query->where( 'company_id', '=', $requestCompany->id );
+				                             } )->with( [ 'subscriptionLogs' => function ( $query ) {
+													$query->orderBy( 'created_at', 'DESC' );
+												}
+											] )->orderBy( 'updated_at', 'DESC' )->paginate( $perPage );
+			} else {
+				$subscriptions = Subscription::pendingNumberChange()->where( 'company_id', $requestCompany->id  )
+				                                                    ->with( [ 'subscriptionLogs' => function ( $query ) {
+																		$query->orderBy( 'created_at', 'DESC' );
+																	} ] )->orderBy( 'updated_at', 'DESC' )->paginate( $perPage );
+			}
 			return $this->respond($subscriptions);
 
 		} catch(\Exception $e) {
