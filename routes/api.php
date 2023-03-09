@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use App\Scripts\TestEye4Fraud;
-use App\Events\SubcriptionStatusChanged;
 /*
 |--------------------------------------------------------------------------
 | API Routes
