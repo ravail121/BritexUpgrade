@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\BulkOrder;
 
-
 use Validator;
 use Carbon\Carbon;
 use App\Model\Sim;
@@ -11,6 +10,7 @@ use App\Model\Addon;
 use App\Helpers\Log;
 use App\Model\Order;
 use App\Model\Device;
+use App\Model\Company;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\PlanToAddon;
@@ -314,8 +314,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 			$baseValidation['orders.*.subscription_id']              = [
 				'required',
 				'numeric',
-				Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany) {
-					return $query->where('company_id', $requestCompany->id);
+				Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany, $request) {
+					return $query->where('company_id', $requestCompany->id)
+						->where('customer_id', $request->customer_id);
 				})
 			];
 			$baseValidation['zip_code']              = [
@@ -1400,5 +1401,191 @@ class CheckoutController extends BaseController implements ConstantInterface
 			return $this->respondError( $e->getMessage() );
 		}
 
+	}
+
+
+	/**
+	 * Order Number Changes from CSV file
+	 * @param Request $request
+	 *
+	 * @return \Illuminate\Http\JsonResponse|void
+	 */
+	public function csvOrderNumberChanges(Request $request)
+	{
+		try {
+			$requestCompany = $request->get('company');
+
+			$validator = Validator::make( $request->all(), [
+				'csv_file'              =>  'required',
+				'customer_id'           => [
+					'numeric',
+					'required',
+					Rule::exists('customer', 'id')->where(function ($query) use ($requestCompany) {
+						return $query->where('company_id', $requestCompany->id);
+					})
+				]
+			]);
+
+			if ($validator->fails()) {
+				$errors = $validator->errors();
+				return $this->respondError($errors->messages(), 422);
+			}
+			$customerId = $request->get('customer_id');
+
+			$customer = Customer::find($customerId);
+
+			$csvFile = $request->post('csv_file');
+
+			/**
+			 * Validate if the input file is CSV file
+			 */
+			if (preg_match('/^data:text\/(\w+);base64,/', $csvFile) || preg_match('/^data:application\/(\w+);base64,/', $csvFile) || preg_match('/^data:@file\/(\w+);base64,/', $csvFile)) {
+				$csvFile = substr($csvFile, strpos($csvFile, ',') + 1);
+				$csvFile = base64_decode($csvFile);
+			} else {
+				return $this->respondError('CSV file not uploaded', 422);
+			}
+
+			if ($csvFile) {
+				$csvAsArray = str_getcsv( $csvFile, "\n" );
+				$headerRows = array_shift( $csvAsArray );
+				$headerRowsArray = explode( ',', $headerRows );
+				$csvAsArray = array_map( function ( $row ) use ( $headerRowsArray ) {
+					return array_combine( $headerRowsArray, str_getcsv( $row ) );
+				}, $csvAsArray );
+
+				$numberChangesData = [];
+				$error = [];
+
+				foreach ( $csvAsArray as $rowIndex => $row ) {
+					$rowNumber = $rowIndex + 1;
+
+
+					if(!$row['subscription_id'] && !$row['addon_id']) {
+						$error[] = "Required fields missing for row $rowNumber";
+					}
+
+					/**
+					 * Validate if the required fields are present
+					 */
+					if($row['zip_code'] && !preg_match("/^[0-9]{5}$/", $row['zip_code'])) {
+						$error[] = "Zip code is not valid for row $rowNumber";
+					}
+
+					if(!$this->subscriptionExistsForCustomer((int) $row['subscription_id'], $customer, $requestCompany)) {
+						$error[] = "Subscription with ID {$row['subscription_id']} is not valid for row $rowNumber";
+					}
+
+					if(!$this->validateAddonForNumberChange((int) $row['addon_id'], $customer, $requestCompany)) {
+						$error[] = "Addon with ID {$row['addon_id']} is not valid for row $rowNumber";
+					}
+
+					$numberChangesData[] = $row;
+				}
+
+				if($error) {
+					return $this->respondError($error, 422);
+				} else {
+
+					$orderTransaction = DB::transaction( function () use ( $request, $numberChangesData, $customer ) {
+
+						/**
+						 * Create new row in order table if the order is not for plan activation
+						 */
+						$order = Order::create( [
+							'hash'              => sha1( time() . rand() ),
+							'company_id'        => $request->get( 'company' )->id,
+							'customer_id'       => $request->get( 'customer_id' ),
+							'shipping_fname'    => $request->get( 'shipping_fname' ) ?: $customer->billing_fname,
+							'shipping_lname'    => $request->get( 'shipping_lname' ) ?: $customer->billing_lname,
+							'shipping_address1' => $request->get( 'shipping_address1' ) ?: $customer->billing_address1,
+							'shipping_address2' => $request->get( 'shipping_address2' ) ?: $customer->billing_address2,
+							'shipping_city'     => $request->get( 'shipping_city' ) ?: $customer->billing_city,
+							'shipping_state_id' => $request->get( 'shipping_state_id' ) ?: $customer->billing_state_id,
+							'shipping_zip'      => $request->get( 'shipping_zip' ) ?: $customer->billing_zip
+						] );
+
+						if ( $request->has( 'billing_state_id' ) ) {
+							$customerData[ 'billing_state_id' ] = $request->get( 'billing_state_id' );
+							$customerData[ 'billing_fname' ]    = $request->get( 'billing_fname' );
+							$customerData[ 'billing_lname' ]    = $request->get( 'billing_lname' );
+							$customerData[ 'billing_address1' ] = $request->get( 'billing_address1' );
+							$customerData[ 'billing_address2' ] = $request->get( 'billing_address2' );
+							$customerData[ 'billing_city' ]     = $request->get( 'billing_city' );
+							$customerData[ 'billing_zip' ]      = $request->get( 'billing_zip' );
+							$customer->update( $customerData );
+						}
+
+						foreach ( $numberChangesData as $numberChangesDataItem ) {
+							$order_group = OrderGroup::create( [
+								'order_id'      => $order->id,
+								'requested_zip' => $numberChangesDataItem[ 'zip_code' ]
+							] );
+							/**
+							 * Transforming the addon_id from csv to array to insert in order_group table
+							 */
+							$numberChangesDataItem[ 'addon_id' ] = [$numberChangesDataItem[ 'addon_id' ]];
+
+							if ( $order_group ) {
+								$this->insertOrderGroupForBulkOrder( $numberChangesDataItem, $order, $order_group );
+							}
+						}
+
+						return $order;
+					} );
+					$successResponse  = [
+						'status'  => 'success',
+						'data'    => [
+							'order_hash' => $orderTransaction ? $orderTransaction->hash : null
+						],
+						'message' => 'Order created successfully'
+					];
+
+					return $this->respond( $successResponse );
+				}
+			} else {
+				Log::info('CSV File not uploaded', 'Error in CSV number change');
+				return $this->respondError('CSV File not uploaded');
+			}
+
+		} catch(\Exception $e) {
+			Log::info($e->getMessage(), 'Error in CSV number change');
+			return $this->respondError($e->getMessage());
+		}
+	}
+
+	/**
+	 * @param          $subscriptionId
+	 * @param Customer $customer
+	 * @param Company  $requestCompany
+	 *
+	 * @return bool
+	 */
+	private function subscriptionExistsForCustomer($subscriptionId, Customer $customer, Company $requestCompany){
+		$subscription = Subscription::find($subscriptionId);
+		return $subscription && $subscription->company_id === $requestCompany->id && $subscription->customer_id === $customer->id;
+	}
+
+
+	/**
+	 * @param          $addonId
+	 * @param Customer $customer
+	 * @param Company  $requestCompany
+	 *
+	 * @return bool
+	 */
+	private function validateAddonForNumberChange($addonId, Customer $customer, Company $requestCompany) {
+		$addon = Addon::find($addonId);
+		/**
+		 * Check if the addon is valid for the company and the customer
+		 */
+		if(!$addon || !$addon->is_one_time || $addon->company_id !== $requestCompany->id) {
+			return false;
+		} else {
+			return CustomerProduct::where('customer_id', $customer->id)
+				->where('product_id', $addon->id)
+				->where('product_type', CustomerProduct::PRODUCT_TYPES['addon'])
+				->exists();
+		}
 	}
 }

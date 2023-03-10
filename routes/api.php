@@ -704,6 +704,11 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.order.lines.process-number-change',
 			'uses' => 'BulkOrder\CheckoutController@processNumberChange'
 		]);
+
+		Route::post('/order/csv-number-changes', [
+			'as'   => 'api.bulk.order.csv-number-changes',
+			'uses' => 'BulkOrder\CheckoutController@csvOrderNumberChanges'
+		]);
 	});
 
 	/**
