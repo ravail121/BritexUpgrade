@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use App\Scripts\TestEye4Fraud;
-use App\Events\SubcriptionStatusChanged;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -105,7 +104,7 @@ Route::middleware('APIToken')->group(function () {
 			//'middleware' => 'auth:api',
 			'uses' => 'OrderController@delete',
 		]);
-		Route::patch('/remove', [
+		Route::post('/remove', [
 			'as' => 'api.orders.patch_remove',
 			'uses' => 'OrderController@remove_from_order',
 		]);
@@ -679,6 +678,36 @@ Route::middleware('APIToken')->group(function () {
 		Route::post('/ultra/validate-zip-code', [
 			'as'   => 'api.bulk.order.ultra.validate-zip-code',
 			'uses' => 'BulkOrder\CheckoutController@validateZipCodeForUltraSims'
+		]);
+
+		Route::post('/addons/number-change', [
+			'as'   => 'api.bulk.order.addons.get-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getNumberChangeAddons'
+		]);
+
+		Route::post('/lines/pending-number-change', [
+			'as'   => 'api.bulk.order.lines.pending-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getPendingNumberChanges'
+		]);
+
+		Route::post('/lines/eligible-for-number-change', [
+			'as'   => 'api.bulk.order.lines.eligible-for-number-change',
+			'uses' => 'BulkOrder\CheckoutController@listEligibleSimsForNumberChange'
+		]);
+
+		Route::post('/lines/number-change-history', [
+			'as'   => 'api.bulk.order.lines.number-change-history',
+			'uses' => 'BulkOrder\CheckoutController@numberChangeHistory'
+		]);
+
+		Route::post('/lines/process-number-change', [
+			'as'   => 'api.bulk.order.lines.process-number-change',
+			'uses' => 'BulkOrder\CheckoutController@processNumberChange'
+		]);
+
+		Route::post('/order/csv-number-changes', [
+			'as'   => 'api.bulk.order.csv-number-changes',
+			'uses' => 'BulkOrder\CheckoutController@csvOrderNumberChanges'
 		]);
 	});
 

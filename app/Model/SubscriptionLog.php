@@ -13,7 +13,9 @@ class SubscriptionLog extends Model
 		'replacement-device-ordered'       => 'Replacement Device Ordered',
 		'replacement-sim-ordered'          => 'Replacement SIM Ordered',
 		'sim-num-changed'                  => 'SIM Num Changed',
-		'device-imei-changed'              => 'Device IMEI Changed'
+		'device-imei-changed'              => 'Device IMEI Changed',
+		'number-change-requested'          => 'Number Change Requested',
+		'number-change-processed'          => 'Number Change Processed',
 	];
 
 	/**
@@ -32,6 +34,23 @@ class SubscriptionLog extends Model
 		'product_id',
 		'description',
 		'old_product',
-		'new_product'
+		'new_product',
+		'order_num'
 	];
+
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function subscription(){
+		return $this->hasOne('App\Model\Subscription' , 'id', 'subscription_id');
+	}
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\HasOne
+	 */
+	public function customer()
+	{
+		return $this->hasOne('App\Model\Customer', 'id', 'customer_id');
+	}
 }
