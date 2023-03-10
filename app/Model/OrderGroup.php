@@ -36,7 +36,8 @@ class OrderGroup extends Model
 		'subscription_id',
 		'old_subscription_plan_id',
 		'paid',
-		'change_subscription'
+		'change_subscription',
+		'requested_zip'
 	];
 
 	/**

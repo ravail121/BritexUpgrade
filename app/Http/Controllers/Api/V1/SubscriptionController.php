@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers\Api\V1;
 
-
 use Validator;
 use App\Model\Ban;
 use Carbon\Carbon;
@@ -345,11 +344,9 @@ class SubscriptionController extends BaseController
 	public function closeSubcription(Request $request)
     {
         $validation = $this->validate_input($request->all(), [
-		        'id'            => 'required_without:phone_number|numeric',
-                'phone_number'  => 'required_without:id|numeric',
-
-            ]
-        );
+	        'id'            => 'required_without:phone_number|numeric',
+            'phone_number'  => 'required_without:id|numeric',
+        ] );
         if ($validation) {
             return $validation;
         }
@@ -558,12 +555,17 @@ class SubscriptionController extends BaseController
 	 */
 	public function updateRequestedZip(Request $request)
 	{
-		$subscriptions = Subscription::find($request->id);
-		$update = $subscriptions->update(['requested_zip' => $request->requested_zip]);
+		try {
+			$subscriptions = Subscription::find($request->id);
+			$update = $subscriptions->update(['requested_zip' => $request->requested_zip]);
 
-		if($update){
-			return $subscriptions;
+			if($update){
+				return $subscriptions;
+			}
+		} catch (\Exception $e) {
+			return $this->respondWithError($e->getMessage());
 		}
+
 	}
 
 

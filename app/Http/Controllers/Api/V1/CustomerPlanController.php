@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Carbon\Carbon;
-use App\Model\Plan;
 use App\Model\Port;
 use App\Model\Customer;
+use App\Events\PortPending;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
-use App\Events\PortPending;
 
 /**
  * Class CustomerPlanController
@@ -24,8 +22,8 @@ class CustomerPlanController extends BaseController
 	 *
 	 * @return bool[]|\Illuminate\Http\JsonResponse
 	 */
-	public function get(Request $request){
-
+	public function get(Request $request)
+	{
         if ($request->hash) {
     	    $customer = Customer::whereHash($request->hash)->with('tax')->first();
             $subscriptionDetails = $this->getSubscriptions($customer);
@@ -46,7 +44,12 @@ class CustomerPlanController extends BaseController
 	 * @return array
 	 */
 	public function getSubscriptions($customer){
-    	$subscriptions = Subscription::with('plan.carrier', 'device', 'subscriptionAddonNotRemoved.addons','port')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
+    	$subscriptions = Subscription::with('plan.carrier',
+		    'device',
+		    'subscriptionAddonNotRemoved.addons',
+		    'port',
+	        'usageData',
+	        'attTwoUsageData')->whereCustomerId($customer->id)->orderBy('id', 'desc')->get();
 
         $subscriptionPriceDetails = $this->getSubscriptionPriceDetails($subscriptions, $customer);
 
@@ -132,7 +135,6 @@ class CustomerPlanController extends BaseController
             'account_number_porting_from'   => 'required',
             'status'                        => 'required',
             'account_pin_porting_from'      => 'required',
-
         ]);
         $data['address_line2']=  $request->address_line2;
         $data['ssn_taxid']=  $request->ssn_taxid;
@@ -147,10 +149,20 @@ class CustomerPlanController extends BaseController
             }
         }else{
             $data['notes'] = '';
-            $data['subscription_id'] = $request->subscription_id;
-            $id = Port::create($data)->id;
-            event(new PortPending($id));
-            return $this->respond('sucessfully Updated');
+			$subscriptionId = $request->get('subscription_id');
+			if($subscriptionId){
+				$existingPort = Port::where('subscription_id', $subscriptionId)->first();
+				if($existingPort){
+					$existingPort->update($data);
+					event(new PortPending($existingPort->id));
+					return $this->respond('sucessfully Updated');
+				} else{
+					$data['subscription_id'] = $subscriptionId;
+					$id = Port::create($data)->id;
+					event(new PortPending($id));
+					return $this->respond('sucessfully Updated');
+				}
+			}
         }
     }
 

@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use App\Scripts\TestEye4Fraud;
-use App\Events\SubcriptionStatusChanged;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -20,11 +19,6 @@ Route::get('/', function (Request $request) {
 		'message' => 'BriteX Backend !!'
 	], 200);
 });
-
-Route::get('/test', [
-	'as'=>'api.cron.data.usage2',
-	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData2',
-]);
 
 
 Route::get('/data_usage', [
@@ -74,6 +68,20 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 
 Route::middleware('APIToken')->group(function () {
+	Route::get('/get-sims-telit', [
+		'as'=>'api.cron.auth',
+		'uses'=> 'Api\V1\CronJobs\APICallController@callAuthentication',
+	]);
+	Route::get('/get-plans-telit', [
+		'as'=>'api.cron.plans',
+		'uses'=> 'Api\V1\CronJobs\APICallController@getPlans',
+	]);
+
+	Route::post('/activation/notify-error', [
+		'as'=>'api.activation.notify.error',
+		'uses'=> 'Api\V1\ActivationController@sendNotification',
+	]);
+
 	// Orders API
 	Route::group(['prefix' => 'order', 'namespace' => 'Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
 	{
@@ -96,7 +104,7 @@ Route::middleware('APIToken')->group(function () {
 			//'middleware' => 'auth:api',
 			'uses' => 'OrderController@delete',
 		]);
-		Route::patch('/remove', [
+		Route::post('/remove', [
 			'as' => 'api.orders.patch_remove',
 			'uses' => 'OrderController@remove_from_order',
 		]);
@@ -655,6 +663,51 @@ Route::middleware('APIToken')->group(function () {
 		Route::post('/get-orders', [
 			'as'   => 'api.bulk.order.get-orders',
 			'uses' => 'BulkOrder\CheckoutController@getOrders'
+		]);
+
+		Route::post('/generate-one-time-invoice', [
+			'as'   => 'api.bulk.order.generate-one-time-invoice',
+			'uses' => 'BulkOrder\CheckoutController@generateOneTimeInvoice'
+		]);
+
+		Route::post('/close-lines', [
+			'as'   => 'api.bulk.order.close-lines',
+			'uses' => 'BulkOrder\CheckoutController@closeLines'
+		]);
+
+		Route::post('/ultra/validate-zip-code', [
+			'as'   => 'api.bulk.order.ultra.validate-zip-code',
+			'uses' => 'BulkOrder\CheckoutController@validateZipCodeForUltraSims'
+		]);
+
+		Route::post('/addons/number-change', [
+			'as'   => 'api.bulk.order.addons.get-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getNumberChangeAddons'
+		]);
+
+		Route::post('/lines/pending-number-change', [
+			'as'   => 'api.bulk.order.lines.pending-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getPendingNumberChanges'
+		]);
+
+		Route::post('/lines/eligible-for-number-change', [
+			'as'   => 'api.bulk.order.lines.eligible-for-number-change',
+			'uses' => 'BulkOrder\CheckoutController@listEligibleSimsForNumberChange'
+		]);
+
+		Route::post('/lines/number-change-history', [
+			'as'   => 'api.bulk.order.lines.number-change-history',
+			'uses' => 'BulkOrder\CheckoutController@numberChangeHistory'
+		]);
+
+		Route::post('/lines/process-number-change', [
+			'as'   => 'api.bulk.order.lines.process-number-change',
+			'uses' => 'BulkOrder\CheckoutController@processNumberChange'
+		]);
+
+		Route::post('/order/csv-number-changes', [
+			'as'   => 'api.bulk.order.csv-number-changes',
+			'uses' => 'BulkOrder\CheckoutController@csvOrderNumberChanges'
 		]);
 	});
 

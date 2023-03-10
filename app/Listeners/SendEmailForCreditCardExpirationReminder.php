@@ -34,7 +34,7 @@ class SendEmailForCreditCardExpirationReminder
 	    $customer = $customerCreditCard->customer;
 
 	    /**
-	     * @inernal Formatting expiration date to include forward slash in the date
+	     * @internal Formatting expiration date to include forward slash in the date
 	     */
 	    $customerCreditCard->expiration = $customerCreditCard->addPrefixSlash();
 
