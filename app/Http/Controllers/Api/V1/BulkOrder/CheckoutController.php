@@ -312,11 +312,19 @@ class CheckoutController extends BaseController implements ConstantInterface
 				})
 			];
 			$baseValidation['orders.*.subscription_id']              = [
-				'required',
+				'required_without:orders.*.phone_number',
 				'numeric',
 				Rule::exists('subscription', 'id')->where(function ($query) use ($requestCompany, $request) {
 					return $query->where('company_id', $requestCompany->id)
 						->where('customer_id', $request->customer_id);
+				})
+			];
+			$baseValidation['orders.*.phone_number']              = [
+				'required_without:orders.*.subscription_id',
+				'numeric',
+				Rule::exists('subscription', 'phone_number')->where(function ($query) use ($requestCompany, $request) {
+					return $query->where('company_id', $requestCompany->id)
+					             ->where('customer_id', $request->customer_id);
 				})
 			];
 			$baseValidation['zip_code']              = [
@@ -1448,6 +1456,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 
 			$csvFile = $request->post('csv_file');
 
+			$addonId = $request->get( 'addon_id' );
+
 			/**
 			 * Validate if the input file is CSV file
 			 */
@@ -1486,7 +1496,8 @@ class CheckoutController extends BaseController implements ConstantInterface
 						$error[] = "Zip code is not valid for row $rowNumber";
 					}
 
-					$subscription = $this->subscriptionExistsForCustomer($row['phone_number'], $customer, $requestCompany);
+					$subscription = $this->subscriptionExistsForCustomer($row['phone_number'], $customer, $requestCompany, $addonId);
+
 
 
 					if(!$subscription) {
@@ -1497,7 +1508,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 						 * Get the subscription_id from the old_num from number change subscription log
 						 */
 						$row[ 'subscription_id' ] = $subscription->id;
-						$row[ 'addon_id' ] = $request->get( 'addon_id' );
+						$row[ 'addon_id' ] = $addonId;
 						unset( $row[ 'phone_number' ] );
 
 						$numberChangesData[] = $row;
@@ -1579,23 +1590,24 @@ class CheckoutController extends BaseController implements ConstantInterface
 	 * @param          $phoneNumber
 	 * @param Customer $customer
 	 * @param Company  $requestCompany
+	 * @param          $addonId
 	 *
 	 * @return false
 	 */
-	private function subscriptionExistsForCustomer($phoneNumber, Customer $customer, Company $requestCompany){
-		$subscription = Subscription::whereHas( 'customer', function ( $query ) use ( $requestCompany, $customer) {
-			$query->where(
-				[
-					[ 'id', $customer->id],
-					[ 'company_id', $requestCompany->id ]
-				]
-			);
-		} )->whereHas( 'subscriptionLogs', function( $query ) use ($phoneNumber) {
-			$query->where([
-				[ 'category', SubscriptionLog::CATEGORY['number-change-requested' ]],
-				[ 'old_product', $phoneNumber ]
-			]);
-		})->first();
+	private function subscriptionExistsForCustomer($phoneNumber, Customer $customer, Company $requestCompany, $addonId){
+		$planIds = PlanToAddon::where('addon_id', $addonId)->pluck('plan_id')->toArray();
+		$subscription = Subscription::where( 'status', Subscription::STATUS['active'] )
+		                            ->where( 'pending_number_change', 0 )
+		                            ->where( 'phone_number', $phoneNumber )
+									->whereIn( 'plan_id', $planIds )
+		                            ->whereHas( 'customer', function ( $query ) use ( $requestCompany, $customer) {
+										$query->where(
+											[
+												[ 'id', $customer->id],
+												[ 'company_id', $requestCompany->id ]
+											]
+										);
+									})->first();
 		return $subscription && $subscription->company_id === $requestCompany->id && $subscription->customer_id === $customer->id ? $subscription : false;
 	}
 }
