@@ -1492,7 +1492,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					/**
 					 * Validate if the required fields are present
 					 */
-					if($row['zip_code'] && !preg_match("/^[0-9]{5}$/", $row['zip_code'])) {
+					if($row['zip_code'] && !$this->isZipCodeValid($row['zip_code'], $requestCompany)) {
 						$error[] = "Zip code is not valid for row $rowNumber";
 					}
 
