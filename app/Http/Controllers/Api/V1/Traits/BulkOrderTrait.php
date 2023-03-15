@@ -733,7 +733,7 @@ trait BulkOrderTrait
 					'subscription_id'   => $subscription->id,
 					'company_id'        => $subscription->company->id,
 					'customer_id'       => $subscription->customer->id,
-					'description'       => 'Number Change Requested',
+					'description'       => $subscription->sim_card_num,
 					'category'          => SubscriptionLog::CATEGORY['number-change-requested'],
 					'old_product'       => $subscription->phone_number,
 					'new_product'       => null,

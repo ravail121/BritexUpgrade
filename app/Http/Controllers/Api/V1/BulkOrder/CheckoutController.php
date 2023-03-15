@@ -1389,7 +1389,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 				'subscription_id'   => $subscription->id,
 				'company_id'        => $subscription->company->id,
 				'customer_id'       => $subscription->customer->id,
-				'description'       => 'Number Change Processed',
+				'description'       => $subscription->sim_card_num,
 				'category'          => SubscriptionLog::CATEGORY['number-change-processed'],
 				'old_product'       => $existingPhoneNumber,
 				'new_product'       => $subscription->phone_number,
