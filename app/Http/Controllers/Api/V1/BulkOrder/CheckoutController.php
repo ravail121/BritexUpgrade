@@ -1493,7 +1493,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					 * Validate if the required fields are present
 					 */
 					if($row['zip_code'] && !$this->isZipCodeValid($row['zip_code'], $requestCompany)) {
-						$error[] = "Zip code is not valid for row $rowNumber";
+						$error[] = "Zip code {$row['zip_code']} is not valid for row $rowNumber";
 					}
 
 					$subscription = $this->subscriptionExistsForCustomer($row['phone_number'], $customer, $requestCompany, $addonId);
