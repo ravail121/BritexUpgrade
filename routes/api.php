@@ -14,6 +14,10 @@ use App\Scripts\TestEye4Fraud;
 */
 
 
+Route::post('/get-usage', [
+	'as'=>'api.get.usage',
+	'uses'=> 'Api\V1\SimController@getUsage',
+]);
 Route::get('/', function (Request $request) {
 	return  response()->json([
 		'message' => 'BriteX Backend !!'
