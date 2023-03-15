@@ -201,7 +201,7 @@ class SimController extends BaseController
 		$response = curl_exec($curl);
 
 		curl_close($curl);
-		return json_decode($response);
-
+		$response = json_decode($response);
+		return response()->json($response);
 	}
 }
