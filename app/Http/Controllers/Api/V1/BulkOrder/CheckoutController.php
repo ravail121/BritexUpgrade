@@ -550,6 +550,7 @@ class CheckoutController extends BaseController implements ConstantInterface
 					if($plan->carrier->slug === 'ultra' && $row['zip_code'] && !$this->isZipCodeValid($row['zip_code'], $requestCompany)) {
 						$error[] = "Zip code {$row['zip_code']} is not valid for row $rowNumber";
 					}
+					$row['sim_num'] = str_replace("'", '', $row['sim_num']);
 					if(!$this->simNumberExistsForCustomer($row['sim_num'], $customer)) {
 						$error[] = "Phone number {$row['sim_num']} is not valid for row $rowNumber";
 					}
@@ -1476,8 +1477,6 @@ class CheckoutController extends BaseController implements ConstantInterface
 					return array_combine( $headerRowsArray, str_getcsv( $row ) );
 				}, $csvAsArray );
 
-
-
 				$numberChangesData = [];
 				$error = [];
 
@@ -1496,8 +1495,9 @@ class CheckoutController extends BaseController implements ConstantInterface
 						$error[] = "Zip code {$row['zip_code']} is not valid for row $rowNumber";
 					}
 
-					$subscription = $this->subscriptionExistsForCustomer($row['phone_number'], $customer, $requestCompany, $addonId);
+					$row['phone_number'] = str_replace("'", '', $row['phone_number']);
 
+					$subscription = $this->subscriptionExistsForCustomer($row['phone_number'], $customer, $requestCompany, $addonId);
 
 
 					if(!$subscription) {
