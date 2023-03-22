@@ -281,7 +281,7 @@ trait InvoiceTrait {
 			'order'            => $order,
 			'invoice'          => $order->invoice,
 			//Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
-			'standalone_items' => Invoice::find( $order->invoice_id )->invoiceItem->where( 'subscription_id', null ),
+			'standalone_items' => Invoice::find( $order->invoice_id )->invoiceItem->where( 'subscription_id', null )->orWhere( 'subscription_id', 0 ),
 			'previous_bill'    => $this->previousBill( $order ),
 			'credits'          => $order->invoice->creditsToInvoice
 		];
