@@ -319,7 +319,7 @@ trait InvoiceTrait {
 				$simRecord = Sim::find($simId);
 				if($simRecord) {
 					$groupedPrice = $simRecord->amount_alone;
-					$breakdowns   .= $simRecord->name . ' : $ ' . number_format( $groupedPrice ) . ', ';
+					$breakdowns   .= $simRecord->name . ': $ ' . number_format( $groupedPrice ) . ', ';
 				}
 			}
 		}
@@ -329,7 +329,7 @@ trait InvoiceTrait {
 				$deviceRecord = Device::find($deviceId);
 				if($deviceRecord) {
 					$groupedPrice = $deviceRecord->amount;
-					$breakdowns   .= $deviceRecord->name . ' : $ ' . number_format( $groupedPrice ) . ', ';
+					$breakdowns   .= $deviceRecord->name . ': $ ' . number_format( $groupedPrice ) . ', ';
 				}
 			}
 		}
@@ -339,7 +339,7 @@ trait InvoiceTrait {
 				$addonRecord = Addon::find($addonId);
 				if($addonRecord) {
 					$groupedPrice = $addonRecord->amount;
-					$breakdowns   .= $addonRecord->name . ' : $ ' . number_format( $groupedPrice ) . ', ';
+					$breakdowns   .= $addonRecord->name . ': $ ' . number_format( $groupedPrice ) . ', ';
 				}
 			}
 		}
