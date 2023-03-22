@@ -315,21 +315,21 @@ trait InvoiceTrait {
 		if($groupedSims->count() > 0) {
 			foreach($groupedSims as $simId => $sim) {
 				$simRecord = Sim::find($simId);
-				$breakdowns .= $simRecord->name . ' <b>X</b> ' . $sim->count();
+				$breakdowns .= $simRecord->name . ' : $ ' . number_format($sim->amount);
 			}
 		}
 
 		if($groupedDevices->count() > 0) {
 			foreach($groupedDevices as $deviceId => $device) {
 				$deviceRecord = Device::find($deviceId);
-				$breakdowns .= ', ' . $deviceRecord->name . ' <b>X</b> ' . $device->count();
+				$breakdowns .= ', ' . $deviceRecord->name . ' : $ ' . number_format($device->amount);
 			}
 		}
 
 		if($groupedAddons->count() > 0) {
 			foreach($groupedAddons as $addonId => $addon) {
 				$addonRecord = Addon::find($addonId);
-				$breakdowns .= ', '. $addonRecord->name . ' <b>X</b> ' . $addon->count();
+				$breakdowns .= ', '. $addonRecord->name . ' : $ ' . number_format($addon->amount_recurring);
 			}
 		}
 		return $breakdowns;
