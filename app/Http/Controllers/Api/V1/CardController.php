@@ -152,6 +152,7 @@ class CardController extends BaseController implements ConstantInterface
      */
     public function chargeCard(Request $request)
     {
+        
         $validation = $this->validateData($request);
         if ($validation) {
             return $this->respondError($validation);
@@ -202,20 +203,31 @@ class CardController extends BaseController implements ConstantInterface
 	 */
 	protected function processTransaction($request, $command = null)
     {
-	    if ($request->order_hash) {
+        if ($request->order_hash) {
 		    $order = Order::where('hash', $request->order_hash)->first();
 
 	    } elseif ($request->customer_id) {
 		    $order = Order::where('customer_id', $request->customer_id)->first();
 	    }
         if ($order) {
+            // Checking if the customer has total due amount 0 just unsuspend the subscriptions
+            if($request->without_order && $request->amount=="0"){
+                $checkCredit=$this->accountSuspendedAccount($request->customer_id,true);
+                if($checkCredit){
+                    $response = response()->json(['success' => true]);
+                    return $response;
+                }
+
+            }
+
+            //Charging card
             $this->tran = $this->setUsaEpayData($this->tran, $request, $command);
             if($this->tran->Process()) {
                 if($request->without_order){
                     $this->response = $this->transactionSuccessfulWithoutOrder($request, $this->tran);
+                    
                 }else{
                     $this->response = $this->transactionSuccessful($request, $this->tran);
-
 	                if($order->invoice_id) {
 		                $invoice = Invoice::find( $order->invoice_id );
 	                } else {
@@ -231,6 +243,7 @@ class CardController extends BaseController implements ConstantInterface
 		                $data    = $this->setInvoiceData($order, $request, $credit);
 		                $invoice = Invoice::create($data);
 	                }
+
 	                if ($invoice) {
 		                $orderCount = Order::where( [
 			                [ 'status', 1 ],
@@ -252,7 +265,7 @@ class CardController extends BaseController implements ConstantInterface
                 }
             }
         } else {
-	        return response()->json(['message' => 'Pending Order Not Found for the order hash'], 400);
+            return response()->json(['message' => 'Pending Order Not Found for the order hash'], 400);
         }
         return $this->respond($this->response);
     }
@@ -517,22 +530,31 @@ class CardController extends BaseController implements ConstantInterface
 	 */
 	protected function payUnpaiedInvoice($tranAmount, $request, $credit)
     {
+       
         $invoices = Invoice::where([
             ['customer_id', $request->customer_id],
             ['status', Invoice::INVOICESTATUS['open']]
         ])->get();
-
+       
+        $amountTotalOpenInvoices=$invoices->sum('total_due');
+        $amount=$request->amount-$amountTotalOpenInvoices;
         $date = Carbon::today()->subDays(31)->endOfDay();
         $closedInvoice = Invoice::where([
             ['customer_id', $request->customer_id],
-            ['status', Invoice::INVOICESTATUS['closed&upaid']]
-        ])->whereBetween('start_date', [$date, Carbon::today()->startOfDay()])->get()->last();
-
+            ['status', Invoice::INVOICESTATUS['closed&upaid']],
+        ])
+        ->orderBy('id','desc')
+        ->get()
+        ->takeUntil(function ($invoice) use ($amount) {
+            return $invoice->subtotal >= $amount;
+        });
+         
         if($closedInvoice){
-            $invoices->push($closedInvoice);
+            $mergedInvoices=$invoices->merge($closedInvoice);
         }
-        if(isset($invoices[0]) && $invoices[0]){
-            foreach ($invoices as $key => $invoice) {
+        
+        if(isset($mergedInvoices) && $mergedInvoices){
+            foreach ($mergedInvoices as $key => $invoice) {
                 if($invoice->total_due == $tranAmount){
                     $this->updateCredit(1 ,$credit);
                     $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
@@ -553,8 +575,9 @@ class CardController extends BaseController implements ConstantInterface
                     break;
                 }
             }
-            $this->accountSuspendedAccount($request->customer_id);
+           
         }
+        $this->accountSuspendedAccount($request->customer_id);
     }
 
 	/**

@@ -195,19 +195,21 @@ trait UsaEpayTransaction
 	/**
 	 * @param $customerId
 	 */
-	protected function accountSuspendedAccount($customerId)
+	protected function accountSuspendedAccount($customerId,$checkCredit=false)
     {
         $customer = Customer::find($customerId);
-        if($customer->account_suspended){
+        if($customer->account_suspended || $checkCredit){
             $count = Invoice::where([
                 ['customer_id', $customer->id],
                 ['status', '!=', Invoice::INVOICESTATUS['closed']]
             ])->count();
-
-            if($count == 0){
+            if($count == 0 || $customer->credits_count=="0.00"){
+              
                 $this->updateSub($customer);
+                return true;
             }
         }
+        return false;
     }
 
 	/**
@@ -265,8 +267,7 @@ trait UsaEpayTransaction
 	protected function updateCredit($applied ,$credit)
     {
         $credit->update( [
-            'applied_to_invoice'    => $applied,
-            'description'           => "$credit->description (One Time New Invoice)",
+            'applied_to_invoice'    => $applied
         ] );
     }
 
@@ -321,7 +322,6 @@ trait UsaEpayTransaction
         }else{
             $customerId = null;
         }
-
         return PaymentLog::create([
             'customer_id'            => $customerId, 
             'order_id'               => $orderId,
@@ -367,9 +367,8 @@ trait UsaEpayTransaction
         }else{
             $creditData ['order_id'] = $data->id;
         }
-
+       
         $credit = Credit::create($creditData);
-
         // Some attributes are set via default() method
         // and are not returned in create()
         return Credit::find($credit->id);
