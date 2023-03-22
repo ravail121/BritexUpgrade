@@ -278,9 +278,7 @@ trait InvoiceTrait {
 	 */
 	public function dataForInvoice( $order ) {
 		//Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
-		$standAloneItems = Invoice::find( $order->invoice_id )->invoiceItem->where( function($query){
-			$query->where( 'subscription_id', null )->orWhere( 'subscription_id', 0 );
-		});
+		$standAloneItems = Invoice::find( $order->invoice_id )->invoiceItem()->where( 'subscription_id', null )->orWhere( 'subscription_id', 0 )->get();
 		$invoice = [
 			'order'            => $order,
 			'invoice'          => $order->invoice,
@@ -294,15 +292,15 @@ trait InvoiceTrait {
 
 
 	/**
-	 * @param $standaloneItems
+	 * @param $standAloneItems
 	 *
 	 * @return string
 	 */
-	public function getBreakDownForStandAloneItems($standaloneItems){
+	public function getBreakDownForStandAloneItems($standAloneItems){
 		$breakdowns = '';
-		$standAloneDevices = $standaloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['device']);
-		$standAloneSims = $standaloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['sim']);
-		$standAloneAddons = $standaloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['addon']);
+		$standAloneDevices = $standAloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['device']);
+		$standAloneSims = $standAloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['sim']);
+		$standAloneAddons = $standAloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['addon']);
 		$groupedSims = $standAloneSims->groupBy(function($standAloneSim) {
 			return $standAloneSim->product_id;
 		});
@@ -318,24 +316,30 @@ trait InvoiceTrait {
 		if($groupedSims->count() > 0) {
 			foreach($groupedSims as $simId => $sim) {
 				$simRecord = Sim::find($simId);
-				$groupedPrice = $simRecord->amount_alone * $sim->count();
-				$breakdowns .= $simRecord->name . ' : $ ' . number_format($groupedPrice);
+				if($simRecord) {
+					$groupedPrice = $simRecord->amount_alone * $sim->count();
+					$breakdowns   .= $simRecord->name . ' : $ ' . number_format( $groupedPrice );
+				}
 			}
 		}
 
 		if($groupedDevices->count() > 0) {
 			foreach($groupedDevices as $deviceId => $device) {
 				$deviceRecord = Device::find($deviceId);
-				$groupedPrice = $deviceRecord->amount * $device->count();
-				$breakdowns .= ', ' . $deviceRecord->name . ' : $ ' . number_format($groupedPrice);
+				if($deviceRecord) {
+					$groupedPrice = $deviceRecord->amount * $device->count();
+					$breakdowns   .= ', ' . $deviceRecord->name . ' : $ ' . number_format( $groupedPrice );
+				}
 			}
 		}
 
 		if($groupedAddons->count() > 0) {
 			foreach($groupedAddons as $addonId => $addon) {
 				$addonRecord = Addon::find($addonId);
-				$groupedPrice = $addonRecord->amount * $addon->count();
-				$breakdowns .= ', '. $addonRecord->name . ' : $ ' . number_format($groupedPrice);
+				if($addonRecord) {
+					$groupedPrice = $addonRecord->amount * $addon->count();
+					$breakdowns   .= ', ' . $addonRecord->name . ' : $ ' . number_format( $groupedPrice );
+				}
 			}
 		}
 		return $breakdowns;
