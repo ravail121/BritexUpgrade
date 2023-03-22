@@ -278,9 +278,7 @@ trait InvoiceTrait {
 	 */
 	public function dataForInvoice( $order ) {
 		//Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
-		$standAloneItems = Invoice::find( $order->invoice_id )->invoiceItem()->where(function($query){
-			$query->where('subscription_id', null);
-		})->get();
+		$standAloneItems = Invoice::find( $order->invoice_id )->invoiceItem->where('subscription_id', null);
 
 		dd($standAloneItems);
 		$invoice = [
