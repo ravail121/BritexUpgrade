@@ -792,7 +792,7 @@ trait InvoiceTrait {
 			],
 			[
 				'',
-				!empty( $csvData[ 'subscriptions' ] ) ? count( $csvData[ 'subscriptions' ] ) : count( $csvData[ 'standalone_items' ])->whereNotIn('type', 11 ),
+				!empty( $csvData[ 'subscriptions' ] ) ? count( $csvData[ 'subscriptions' ] ) : count( $csvData[ 'standalone_items' ]->whereNotIn('type', 11 )),
 				!empty( $csvData[ 'subscriptions' ] ) && $csvData[ 'invoice' ]->cal_plan_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_plan_charges, 2 ) : $this->getBreakDownForStandAloneItems( $csvData[ 'standalone_items' ] ),
 				$csvData[ 'invoice' ]->cal_onetime ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_onetime, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_usage_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_usage_charges, 2 ) : '$ 0.00',
