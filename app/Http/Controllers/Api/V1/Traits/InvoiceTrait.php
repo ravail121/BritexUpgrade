@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
+use App\Model\Sims;
 use PDF;
 use Exception;
 use Carbon\Carbon;
@@ -287,6 +288,52 @@ trait InvoiceTrait {
 		];
 
 		return $invoice;
+	}
+
+
+	/**
+	 * @param $standaloneItems
+	 *
+	 * @return string
+	 */
+	public function getBreakDownForStandAloneItems($standaloneItems){
+		$breakdowns = '';
+		$standAloneDevices = $standaloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['device']);
+		$standAloneSims = $standaloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['sim']);
+		$standAloneAddons = $standaloneItems->where('product_type', InvoiceItem::PRODUCT_TYPE['addon']);
+		$groupedSims = $standAloneSims->groupBy(function($standAloneSim) {
+			return $standAloneSim->product_id;
+		});
+
+		$groupedDevices = $standAloneDevices->groupBy(function($standAloneDevice) {
+			return $standAloneDevice->product_id;
+		});
+
+		$groupedAddons = $standAloneAddons->groupBy(function($standAloneAddon) {
+			return $standAloneAddon->product_id;
+		});
+
+		if($groupedSims->count() > 0) {
+			foreach($groupedSims as $simId => $sim) {
+				$simRecord = Sims::find($simId);
+				$breakdowns .= $simRecord->name . ' <b>X</b> ' . $sim->count();
+			}
+		}
+
+		if($groupedDevices->count() > 0) {
+			foreach($groupedDevices as $deviceId => $device) {
+				$deviceRecord = Device::find($deviceId);
+				$breakdowns .= ', ' . $deviceRecord->name . ' <b>X</b> ' . $device->count();
+			}
+		}
+
+		if($groupedAddons->count() > 0) {
+			foreach($groupedAddons as $addonId => $addon) {
+				$addonRecord = Addon::find($addonId);
+				$breakdowns .= ', '. $addonRecord->name . ' <b>X</b> ' . $addon->count();
+			}
+		}
+		return $breakdowns;
 	}
 
 
@@ -723,8 +770,8 @@ trait InvoiceTrait {
 			[ '', '', '', '', '', '', '', '', '', '' ],
 			[
 				'',
-				'TOTAL LINES',
-				'PLAN CHARGES',
+				!empty( $csvData[ 'subscriptions' ] ) ? 'TOTAL LINES' : 'QUANTITY',
+				!empty( $csvData[ 'subscriptions' ] ) ? 'PLAN CHARGES' : 'PRICE',
 				'ONE-TIME CHARGES',
 				'USAGE CHARGES',
 				'TAXES/FEES',
@@ -735,8 +782,8 @@ trait InvoiceTrait {
 			],
 			[
 				'',
-				! empty( $csvData[ 'subscriptions' ] ) ? count( $csvData[ 'subscriptions' ] ) : 0,
-				$csvData[ 'invoice' ]->cal_plan_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_plan_charges, 2 ) : '$ 0.00',
+				!empty( $csvData[ 'subscriptions' ] ) ? count( $csvData[ 'subscriptions' ] ) : count( $csvData[ 'standalone_items' ] ),
+				!empty( $csvData[ 'subscriptions' ] ) && $csvData[ 'invoice' ]->cal_plan_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_plan_charges, 2 ) : $this->getBreakDownForStandAloneItems( $csvData[ 'standalone_items' ] ),
 				$csvData[ 'invoice' ]->cal_onetime ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_onetime, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_usage_charges ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_usage_charges, 2 ) : '$ 0.00',
 				$csvData[ 'invoice' ]->cal_taxes ? '$ ' . number_format( $csvData[ 'invoice' ]->cal_taxes, 2 ) : '$ 0.00',
