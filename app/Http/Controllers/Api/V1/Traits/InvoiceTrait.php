@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\Traits;
 
-use App\Model\Sims;
 use PDF;
 use Exception;
 use Carbon\Carbon;
@@ -315,7 +314,7 @@ trait InvoiceTrait {
 
 		if($groupedSims->count() > 0) {
 			foreach($groupedSims as $simId => $sim) {
-				$simRecord = Sims::find($simId);
+				$simRecord = Sim::find($simId);
 				$breakdowns .= $simRecord->name . ' <b>X</b> ' . $sim->count();
 			}
 		}
