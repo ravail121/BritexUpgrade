@@ -1071,7 +1071,6 @@ trait BulkOrderTrait
 			'product_id'        => 0,
 			'amount'            => $this->convertToTwoDecimals($surchargeAmount, 2),
 			'product_type'      => InvoiceController::SURCHARGE_TYPE,
-			'subscription_id'   => 0,
 			'invoice_id'        => $invoice->id,
 			'type'              => InvoiceItem::TYPES['surcharge'],
 			'start_date'        => $invoice->start_date,

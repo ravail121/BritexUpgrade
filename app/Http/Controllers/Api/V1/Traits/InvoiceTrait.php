@@ -277,11 +277,14 @@ trait InvoiceTrait {
 	 * @return array
 	 */
 	public function dataForInvoice( $order ) {
+		//Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
+		$standAloneItems = Invoice::find( $order->invoice_id )->invoiceItem->where( function($query){
+			$query->where( 'subscription_id', null )->orWhere( 'subscription_id', 0 );
+		});
 		$invoice = [
 			'order'            => $order,
 			'invoice'          => $order->invoice,
-			//Had to use this because $order->invoice->invoiceItem is excluding shipping fee.
-			'standalone_items' => Invoice::find( $order->invoice_id )->invoiceItem->where( 'subscription_id', null )->orWhere( 'subscription_id', 0 ),
+			'standalone_items' => $standAloneItems,
 			'previous_bill'    => $this->previousBill( $order ),
 			'credits'          => $order->invoice->creditsToInvoice
 		];
