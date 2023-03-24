@@ -390,7 +390,7 @@ class OrderController extends BaseController
 
 
         if ($validation->fails()) {
-            return response()->json($validation->getMessageBag()->all());
+            return response()->json($validation->getMessageBag()->all(), 422);
         }
 
         $data = $request->all();
