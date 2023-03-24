@@ -381,8 +381,8 @@ class OrderController extends BaseController
         );
 
         if($request->has('sim_num')) {
-	        $validation->after( function ( $validator ) use ($request) {
-		        if ( $this->validateIfTheSimIsUsed( $request->input('sim_num') ) ) {
+	        $validation->after( function ( $validator ) use ($request){
+		        if ( $this->validateIfTheSimIsUsed( $request->input('sim_num'), $request->get('company')->id ) ) {
 			        $validator->errors()->add( 'sim_num', "The SIM can't be used." );
 		        }
 	        } );
@@ -400,7 +400,7 @@ class OrderController extends BaseController
             //Create new row in order table
             $order = Order::create([
                 'hash'       => sha1(time().rand()),
-                'company_id' => \Request::get('company')->id,
+                'company_id' => $request->get('company')->id
             ]);
         }else{
             $order = Order::where('hash', $data['order_hash'])->get();
@@ -671,14 +671,16 @@ class OrderController extends BaseController
 
 	/**
 	 * @param $simNum
+	 * @param $companyId
 	 *
 	 * @return mixed
 	 */
-	protected function validateIfTheSimIsUsed($simNum)
+	protected function validateIfTheSimIsUsed($simNum, $companyId)
     {
 	    return Subscription::where([
 	    	['sim_card_num', $simNum],
-	    	['status', '!=', 'closed']
+	    	['status', '!=', 'closed'],
+		    ['company_id', $companyId]
 	    ])->exists();
     }
 

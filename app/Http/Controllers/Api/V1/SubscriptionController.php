@@ -626,6 +626,7 @@ class SubscriptionController extends BaseController
 		if(preg_match("/[a-z]/i", $simNum)){
 			return $this->respond( [ 'status' => false, 'message' => 'Invalid Sim Number' ]);
 		}
+
 		$subscriptionExists = Subscription::where([
 			['company_id', $companyId],
 			['sim_card_num', $simNum],
