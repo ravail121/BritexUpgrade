@@ -18,22 +18,3 @@ Route::get('/', function () {
         'message'   => 'BriteX Backend !!'
     ]);
 });
-
-/**
-Route::get('britex-test-subscription-changed', function(){
-	$config = [
-		'driver'   => 'smtp',
-		'host'     => 'smtp.mailgun.org',
-		'port'     =>  587,
-		'username' => 'postmaster@mg.teltik.com',
-		'password' => '04e563fba7cb19fad52077c6c91259bd-41a2adb4-8c7d96e1',
-	];
-	Config::set('mail',$config);
-	event(new SubcriptionStatusChanged('702'));
-});
- **/
-
-Route::group(['namespace'=>'Api\V1\CronJobs'],function() {
-	Route::get( '/test-shipping-easy', 'OrderController@order' );
-
-});

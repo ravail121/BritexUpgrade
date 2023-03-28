@@ -157,6 +157,17 @@ class OrderController extends BaseController
 
 								return $this->respond( [ 'message' => 'Something went wrong!' ] );
 							}
+						} else {
+							$logEntry = [
+								'name'     => CronLog::TYPES[ 'ship-order' ],
+								'status'   => 'error',
+								'payload'  => json_encode( $apiData ),
+								'response' => 'Order ship failed for ' . $order->id
+							];
+
+							$this->logCronEntries( $logEntry );
+
+							return $this->respond( [ 'message' => 'Something went wrong!' ] );
 						}
 					}
 				}

@@ -163,6 +163,7 @@ class APICallController extends Controller
                 "params": {
                     "offset": 0,
                     "limit": 200,
+                    "query": "apn:nxt17.net",
                     "query": "apn:nxt20.net",
                     "useSearch": true,
                     "iterator": "'.$iterator.'"
