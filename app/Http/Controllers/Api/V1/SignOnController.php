@@ -7,7 +7,6 @@ use Carbon\Carbon;
 use App\Model\Invoice;
 use App\Model\Customer;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\BaseController;
 
 /**
@@ -26,10 +25,10 @@ class SignOnController extends BaseController
 	public function signOn(Request $request)
     {
         $data = $request->validate([
-            'identifier' => 'required',
-            'password'   => 'required',
+            'identifier'    => 'required',
+            'password'      => 'required',
         ]);
-        $companyId = \Request::get('company')->id;
+        $companyId = $request->get('company')->id;
 
         if ($this->isNumeric($data['identifier'])) {
             $customer = Customer::find($data['identifier']);
@@ -53,9 +52,11 @@ class SignOnController extends BaseController
 
         unset($data['identifier']);
 
+		$data['company_id'] = $companyId;
+
         if(Auth::validate($data))
         {
-            $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id','hash', 'account_suspended']);
+            $user = Customer::where('company_id', $companyId)->whereEmail($data['email'])->get(['id', 'hash', 'account_suspended']);
 
             $date = Carbon::today()->addDays(6)->endOfDay();
             $invoice = Invoice::where([

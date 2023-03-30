@@ -84,7 +84,8 @@ class Invoice extends Model implements ConstantInterface
 		'shipping_state',
 		'shipping_zip',
 		'created_at',
-		'staff_id'
+		'staff_id',
+        'regenerate'
 	];
 
 	/**
@@ -509,6 +510,11 @@ class Invoice extends Model implements ConstantInterface
 
 		return self::toTwoDecimals($subTotalWithoutSurcharge);
 
+	}
+
+	public function getCalUsedCouponDiscountAttribute(){
+		$invoiceItems = $this->invoiceItem()->usedCoupon()->get();
+		return $this->calAmount($invoiceItems);
 	}
 
 }

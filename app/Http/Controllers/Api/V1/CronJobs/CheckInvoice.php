@@ -32,8 +32,6 @@ class CheckInvoice extends BaseController
             $invoices = Invoice::all();
 
             foreach($invoices as $invoice){
-
-
                 $sumtotal = InvoiceItem::where('invoice_id', $invoice->id)->where('type', '!=', 6)->where('type', '!=', 10)->sum('amount');
                 $sum = InvoiceItem::where('invoice_id', $invoice->id)->where('type', 6)->sum('amount');
                 $invoice->sumtotal = $sumtotal;

@@ -158,7 +158,6 @@ trait UsaEpayTransaction
      */
     protected function transactionSuccessful($request, $tran, $invoice = null)
     {
-       
         $data = ['success' => false];
         $order = $this->getOrder($request);
 
@@ -168,7 +167,6 @@ trait UsaEpayTransaction
         $data['card'] = $this->createCustomerCard($request, $order, $tran);
         
         if(!$tran->command == 'authonly'){
-           
             $data['payment_log'] = $this->createPaymentLogs($order, $tran, 1, $data['card']['card']);
             $data['credit']      = $this->createCredits($order, $tran, $invoice);
         }
@@ -178,22 +176,40 @@ trait UsaEpayTransaction
         return $data;
     }
 
+    protected function transactionSuccessfulNewCard($request, $tran, $invoice = null)
+    {
+        $data = ['success' => false];
+        $order = $this->getOrder($request);
+
+        if(!$order){
+            return ['success' => false];
+        }
+        $data['card'] = $this->createNewCustomerCard($request, $order, $tran);
+      
+
+        $data['success'] = true;
+        
+        return $data;
+    }
+
 	/**
 	 * @param $customerId
 	 */
-	protected function accountSuspendedAccount($customerId)
+	protected function accountSuspendedAccount($customerId,$checkCredit=false)
     {
         $customer = Customer::find($customerId);
-        if($customer->account_suspended){
+        if($customer->account_suspended || $checkCredit){
             $count = Invoice::where([
                 ['customer_id', $customer->id],
                 ['status', '!=', Invoice::INVOICESTATUS['closed']]
             ])->count();
-
-            if($count == 0){
+            if($count == 0 || $customer->credits_count=="0.00"){
+              
                 $this->updateSub($customer);
+                return true;
             }
         }
+        return false;
     }
 
 	/**
@@ -251,8 +267,7 @@ trait UsaEpayTransaction
 	protected function updateCredit($applied ,$credit)
     {
         $credit->update( [
-            'applied_to_invoice'    => $applied,
-            'description'           => "$credit->description (One Time New Invoice)",
+            'applied_to_invoice'    => $applied
         ] );
     }
 
@@ -281,9 +296,9 @@ trait UsaEpayTransaction
      * @param  UsaEpay   $tranFail
      * @return string
      */
-    protected function transactionFail($order, $tranFail)
+    protected function transactionFail($order, $tranFail, $card=null)
     {
-        $this->createPaymentLogs($order, $tranFail, 0);
+        $this->createPaymentLogs($order, $tranFail, 0, $card);
         return ['message' => $tranFail->error];
     }
 
@@ -307,7 +322,6 @@ trait UsaEpayTransaction
         }else{
             $customerId = null;
         }
-
         return PaymentLog::create([
             'customer_id'            => $customerId, 
             'order_id'               => $orderId,
@@ -336,10 +350,9 @@ trait UsaEpayTransaction
     protected function createCredits($data, $tran)
     {
         $staff_id = null;
-        if (isset($data->staff_id)) {
-            $staff_id = $data->staff_id;
+        if (array_key_exists('staff_id', $data)) {
+            $staff_id = $data['staff_id'];
         }
-       
         $creditData = [
             'customer_id' => $data->customer_id,
             'amount'      => $tran->amount,
@@ -354,9 +367,8 @@ trait UsaEpayTransaction
         }else{
             $creditData ['order_id'] = $data->id;
         }
-
+       
         $credit = Credit::create($creditData);
-
         // Some attributes are set via default() method
         // and are not returned in create()
         return Credit::find($credit->id);
@@ -393,6 +405,53 @@ trait UsaEpayTransaction
      * @param  Request $request
      * @return Order object
      */
+
+
+    protected function createNewCustomerCard($request, $order, $tran)
+    {   
+            $customerCreditCard = CustomerCreditCard::where('customer_id', $order->customer_id)->get();
+            $creditCardData = [
+                'token'            => $tran->cardref,
+                'api_key'          => $order->company->api_key, 
+                'customer_id'      => $order->customer_id, 
+                'cardholder'       => $request->payment_card_holder,
+                'expiration'       => $request->expires_mmyy,
+                'last4'            => $tran->last4,
+                'default'          => 0,
+                'card_type'        => $tran->cardType,
+                'cvc'              => $request->payment_cvc,
+                'billing_address1' => $request->billing_address1, 
+                'billing_address2' => $request->billing_address2, 
+                'billing_city'     => $request->billing_city, 
+                'billing_state_id' => $request->billing_state_id, 
+                'billing_zip'      => $request->billing_zip,
+            ];
+            if(isset($request->make_primary)){
+                $creditCardData['default'] = true;
+                CustomerCreditCard::where('customer_id',$order->customer_id)->where('default',true)->update(['default'=>false]);
+            }
+            $customerCreditCard = CustomerCreditCard::create($creditCardData);
+            $customer = Customer::find($order->customer_id);
+           
+            if ($customer->billing_address1 == 'N/A') {
+                $customer->update([
+                    'billing_fname'    => $request->billing_fname, 
+                    'billing_lname'    => $request->billing_lname, 
+                    'billing_address1' => $request->billing_address1, 
+                    'billing_address2' => $request->billing_address2, 
+                    'billing_city'     => $request->billing_city, 
+                    'billing_state_id' => $request->billing_state_id, 
+                    'billing_zip'      => $request->billing_zip,
+                ]);
+            }
+            return ['card' => $customerCreditCard];
+
+
+        $customerCreditCard = CustomerCreditCard::find($request->card_id);
+        return ['card' => $customerCreditCard];
+
+    }
+
     protected function createCustomerCard($request, $order, $tran)
     {   
         if (!$request->card_id) {
@@ -409,7 +468,7 @@ trait UsaEpayTransaction
             }
                 
             if ($count == 0) {    
-                $customerCreditCard = CustomerCreditCard::create([
+                $creditCardData = [
                     'token'            => $tran->cardref,
                     'api_key'          => $order->company->api_key, 
                     'customer_id'      => $order->customer_id, 
@@ -424,12 +483,19 @@ trait UsaEpayTransaction
                     'billing_city'     => $request->billing_city, 
                     'billing_state_id' => $request->billing_state_id, 
                     'billing_zip'      => $request->billing_zip,
-                ]);
+                ];
+                if(isset($request->make_primary)){
+                    $creditCardData['default'] = true;
+                    CustomerCreditCard::where('customer_id',$order->customer_id)->where('default',true)->update(['default'=>false]);
+                }
+                $customerCreditCard = CustomerCreditCard::create($creditCardData);
                 $customer = Customer::find($order->customer_id);
-                if($request->order_hash && $request->auto_pay){
-                    $customer->update(['auto_pay' => '1']);
-                }else{
-                    $customer->update(['auto_pay' => '0']);
+                if(!isset($request->new_card)){
+                    if($request->order_hash && $request->auto_pay){
+                        $customer->update(['auto_pay' => '1']);
+                    }else{
+                        $customer->update(['auto_pay' => '0']);
+                    }
                 }
                 if ($customer->billing_address1 == 'N/A') {
                     $customer->update([

@@ -174,4 +174,34 @@ class SimController extends BaseController
 		}
 		return $sims;
 	}
+	public function getUsage(Request $request){
+		$validate = $this->validate_input($request->all(), [
+			'sim'         => 'required|integer',
+			'type'         => 'required|integer',
+			'date'         => 'required|integer',
+		]);
+		if($validate){
+			return $validate;
+		}
+
+		$curl = curl_init();
+
+		curl_setopt_array($curl, array(
+		CURLOPT_URL => 'http://137.184.122.121/getApi.php',
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_ENCODING => '',
+		CURLOPT_MAXREDIRS => 10,
+		CURLOPT_TIMEOUT => 0,
+		CURLOPT_FOLLOWLOCATION => true,
+		CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+		CURLOPT_CUSTOMREQUEST => 'POST',
+		CURLOPT_POSTFIELDS => array('sim' => $request->sim,'type' => $request->type,'date' => $request->date),
+		));
+
+		$response = curl_exec($curl);
+
+		curl_close($curl);
+		$response = json_decode($response);
+		return response()->json($response);
+	}
 }

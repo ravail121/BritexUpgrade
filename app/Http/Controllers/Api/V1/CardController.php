@@ -73,13 +73,14 @@ class CardController extends BaseController implements ConstantInterface
 	 */
     public function getCustomerCards(Request $request)
     {
+		$requestCompany = $request->get('company');
         if ($request->hash) {
             $customer = Customer::where('hash', $request->hash)->first();
             $customerCreditCard =  $customer->customerCreditCards;
 
         } elseif ($request->customer_id) {
             $customerCreditCard = CustomerCreditCard::where([
-                'api_key'     => $request->api_key,
+                'api_key'     => $request->api_key ?? $requestCompany->api_key,
                 'customer_id' =>  $request->customer_id
             ])->get();
 
@@ -89,8 +90,7 @@ class CardController extends BaseController implements ConstantInterface
 
         if (!$customerCreditCard) {
             return $this->respond(['message' => 'no cards available']);
-
-        } 
+        }
 
         foreach ($customerCreditCard as $card) {
             $card->expiration = $card->addPrefixSlash();
@@ -117,6 +117,31 @@ class CardController extends BaseController implements ConstantInterface
                 'message' => $validation->getMessageBag()->all()
             ]);
         }
+        if($request->new_card==1) {
+	        if ( $request->order_hash ) {
+		        $order = Order::where( 'hash', $request->order_hash )->first();
+	        } elseif ( $request->customer_id ) {
+		        $order = Order::where( 'customer_id', $request->customer_id )->first();
+	        }
+	        if ($order) {
+	            $this->tran = $this->setUsaEpayData($this->tran, $request);
+	            if($this->tran->Process()) {
+	                $this->response = $this->transactionSuccessfulNewCard($request, $this->tran);
+
+	            } else {
+	                $this->response = $this->transactionFail($order, $this->tran);
+	                if($request->without_order){
+	                    return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+	                }
+	            }
+	        } else {
+	            $this->response = $this->transactionFail(null, $this->tran);
+		        if($request->without_order){
+			        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
+		        }
+	        }
+	        return $this->respond($this->response);
+        }
         return $this->processTransaction($request, 'authonly');
     }
 
@@ -127,6 +152,7 @@ class CardController extends BaseController implements ConstantInterface
      */
     public function chargeCard(Request $request)
     {
+        
         $validation = $this->validateData($request);
         if ($validation) {
             return $this->respondError($validation);
@@ -177,16 +203,46 @@ class CardController extends BaseController implements ConstantInterface
 	 */
 	protected function processTransaction($request, $command = null)
     {
-        $order = Order::where('customer_id', $request->customer_id)->first();
+        if ($request->order_hash) {
+		    $order = Order::where('hash', $request->order_hash)->first();
+
+	    } elseif ($request->customer_id) {
+		    $order = Order::where('customer_id', $request->customer_id)->first();
+	    }
         if ($order) {
+            // Checking if the customer has total due amount 0 just unsuspend the subscriptions
+            if($request->without_order && $request->amount=="0"){
+                $checkCredit=$this->accountSuspendedAccount($request->customer_id,true);
+                if($checkCredit){
+                    $response = response()->json(['success' => true]);
+                    return $response;
+                }
+
+            }
+
+            //Charging card
             $this->tran = $this->setUsaEpayData($this->tran, $request, $command);
             if($this->tran->Process()) {
                 if($request->without_order){
                     $this->response = $this->transactionSuccessfulWithoutOrder($request, $this->tran);
+                    
                 }else{
                     $this->response = $this->transactionSuccessful($request, $this->tran);
-	                $data    = $this->setInvoiceData($order, $request);
-	                $invoice = Invoice::create($data);
+	                if($order->invoice_id) {
+		                $invoice = Invoice::find( $order->invoice_id );
+	                } else {
+		                $invoice = null;
+	                }
+
+					$credit = $this->response['credit'];
+
+	                /**
+	                 * @internal If the invoice is already created from Bulk Order System, Don't create a new invoice
+	                 */
+	                if(!$invoice) {
+		                $data    = $this->setInvoiceData($order, $request, $credit);
+		                $invoice = Invoice::create($data);
+	                }
 
 	                if ($invoice) {
 		                $orderCount = Order::where( [
@@ -202,19 +258,26 @@ class CardController extends BaseController implements ConstantInterface
 	                }
                 }
             } else {
-                $this->response = $this->transactionFail($order, $this->tran);
+	            $cardDetails = $this->getCustomerCard($request);
+                $this->response = $this->transactionFail($order, $this->tran, $cardDetails);
                 if($request->without_order){
                     return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
                 }
             }
         } else {
-            $this->response = $this->transactionFail(null, $this->tran);
-	        if($request->without_order){
-		        return response()->json(['message' => ' Card  ' . $this->tran->result . ', '. $this->tran->error, 'transaction' => $this->tran]);
-	        }
+            return response()->json(['message' => 'Pending Order Not Found for the order hash'], 400);
         }
         return $this->respond($this->response);
     }
+
+	/**
+	 * @param Request $request
+	 *
+	 * @return null
+	 */
+	protected function getCustomerCard(Request $request){
+		return $request->card_id ? CustomerCreditCard::find($request->card_id) : null;
+	}
 
 
 	/**
@@ -269,7 +332,7 @@ class CardController extends BaseController implements ConstantInterface
             }else{
                 $customerCreditCard->delete();
             }
-            return $this->respond(['details' => 'Card Sucessfully Deleted']);
+            return $this->respond(['details' => 'Card Successfully Deleted']);
         }
         else{
             return $this->respondError("Card Not Found");
@@ -323,10 +386,11 @@ class CardController extends BaseController implements ConstantInterface
         ]])->with('unpaidAndClosedMounthlyInvoice', 'company')->get()->toArray();
 
         $customers = array_merge($customers, $customersB);
-
+       
         foreach ($customers as $key => $customer) {
             $customer_obj = Customer::find($customer["id"]);
 	        $invoice = Invoice::where([['customer_id', $customer_obj->id], ['status', Invoice::INVOICESTATUS['open'] ],['type', Invoice::TYPES['monthly']]])->first();
+            
 	        $amount_due = $customer_obj->amount_due;
 	        $customer['mounthlyInvoice'] = [
 		        'total_due'     => $amount_due,
@@ -347,6 +411,7 @@ class CardController extends BaseController implements ConstantInterface
                     $card = CustomerCreditCard::where(
                         'customer_id', $customer['id']
                     )->orderBy('default', 'desc')->first();
+                   
 
                     if($card){
                         $order_hash = "";
@@ -465,22 +530,31 @@ class CardController extends BaseController implements ConstantInterface
 	 */
 	protected function payUnpaiedInvoice($tranAmount, $request, $credit)
     {
+       
         $invoices = Invoice::where([
             ['customer_id', $request->customer_id],
             ['status', Invoice::INVOICESTATUS['open']]
         ])->get();
-
+       
+        $amountTotalOpenInvoices=$invoices->sum('total_due');
+        $amount=$request->amount-$amountTotalOpenInvoices;
         $date = Carbon::today()->subDays(31)->endOfDay();
         $closedInvoice = Invoice::where([
             ['customer_id', $request->customer_id],
-            ['status', Invoice::INVOICESTATUS['closed&upaid']]
-        ])->whereBetween('start_date', [$date, Carbon::today()->startOfDay()])->get()->last();
-
+            ['status', Invoice::INVOICESTATUS['closed&upaid']],
+        ])
+        ->orderBy('id','desc')
+        ->get()
+        ->takeUntil(function ($invoice) use ($amount) {
+            return $invoice->subtotal >= $amount;
+        });
+         
         if($closedInvoice){
-            $invoices->push($closedInvoice);
+            $mergedInvoices=$invoices->merge($closedInvoice);
         }
-        if(isset($invoices[0]) && $invoices[0]){
-            foreach ($invoices as $key => $invoice) {
+        
+        if(isset($mergedInvoices) && $mergedInvoices){
+            foreach ($mergedInvoices as $key => $invoice) {
                 if($invoice->total_due == $tranAmount){
                     $this->updateCredit(1 ,$credit);
                     $this->addCreditToInvoiceRowNonOrder($invoice, $credit, $tranAmount);
@@ -501,8 +575,9 @@ class CardController extends BaseController implements ConstantInterface
                     break;
                 }
             }
-            $this->accountSuspendedAccount($request->customer_id);
+           
         }
+        $this->accountSuspendedAccount($request->customer_id);
     }
 
 	/**
@@ -639,8 +714,8 @@ class CardController extends BaseController implements ConstantInterface
 				'payment_method'          => $credit ? $credit->payment_method : 'USAePay',
 				'notes'                   => 'notes',
 				'business_name'           => $costumer->company_name,
-				'billing_fname'           => $request->billing_fname,
-				'billing_lname'           => $request->billing_lname,
+				'billing_fname'           => $request->billing_fname ?? $costumer->fname,
+				'billing_lname'           => $request->billing_lname ?? $costumer->lname,
 				'billing_address_line_1'  => $card->billing_address1,
 				'billing_address_line_2'  => $card->billing_address2,
 				'billing_city'            => $card->billing_city,

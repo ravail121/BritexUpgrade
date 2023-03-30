@@ -18,6 +18,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+         \App\Http\Middleware\CORS::class
     ];
 
     /**
@@ -59,5 +60,6 @@ class Kernel extends HttpKernel
 
         'APIToken' => \App\Http\Middleware\APIToken::class,
         'JsonApiMiddleware' => \App\Http\Middleware\JsonApiMiddleware::class,
+        'ShippingEasyCallbackAuthenticator' => \App\Http\Middleware\ShippingEasyCallbackAuthenticator::class,
     ];
 }

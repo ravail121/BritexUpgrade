@@ -58,7 +58,6 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
     public function generateMonthlyInvoice(Request $request)
     {
         $customers = Customer::shouldBeGeneratedNewInvoices();
-        
         foreach ($customers as $customer) {
             try {
 	            \Log::info('Generating invoice for ' . $customer->id);
@@ -156,6 +155,71 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 			$this->generateInvoice($order, $mail, $request);
 		}
 	}
+
+	public function processMonthlyInvoice2($invoice,$customer, $request, $mail = true)
+	{
+		// dd(9);
+		if ($customer->billableSubscriptions->count()) {
+			// $invoice = Invoice::create($this->getInvoiceData($customer));
+
+			$dueDate = Carbon::parse($invoice->start_date)->subDay();
+
+			$dueDateChange = $invoice->update([
+				'due_date' => $dueDate
+			]);
+
+			$billableSubscriptionInvoiceItems = $this->addBillableSubscriptions2($customer->billableSubscriptions, $invoice);
+
+			$billableSubscriptionAddons = $this->addSubscriptionAddons($billableSubscriptionInvoiceItems);
+
+			$regulatoryFees = $this->regulatoryFees($billableSubscriptionInvoiceItems);
+
+			$pendingCharges = $this->pendingCharges($invoice);
+
+			$totalPendingCharges = $pendingCharges->sum('amount') ? $pendingCharges->sum('amount') : 0;
+
+			// Add Coupons
+			$couponAccount = $this->customerAccountCoupons2($customer, $invoice);
+
+			$couponSubscription = $this->customerSubscriptionCoupons2($invoice, $customer->billableSubscriptions);
+
+			if($customer->stateTax) {
+				$taxes = $this->addTaxes2( $customer, $invoice, $billableSubscriptionInvoiceItems );
+				\Log::info("----State Tax not present for customer with id {$customer->id} and stateTax {$customer->stateTax}. Tax Calculation skipped");
+			}
+
+			$monthlyCharges = $invoice->cal_total_charges;
+			/**
+			 * Apply Surcharge
+			 */
+			if($customer->surcharge > 0) {
+				$surcharge = ($monthlyCharges * $customer->surcharge) / 100;
+				$this->surchargeInvoiceItem($invoice, $surcharge);
+				$monthlyCharges += $surcharge;
+			}
+
+			//Plan charge + addon charge + pending charges + taxes - discount = monthly charges
+			$subtotal = str_replace(',', '', number_format($monthlyCharges + $totalPendingCharges, 2));
+
+			$invoiceUpdate = $invoice->update(compact('subtotal'));
+
+			$totalDue = $this->applyCredits($customer, $invoice);
+
+			$invoice->update(['total_due' => $totalDue]);
+
+			if ($totalDue == 0) {
+				$invoice->update(['status' => Invoice::INVOICESTATUS['closed']]);
+			}
+
+			// $insertOrder = $this->insertOrder($invoice);
+
+			// $order       = Order::where('invoice_id', $invoice->id)->first();
+
+			// $request->headers->set('authorization', $order->company->api_key);
+
+			// $this->generateInvoice($order, $mail, $request);
+		}
+	}
 	/**
 	 * @param $customer
 	 * @param $invoice
@@ -212,6 +276,55 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 		$amount = [0];
 		$taxData = [];
 		$taxableItems = $invoice->invoiceItem->where('taxable', true);
+		
+		
+		$taxableSubscriptionIds = array_unique($taxableItems->pluck('subscription_id')->toArray());
+
+		foreach ($taxableSubscriptionIds as $subId) {
+			$itemAmount = $taxableItems->where('subscription_id', $subId)->sum('amount');
+			if (count($this->taxDiscount)) {
+				foreach ($this->taxDiscount as $id => $taxDiscount) {
+					if ($id == $subId) {
+						$itemAmount -= array_sum($taxDiscount);
+					}
+				}
+			}
+			$itemAmount = $itemAmount * $taxPercentage;
+			$data = [
+				'subscription_id' => $subId,
+				'product_type'    => '',
+				'product_id'      => null,
+				'type'            => InvoiceItem::INVOICE_ITEM_TYPES['taxes'],
+				'start_date'      => $invoice->start_date,
+				'description'     => '(Taxes)',
+				'amount'          => number_format($itemAmount, 2),
+				'taxable'         => self::TAX_FALSE
+			];
+
+			$taxes->push(
+				$invoice->invoiceItem()->create($data)
+			);
+		}
+		return $taxes;
+	}
+
+	public function addTaxes2($customer, $invoice, $billableSubscriptionInvoiceItems)
+	{
+		$taxes = collect();
+		$taxPercentage = ($customer->stateTax->rate)/100;
+		$amount = [0];
+		$taxData = [];
+		$taxableItems = $invoice->invoiceItem->where('taxable', true);
+		$today     = Carbon::today();
+		$taxableItems = $taxableItems->filter(function($taxableItems, $i) use ($today){
+			//dd(7);
+			$billingEndParsed = Carbon::parse($taxableItems->created_at);
+			// Is today between customer.billing_date and -5 days
+			return
+				$today <= $billingEndParsed;
+		});
+
+		// dd($taxableItems);
 		$taxableSubscriptionIds = array_unique($taxableItems->pluck('subscription_id')->toArray());
 
 		foreach ($taxableSubscriptionIds as $subId) {
@@ -423,6 +536,68 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 		return $invoiceItems;
 	}
 
+	protected function addBillableSubscriptions2($billableSubscriptions, $invoice)
+	{
+		$invoiceItems = collect();
+
+		$today     = Carbon::yesterday();
+		
+		$billableSubscriptions = $billableSubscriptions->filter(function($billableSubscriptions, $i) use ($today){
+			//dd(7);
+			$billingEndParsed = Carbon::parse($billableSubscriptions->created_at);
+			// Is today between customer.billing_date and -5 days
+			return
+				$today <= $billingEndParsed;
+		});
+
+
+		foreach ($billableSubscriptions as $billableSubscription) {
+			$subDescription = isset($billableSubscription->plan->description) ? $billableSubscription->plan->description : null;
+			$data = [
+				'subscription_id' => $billableSubscription->id,
+				'product_type'    => InvoiceItem::INVOICE_ITEM_PRODUCT_TYPES['plan'],
+				'type'            => InvoiceItem::INVOICE_ITEM_TYPES['plan_charges'],
+				'start_date'      => $invoice->start_date,
+				'description'     => "(Billable Subscription) {$billableSubscription->plan->description}",
+				// Values added below
+				'product_id'      => '',
+				'amount'          => '',
+				'taxable'         => '',
+			];
+
+			if ($billableSubscription->is_status_shipping_or_for_activation) {
+				$plan     = $billableSubscription->plan;
+				$planData = $this->getPlanData($plan);
+
+			}
+			// Subscription that are scheduled for Suspension/Closure  are already excluded
+			// (sub_status!=’suspend-scheduled’ AND sub_status!=’close-scheduled’)
+			// See  in Customer@billableSubscriptions() and
+			// Subscription@scopeBillabe()
+			elseif ($billableSubscription->is_status_active_not_upgrade_downgrade_status) {
+				$plan     = $billableSubscription->plan;
+				$planData = $this->getPlanData($plan);
+
+			} elseif ($billableSubscription->status_active_and_upgrade_downgrade_status) {
+				$plan     = $billableSubscription->newPlanDetail;
+				$planData = $this->getPlanData($plan);
+				$data['description'] = "(Billable Subscription) {$plan->description}";
+
+			} else {
+				\Log::error(">>>>>>>>>> Subscription status not met in Monthly Invoice for subscription.id = {$billableSubscription} <<<<<<<<<<<<");
+				continue;
+			}
+
+			$dataForInvoiceItem = array_merge($data, $planData);
+
+			$invoiceItems->push(
+				$invoice->invoiceItem()->create($dataForInvoiceItem)
+			);
+		}
+
+		return $invoiceItems;
+	}
+
 	/**
 	 * Creates Invoice-items corresponding to subscription-addons
 	 *
@@ -537,6 +712,7 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 	public function regenerateInvoice(Request $request)
 	{
 		$customers = Customer::invoicesForRegeneration(); // Customers with open and unpaid invoice and gap between today and billing_end is <=5 days.
+		// dd($customers);
 		foreach ($customers as $customer) {
 			$latestUnpaidInvoice = $customer->openAndUnpaidInvoices()->orderBy('id', 'desc')->first(); // Get latest open unpaid invoice
 			$latestPaidInvoice   = false;
@@ -546,16 +722,19 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 					$latestPaidInvoice = $invoice;
 				}
 			}
-			if (isset($latestPaidInvoice->id) && isset($latestUnpaidInvoice->id) && $latestPaidInvoice->id > $latestUnpaidInvoice->id) { // If latest order invoice was made after latest open unpaid invoice
+	
+			// dd($latestUnpaidInvoice);
+			if (isset($latestPaidInvoice->id) && isset($latestUnpaidInvoice->id) && $latestPaidInvoice->id > $latestUnpaidInvoice->id  && $latestPaidInvoice->subtotal!=0) { // If latest order invoice was made after latest open unpaid invoice
 				$this->regenerateCoupons($latestUnpaidInvoice->couponUsed); // Regenerate used coupons (add to cycles remaining)
-				$regenerateInvoice = $this->processMonthlyInvoice($customer, $request, false); // Regenerate monthly invoice
+				$regenerateInvoice = $this->processMonthlyInvoice2($latestUnpaidInvoice,$customer, $request, false); // Regenerate monthly invoice
 				$updatedLatestUnpaidInvoice = $customer->openAndUnpaidInvoices()->orderBy('id', 'desc')->first(); // Get latest generated monthly invoice
-				if ($updatedLatestUnpaidInvoice->id > $latestPaidInvoice->id) { // Confirm latest monthly invoice->id is greater than old monthly invoice
-					$creditsUsed = $latestUnpaidInvoice->creditsToInvoice->sum('amount');
-					$latestUnpaidInvoice->creditsToInvoice()->update(['invoice_id' => $updatedLatestUnpaidInvoice->id]); // Update invoice id of used credits
-					$latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
-					$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
-					$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
+			//	dd($updatedLatestUnpaidInvoice);
+				// if ($updatedLatestUnpaidInvoice->id > $latestPaidInvoice->id) { // Confirm latest monthly invoice->id is greater than old monthly invoice
+				// 	$creditsUsed = $latestUnpaidInvoice->creditsToInvoice->sum('amount');
+				// 	$latestUnpaidInvoice->creditsToInvoice()->update(['invoice_id' => $updatedLatestUnpaidInvoice->id]); // Update invoice id of used credits
+				// 	$latestUnpaidInvoice->delete(); // Delete old monthly invoice, also deletes order and invoice item rows.
+				// 	$updatedLatestUnpaidInvoice->decrement('total_due', $creditsUsed); // Update total due with old used credits.
+				// 	$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request); // Send pdf mail.
 					$logEntry = [
 						'name'      => CronLog::TYPES['regenerate-invoice'],
 						'status'    => 'success',
@@ -564,7 +743,9 @@ class MonthlyInvoiceController extends BaseController implements ConstantInterfa
 					];
 
 					$this->logCronEntries($logEntry);
-				}
+				// }
+				$latestUnpaidInvoice->update(['regenerate' => 1]);
+				$this->generateInvoice($updatedLatestUnpaidInvoice->order, true, $request);
 			}
 		}
 	}

@@ -220,7 +220,14 @@ class Order extends Model
     {
         $addon = Addon::find($addonId);
         $amount = $addon->amount_recurring;
-        return $this->calProRatedAmount($amount);
+	    /**
+	     * @internal Don't pro-rate one time addons
+	     */
+		if($addon->is_one_time) {
+			return $amount;
+		}
+	    return $this->calProRatedAmount($amount);
+
     }
 
 	/**
@@ -265,6 +272,15 @@ class Order extends Model
     {
         return Carbon::parse($this->created_at)->format('Y-m-d\Th:i\Z');
     }
+
+
+	/**
+	 * @return string
+	 */
+	public function getUpdatedAtFormatAttribute()
+	{
+		return Carbon::parse($this->updated_at)->format('Y-m-d\Th:i\Z');
+	}
 
 	/**
 	 * @param $order

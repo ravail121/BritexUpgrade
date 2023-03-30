@@ -7,8 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomerStandaloneSim extends Model
 {
-    protected $table = 'customer_standalone_sim'; 
 
+	/**
+	 * @var string
+	 */
+    protected $table = 'customer_standalone_sim';
+
+	/**
+	 * @var string[]
+	 */
     protected $fillable = [
     	'customer_id',
     	'sim_id',
@@ -19,19 +26,31 @@ class CustomerStandaloneSim extends Model
         'shipping_date',
         'order_num',
         'processed',
-	    'closed_date'
+	    'closed_date',
+	    'subscription_id'
     ];
 
+	/**
+	 *
+	 */
     const STATUS = [
         'complete'    => 'complete',
 	    'closed'      => 'closed'
     ];
-    
+
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
     public function sim()
     {
     	return $this->belongsTo('App\Model\Sim', 'sim_id', 'id');
   	}
 
+	/**
+	 * @param $value
+	 *
+	 * @return string
+	 */
     public function getShippingDateAttribute($value)
     {
         if (isset($value)) {
@@ -40,21 +59,37 @@ class CustomerStandaloneSim extends Model
         return "NA";
     }
 
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
     public function scopeShipping($query)
     {
-        return $query->where([['status', 'shipping'],['processed', 0 ]]);
+        return $query->where([['status', 'shipping'], ['processed', 0 ]]);
     }
 
+	/**
+	 * @param $query
+	 *
+	 * @return mixed
+	 */
     public function scopeShippingData($query)
     {
         return $query->where('status', 'shipping');
     }
 
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
     public function order()
     {
         return $this->belongsTo('App\Model\Order');
     }
 
+	/**
+	 * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+	 */
     public function customer()
     {
         return $this->belongsTo('App\Model\Customer', 'customer_id');

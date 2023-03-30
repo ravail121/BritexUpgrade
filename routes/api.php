@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use App\Scripts\TestEye4Fraud;
-use App\Events\SubcriptionStatusChanged;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -14,58 +13,16 @@ use App\Events\SubcriptionStatusChanged;
 |
 */
 
-Route::get('/update-con', [
-	'as'=>'api.sample.invoice2',
-	'uses'=> 'Api\V1\CronJobs\UpdateController@checkUpdates',
 
-   ]);
-   
-
-   Route::get('/update-con999', [
-	   'as'=>'api.monthly.invoice2',
-	   'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@generateMonthlyInvoice',
-
-   ]);
-   Route::get('/update-con2', [
-	   'as'=>'api.sample.invoice22',
-	   'uses'=> 'Api\V1\CronJobs\MonthlyInvoiceController@regenerateInvoice',
-
-	  ]);
-
-	  Route::get('/update-con3', [
-		'as'=>'api.sample.invoice33',
-		'uses'=> 'Api\V1\CardController@autoPayInvoice',
- 
-	   ]);
-
-	   Route::get('/update-con6', [
-		'as'=>'api.sample.invoice6',
-		'uses'=> 'Api\V1\CronJobs\ProcessController@processSubscriptions',
- 
-	   ]);
-
-	   Route::get('/update-con7', [
-		'as'=>'api.sample.invoice7',
-		'uses'=> 'Api\V1\CronJobs\SubscriptionStatusDateController@processAccountSuspendedAndNullStartDateCheck',
- 
-	   ]);
-	   
-	   
-
-
-
-
-
+Route::post('/get-usage', [
+	'as'=>'api.get.usage',
+	'uses'=> 'Api\V1\SimController@getUsage',
+]);
 Route::get('/', function (Request $request) {
 	return  response()->json([
 		'message' => 'BriteX Backend !!'
 	], 200);
 });
-
-Route::get('/test', [
-	'as'=>'api.cron.data.usage2',
-	'uses'=> 'Api\V1\CronJobs\DataUsage@getUsageData2',
-]);
 
 
 Route::get('/data_usage', [
@@ -78,13 +35,11 @@ Route::post('/check2', [
 	'uses'=> 'Api\V1\CronJobs\DataUsage@check2',
 ]);
 
-
 Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 	Route::get('/cron-jobs', [
 		'as'=>'api.monthly.invoice',
 		'uses'=> 'MonthlyInvoiceController@generateMonthlyInvoice',
-
 	]);
 
 	Route::post('/generate-one-time-invoice',[
@@ -117,6 +72,20 @@ Route::group(['namespace'=>'Api\V1\Invoice'],function(){
 
 
 Route::middleware('APIToken')->group(function () {
+	Route::get('/get-sims-telit', [
+		'as'=>'api.cron.auth',
+		'uses'=> 'Api\V1\CronJobs\APICallController@callAuthentication',
+	]);
+	Route::get('/get-plans-telit', [
+		'as'=>'api.cron.plans',
+		'uses'=> 'Api\V1\CronJobs\APICallController@getPlans',
+	]);
+
+	Route::post('/activation/notify-error', [
+		'as'=>'api.activation.notify.error',
+		'uses'=> 'Api\V1\ActivationController@sendNotification',
+	]);
+
 	// Orders API
 	Route::group(['prefix' => 'order', 'namespace' => 'Api\V1', 'middleware' => ['JsonApiMiddleware']], function()
 	{
@@ -139,7 +108,7 @@ Route::middleware('APIToken')->group(function () {
 			//'middleware' => 'auth:api',
 			'uses' => 'OrderController@delete',
 		]);
-		Route::patch('/remove', [
+		Route::post('/remove', [
 			'as' => 'api.orders.patch_remove',
 			'uses' => 'OrderController@remove_from_order',
 		]);
@@ -178,7 +147,7 @@ Route::middleware('APIToken')->group(function () {
 			'uses'  => 'CouponController@addCoupon'
 		]);
 		Route::post('/remove-coupon', [
-			'as' => 'api.coupon.removeCoupon'  ,
+			'as' => 'api.coupon.addCoupon'  ,
 			'uses' => 'CouponController@removeCoupon'
 		]);
 
@@ -204,6 +173,10 @@ Route::middleware('APIToken')->group(function () {
 			//'middleware' => 'auth:api',
 			'uses' => 'DeviceController@delete',
 
+		]);
+		Route::post('/updateOrder',[
+			'as' => 'api.devices.order',
+			'uses' => 'DeviceController@updateOrder',
 		]);
 	});
 
@@ -288,8 +261,6 @@ Route::middleware('APIToken')->group(function () {
 		]);
 	});
 
-
-
 	// Porting
 	Route::group(['prefix' => 'porting/check', 'namespace' => 'Api\V1'], function()
 	{
@@ -297,7 +268,6 @@ Route::middleware('APIToken')->group(function () {
 			'as' => 'api.porting.check',
 			'uses' => 'PortingController@check',
 		]);
-
 	});
 
 
@@ -364,88 +334,9 @@ Route::middleware('APIToken')->group(function () {
 
 		// ]);
 
-		
-
 		Route::post('/start-billing',[
 			'as'   => 'api.start.billing',
 			'uses' => 'InvoiceController@startBilling',
-		]);
-	});
-
-	Route::group(['namespace' => 'Api\V1'], function(){
-		Route::get('/default-imei', [
-			'as'   => 'api.default.imei',
-			'uses' => 'DeviceController@getImei'
-		]);
-	});
-
-	Route::group(['namespace' => 'Api\V1'], function(){
-
-		Route::get('/blogs',[
-			'as' => 'api.blogs.list',
-			'uses' => 'BlogsController@get',
-		]);
-		
-		Route::post('/deleteBlogById',[
-			'as' => 'api.blogs.delete.id',
-			'uses' => 'BlogsController@deleteBlogById',
-		]);
-
-		Route::post('/blogs',[
-			'as' => 'api.blogs.post',
-			'uses' => 'BlogsController@post',
-		]);
-
-		Route::post('/blogsById',[
-			'as' => 'api.blogs.id',
-			'uses' => 'BlogsController@blogsById',
-		]);
-
-		
-
-		Route::post('/charge-new-card',[
-			'as'   => 'api.customer.creditcard',
-			'uses' => 'PaymentController@chargeNewCard',
-		]);
-
-		Route::post('/process-refund',[
-			'as'   => 'api.process.refund',
-			'uses' => 'PaymentController@processRefund',
-		]);
-
-		Route::post('/payment-failed',[
-			'as'   => 'api.payment.failed',
-			'uses' => 'PaymentController@paymentFailed',
-		]);
-
-		Route::get('/customer-cards',[
-			'as'   => 'api.get.customercards',
-			'uses' => 'CardController@getCustomerCards',
-		]);
-
-		Route::post('/add-card',[
-			'as'   => 'api.add.cards',
-			'uses' => 'CardController@addCard',
-		]);
-
-		Route::post('/remove-card',[
-			'as'   => 'api.remove.cards',
-			'uses' => 'CardController@removeCard',
-		]);
-
-		Route::post('/charge-card',[
-			'as'   => 'api.charge.cards',
-			'uses' => 'CardController@chargeCard',
-		]);
-
-		Route::post('/primary-card',[
-			'as'   => 'api.primary.cards',
-			'uses' => 'CardController@primaryCard',
-		]);
-
-		Route::post('/pay-unpaied-invoice',[
-			'as'   => 'api.pay.unpaied.invoice',
-			'uses' => 'CardController@payCreditToInvoice',
 		]);
 	});
 
@@ -497,6 +388,86 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.query.active-sim-with-addon',
 			'uses' => 'SubscriptionController@queryActiveSubscriptionWithAddon',
 		]);
+
+		Route::get('/blogs',[
+			'as' => 'api.blogs.list',
+			'uses' => 'BlogsController@get',
+		]);
+
+		Route::post('/deleteBlogById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@deleteBlogById',
+		]);
+
+		Route::post('/blogs',[
+			'as' => 'api.blogs.post',
+			'uses' => 'BlogsController@post',
+		]);
+
+		Route::post('/removeImageById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@removeImageById',
+		]);
+
+		Route::post('/blogsById',[
+			'as' => 'api.blogs.id',
+			'uses' => 'BlogsController@blogsById',
+		]);
+		Route::post('/edit-blog-by-id',[
+			'as' => 'api.blogs.post',
+			'uses' => 'BlogsController@update',
+		]);
+
+
+		Route::post('/charge-new-card',[
+			'as'   => 'api.customer.creditcard',
+			'uses' => 'PaymentController@chargeNewCard',
+		]);
+
+		Route::post('/process-refund',[
+			'as'   => 'api.process.refund',
+			'uses' => 'PaymentController@processRefund',
+		]);
+
+		Route::post('/payment-failed',[
+			'as'   => 'api.payment.failed',
+			'uses' => 'PaymentController@paymentFailed',
+		]);
+
+		Route::any('/customer-cards',[
+			'as'   => 'api.get.customercards',
+			'uses' => 'CardController@getCustomerCards',
+		]);
+
+		Route::post('/add-card',[
+			'as'   => 'api.add.cards',
+			'uses' => 'CardController@addCard',
+		]);
+
+		Route::post('/remove-card',[
+			'as'   => 'api.add.cards',
+			'uses' => 'CardController@removeCard',
+		]);
+
+		Route::post('/charge-card',[
+			'as'   => 'api.charge.cards',
+			'uses' => 'CardController@chargeCard',
+		]);
+
+		Route::post('/primary-card',[
+			'as'   => 'api.charge.cards',
+			'uses' => 'CardController@primaryCard',
+		]);
+
+		Route::post('/pay-unpaied-invoice',[
+			'as'   => 'api.pay.unpaied.invoice',
+			'uses' => 'CardController@payCreditToInvoice',
+		]);
+
+		Route::get('/default-imei', [
+			'as'   => 'api.default.imei',
+			'uses' => 'DeviceController@getImei'
+		]);
 	});
 
 
@@ -507,13 +478,13 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 
-		Route::group(['namespace' => 'Api\V1'], function(){
+	Route::group(['namespace' => 'Api\V1'], function(){
 		Route::post('/sign-on',[
 			'as'   => 'api.customer.signon',
 			'uses' => 'SignOnController@signOn',
 		]);
 
-		Route::get('customer',[
+		Route::any('customer',[
 			'as'   => 'api.customer.details',
 			'uses' => 'CustomerController@customerDetails',
 		]);
@@ -589,12 +560,10 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'SubscriptionController@updateSubLabel',
 		]);
 
-		Route::group([], function(){
-			Route::post('/update-port',[
-				'as'   => 'api.update.port',
-				'uses' => 'CustomerPlanController@updatePort',
-			]);
-		});
+		Route::post('/update-port',[
+			'as'   => 'api.update.port',
+			'uses' => 'CustomerPlanController@updatePort',
+		]);
 
 		Route::post('/subscription/update-requested-zip',[
 			'as'   => 'api.Subscription.requestedZip',
@@ -605,10 +574,6 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.customers.list',
 			'uses' => 'CustomerController@listCustomers',
 		]);
-	});
-
-
-	Route::group(['namespace' => 'Api\V1'], function() {
 		Route::get('/subscription-by-phone-number', [
 			'as' => 'api.Subscription.phone',
 			'uses' => 'SubscriptionController@getSubscriptionByPhoneNumber',
@@ -662,6 +627,91 @@ Route::middleware('APIToken')->group(function () {
 			'as'   => 'api.bulk.activate.subscription',
 			'uses' => 'SubscriptionController@activateSubscription',
 		]);
+
+		Route::post( '/list-sims', [
+			'as'   => 'api.bulk.list.sims',
+			'uses' => 'BulkOrder\CheckoutController@simsForCatalogue',
+		]);
+
+		Route::post( '/create-bulk-order', [
+			'as'   => 'api.bulk.order.create.bulk-order',
+			'uses' => 'BulkOrder\CheckoutController@createOrder',
+		]);
+
+		Route::post( '/order-summary', [
+			'as'   => 'api.bulk.order.preview.order-summary',
+			'uses' => 'BulkOrder\CheckoutController@orderSummaryForBulkOrder'
+		]);
+
+		Route::post( '/list-order-sims', [
+			'as'   => 'api.bulk.order.list.order-sims',
+			'uses' => 'BulkOrder\CheckoutController@listOrderSims'
+		]);
+
+		Route::post( '/list-order-plans', [
+			'as'   => 'api.bulk.order.list.order-plans',
+			'uses' => 'BulkOrder\CheckoutController@listOrderPlans'
+		]);
+
+		Route::post('/csv-order-subscriptions', [
+			'as'   => 'api.bulk.order.csv-order-subscriptions',
+			'uses' => 'BulkOrder\CheckoutController@csvOrderSubscriptions'
+		]);
+
+		Route::post('/order-subscriptions', [
+			'as'   => 'api.bulk.order.order-subscriptions',
+			'uses' => 'BulkOrder\CheckoutController@orderSubscriptions'
+		]);
+
+		Route::post('/get-orders', [
+			'as'   => 'api.bulk.order.get-orders',
+			'uses' => 'BulkOrder\CheckoutController@getOrders'
+		]);
+
+		Route::post('/generate-one-time-invoice', [
+			'as'   => 'api.bulk.order.generate-one-time-invoice',
+			'uses' => 'BulkOrder\CheckoutController@generateOneTimeInvoice'
+		]);
+
+		Route::post('/close-lines', [
+			'as'   => 'api.bulk.order.close-lines',
+			'uses' => 'BulkOrder\CheckoutController@closeLines'
+		]);
+
+		Route::post('/ultra/validate-zip-code', [
+			'as'   => 'api.bulk.order.ultra.validate-zip-code',
+			'uses' => 'BulkOrder\CheckoutController@validateZipCodeForUltraSims'
+		]);
+
+		Route::post('/addons/number-change', [
+			'as'   => 'api.bulk.order.addons.get-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getNumberChangeAddons'
+		]);
+
+		Route::post('/lines/pending-number-change', [
+			'as'   => 'api.bulk.order.lines.pending-number-change',
+			'uses' => 'BulkOrder\CheckoutController@getPendingNumberChanges'
+		]);
+
+		Route::post('/lines/eligible-for-number-change', [
+			'as'   => 'api.bulk.order.lines.eligible-for-number-change',
+			'uses' => 'BulkOrder\CheckoutController@listEligibleSimsForNumberChange'
+		]);
+
+		Route::post('/lines/number-change-history', [
+			'as'   => 'api.bulk.order.lines.number-change-history',
+			'uses' => 'BulkOrder\CheckoutController@numberChangeHistory'
+		]);
+
+		Route::post('/lines/process-number-change', [
+			'as'   => 'api.bulk.order.lines.process-number-change',
+			'uses' => 'BulkOrder\CheckoutController@processNumberChange'
+		]);
+
+		Route::post('/order/csv-number-changes', [
+			'as'   => 'api.bulk.order.csv-number-changes',
+			'uses' => 'BulkOrder\CheckoutController@csvOrderNumberChanges'
+		]);
 	});
 
 	/**
@@ -673,6 +723,16 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'SubscriptionLogController@store',
 		] );
 	});
-
 }); //APIToken middleware
+
+
+Route::middleware('ShippingEasyCallbackAuthenticator')->group(function () {
+	Route::group(['prefix' => 'shipment', 'namespace' => '\Api\V1', 'middleware' => ['JsonApiMiddleware']], function() {
+		Route::post( '/callback', [
+			'as'   => 'api.shipment.callback',
+			'uses' => 'ShippingEasyShipmentNotificationCallback@updateOrderShipment',
+		] );
+	});
+	// Shipment Callback
+});
 

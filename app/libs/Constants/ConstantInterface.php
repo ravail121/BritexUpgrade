@@ -26,7 +26,8 @@ interface ConstantInterface
         'taxes'            => 7,
         'manual'           => 8,
         'payment'          => 9,
-	    'surcharge'        => 10,
+	    'refund'           => 10,
+	    'surcharge'        => 11
     ];
 
     const INVOICE_ITEM_PRODUCT_TYPES = [
@@ -53,6 +54,7 @@ interface ConstantInterface
     const SHOW_COLUMN_VALUES = [
         'not-visible'             => 0,
         'visible-and-orderable'   => 1,
-        'visible-and-unorderable' => 2
+        'visible-and-unorderable' => 2,
+	    'not-visible-at-all'      => 3
     ];
 }

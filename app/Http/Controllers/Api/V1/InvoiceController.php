@@ -270,11 +270,9 @@ class InvoiceController extends BaseController
 			}
 		}
 		// $total = ($charges - $payment) + $pastDue;
-		$total =  $customerInvoices->sum('total_due');
+		//$total =  $customerInvoices->sum('total_due');
 
-		if($total < 0){
-			$total = 0;
-		}
+		$total=$customer->amount_due_2;
 
 		$charges = $this->getAmountFormated($charges);
 		$payment = $this->getAmountFormated($payment);

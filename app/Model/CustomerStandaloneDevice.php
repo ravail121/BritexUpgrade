@@ -31,6 +31,7 @@ class CustomerStandaloneDevice extends Model
         'shipping_date',
         'order_num',
         'processed',
+		'subscription_id'
     ];
 
 	/**

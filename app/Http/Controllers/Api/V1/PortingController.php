@@ -1,15 +1,13 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1;
-use Validator;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
-use App\Http\Controllers\Controller;
-use App\Model\Order;
-use App\Model\Plan;
-use App\Model\OrderGroup;
 
+use Validator;
+use App\Model\Plan;
+use App\Model\Order;
+use App\Model\OrderGroup;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 /**
  * Class PortingController

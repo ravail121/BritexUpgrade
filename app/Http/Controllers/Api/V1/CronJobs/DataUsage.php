@@ -24,7 +24,7 @@ class DataUsage extends BaseController
 	 */
     public function check2(Request $request)
     {
-		$string=$request->sim_card_num;
+		$string = $request->sim_card_num;
 		if(substr($request->sim_card_num, -1)=='F' || substr($request->sim_card_num, -1)=='f'){
 
 			$string=substr($request->sim_card_num, 0, -1);

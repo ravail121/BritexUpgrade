@@ -190,6 +190,52 @@ trait InvoiceCouponTrait
         }
     }
 
+    public function customerAccountCoupons2($customer, $invoice)
+    {
+        $customerCouponRedeemable = $customer->customerCouponRedeemable;
+        if ($customerCouponRedeemable) {
+            foreach ($customerCouponRedeemable as $customerCoupon) {
+                $coupon = $customerCoupon->coupon;
+                
+                if($customerCoupon->cycles_remaining == 0) continue;
+
+                list($isApplicable, $subscriptions) = 
+                            $this->isCustomerAccountCouponApplicable2(
+                                $coupon,
+                                $customer->billableSubscriptions
+                            );
+                
+                if($isApplicable){
+                    $coupon->load('couponProductTypes', 'couponProducts');
+
+                    foreach($subscriptions as $subscription){
+
+                        $amount = $this->couponAmount($subscription, $coupon);
+
+                        // Possibility of returning 0 as well but
+                        // returns false when coupon is not applicable
+                        if($amount === false || $amount == 0) continue;
+
+                        $invoice->invoiceItem()->create([
+                            'subscription_id' => $subscription->id,
+                            'product_type'    => 'Customer Coupon',
+                            'product_id'      => $customerCoupon->id,
+                            'type'            => InvoiceItem::TYPES['coupon'],
+                            'description'     => $coupon->code,
+                            'amount'          => str_replace(',', '',number_format($amount, 2)),
+                            'start_date'      => $invoice->start_date,
+                            'taxable'         => false,
+                        ]);
+                    }
+                    if ($customerCoupon['cycles_remaining'] > 0) {
+                        $customerCoupon->update(['cycles_remaining' => $customerCoupon['cycles_remaining'] - 1]);
+                    }
+                    // ToDo: Add logs,Order not provided in requirements
+                }
+            }
+        }
+    }
+
 	/**
 	 * @param $coupon
 	 * @param $subscriptions
@@ -200,6 +246,29 @@ trait InvoiceCouponTrait
     {
         $isApplicable  = true;
         $multilineMin = $coupon->multiline_min;
+        $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
+        if($coupon->multiline_max){
+            $isApplicable = $isApplicable && $subscriptions->count() <= $coupon->multiline_max;
+        }
+        
+        return [$isApplicable, $subscriptions];
+    }
+
+    protected function isCustomerAccountCouponApplicable2($coupon, $subscriptions)
+    {
+        $isApplicable  = true;
+        $multilineMin = $coupon->multiline_min;
+
+        $today     = Carbon::yesterday();
+		
+		$subscriptions = $subscriptions->filter(function($subscriptions, $i) use ($today){
+			//dd(7);
+			$billingEndParsed = Carbon::parse($subscriptions->created_at);
+			// Is today between customer.billing_date and -5 days
+			return
+				$today <= $billingEndParsed;
+		});
+
         $isApplicable = $isApplicable && ($subscriptions->count() >= $multilineMin);
         if($coupon->multiline_max){
             $isApplicable = $isApplicable && $subscriptions->count() <= $coupon->multiline_max;
@@ -247,6 +316,60 @@ trait InvoiceCouponTrait
 	 */
     public function customerSubscriptionCoupons($invoice, $subscriptions)
     {
+       //  dd($subscriptions);
+        foreach($subscriptions as $subscription){
+
+            $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
+
+            // Subscription doesnot has any coupons
+            if(!$subscriptionCouponRedeemable) continue;
+
+            foreach ($subscriptionCouponRedeemable as $subscriptionCoupon) {
+                
+                $coupon = $subscriptionCoupon->coupon;
+
+                if($subscriptionCoupon->cycles_remaining == 0) continue;
+
+                $coupon->load('couponProductTypes', 'couponProducts');
+
+                $amount = $this->couponAmount($subscription, $coupon);
+
+                // Possibility of returning 0 as well but
+                // returns false when coupon is not applicable
+                if($amount === false || $amount == 0) continue;
+
+                $invoice->invoiceItem()->create([
+                    'subscription_id' => $subscription->id,
+                    'product_type'    => 'Subscription Coupon',
+                    'product_id'      => $subscriptionCoupon->id,
+                    'type'            => InvoiceItem::TYPES['coupon'],
+                    'description'     => $coupon->code,
+                    'amount'          => str_replace(',', '', number_format($amount, 2)),
+                    'start_date'      => $invoice->start_date,
+                    'taxable'         => false,
+                ]);
+
+                if ($subscriptionCoupon['cycles_remaining'] > 0) {
+                    $subscriptionCoupon->decrement('cycles_remaining');
+                }
+            }
+        }
+    }
+
+    public function customerSubscriptionCoupons2($invoice, $subscriptions)
+    {
+       //  dd($subscriptions);
+
+       $today     = Carbon::yesterday();
+		
+		$subscriptions = $subscriptions->filter(function($subscriptions, $i) use ($today){
+			//dd(7);
+			$billingEndParsed = Carbon::parse($subscriptions->created_at);
+			// Is today between customer.billing_date and -5 days
+			return
+				$today <= $billingEndParsed;
+		});
+        
         foreach($subscriptions as $subscription){
 
             $subscriptionCouponRedeemable = $subscription->subscriptionCouponRedeemable;
@@ -420,7 +543,7 @@ trait InvoiceCouponTrait
         $appliedToAll       = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_ALL']              ?  $this->appliedToAll($coupon, $order, $stateTax) : 0;
         $appliedToTypes     = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_TYPES']   ?  $this->appliedToTypes($coupon, $order, $stateTax) : 0;
         $appliedToProducts  = $coupon['class'] == Coupon::CLASSES['APPLIES_TO_SPECIFIC_PRODUCT'] ?  $this->appliedToProducts($coupon, $order, $stateTax) : 0;
-        
+        // dd($appliedToAll);
         
         if ($this->isApplicable($order, $customer, $coupon,false,$check)) {
             
@@ -429,10 +552,12 @@ trait InvoiceCouponTrait
                     'order_id'      => $order->id,
                     'coupon_id'     => $coupon->id
                 ]);
+                // $this->updateCouponNumUses($order);
 
             }
             
-            $total = (isset($appliedToAll['total']) ? $appliedToAll['total'] : 0) + (isset($appliedToTypes['total']) ? $appliedToTypes['total'] : 0) + (isset($appliedToProducts['total']) ? $appliedToProducts['total'] : 0);
+            
+            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
 
             return [
                 'total'                 => $total,
@@ -441,9 +566,9 @@ trait InvoiceCouponTrait
                 'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to'            => [
                     
-                    'applied_to_all'        => isset($appliedToAll['applied_to']) ? $appliedToAll['applied_to'] : null,
-                    'applied_to_types'      => isset($appliedToTypes['applied_to']) ? $appliedToTypes['applied_to'] : null,
-                    'applied_to_products'   => isset($appliedToProducts['applied_to']) ? $appliedToProducts['applied_to'] : null,
+                    'applied_to_all'        => $appliedToAll['applied_to'],
+                    'applied_to_types'      => $appliedToTypes['applied_to'],
+                    'applied_to_products'   => $appliedToProducts['applied_to'],
                 ],
                 'coupon_amount_details' => $couponEligibleFor,
                 'coupon_tax'            => array_sum($this->totalTaxableAmount) * $stateTax / 100,
@@ -469,12 +594,10 @@ trait InvoiceCouponTrait
         $this->calDevicePrices();
         $this->getPlanPrices();
         $this->getSimPrices();
-        
         $this->getAddonPrices();
         $this->calTaxes();
         $this->getShippingFee();
         $this->calRegulatory();
-        
         $price[] = ($this->prices) ? array_sum($this->prices) : 0;
         $price[] = ($this->regulatory) ? array_sum($this->regulatory) : 0;
         $price[] = ($this->coupon());
@@ -546,14 +669,14 @@ trait InvoiceCouponTrait
         if ($this->cartItems != null) {
             if (count($this->cartItems['order_groups'])) {
                 foreach ($this->cartItems['order_groups'] as $cart) {
-                    if (isset($cart['plan']['amount_onetime']) && $cart['plan']['amount_onetime'] > 0) {
+                    if ($cart['plan']['amount_onetime'] > 0) {
                         $this->activation[] = $cart['plan']['amount_onetime'];
                     }
                     if ($cart['plan_prorated_amt']) {
                         $this->prices[] = $cart['plan_prorated_amt'];
                     } else {
                     
-                        $this->prices[] = ($cart['plan'] != null) && isset($cart['plan']['amount_recurring']) ? $cart['plan']['amount_recurring'] : [];
+                        $this->prices[] = ($cart['plan'] != null) ? $cart['plan']['amount_recurring'] : [];
                    }
                 }
             }
@@ -752,11 +875,11 @@ trait InvoiceCouponTrait
         $_tax_id = null;
         $order = Order::where('hash', $this->order_hash)->first();
         $customer = Customer::find($order->customer_id);
-       // dd($customer);
-        if ($customer==null) {
+        
+        if (!$customer) {
             if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
-            } elseif (isset($this->cart['customer']['billing_state_id'])) {
+            } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['customer']['billing_state_id'];
             }
         } else {

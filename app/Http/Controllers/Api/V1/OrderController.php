@@ -8,6 +8,7 @@ use App\Model\Sim;
 use App\Model\Plan;
 use App\Model\Order;
 use App\Helpers\Log;
+use App\Model\Coupon;
 use App\Model\Customer;
 use App\Model\OrderGroup;
 use App\Model\OrderCoupon;
@@ -16,7 +17,6 @@ use App\Model\Subscription;
 use Illuminate\Http\Request;
 use App\Model\OrderGroupAddon;
 use Illuminate\Validation\Rule;
-use App\Model\Coupon;
 use App\Model\BusinessVerification;
 use Illuminate\Support\Facades\DB;
 use App\Model\CustomerStandaloneSim;
@@ -126,7 +126,6 @@ class OrderController extends BaseController
 	 */
 	protected  $cart;
 
-
     /**
 	 * OrderController constructor.
 	 */
@@ -141,8 +140,6 @@ class OrderController extends BaseController
 	 */
 	public function get(Request $request)
 	{
-
-		
 		if($request->has('customer_id')){
 			$customerId = $request->input('customer_id');
 			$order = Order::where('customer_id', $customerId)
@@ -174,8 +171,9 @@ class OrderController extends BaseController
                 $query->where('hash', $hash);
             })->get();
 
+
+
             foreach($order_groups as $key => $og){
-				
 
                 if($order == []){
 
@@ -313,7 +311,6 @@ class OrderController extends BaseController
 
         $order['order_groups'] = $ordergroups;
         $this->cartItems = $order;
-
         $this->getCouponDetails();
         $order['totalPrice'] =  $this->totalPrice();
         $order['subtotalPrice'] =  $this->subTotalPrice();
@@ -369,8 +366,8 @@ class OrderController extends BaseController
         );
 
         if($request->has('sim_num')) {
-	        $validation->after( function ( $validator ) use ($request) {
-		        if ( $this->validateIfTheSimIsUsed( $request->input('sim_num') ) ) {
+	        $validation->after( function ( $validator ) use ($request){
+		        if ( $this->validateIfTheSimIsUsed( $request->input('sim_num'), $request->get('company')->id ) ) {
 			        $validator->errors()->add( 'sim_num', "The SIM can't be used." );
 		        }
 	        } );
@@ -378,7 +375,7 @@ class OrderController extends BaseController
 
 
         if ($validation->fails()) {
-            return response()->json($validation->getMessageBag()->all());
+            return response()->json($validation->getMessageBag()->all(), 422);
         }
 
         $data = $request->all();
@@ -388,7 +385,7 @@ class OrderController extends BaseController
             //Create new row in order table
             $order = Order::create([
                 'hash'       => sha1(time().rand()),
-                'company_id' => \Request::get('company')->id,
+                'company_id' => $request->get('company')->id
             ]);
         }else{
             $order = Order::where('hash', $data['order_hash'])->get();
@@ -564,7 +561,7 @@ class OrderController extends BaseController
         if($og->order_id != $order->id){
             return $this->respondError('Given order_group_id is not associated with provided order hash', 400);
         }
-//dd($data);
+		//dd($data);
         if($data['paid_monthly_invoice'] == 1 && $og->plan_id != null){
 
 			$op=OrderCoupon::where('order_id',$order->id)->first();
@@ -636,7 +633,6 @@ class OrderController extends BaseController
         return \Request::get('company');
     }
 
-
 	/**
 	 * Get Coupon Details
 	 */
@@ -660,14 +656,16 @@ class OrderController extends BaseController
 
 	/**
 	 * @param $simNum
+	 * @param $companyId
 	 *
 	 * @return mixed
 	 */
-	protected function validateIfTheSimIsUsed($simNum)
+	protected function validateIfTheSimIsUsed($simNum, $companyId)
     {
 	    return Subscription::where([
 	    	['sim_card_num', $simNum],
-	    	['status', '!=', 'closed']
+	    	['status', '!=', 'closed'],
+		    ['company_id', $companyId]
 	    ])->exists();
     }
 
@@ -679,38 +677,25 @@ class OrderController extends BaseController
 	public function createOrderForBulkOrder(Request $request)
 	{
 		try {
-
-			$data2=array();
-
+			$data2 = [];
 			$planActivation = $request->get('plan_activation') ?: false;
-
-			
 				foreach ( $request->get( 'orders' ) as $orderItem ) {
 
-					$subscription=Subscription::where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
+					$subscription = Subscription::where('sim_card_num', $orderItem['sim_num'])->where('status', '!=', 'closed')->first();
 					if($subscription){
-
-						$customer=Customer::where('id',$subscription->customer_id)->first();
-						$customer = Subscription::with(['customer'])->where('sim_card_num',$orderItem['sim_num'])->where('status','!=','closed')->first();
-						
-
-						$data2[$orderItem['sim_num']]=$customer;
-
+						$customer = Customer::where('id', $subscription->customer_id)->first();
+						$customer = Subscription::with(['customer'])->where('sim_card_num', $orderItem['sim_num'])->where('status', '!=', 'closed')->first();
+						$data2[$orderItem['sim_num']] = $customer;
 					}
-
 				}
 
-				if(sizeof($data2)>0){
+				if(sizeof($data2) > 0){
 					$validationErrorResponse2 = [
 						'status' => 'error2',
 						'data'   => $data2
 					];
-
 					return $validationErrorResponse2;
 				}
-
-
-			
 
 			$validation = $this->validationRequestForBulkOrder($request, $planActivation);
 			if($validation !== 'valid') {
