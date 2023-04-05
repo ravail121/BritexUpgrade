@@ -556,9 +556,11 @@ trait InvoiceCouponTrait
 
             }
             
-            
-            $total = $appliedToAll['total'] + $appliedToTypes['total'] + $appliedToProducts['total'];
+            $appliedToAllTotal=isset($appliedToAll['total']) ? $appliedToAll['total'] : 0;
+            $appliedToTypesTotal=isset($appliedToTypes['total']) ? $appliedToTypes['total'] : 0;
+            $appliedToProductsTotal=isset($appliedToProducts['total']) ? $appliedToProducts['total'] : 0;
 
+            $total = $appliedToAllTotal + $appliedToTypesTotal + $appliedToProductsTotal;
             return [
                 'total'                 => $total,
                 'code'                  => $coupon->code,
@@ -566,9 +568,9 @@ trait InvoiceCouponTrait
                 'percentage'            => $coupon->fixed_or_perc == self::FIXED_PERC_TYPES['percentage'],
                 'applied_to'            => [
                     
-                    'applied_to_all'        => $appliedToAll['applied_to'],
-                    'applied_to_types'      => $appliedToTypes['applied_to'],
-                    'applied_to_products'   => $appliedToProducts['applied_to'],
+                    'applied_to_all'        => isset($appliedToAll['applied_to']) ? $appliedToAll['applied_to'] : null,
+                    'applied_to_types'      => isset($appliedToTypes['applied_to']) ? $appliedToTypes['applied_to'] : null,
+                    'applied_to_products'   => isset($appliedToProducts['applied_to']) ? $appliedToProducts['applied_to'] : null,
                 ],
                 'coupon_amount_details' => $couponEligibleFor,
                 'coupon_tax'            => array_sum($this->totalTaxableAmount) * $stateTax / 100,
@@ -669,7 +671,7 @@ trait InvoiceCouponTrait
         if ($this->cartItems != null) {
             if (count($this->cartItems['order_groups'])) {
                 foreach ($this->cartItems['order_groups'] as $cart) {
-                    if ($cart['plan']['amount_onetime'] > 0) {
+                    if (isset($cart['plan']['amount_onetime']) && $cart['plan']['amount_onetime'] > 0) {
                         $this->activation[] = $cart['plan']['amount_onetime'];
                     }
                     if ($cart['plan_prorated_amt']) {
@@ -879,7 +881,7 @@ trait InvoiceCouponTrait
         if (!$customer) {
             if ($this->cartItems['business_verification'] && isset($this->cartItems['business_verification']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['business_verification']['billing_state_id'];
-            } elseif ($this->cart['customer'] && isset($this->cart['customer']['billing_state_id'])) {
+            } elseif (isset($this->cart['customer']) && isset($this->cart['customer']['billing_state_id'])) {
                 $_tax_id = $this->cartItems['customer']['billing_state_id'];
             }
         } else {

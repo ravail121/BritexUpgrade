@@ -147,7 +147,7 @@ Route::middleware('APIToken')->group(function () {
 			'uses'  => 'CouponController@addCoupon'
 		]);
 		Route::post('/remove-coupon', [
-			'as' => 'api.coupon.addCoupon'  ,
+			'as' => 'api.coupon.removeCoupon'  ,
 			'uses' => 'CouponController@removeCoupon'
 		]);
 
@@ -395,7 +395,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 		Route::post('/deleteBlogById',[
-			'as' => 'api.blogs.id',
+			'as' => 'api.blogs.delete.id',
 			'uses' => 'BlogsController@deleteBlogById',
 		]);
 
@@ -405,7 +405,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 		Route::post('/removeImageById',[
-			'as' => 'api.blogs.id',
+			'as' => 'api.blogs.remove.id',
 			'uses' => 'BlogsController@removeImageById',
 		]);
 
@@ -414,7 +414,7 @@ Route::middleware('APIToken')->group(function () {
 			'uses' => 'BlogsController@blogsById',
 		]);
 		Route::post('/edit-blog-by-id',[
-			'as' => 'api.blogs.post',
+			'as' => 'api.blogs.edit.post',
 			'uses' => 'BlogsController@update',
 		]);
 
@@ -445,7 +445,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 		Route::post('/remove-card',[
-			'as'   => 'api.add.cards',
+			'as'   => 'api.remove.cards',
 			'uses' => 'CardController@removeCard',
 		]);
 
@@ -455,7 +455,7 @@ Route::middleware('APIToken')->group(function () {
 		]);
 
 		Route::post('/primary-card',[
-			'as'   => 'api.charge.cards',
+			'as'   => 'api.primary.cards',
 			'uses' => 'CardController@primaryCard',
 		]);
 

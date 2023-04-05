@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 use Exception;
 use App\Model\Plan;
 use App\Model\Order;
+use App\Helpers\Log;
 use App\Model\Coupon;
 use App\Model\Subscription;
 use Illuminate\Http\Request;
@@ -118,7 +119,7 @@ class CouponController extends Controller
             }
 
         } catch (Exception $e) {
-            \Log::info($e->getMessage() . ' on line number: '.$e->getLine() . ' in CouponController');
+            Log::info($e->getMessage() . ' on line number: '.$e->getLine() . ' Create Subscription Log');
             return [
             	'total' => 0,
 	            'error' => 'Server error'

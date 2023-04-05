@@ -53,7 +53,7 @@ class Company extends Model
 	 */
 	public function visibleDevices()
     {
-		return $this->devices()->visible()->orderBy('device_order', 'ASC');
+		return $this->devices()->visible()->orderBy('show', 'ASC');
     }
 
 	/**

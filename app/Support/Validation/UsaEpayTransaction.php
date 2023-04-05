@@ -350,15 +350,15 @@ trait UsaEpayTransaction
     protected function createCredits($data, $tran)
     {
         $staff_id = null;
-        if (array_key_exists('staff_id', $data)) {
-            $staff_id = $data['staff_id'];
+        if ($data->staff_id) {
+            $staff_id = $data->staff_id;
         }
         $creditData = [
             'customer_id' => $data->customer_id,
             'amount'      => $tran->amount,
             'date'        => date("Y/m/d"),
             'description' => $tran->cardType . ' '.substr($tran->last4, -4),
-            'staff_id' =>  $data["staff_id"]
+            'staff_id' =>  $data->staff_id
         ];
 
         if(isset($data->without_order)){

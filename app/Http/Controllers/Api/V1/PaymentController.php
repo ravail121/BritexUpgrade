@@ -104,7 +104,6 @@ class PaymentController extends BaseController implements ConstantInterface
 			$this->tran = $this->setUsaEpayData( $this->tran, $request );
 
 			if ( $this->tran->Process() ) {
-
 				$msg = $this->transactionSuccessful( $request, $this->tran );
 
 				if ( $order->invoice_id ) {
